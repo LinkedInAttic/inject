@@ -4,13 +4,13 @@ Inject: Dependency Management Got Awesome
 
 * CommonJS Compliance in the Browser (exports.*)
 * Cross domain retrieval of files (via Porthole)
+* localStorage (load a module once!) w IE 7 support
 * Frustratingly Simple
 
 Some of the awesome roadmap things coming soon(ish)
 
-* localStorage (load a module once!)
 * versioning (once we re-expose modules.* interface most likely)
-* some other kind of epic client storage to make IE 6/7 fast too
+* localStorage space management (LRU Cache)
 
 Getting Started
 ===
@@ -80,3 +80,10 @@ inject().config({
 ```
 
 You can then carry on with your injecting. To support the cross domain, we use `window.postMessage` in the browsers that support it, and fall back to fragment transports with window.resize monitoring. To make that happen, we use [Porthole](http://ternarylabs.github.com/porthole/) by the awesome Ternary Labs folks (also MIT License).
+
+Also Staring
+===
+* Porthole: Cross Domain Communication
+* PersistJS: LocalStorage and More
+* JSON: Stringy Object Deliciousness
+* Google Closure Compiler
