@@ -64,9 +64,9 @@ Cross Domain
 ===
 In CDN-like environments, the data you need to include may be on a separate domain. If that's the case, you'll need to do 3 extra steps to get inject up and running.
 
-# **edit relay.html** from the artifacts directory. You'll need to change `PROXY_LOCATIONS` to the location of your relay.html files. You'll need one path on your main server (inject) and one path on the server that contains all your javascript (xhr)
-# **add to inject().config()** You'll then need to add the config for your XD files (below)
-# **upload both relay.html files** to your servers
+1. **edit relay.html** from the artifacts directory. You'll need to change `PROXY_LOCATIONS` to the location of your relay.html files. You'll need one path on your main server (inject) and one path on the server that contains all your javascript (xhr)
+2. **add to inject().config()** You'll then need to add the config for your XD files (below)
+3. **upload both relay.html files** to your servers
 
 When you add the XD config, you'll use the same paths you used in #1 above
 
