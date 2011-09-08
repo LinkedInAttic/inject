@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <script type="text/javascript" src="../artifacts/inject-0.0.1.js"></script>
+</head>
+<body>
+<script type="text/javascript">
+inject().config({
+  path: "http://dl.dropbox.com/u/493580/inject/example/deps"
+});
+
+inject("foo", "bar", function(foo, bar) {
+  try {
+    console.log("foo is", foo);
+    console.log("bar is", bar);
+  }
+  catch (e) {
+    alert("foo and bar:"+foo+bar);
+  }
+});
+</script>
+</body>
+</html>

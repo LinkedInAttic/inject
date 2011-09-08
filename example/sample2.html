@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <script type="text/javascript" src="../artifacts/inject-0.0.1.js"></script>
+</head>
+<body>
+  <span></span>
+<script type="text/javascript">
+inject().config({
+  path: "http://jheuser-md.linkedin.biz/~jheuser/inject/remotedeps",
+  xd: {
+    local: "http://dl.dropbox.com/u/493580/inject/relay.html",
+    remote: "http://jheuser-md.linkedin.biz/~jheuser/inject/relay_cdn.html"
+  }
+});
+
+inject("foo", "bar", function(foo, bar) {
+  try {
+    console.log("foo is", foo);
+    console.log("bar is", bar);
+  }
+  catch (e) {
+    alert("foo and bar:"+foo+bar);
+  }
+});
+</script>
+</body>
+</html>
