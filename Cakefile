@@ -3,54 +3,141 @@ PROJECT = "inject"
 
 fs = require("fs")
 exec = require("child_process").exec
+path = require("path")
+compiler = "java -jar ./build/gcc/compiler.jar --compilation_level SIMPLE_OPTIMIZATIONS"
+compilerInputFile = "--js ./artifacts/#{PROJECT}-#{VERSION}.js"
+compilerOutputFile = "--js_output_file ./artifacts/#{PROJECT}-#{VERSION}.min.js"
 
-files = [
-  "copyright.js"
-  "licenses.js"
-  "inject.coffee"
-]
+packages = 
+  min:
+    name: "#{PROJECT}-#{VERSION}.min.js"
+    headers: [ "./src/copyright-lic-min.js" ]
+    files: [
+      "./src/inject.coffee"
+    ]
+    copy: [ "./src/relay{VERSION}.html" ]
+  full:
+    name: "#{PROJECT}-#{VERSION}.js"
+    headers: [
+      "./src/copyright.js"
+      "./src/licenses.js"
+    ]
+    files: [
+      "./src/inject.coffee"
+    ]
+    copy: [ "./src/relay{VERSION}.html" ]
+
+fileSources = {}
+tmpdir = "./tmp"
+artifacts = "./artifacts"
 
 task "build", "Build the Project", ->
-  index = 0
-  remaining = files.length
-  allContents = []
-  
-  readCompileFile = (file, index) ->
+  readSrc = (file, cb) ->
     if file.indexOf(".coffee") == -1
       # read file into slot
       console.log "Reading #{file}"
-      fs.readFile "./src/#{file}", "utf8", (err, contents) ->
-        throw err if err
-        remaining--
-        allContents[index] = contents
-        if remaining is 0 then cleanArtifacts()
-    else
-      # compile
-      console.log "Compiling #{file}"
-      exec "coffee --output ./artifacts/tmp --compile ./src/#{file} ", (err, stdout, stderr) ->
-        throw err if err
-        newFile = file.replace(".coffee", ".js")
-        fs.readFile "./artifacts/#{newFile}", "utf8", (err, contents) ->
-          remaining--
-          allContents[index] = contents
-          if remaining is 0 then cleanArtifacts()
+      fs.readFile "#{file}", "utf8", (err, contents) ->
+        if err then return cb(err, null)
+        cb(null, contents)
   
-  for file, index in files
-    readCompileFile(file, index)
-  cleanArtifacts = () ->
-    # clean artifacts directory
-    exec "rm -rf ./artifacts/tmp", (err, stdout, stderr) ->
-      throw err if err
-      writeJS()
-  writeJS = () ->
-    fs.writeFile "artifacts/#{PROJECT}-#{VERSION}.js", allContents.join("\n\n"), "utf8", (err) ->
-      throw err if err
-      copyFiles()
-  copyFiles = () ->
-    srcFile = fs.createReadStream("./src/relay.html");
-    artFile = fs.createWriteStream("./artifacts/relay-#{VERSION}.html");
+  compile = (file, cb) ->
+    exec "coffee --output #{tmpdir} --compile #{file}", (err, stdout, stderr) ->
+      if err then return cb(err, null)
+      jsName = path.basename(file.replace(/\.coffee$/, ".js"))
+      compress "#{tmpdir}/#{jsName}", (err, contents) ->
+        if err then return cb(err, null)
+        cb(null, contents)
+  
+  compress = (file, cb) ->
+    if file.indexOf(tmpdir) isnt 0
+      err = new Error("Can only compress items in tempdir")
+      return cb(err, null)
+    
+    exec "java -jar ./build/gcc/compiler.jar --compilation_level SIMPLE_OPTIMIZATIONS --js #{file} --js_output_file #{file}.gcc", (err, stdout, stderr) ->
+      if err then return cb(err, null)
+      gccName = path.basename("#{file}.gcc")
+      readSrc "#{tmpdir}/#{gccName}", (err, contents) ->
+        if err then return cb(err, null)
+        cb(null, contents)
+  
+  copy = (from, to, cb) ->
+    srcFile = fs.createReadStream("#{from}");
+    outFile = fs.createWriteStream("#{to}");
     srcFile.once "open", () ->
-      require("util").pump srcFile, artFile, () ->
-        complete()
+      require("util").pump srcFile, outFile, () ->
+        cb(null, null)
+  
+  namespace = (file) ->
+    file = file.replace(/[^a-zA-Z0-9\.\_\-]/g, "_")
+  
+  readInAllFiles = (allFiles, cb) ->
+    remaining = allFiles.length
+    
+    innerCompile = (file) ->
+      # this is a coffeescript file
+      compile file, (err, contents) ->
+        if err then return cb(err, null)
+        fileSources[namespace(file)] = contents
+        cb() if --remaining is 0
+    
+    innerRead = (file) ->
+      # regular JS file
+      readSrc file, (err, contents) ->
+        if err then return cb(err, null)
+        fileSources[namespace(file)] = contents
+        cb() if --remaining is 0
+    
+    for file in allFiles
+      if file.indexOf(".coffee") isnt -1
+        innerCompile(file)
+      if file.indexOf(".js") isnt -1
+        innerRead(file)
+  
+  assemble = (pkg, cb) ->
+    contents = []
+    copies = pkg.copy.length
+    for name in pkg.headers
+      contents.push fileSources[namespace(name)]
+    for name in pkg.files
+      contents.push fileSources[namespace(name)]
+    fs.writeFile "#{artifacts}/#{pkg.name}", contents.join("\n\n"), (err) ->
+      if err then return cb(err, null)
+      for item in pkg.copy
+        fromItem = item.replace(/\{VERSION\}/, "")
+        toItem = item.replace(/\{VERSION\}/, "#{VERSION}")
+        copy fromItem, "#{artifacts}/#{toItem}", (err) ->
+          if err then return cb(err, null)
+          cb(null, null) if --copies is 0
+  
+  cleanup = (cb) ->
+    exec "rm -rf #{tmpdir}", (err, stdout, stderr) ->
+      if err then return cb(err, null)
+      cb(null, null)
+  
   complete = () ->
-    console.log "Complete!"
+    console.log "Done!"
+  
+  # main
+  files = []
+  fileCache = {}
+  pkgCount = 0
+  for pkg, contents of packages
+    pkgCount++
+    for file in contents.files
+      if !fileCache[file]
+        files.push(file)
+        fileCache[file] = true
+    for file in contents.headers
+      if !fileCache[file]
+        files.push(file)
+        fileCache[file] = true
+  
+  readInAllFiles files, (err) ->
+    throw err if err
+    for pkg, contents of packages
+      assemble contents, (err) ->
+        throw err if err
+        if --pkgCount is 0
+          cleanup () ->
+            throw err if err
+            complete()
