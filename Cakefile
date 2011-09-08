@@ -17,6 +17,7 @@ packages =
     ]
     copy: [ "./src/relay{VERSION}.html" ]
   full:
+    uncompressed: true
     name: "#{PROJECT}-#{VERSION}.js"
     headers: [
       "./src/copyright.js"
@@ -44,9 +45,11 @@ task "build", "Build the Project", ->
     exec "coffee --output #{tmpdir} --compile #{file}", (err, stdout, stderr) ->
       if err then return cb(err, null)
       jsName = path.basename(file.replace(/\.coffee$/, ".js"))
-      compress "#{tmpdir}/#{jsName}", (err, contents) ->
+      readSrc "#{tmpdir}/#{jsName}", (err, JScontents) ->
         if err then return cb(err, null)
-        cb(null, contents)
+        compress "#{tmpdir}/#{jsName}", (err, GCCcontents) ->
+          if err then return cb(err, null)
+          cb(null, [JScontents, GCCcontents])
   
   compress = (file, cb) ->
     if file.indexOf(tmpdir) isnt 0
@@ -77,7 +80,8 @@ task "build", "Build the Project", ->
       # this is a coffeescript file
       compile file, (err, contents) ->
         if err then return cb(err, null)
-        fileSources[namespace(file)] = contents
+        fileSources[namespace(file)] = contents[1]
+        fileSources["!"+namespace(file)] = contents[0]
         cb() if --remaining is 0
     
     innerRead = (file) ->
@@ -96,10 +100,13 @@ task "build", "Build the Project", ->
   assemble = (pkg, cb) ->
     contents = []
     copies = pkg.copy.length
+    useUncompressed = pkg.uncompressed is true
     for name in pkg.headers
-      contents.push fileSources[namespace(name)]
+      content = if useUncompressed and fileSources["!"+namespace(name)] then fileSources["!"+namespace(name)] else fileSources[namespace(name)]
+      contents.push content
     for name in pkg.files
-      contents.push fileSources[namespace(name)]
+      content = if useUncompressed and fileSources["!"+namespace(name)] then fileSources["!"+namespace(name)] else fileSources[namespace(name)]
+      contents.push content
     fs.writeFile "#{artifacts}/#{pkg.name}", contents.join("\n\n"), (err) ->
       if err then return cb(err, null)
       for item in pkg.copy
