@@ -37,26 +37,32 @@ THE SOFTWARE.
 
 (function() {
   /*
+  Inject: Dependency Awesomeness
+  
+  Some sample ways to use inject...
   inject("moduleOne", "moduleTwo", "moduleThree", function(a, b, c) {
-    // n args, last is function. Inject, run
+    // n args, last is function. Inject those modules, then run this body
+    // modules are available as arguments
   });
   
-  inject(["moduleOne", "moduleTwo", "moduleThree"], function(a, b, c) {
-    // 2 args, last is function. Inject, run
-  });
-  
+  Configuring inject()
   inject().config({
-    // 0 args. Return altering interface such as config
-    path: "http://example.com/path/to/js/root"
+    // where are your JS files? Can also be a function which will do
+    // lookups for you
+    path: "http://example.com/path/to/js/root",
+    
+    // if your JS files are on a different domain, you'll need to use
+    // relay files. See the readme
     xd: {
-      local: "http://local.example.com/path/to/relay.html",
-      remote: "http://example.com/path/to/relay.html"
+      inject: "http://local.example.com/path/to/relay.html",
+      xhr: "http://remote.example.com/path/to/relay.html"
     }
   })
   
+  Specifying specific module locations (that pathing could never guess)
   inject().modules({
-    moduleName: "module/path/from/config.path/or/fqdn.js",
-    moreModuleName: "module/path/from/config.path/or/fqdn2.js"
+    // module name, module path
+    moduleName: "http://example.com/location/of/module.js"
   })
   */
   /*
@@ -115,8 +121,8 @@ var Porthole=(typeof Porthole=="undefined")||!Porthole?{}:Porthole;Porthole={tra
     responseSlicer = /^(.+?) (.+?) (.+?) (.+)$/m;
     hostPrefixRegex = /^https?:\/\//;
     hostSuffixRegex = /^(.*?)(\/.*|$)/;
-    src = config != null ? (_ref = config.xd) != null ? _ref.remote : void 0 : void 0;
-    localSrc = config != null ? (_ref2 = config.xd) != null ? _ref2.local : void 0 : void 0;
+    src = config != null ? (_ref = config.xd) != null ? _ref.xhr : void 0 : void 0;
+    localSrc = config != null ? (_ref2 = config.xd) != null ? _ref2.inject : void 0 : void 0;
     iframeName = "injectProxy";
     if (!src) {
       throw new Error("Configuration requires xd.remote to be defined");
@@ -140,10 +146,10 @@ var Porthole=(typeof Porthole=="undefined")||!Porthole?{}:Porthole;Porthole={tra
     iframe.style.position = "absolute";
     iframe.id = iframeName;
     document.body.insertBefore(iframe, document.body.firstChild);
-    xDomainRpc = new Porthole.WindowProxy(config.xd.remote + "#xhr", iframeName);
+    xDomainRpc = new Porthole.WindowProxy(config.xd.xhr + "#xhr", iframeName);
     return xDomainRpc.addEventListener(function(event) {
       var item, pieces, _i, _len;
-      if (trimHost(event.origin) !== trimHost(config.xd.remote)) {
+      if (trimHost(event.origin) !== trimHost(config.xd.xhr)) {
         return;
       }
       if (event.data === "READY") {

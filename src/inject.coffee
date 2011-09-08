@@ -1,24 +1,30 @@
 ###
+Inject: Dependency Awesomeness
+
+Some sample ways to use inject...
 inject("moduleOne", "moduleTwo", "moduleThree", function(a, b, c) {
-  // n args, last is function. Inject, run
+  // n args, last is function. Inject those modules, then run this body
+  // modules are available as arguments
 });
 
-inject(["moduleOne", "moduleTwo", "moduleThree"], function(a, b, c) {
-  // 2 args, last is function. Inject, run
-});
-
+Configuring inject()
 inject().config({
-  // 0 args. Return altering interface such as config
-  path: "http://example.com/path/to/js/root"
+  // where are your JS files? Can also be a function which will do
+  // lookups for you
+  path: "http://example.com/path/to/js/root",
+  
+  // if your JS files are on a different domain, you'll need to use
+  // relay files. See the readme
   xd: {
-    local: "http://local.example.com/path/to/relay.html",
-    remote: "http://example.com/path/to/relay.html"
+    inject: "http://local.example.com/path/to/relay.html",
+    xhr: "http://remote.example.com/path/to/relay.html"
   }
 })
 
+Specifying specific module locations (that pathing could never guess)
 inject().modules({
-  moduleName: "module/path/from/config.path/or/fqdn.js",
-  moreModuleName: "module/path/from/config.path/or/fqdn2.js"
+  // module name, module path
+  moduleName: "http://example.com/location/of/module.js"
 })
 ###
 
@@ -79,8 +85,8 @@ createIframe = () ->
   responseSlicer = /^(.+?) (.+?) (.+?) (.+)$/m
   hostPrefixRegex = /^https?:\/\//
   hostSuffixRegex = /^(.*?)(\/.*|$)/
-  src = config?.xd?.remote
-  localSrc = config?.xd?.local
+  src = config?.xd?.xhr
+  localSrc = config?.xd?.inject
   iframeName = "injectProxy"
   if !src then throw new Error("Configuration requires xd.remote to be defined")
   if !localSrc then throw new Error("Configuration requires xd.local to be defined")
@@ -102,9 +108,9 @@ createIframe = () ->
   document.body.insertBefore(iframe, document.body.firstChild)
   
   # Create a proxy window to send to and receive message from the guest iframe
-  xDomainRpc = new Porthole.WindowProxy(config.xd.remote+"#xhr", iframeName);
+  xDomainRpc = new Porthole.WindowProxy(config.xd.xhr+"#xhr", iframeName);
   xDomainRpc.addEventListener (event) ->
-    if trimHost(event.origin) isnt trimHost(config.xd.remote) then return
+    if trimHost(event.origin) isnt trimHost(config.xd.xhr) then return
     
     # Ready init
     if event.data is "READY"
