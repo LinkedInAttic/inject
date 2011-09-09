@@ -10,7 +10,7 @@ Inject: Dependency Management Got Awesome
 Some of the awesome roadmap things coming soon(ish)
 
 * versioning (once we re-expose modules.* interface most likely)
-* localStorage space management (LRU Cache)
+* localStorage space management (time based + config? LRU? who knows?!)
 
 Getting Started
 ===
@@ -33,6 +33,7 @@ inject("moduleA", "moduleB", "moduleC/SomePart", function(A, B, C) {
   // fired when all modules are loaded
   // if exports.* are set, they'll be available in A, B, and C
 });
+```
 
 By default, modules map to `path` + `moduleName` + `".js"`. If you have a much more complex scheme, you can map things manually using the `modules()` config or by passing a function to `config.path` for resolving paths yourself.
 
