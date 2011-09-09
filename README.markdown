@@ -82,7 +82,7 @@ inject().config({
 
 You can then carry on with your injecting. To support the cross domain, we use `window.postMessage` in the browsers that support it, and fall back to fragment transports with window.resize monitoring. To make that happen, we use [Porthole](http://ternarylabs.github.com/porthole/) by the awesome Ternary Labs folks (also MIT License).
 
-Also Staring
+Also Starring
 ===
 * Porthole: Cross Domain Communication
 * PersistJS: LocalStorage and More
