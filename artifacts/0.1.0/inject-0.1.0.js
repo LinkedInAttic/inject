@@ -70,7 +70,7 @@ THE SOFTWARE.
     // module name, module path
     moduleName: "http://example.com/location/of/module.js"
   })
-  */  var JSON, Persist, Porthole, callbackRegistry, checkComplete, commonJSFooter, commonJSHeader, config, configInterface, context, counter, createIframe, createTxId, fileRegistry, fileStorage, fileStorageToken, getFile, getModule, getXHR, inject, jsSuffix, loadModules, loadQueue, modulePathRegistry, moduleRegistry, namespace, normalizePath, oldInject, onModuleLoad, pauseRequired, saveFile, saveModule, sendToIframe, sendToXhr, setConfig, setNamespace, setUserModules, txnRegistry, userModules, xDomainRpc;
+  */  var JSON, Persist, Porthole, callbackRegistry, checkComplete, clearFileRegistry, commonJSFooter, commonJSHeader, config, configInterface, context, counter, createIframe, createTxId, fileRegistry, fileStorage, fileStorageToken, getFile, getModule, getXHR, inject, jsSuffix, loadModules, loadQueue, modulePathRegistry, moduleRegistry, namespace, normalizePath, oldInject, onModuleLoad, pauseRequired, saveFile, saveModule, sendToIframe, sendToXhr, setConfig, setNamespace, setUserModules, txnRegistry, userModules, xDomainRpc;
   var __slice = Array.prototype.slice;
   context = this;
   oldInject = context.inject;
@@ -111,6 +111,8 @@ THE SOFTWARE.
           fileRegistry = JSON.parse(val);
           if (fileRegistry[path]) {
             return cb(true, fileRegistry[path]);
+          } else {
+            return cb(false, null);
           }
         } else {
           fileRegistry = {};
@@ -135,6 +137,13 @@ THE SOFTWARE.
     fileRegistry[path] = file;
     return fileStorage.set(fileStorageToken, JSON.stringify(fileRegistry));
   };
+  clearFileRegistry = function() {
+    if (!fileStorage) {
+      fileStorage = new Persist.Store("Inject FileStorage");
+    }
+    fileStorage.set(fileStorageToken, "");
+    return fileRegistry = {};
+  };
   counter = 0;
   createTxId = function() {
     return "txn_" + (counter++);
@@ -142,7 +151,7 @@ THE SOFTWARE.
   xDomainRpc = null;
   createIframe = function() {
     var hostPrefixRegex, hostSuffixRegex, iframe, iframeName, localSrc, responseSlicer, src, trimHost, _ref, _ref2;
-    responseSlicer = /^(.+?) (.+?) (.+?) (.+)$/m;
+    responseSlicer = /^(.+?)[\s](.+?)[\s](.+?)[\s]([\w\W]+)$/m;
     hostPrefixRegex = /^https?:\/\//;
     hostSuffixRegex = /^(.*?)(\/.*|$)/;
     src = config != null ? (_ref = config.xd) != null ? _ref.xhr : void 0 : void 0;
@@ -203,6 +212,9 @@ THE SOFTWARE.
     modules: function(modl) {
       setModules(modl);
       return configInterface;
+    },
+    clear: function() {
+      return clearFileRegistry();
     },
     noConflict: function(ns) {
       var currentInject;

@@ -67,7 +67,7 @@ getFile = (path, cb) ->
     fileStorage.get fileStorageToken, (ok, val) ->
       if ok and typeof(val) is "string" and val.length > 1 
         fileRegistry = JSON.parse(val)
-        if fileRegistry[path] then return cb(true, fileRegistry[path])
+        if fileRegistry[path] then return cb(true, fileRegistry[path]) else return cb(false, null)
       else
         fileRegistry = {}
         return cb(false, null)
@@ -80,6 +80,11 @@ saveFile = (path, file) ->
   if fileRegistry[path] and fileRegistry[path].length > 1 then return
   fileRegistry[path] = file
   fileStorage.set fileStorageToken, JSON.stringify(fileRegistry)
+  
+clearFileRegistry = () ->
+  if !fileStorage then fileStorage = new Persist.Store("Inject FileStorage")
+  fileStorage.set fileStorageToken, ""
+  fileRegistry = {}
 
 # create a transaction id
 counter = 0
@@ -89,7 +94,7 @@ createTxId = () ->
 # create an iframe to the config.xd.remote location
 xDomainRpc = null
 createIframe = () ->
-  responseSlicer = /^(.+?) (.+?) (.+?) (.+)$/m
+  responseSlicer = /^(.+?)[\s](.+?)[\s](.+?)[\s]([\w\W]+)$/m
   hostPrefixRegex = /^https?:\/\//
   hostSuffixRegex = /^(.*?)(\/.*|$)/
   src = config?.xd?.xhr
@@ -140,6 +145,8 @@ configInterface =
   modules: (modl) ->
     setModules(modl)
     return configInterface
+  clear: () ->
+    clearFileRegistry()
   noConflict: (ns) ->
     setNamespace(ns)
     currentInject = context.inject

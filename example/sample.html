@@ -4,19 +4,27 @@
   <script type="text/javascript" src="../artifacts/0.1.0/inject-0.1.0.js"></script>
 </head>
 <body>
+<h1>Local Domain</h1>
+<p>This pulls from the local domain using XMLHttpRequest</p>
+<p><a href="sample.html">Same Domain</a> | <a href="sample2.html">Alternate Domain</a></p>
+<p id="output-foo"></p>
+<p id="output-bar"></p>
+<button id="clearit">Clear Cache</button>
+
 <script type="text/javascript">
+document.getElementById("clearit").onclick = function() {
+  inject().clear();
+};
+
 inject().config({
   path: "http://dl.dropbox.com/u/493580/inject/example/deps"
 });
 
 inject("foo", "bar", function(foo, bar) {
-  try {
-    console.log("foo is", foo);
-    console.log("bar is", bar);
-  }
-  catch (e) {
-    alert("foo and bar:"+foo+bar);
-  }
+  document.getElementById("output-foo").innerHTML = foo.sampleString;
+  
+  var b = new bar.Bar();
+  document.getElementById("output-bar").innerHTML = b.baz();
 });
 </script>
 </body>

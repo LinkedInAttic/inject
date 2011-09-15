@@ -1,2 +1,2 @@
 exports.foo = function() {};
-exports.lala = "Stringness!";
+exports.sampleString = "Stringness!";

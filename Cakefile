@@ -30,7 +30,7 @@ packages =
 
 fileSources = {}
 tmpdir = "./tmp"
-artifacts = "./artifacts"
+artifacts = "./artifacts/dev"
 
 task "build", "Build the Project", ->
   readSrc = (file, cb) ->
@@ -63,7 +63,13 @@ task "build", "Build the Project", ->
         if err then return cb(err, null)
         cb(null, contents)
   
+  copyArchive = {}
   copy = (from, to, cb) ->
+    key = "#{from}::#{to}"
+    if copyArchive[key] then return cb(null, null)
+    
+    copyArchive[key] = true
+    console.log "Copy #{from} => #{to}"
     srcFile = fs.createReadStream("#{from}");
     outFile = fs.createWriteStream("#{to}");
     srcFile.once "open", () ->
@@ -111,7 +117,7 @@ task "build", "Build the Project", ->
       if err then return cb(err, null)
       for item in pkg.copy
         fromItem = item.replace(/\{VERSION\}/, "")
-        toItem = item.replace(/\{VERSION\}/, "#{VERSION}")
+        toItem = item.replace(/\{VERSION\}/, "-#{VERSION}").replace(/^\.\/src\//, "")
         copy fromItem, "#{artifacts}/#{toItem}", (err) ->
           if err then return cb(err, null)
           cb(null, null) if --copies is 0
