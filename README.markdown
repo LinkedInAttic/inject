@@ -88,3 +88,7 @@ Also Starring
 * PersistJS: LocalStorage and More
 * JSON: Stringy Object Deliciousness
 * Google Closure Compiler
+
+Live Awesomeness
+===
+We have live examples [here](http://jakobo.github.com/inject/example/0.1.0/sample.html) with Same and Alternate domains. These pages are viewable in the [gh-pages branch](https://github.com/Jakobo/inject/tree/gh-pages). CoralCDN provides the second domain which is a might-handy CDN simulation given it's actually a CDN for the alternate domain.
