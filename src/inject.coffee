@@ -43,11 +43,6 @@ userModules = {}
 setUserModules = (modl) ->
   userModules = modl
 
-# set the namespace
-namespace = ""
-setNamespace = (ns) ->
-  namespace = ns
-
 # get and save a module by name
 moduleRegistry = {}
 getModule = (module) ->
@@ -147,12 +142,10 @@ configInterface =
     return configInterface
   clear: () ->
     clearFileRegistry()
-  noConflict: (ns) ->
-    setNamespace(ns)
+  noConflict: () ->
     currentInject = context.inject
     context.inject = oldInject
-    context[ns] = currentInject
-    return true
+    return currentInject
 
 # normalizes modules into names
 # cache is only for this function
@@ -193,6 +186,7 @@ normalizePath = (path) ->
 # loads modules
 callbackRegistry = {}
 txnRegistry = {}
+fileOnComplete = {}
 loadModules = (modList, cb) ->
   # for each item in the mod list
   # resolve it to a full url for file access
@@ -207,43 +201,74 @@ loadModules = (modList, cb) ->
   # paths now has everything we need to include
   # if xd params are set, add them to the queue for iframe dispatch
   for module, path of paths
+    if !fileOnComplete[path]
+      fileOnComplete[path] =
+        txns: []
+        loading: false
+    
     # do we have it locally?
     if getModule(module) then paths[module] = getModule(module)
-    # do we have the file locally?
+    # Check localStorage and load
     getFile path, (ok, val) ->
+      # listen for evaluation of the module
+      fileOnComplete[path].txns.push txId
+      
       if ok and typeof(val) is "string" and val.length > 1
         onModuleLoad(txId, module, path, val)
       else
         # we don't have the file or module, we must retrieve it
-        if config.xd?
-          sendToIframe(txId, module, path, onModuleLoad)
-        else
-          sendToXhr(txId, module, path, onModuleLoad)
+        # if it's already loading, we just wait
+        if (!fileOnComplete[path].loading)
+          fileOnComplete[path].loading = true
+          if config.xd?
+            sendToIframe(txId, module, path, onModuleLoad)
+          else
+            sendToXhr(txId, module, path, onModuleLoad)
 
 # handles when payload is received either from the iframe or XHR
 commonJSHeader = '''
 (function() {
-  var exports = {};
-  (function() {
+  var module = {}, exports = {}, require = function(modl) { return getModule(modl); }, exe = null;
+  module.exports = exports;
+  exe = function(module, exports, require) {
 '''
 commonJSFooter = '''
-  })();
-  return exports;
+  };
+  exe.call(module, module, exports, require);
+  return module.exports;
 })();
 '''
-onModuleLoad = (txId, module, file, text) ->
-  # create the commonJS wrapper for this file and execute it
+onModuleLoad = (txId, module, path, text) ->
+  # create the commonJS wrapper for this path and execute it
   # suck up the exports, write to the module collection
   # write the collection to the path as well
   # invoke check for completeness
   runCmd = "#{commonJSHeader}\n#{text}\n#{commonJSFooter}"
-  try
-    exports = eval(runCmd)
-  catch err
-    throw err
-  saveModule(module, exports)
-  saveFile(file, text)
-  checkComplete(txId)
+  
+  # find all require statements
+  requires = []
+  text.replace /.*?require[\s]*\([\s]*("|')([\w]+?)('|")[\s]*\).*?/gm, (args...) ->
+    requires.push args[2]
+  
+  runModule = () ->
+    try
+      exports = eval(runCmd)
+    catch err
+      throw err
+    saveModule(module, exports)
+    saveFile(path, text)
+    
+    # fire all oncompletes that may be waiting
+    fileOnComplete[path].loading = false
+    for txn in fileOnComplete[path].txns
+      checkComplete(txn)
+  
+  if requires.length > 0
+    loadModules requires, () ->
+      runModule()
+  else
+    runModule()
+
 
 checkComplete = (txId) ->
   done = true

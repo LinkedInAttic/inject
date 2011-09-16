@@ -70,7 +70,7 @@ THE SOFTWARE.
     // module name, module path
     moduleName: "http://example.com/location/of/module.js"
   })
-  */  var JSON, Persist, Porthole, callbackRegistry, checkComplete, clearFileRegistry, commonJSFooter, commonJSHeader, config, configInterface, context, counter, createIframe, createTxId, fileRegistry, fileStorage, fileStorageToken, getFile, getModule, getXHR, inject, jsSuffix, loadModules, loadQueue, modulePathRegistry, moduleRegistry, namespace, normalizePath, oldInject, onModuleLoad, pauseRequired, saveFile, saveModule, sendToIframe, sendToXhr, setConfig, setNamespace, setUserModules, txnRegistry, userModules, xDomainRpc;
+  */  var JSON, Persist, Porthole, callbackRegistry, checkComplete, clearFileRegistry, commonJSFooter, commonJSHeader, config, configInterface, context, counter, createIframe, createTxId, fileOnComplete, fileRegistry, fileStorage, fileStorageToken, getFile, getModule, getXHR, inject, jsSuffix, loadModules, loadQueue, modulePathRegistry, moduleRegistry, normalizePath, oldInject, onModuleLoad, pauseRequired, saveFile, saveModule, sendToIframe, sendToXhr, setConfig, setUserModules, txnRegistry, userModules, xDomainRpc;
   var __slice = Array.prototype.slice;
   context = this;
   oldInject = context.inject;
@@ -83,10 +83,6 @@ THE SOFTWARE.
   userModules = {};
   setUserModules = function(modl) {
     return userModules = modl;
-  };
-  namespace = "";
-  setNamespace = function(ns) {
-    return namespace = ns;
   };
   moduleRegistry = {};
   getModule = function(module) {
@@ -216,13 +212,11 @@ THE SOFTWARE.
     clear: function() {
       return clearFileRegistry();
     },
-    noConflict: function(ns) {
+    noConflict: function() {
       var currentInject;
-      setNamespace(ns);
       currentInject = context.inject;
       context.inject = oldInject;
-      context[ns] = currentInject;
-      return true;
+      return currentInject;
     }
   };
   modulePathRegistry = {};
@@ -262,6 +256,7 @@ THE SOFTWARE.
   };
   callbackRegistry = {};
   txnRegistry = {};
+  fileOnComplete = {};
   loadModules = function(modList, cb) {
     var module, path, paths, txId, _i, _len, _results;
     txId = createTxId();
@@ -275,36 +270,69 @@ THE SOFTWARE.
     _results = [];
     for (module in paths) {
       path = paths[module];
+      if (!fileOnComplete[path]) {
+        fileOnComplete[path] = {
+          txns: [],
+          loading: false
+        };
+      }
       if (getModule(module)) {
         paths[module] = getModule(module);
       }
       _results.push(getFile(path, function(ok, val) {
+        fileOnComplete[path].txns.push(txId);
         if (ok && typeof val === "string" && val.length > 1) {
           return onModuleLoad(txId, module, path, val);
         } else {
-          if (config.xd != null) {
-            return sendToIframe(txId, module, path, onModuleLoad);
-          } else {
-            return sendToXhr(txId, module, path, onModuleLoad);
+          if (!fileOnComplete[path].loading) {
+            fileOnComplete[path].loading = true;
+            if (config.xd != null) {
+              return sendToIframe(txId, module, path, onModuleLoad);
+            } else {
+              return sendToXhr(txId, module, path, onModuleLoad);
+            }
           }
         }
       }));
     }
     return _results;
   };
-  commonJSHeader = '(function() {\n  var exports = {};\n  (function() {';
-  commonJSFooter = '})();\nreturn exports;\n})();';
-  onModuleLoad = function(txId, module, file, text) {
-    var exports, runCmd;
+  commonJSHeader = '(function() {\n  var module = {}, exports = {}, require = function(modl) { return getModule(modl); }, exe = null;\n  module.exports = exports;\n  exe = function(module, exports, require) {';
+  commonJSFooter = '};\nexe.call(module, module, exports, require);\nreturn module.exports;\n})();';
+  onModuleLoad = function(txId, module, path, text) {
+    var requires, runCmd, runModule;
     runCmd = "" + commonJSHeader + "\n" + text + "\n" + commonJSFooter;
-    try {
-      exports = eval(runCmd);
-    } catch (err) {
-      throw err;
+    requires = [];
+    text.replace(/.*?require[\s]*\([\s]*("|')([\w]+?)('|")[\s]*\).*?/gm, function() {
+      var args;
+      args = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
+      return requires.push(args[2]);
+    });
+    runModule = function() {
+      var exports, txn, _i, _len, _ref, _results;
+      try {
+        exports = eval(runCmd);
+      } catch (err) {
+        throw err;
+      }
+      saveModule(module, exports);
+      saveFile(path, text);
+      fileOnComplete[path].loading = false;
+      _ref = fileOnComplete[path].txns;
+      _results = [];
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        txn = _ref[_i];
+        _results.push(checkComplete(txn));
+      }
+      return _results;
+    };
+    if (requires.length > 0) {
+      return loadModules(requires, function() {
+        return runModule();
+      });
+    } else {
+      return runModule();
     }
-    saveModule(module, exports);
-    saveFile(file, text);
-    return checkComplete(txId);
   };
   checkComplete = function(txId) {
     var cb, done, modl, module, modules, _i, _len, _ref;
