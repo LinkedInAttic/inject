@@ -229,6 +229,8 @@ loadModules = (modList, cb) ->
 commonJSHeader = '''
 (function() {
   var module = {}, exports = {}, require = function(modl) { return getModule(modl); }, exe = null;
+  module.id = "__MODULE_ID__";
+  module.uri = "__MODULE_URI__";
   module.exports = exports;
   exe = function(module, exports, require) {
 '''
@@ -243,11 +245,13 @@ onModuleLoad = (txId, module, path, text) ->
   # suck up the exports, write to the module collection
   # write the collection to the path as well
   # invoke check for completeness
-  runCmd = "#{commonJSHeader}\n#{text}\n#{commonJSFooter}"
+  header = commonJSHeader.replace(/__MODULE_ID__/g, module)
+                         .replace(/__MODULE_URI__/g, path)
+  runCmd = "#{header}\n#{text}\n#{commonJSFooter}"
   
   # find all require statements
   requires = []
-  text.replace /.*?require[\s]*\([\s]*("|')([\w]+?)('|")[\s]*\).*?/gm, (args...) ->
+  text.replace /.*?require[\s]*\([\s]*("|')([\w\\]+?)('|")[\s]*\).*?/gm, (args...) ->
     requires.push args[2]
   
   runModule = () ->

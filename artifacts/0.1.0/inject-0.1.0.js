@@ -297,13 +297,14 @@ THE SOFTWARE.
     }
     return _results;
   };
-  commonJSHeader = '(function() {\n  var module = {}, exports = {}, require = function(modl) { return getModule(modl); }, exe = null;\n  module.exports = exports;\n  exe = function(module, exports, require) {';
+  commonJSHeader = '(function() {\n  var module = {}, exports = {}, require = function(modl) { return getModule(modl); }, exe = null;\n  module.id = "__MODULE_ID__";\n  module.uri = "__MODULE_URI__";\n  module.exports = exports;\n  exe = function(module, exports, require) {';
   commonJSFooter = '};\nexe.call(module, module, exports, require);\nreturn module.exports;\n})();';
   onModuleLoad = function(txId, module, path, text) {
-    var requires, runCmd, runModule;
-    runCmd = "" + commonJSHeader + "\n" + text + "\n" + commonJSFooter;
+    var header, requires, runCmd, runModule;
+    header = commonJSHeader.replace(/__MODULE_ID__/g, module).replace(/__MODULE_URI__/g, path);
+    runCmd = "" + header + "\n" + text + "\n" + commonJSFooter;
     requires = [];
-    text.replace(/.*?require[\s]*\([\s]*("|')([\w]+?)('|")[\s]*\).*?/gm, function() {
+    text.replace(/.*?require[\s]*\([\s]*("|')([\w\\]+?)('|")[\s]*\).*?/gm, function() {
       var args;
       args = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
       return requires.push(args[2]);
