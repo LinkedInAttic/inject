@@ -43,66 +43,166 @@ THE SOFTWARE.
 
 (function() {
   /*
-  Inject: Dependency Awesomeness
+  # Inject: Dependency Awesomeness #
   
   Some sample ways to use inject...
-  inject("moduleOne", "moduleTwo", "moduleThree", function(a, b, c) {
-    // n args, last is function. Inject those modules, then run this body
-    // modules are available as arguments
-  });
+  
+      inject("moduleOne", "moduleTwo", "moduleThree", function(a, b, c) {
+        // n args, last is function. Inject those modules, then run this body
+        // modules are available as arguments
+      });
   
   Configuring inject()
-  inject().config({
-    // where are your JS files? Can also be a function which will do
-    // lookups for you
-    path: "http://example.com/path/to/js/root",
-    
-    // if your JS files are on a different domain, you'll need to use
-    // relay files. See the readme
-    xd: {
-      inject: "http://local.example.com/path/to/relay.html",
-      xhr: "http://remote.example.com/path/to/relay.html"
-    }
-  })
+  
+      inject().config({
+        // where are your JS files? Can also be a function which will do
+        // lookups for you
+        path: "http://example.com/path/to/js/root",
+        
+        // if your JS files are on a different domain, you'll need to use
+        // relay files. See the readme
+        xd: {
+          inject: "http://local.example.com/path/to/relay.html",
+          xhr: "http://remote.example.com/path/to/relay.html"
+        }
+      })
   
   Specifying specific module locations (that pathing could never guess)
-  inject().modules({
-    // module name, module path
-    moduleName: "http://example.com/location/of/module.js"
-  })
-  */  var JSON, Persist, Porthole, callbackRegistry, checkComplete, clearFileRegistry, commonJSFooter, commonJSHeader, config, configInterface, context, counter, createIframe, createTxId, fileOnComplete, fileRegistry, fileStorage, fileStorageToken, getFile, getModule, getXHR, inject, jsSuffix, loadModules, loadQueue, modulePathRegistry, moduleRegistry, normalizePath, oldInject, onModuleLoad, pauseRequired, saveFile, saveModule, sendToIframe, sendToXhr, setConfig, setUserModules, txnRegistry, userModules, xDomainRpc;
+  
+      inject().modules({
+        // module name, module path
+        moduleName: "http://example.com/location/of/module.js"
+      })
+  
+  For more details, check out the README or github: https://github.com/Jakobo/inject
+  */
+  /*
+  Constants and Registries used
+  */  var JSON, Persist, Porthole, callbackRegistry, checkComplete, clearFileRegistry, commonJSFooter, commonJSHeader, config, configInterface, context, counter, createIframe, createTxId, fileOnComplete, fileRegistry, fileStorage, fileStorageToken, getFile, getModule, getNamespace, getXHR, hostPrefixRegex, hostSuffixRegex, iframeName, inject, jsSuffix, loadModules, loadQueue, modulePathRegistry, moduleRegistry, namespace, normalizePath, oldInject, onModuleLoad, pauseRequired, requireRegex, responseSlicer, saveFile, saveModule, schemaVersion, sendToIframe, sendToXhr, setConfig, setNamespace, setUserModules, txnRegistry, userModules, xDomainRpc;
   var __slice = Array.prototype.slice;
+  schemaVersion = 1;
   context = this;
   oldInject = context.inject;
   pauseRequired = false;
   loadQueue = [];
   config = {};
-  setConfig = function(cfg) {
-    return config = cfg;
-  };
   userModules = {};
-  setUserModules = function(modl) {
-    return userModules = modl;
-  };
   moduleRegistry = {};
+  fileRegistry = null;
+  fileStorage = null;
+  fileStorageToken = "FILEDB";
+  namespace = "inject";
+  counter = 0;
+  xDomainRpc = null;
+  modulePathRegistry = {};
+  jsSuffix = /.*?\.js$/;
+  callbackRegistry = {};
+  txnRegistry = {};
+  fileOnComplete = {};
+  responseSlicer = /^(.+?)[\s](.+?)[\s](.+?)[\s]([\w\W]+)$/m;
+  hostPrefixRegex = /^https?:\/\//;
+  hostSuffixRegex = /^(.*?)(\/.*|$)/;
+  iframeName = "injectProxy";
+  requireRegex = /.*?require[\s]*\([\s]*("|')([\w\\/\.\:]+?)('|")[\s]*\).*?/gm;
+  /*
+  CommonJS wrappers for a header and footer
+  these bookend the included code and insulate the scope so that it doesn't impact inject()
+  or anything else.
+  this helps secure module bleeding
+  */
+  commonJSHeader = 'with (window) {\n  (function() {\n    var module = {}, exports = {}, require = __INJECT_NS__().require(), exe = null;\n    module.id = "__MODULE_ID__";\n    module.uri = "__MODULE_URI__";\n    module.exports = exports;\n    exe = function(module, exports, require) {';
+  commonJSFooter = '  };\n  exe.call(module, module, exports, require);\n  return module.exports;\n})();\n}';
+  /*
+  an interface for configuring inject
+  provides a suite of methods that call internal functions or expose needed methods
+  */
+  configInterface = {
+    config: function(cfg) {
+      /*
+          ## inject().config(cfg) ##
+          Set the inject() configuration
+          */      if (!cfg.path) {
+        throw new Error("Config requires at least path to be set");
+      }
+      if (typeof cfg.path === "string" && cfg.path.lastIndexOf("/") !== cfg.path.length) {
+        cfg.path = "" + cfg.path + "/";
+      }
+      setConfig(cfg);
+      return configInterface;
+    },
+    modules: function(modl) {
+      /*
+          ## inject().modules(modl) ##
+          Set handling rules for specific modules
+          */      setModules(modl);
+      return configInterface;
+    },
+    clear: function(version) {
+      /*
+          ## inject().clear(version) ##
+          Clear the inject() file registry for a specified version. If no version is specified, defaults to current
+          */      return clearFileRegistry(version);
+    },
+    noConflict: function(ns) {
+      /*
+          ## inject().noConflict(ns) ##
+          move inject() to a new location. You will need to set `ns` to a publicly reachable location, identical to where
+          you save the returned value from noConflict()
+          */      var currentInject;
+      if (!ns) {
+        throw new Error("You must specify a publicly reachable namespace for inject() to work");
+      }
+      setNamespace(ns);
+      currentInject = context.inject;
+      context.inject = oldInject;
+      return currentInject;
+    },
+    require: function() {
+      /*
+          ## inect().require() ##
+          The require interface used when including modules
+          */      return getModule;
+    }
+  };
+  setConfig = function(cfg) {
+    /*
+      ## setConfig(cfg) ##
+      _internal_ Set the config
+      */    return config = cfg;
+  };
+  setUserModules = function(modl) {
+    /*
+      ## setUserModules(modl) ##
+      _internal_ Set the collection of user defined modules
+      */    return userModules = modl;
+  };
   getModule = function(module) {
-    return moduleRegistry[module] || false;
+    /*
+      ## getModule(module) ##
+      _internal_ Get a module by name
+      */    return moduleRegistry[module] || false;
   };
   saveModule = function(module, exports) {
-    if (moduleRegistry[module]) {
+    /*
+      ## saveModule(module, exports) ##
+      _internal_ Save a module by name
+      */    if (moduleRegistry[module]) {
       return;
     }
     return moduleRegistry[module] = exports;
   };
-  fileRegistry = null;
-  fileStorage = null;
-  fileStorageToken = "FILEDB";
   getFile = function(path, cb) {
+    /*
+      ## getFile(path, cb) ##
+      _internal_ Get a file by its path. Asynchronously calls its callback.
+      Uses LocalStorage or UserData if available
+      */    var token;
+    token = "" + fileStorageToken + schemaVersion;
     if (!fileStorage) {
       fileStorage = new Persist.Store("Inject FileStorage");
     }
     if (!fileRegistry) {
-      return fileStorage.get(fileStorageToken, function(ok, val) {
+      return fileStorage.get(token, function(ok, val) {
         if (ok && typeof val === "string" && val.length > 1) {
           fileRegistry = JSON.parse(val);
           if (fileRegistry[path]) {
@@ -124,6 +224,12 @@ THE SOFTWARE.
     }
   };
   saveFile = function(path, file) {
+    /*
+      ## saveFile(path, file) ##
+      _internal_ Save a file for resource `path` into LocalStorage or UserData
+      Also updates the internal fileRegistry
+      */    var token;
+    token = "" + fileStorageToken + schemaVersion;
     if (!fileStorage) {
       fileStorage = new Persist.Store("Inject FileStorage");
     }
@@ -131,28 +237,51 @@ THE SOFTWARE.
       return;
     }
     fileRegistry[path] = file;
-    return fileStorage.set(fileStorageToken, JSON.stringify(fileRegistry));
+    return fileStorage.set(token, JSON.stringify(fileRegistry));
   };
-  clearFileRegistry = function() {
+  clearFileRegistry = function(version) {
+    var token;
+    if (version == null) {
+      version = schemaVersion;
+    }
+    /*
+      ## clearFileRegistry(version = schemaVersion) ##
+      _internal_ Clears the internal file registry at `version`
+      */
+    token = "" + fileStorageToken + version;
     if (!fileStorage) {
       fileStorage = new Persist.Store("Inject FileStorage");
     }
-    fileStorage.set(fileStorageToken, "");
-    return fileRegistry = {};
+    fileStorage.set(token, "");
+    if (version === schemaVersion) {
+      return fileRegistry = {};
+    }
   };
-  counter = 0;
+  setNamespace = function(ns) {
+    /*
+      ## setNamespace(ns) ##
+      _internal_ set the namespace
+      */    return namespace = ns;
+  };
+  getNamespace = function() {
+    /*
+      ## getNamespace() ##
+      _internal_ get the namespace
+      */    return namespace;
+  };
   createTxId = function() {
-    return "txn_" + (counter++);
+    /*
+      ## createTxId() ##
+      _internal_ create a transaction id
+      */    return "txn_" + (counter++);
   };
-  xDomainRpc = null;
   createIframe = function() {
-    var hostPrefixRegex, hostSuffixRegex, iframe, iframeName, localSrc, responseSlicer, src, trimHost, _ref, _ref2;
-    responseSlicer = /^(.+?)[\s](.+?)[\s](.+?)[\s]([\w\W]+)$/m;
-    hostPrefixRegex = /^https?:\/\//;
-    hostSuffixRegex = /^(.*?)(\/.*|$)/;
+    /*
+      ## createIframe() ##
+      _internal_ create an iframe to the config.xd.remote location
+      */    var iframe, localSrc, src, trimHost, _ref, _ref2;
     src = config != null ? (_ref = config.xd) != null ? _ref.xhr : void 0 : void 0;
     localSrc = config != null ? (_ref2 = config.xd) != null ? _ref2.inject : void 0 : void 0;
-    iframeName = "injectProxy";
     if (!src) {
       throw new Error("Configuration requires xd.remote to be defined");
     }
@@ -194,35 +323,12 @@ THE SOFTWARE.
       return onModuleLoad(pieces[1], pieces[2], pieces[3], pieces[4]);
     });
   };
-  configInterface = {
-    config: function(cfg) {
-      if (!cfg.path) {
-        throw new Error("Config requires at least path to be set");
-      }
-      if (typeof cfg.path === "string" && cfg.path.lastIndexOf("/") !== cfg.path.length) {
-        cfg.path = "" + cfg.path + "/";
-      }
-      setConfig(cfg);
-      return configInterface;
-    },
-    modules: function(modl) {
-      setModules(modl);
-      return configInterface;
-    },
-    clear: function() {
-      return clearFileRegistry();
-    },
-    noConflict: function() {
-      var currentInject;
-      currentInject = context.inject;
-      context.inject = oldInject;
-      return currentInject;
-    }
-  };
-  modulePathRegistry = {};
-  jsSuffix = /.*?\.js$/;
   normalizePath = function(path) {
-    var configPath, lookup;
+    /*
+      ## normalizePath(path) ##
+      _internal_ normalize the path based on the module collection or any functions
+      associated with its identifier
+      */    var configPath, lookup;
     lookup = path;
     configPath = config.path || "";
     if (modulePathRegistry[path]) {
@@ -254,11 +360,11 @@ THE SOFTWARE.
     modulePathRegistry[lookup] = path;
     return path;
   };
-  callbackRegistry = {};
-  txnRegistry = {};
-  fileOnComplete = {};
   loadModules = function(modList, cb) {
-    var module, path, paths, txId, _i, _len, _results;
+    /*
+      ## loadModules(modList, cb) ##
+      _internal_ load a collection of modules in modList, and once they have all loaded, execute the callback cb
+      */    var module, path, paths, txId, _i, _len, _results;
     txId = createTxId();
     paths = {};
     for (_i = 0, _len = modList.length; _i < _len; _i++) {
@@ -297,14 +403,18 @@ THE SOFTWARE.
     }
     return _results;
   };
-  commonJSHeader = '(function() {\n  var module = {}, exports = {}, require = function(modl) { return getModule(modl); }, exe = null;\n  module.id = "__MODULE_ID__";\n  module.uri = "__MODULE_URI__";\n  module.exports = exports;\n  exe = function(module, exports, require) {';
-  commonJSFooter = '};\nexe.call(module, module, exports, require);\nreturn module.exports;\n})();';
   onModuleLoad = function(txId, module, path, text) {
-    var header, requires, runCmd, runModule;
-    header = commonJSHeader.replace(/__MODULE_ID__/g, module).replace(/__MODULE_URI__/g, path);
+    /*
+      ## onModuleLoad(txId, module, path, text) ##
+      _internal_ Fired when a module's file has been loaded. Will then set up
+      the CommonJS harness, and will capture its exports. After this, it will signal
+      to inject() that all items that were waiting on this path should continue checking
+      their depdendencies
+      */    var header, requires, runCmd, runModule;
+    header = commonJSHeader.replace(/__MODULE_ID__/g, module).replace(/__MODULE_URI__/g, path).replace(/__INJECT_NS__/g, getNamespace());
     runCmd = "" + header + "\n" + text + "\n" + commonJSFooter;
     requires = [];
-    text.replace(/.*?require[\s]*\([\s]*("|')([\w\\\.\:]+?)('|")[\s]*\).*?/gm, function() {
+    text.replace(requireRegex, function() {
       var args;
       args = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
       return requires.push(args[2]);
@@ -312,7 +422,7 @@ THE SOFTWARE.
     runModule = function() {
       var exports, txn, _i, _len, _ref, _results;
       try {
-        exports = eval(runCmd);
+        exports = context.eval(runCmd);
       } catch (err) {
         throw err;
       }
@@ -336,7 +446,10 @@ THE SOFTWARE.
     }
   };
   checkComplete = function(txId) {
-    var cb, done, modl, module, modules, _i, _len, _ref;
+    /*
+      ## checkComplete(txId) ##
+      _internal_ check if all modules for a txId have loaded. If so, the callback is fired
+      */    var cb, done, modl, module, modules, _i, _len, _ref;
     done = true;
     cb = callbackRegistry[txId];
     modules = [];
@@ -358,7 +471,10 @@ THE SOFTWARE.
     }
   };
   sendToXhr = function(txId, module, path, cb) {
-    var xhr;
+    /*
+      ## sendToXhr(txId, module, path, cb) ##
+      _internal_ request a module at path using xmlHttpRequest. On retrieval, fire off cb
+      */    var xhr;
     xhr = getXHR();
     xhr.open("GET", path);
     xhr.onreadystatechange = function() {
@@ -369,10 +485,16 @@ THE SOFTWARE.
     return xhr.send(null);
   };
   sendToIframe = function(txId, module, path, cb) {
-    return xDomainRpc.postMessage("" + txId + " " + module + " " + path);
+    /*
+      ## sendToIframe(txId, module, path, cb) ##
+      _internal_ request a module at path using Porthole + iframe. On retrieval, the cb will be fired
+      */    return xDomainRpc.postMessage("" + txId + " " + module + " " + path);
   };
   getXHR = function() {
-    var xmlhttp;
+    /*
+      ## getXHR() ##
+      _internal_ get an XMLHttpRequest object
+      */    var xmlhttp;
     xmlhttp = false;
     if (typeof XMLHttpRequest !== "undefined") {
       try {
@@ -405,15 +527,19 @@ THE SOFTWARE.
     return xmlhttp;
   };
   inject = function() {
-    var args, fn, run;
-    args = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
+    var args, fn, run, _i;
+    args = 2 <= arguments.length ? __slice.call(arguments, 0, _i = arguments.length - 1) : (_i = 0, []), fn = arguments[_i++];
+    /*
+      ## inject(args..., fn) ##
+      Injects a module onto the page and will expose it for running
+      If no args, then the config interface is returned
+      */
     if (args.length === 0) {
       return configInterface;
     }
-    if (typeof args[args.length - 1] !== "function") {
+    if (typeof fn !== "function") {
       throw new Error("Last argument must be a function");
     }
-    fn = args.pop();
     if ((config.xd != null) && !xDomainRpc && !pauseRequired) {
       createIframe();
       pauseRequired = true;

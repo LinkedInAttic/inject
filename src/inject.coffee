@@ -1,65 +1,188 @@
 ###
-Inject: Dependency Awesomeness
+# Inject: Dependency Awesomeness #
 
 Some sample ways to use inject...
-inject("moduleOne", "moduleTwo", "moduleThree", function(a, b, c) {
-  // n args, last is function. Inject those modules, then run this body
-  // modules are available as arguments
-});
+
+    inject("moduleOne", "moduleTwo", "moduleThree", function(a, b, c) {
+      // n args, last is function. Inject those modules, then run this body
+      // modules are available as arguments
+    });
 
 Configuring inject()
-inject().config({
-  // where are your JS files? Can also be a function which will do
-  // lookups for you
-  path: "http://example.com/path/to/js/root",
-  
-  // if your JS files are on a different domain, you'll need to use
-  // relay files. See the readme
-  xd: {
-    inject: "http://local.example.com/path/to/relay.html",
-    xhr: "http://remote.example.com/path/to/relay.html"
-  }
-})
+
+    inject().config({
+      // where are your JS files? Can also be a function which will do
+      // lookups for you
+      path: "http://example.com/path/to/js/root",
+      
+      // if your JS files are on a different domain, you'll need to use
+      // relay files. See the readme
+      xd: {
+        inject: "http://local.example.com/path/to/relay.html",
+        xhr: "http://remote.example.com/path/to/relay.html"
+      }
+    })
 
 Specifying specific module locations (that pathing could never guess)
-inject().modules({
-  // module name, module path
-  moduleName: "http://example.com/location/of/module.js"
-})
+
+    inject().modules({
+      // module name, module path
+      moduleName: "http://example.com/location/of/module.js"
+    })
+
+For more details, check out the README or github: https://github.com/Jakobo/inject
 ###
 
-context = this
-oldInject = context.inject
-pauseRequired = false
-loadQueue = []
+###
+Constants and Registries used
+###
+schemaVersion = 1                   # version of inject()'s localstorage schema
+context = this                      # context is our local scope. Should be "window"
+oldInject = context.inject          # capture what was in the inject.* namespace 
+pauseRequired = false               # can we run immediately? (when using iframe transport, the answer is no)
+loadQueue = []                      # when making iframe calls, there's a queue that can stack up while waiting on everything to load
+config = {}                         # the config options for inject()
+userModules = {}                    # any mappings for module => handling defined by the user
+moduleRegistry = {}                 # a registry of modules that have been loaded
+fileRegistry = null                 # a registry of file text that has been loaded
+fileStorage = null                  # localstorage for files (PersistJS)
+fileStorageToken = "FILEDB"         # a storagetoken identifier we use for PersistJS
+namespace = "inject"                # the namespace for inject() that is publicly reachable
+counter = 0                         # a counter used for transaction IDs
+xDomainRpc = null                   # a cross domain RPC object created by Porthole
+modulePathRegistry = {}             # a collection of modules organized by their path information
+jsSuffix = /.*?\.js$/               # Regex for identifying things that end in *.js
+callbackRegistry = {}               # a registry of callbacks keyed by Transaction IDs
+txnRegistry = {}                    # a list of modules that were required for a transaction, keyed by Transaction IDs
+fileOnComplete = {}                 # a list of subscribing transactions for a file's onModuleLoad resolution, keyed by Path
+responseSlicer = ///                # a regular expression for slicing a response from iframe communication into its parts
+  ^(.+?)[\s]                          # (1) Begins with anything up to a space
+  (.+?)[\s]                           # (2) Continues with anything up to a space
+  (.+?)[\s]                           # (3) Continues with anything up to a space
+  ([\w\W]+)$                          # (4) Any text up until the end of the string
+  ///m                                # Supports multiline expressions
+hostPrefixRegex = /^https?:\/\//    # prefixes for URLs that begin with http/https
+hostSuffixRegex = /^(.*?)(\/.*|$)/  # suffix for URLs used to capture everything up to / or the end of the string
+iframeName = "injectProxy"          # the name for the iframe proxy created (Porthole)
+requireRegex = ///                  # a regex for capturing the require() statements inside of included code
+  .*?                                 # anything (non-greedy)
+  require[\s]*\([\s]*                 # followed by require, a whitespace character 0+, and an opening ( then more whitespace
+  ("|')                               # followed by a quote
+  ([\w\/\.\:]+?)                      # (1) capture word characters, forward slashes, dots, and colons (at least one)
+  ('|")                               # followed by a quote
+  [\s]*\)                             # followed by whitespace, and then a closing ) that ends the require() call
+  .*?                                 # anything after the closing paren
+  ///gm                               # supports multiline, and is global matching
 
-# Set the config
-config = {}
+###
+CommonJS wrappers for a header and footer
+these bookend the included code and insulate the scope so that it doesn't impact inject()
+or anything else.
+this helps secure module bleeding
+###
+commonJSHeader = '''
+with (window) {
+  (function() {
+    var module = {}, exports = {}, require = __INJECT_NS__().require(), exe = null;
+    module.id = "__MODULE_ID__";
+    module.uri = "__MODULE_URI__";
+    module.exports = exports;
+    exe = function(module, exports, require) {
+'''
+commonJSFooter = '''
+    };
+    exe.call(module, module, exports, require);
+    return module.exports;
+  })();
+}
+'''
+
+###
+an interface for configuring inject
+provides a suite of methods that call internal functions or expose needed methods
+###
+configInterface =
+  config: (cfg) ->
+    ###
+    ## inject().config(cfg) ##
+    Set the inject() configuration
+    ###
+    if !cfg.path then throw new Error("Config requires at least path to be set")
+    if typeof(cfg.path) is "string" and cfg.path.lastIndexOf("/") isnt cfg.path.length then cfg.path = "#{cfg.path}/"
+    setConfig(cfg)
+    return configInterface
+  modules: (modl) ->
+    ###
+    ## inject().modules(modl) ##
+    Set handling rules for specific modules
+    ###
+    setModules(modl)
+    return configInterface
+  clear: (version) ->
+    ###
+    ## inject().clear(version) ##
+    Clear the inject() file registry for a specified version. If no version is specified, defaults to current
+    ###
+    clearFileRegistry(version)
+  noConflict: (ns) ->
+    ###
+    ## inject().noConflict(ns) ##
+    move inject() to a new location. You will need to set `ns` to a publicly reachable location, identical to where
+    you save the returned value from noConflict()
+    ###
+    if (!ns) then throw new Error("You must specify a publicly reachable namespace for inject() to work")
+    setNamespace(ns)
+    currentInject = context.inject
+    context.inject = oldInject
+    return currentInject
+  require: () ->
+    ###
+    ## inect().require() ##
+    The require interface used when including modules
+    ###
+    return getModule
+
 setConfig = (cfg) ->
+  ###
+  ## setConfig(cfg) ##
+  _internal_ Set the config
+  ###
   config = cfg
 
-# set user defined modules
-userModules = {}
 setUserModules = (modl) ->
+  ###
+  ## setUserModules(modl) ##
+  _internal_ Set the collection of user defined modules
+  ###
   userModules = modl
 
-# get and save a module by name
-moduleRegistry = {}
 getModule = (module) ->
+  ###
+  ## getModule(module) ##
+  _internal_ Get a module by name
+  ###
   return moduleRegistry[module] or false
+
 saveModule = (module, exports) ->
+  ###
+  ## saveModule(module, exports) ##
+  _internal_ Save a module by name
+  ###
   if moduleRegistry[module] then return
   moduleRegistry[module] = exports
 
-# get and save a file by path, using a localStore if possible
-fileRegistry = null
-fileStorage = null
-fileStorageToken = "FILEDB"
 getFile = (path, cb) ->
+  ###
+  ## getFile(path, cb) ##
+  _internal_ Get a file by its path. Asynchronously calls its callback.
+  Uses LocalStorage or UserData if available
+  ###
+  token = "#{fileStorageToken}#{schemaVersion}"
+  
   if !fileStorage then fileStorage = new Persist.Store("Inject FileStorage")
   
   if !fileRegistry
-    fileStorage.get fileStorageToken, (ok, val) ->
+    fileStorage.get token, (ok, val) ->
       if ok and typeof(val) is "string" and val.length > 1 
         fileRegistry = JSON.parse(val)
         if fileRegistry[path] then return cb(true, fileRegistry[path]) else return cb(false, null)
@@ -71,33 +194,61 @@ getFile = (path, cb) ->
     else cb(false, null)
     
 saveFile = (path, file) ->
+  ###
+  ## saveFile(path, file) ##
+  _internal_ Save a file for resource `path` into LocalStorage or UserData
+  Also updates the internal fileRegistry
+  ###
+  token = "#{fileStorageToken}#{schemaVersion}"
+  
   if !fileStorage then fileStorage = new Persist.Store("Inject FileStorage")
   if fileRegistry[path] and fileRegistry[path].length > 1 then return
   fileRegistry[path] = file
-  fileStorage.set fileStorageToken, JSON.stringify(fileRegistry)
+  fileStorage.set token, JSON.stringify(fileRegistry)
   
-clearFileRegistry = () ->
+clearFileRegistry = (version = schemaVersion) ->
+  ###
+  ## clearFileRegistry(version = schemaVersion) ##
+  _internal_ Clears the internal file registry at `version`
+  ###
+  token = "#{fileStorageToken}#{version}"
+  
   if !fileStorage then fileStorage = new Persist.Store("Inject FileStorage")
-  fileStorage.set fileStorageToken, ""
-  fileRegistry = {}
+  fileStorage.set token, ""
+  if version == schemaVersion then fileRegistry = {}
 
-# create a transaction id
-counter = 0
+
+setNamespace = (ns) ->
+  ###
+  ## setNamespace(ns) ##
+  _internal_ set the namespace
+  ###
+  namespace = ns
+getNamespace = () ->
+  ###
+  ## getNamespace() ##
+  _internal_ get the namespace
+  ###
+  return namespace
+
 createTxId = () ->
+  ###
+  ## createTxId() ##
+  _internal_ create a transaction id
+  ###
   return "txn_#{counter++}"
 
-# create an iframe to the config.xd.remote location
-xDomainRpc = null
 createIframe = () ->
-  responseSlicer = /^(.+?)[\s](.+?)[\s](.+?)[\s]([\w\W]+)$/m
-  hostPrefixRegex = /^https?:\/\//
-  hostSuffixRegex = /^(.*?)(\/.*|$)/
+  ###
+  ## createIframe() ##
+  _internal_ create an iframe to the config.xd.remote location
+  ###
   src = config?.xd?.xhr
   localSrc = config?.xd?.inject
-  iframeName = "injectProxy"
   if !src then throw new Error("Configuration requires xd.remote to be defined")
   if !localSrc then throw new Error("Configuration requires xd.local to be defined")
   
+  # trims the host down to its essential values
   trimHost = (host) ->
     host = host.replace(hostPrefixRegex, "").replace(hostSuffixRegex, "$1")
     return host
@@ -129,29 +280,12 @@ createIframe = () ->
     pieces = event.data.match(responseSlicer)
     onModuleLoad(pieces[1], pieces[2], pieces[3], pieces[4])
 
-# an interface for configuring inject
-configInterface =
-  config: (cfg) ->
-    # clean up cfg
-    if !cfg.path then throw new Error("Config requires at least path to be set")
-    if typeof(cfg.path) is "string" and cfg.path.lastIndexOf("/") isnt cfg.path.length then cfg.path = "#{cfg.path}/"
-    setConfig(cfg)
-    return configInterface
-  modules: (modl) ->
-    setModules(modl)
-    return configInterface
-  clear: () ->
-    clearFileRegistry()
-  noConflict: () ->
-    currentInject = context.inject
-    context.inject = oldInject
-    return currentInject
-
-# normalizes modules into names
-# cache is only for this function
-modulePathRegistry = {}
-jsSuffix = /.*?\.js$/
 normalizePath = (path) ->
+  ###
+  ## normalizePath(path) ##
+  _internal_ normalize the path based on the module collection or any functions
+  associated with its identifier
+  ###
   lookup = path
   configPath = config.path or ""
   
@@ -183,11 +317,12 @@ normalizePath = (path) ->
   
   return path
 
-# loads modules
-callbackRegistry = {}
-txnRegistry = {}
-fileOnComplete = {}
 loadModules = (modList, cb) ->
+  ###
+  ## loadModules(modList, cb) ##
+  _internal_ load a collection of modules in modList, and once they have all loaded, execute the callback cb
+  ###
+  
   # for each item in the mod list
   # resolve it to a full url for file access
   # if it has been loaded, flag done & go on
@@ -225,38 +360,34 @@ loadModules = (modList, cb) ->
           else
             sendToXhr(txId, module, path, onModuleLoad)
 
-# handles when payload is received either from the iframe or XHR
-commonJSHeader = '''
-(function() {
-  var module = {}, exports = {}, require = function(modl) { return getModule(modl); }, exe = null;
-  module.id = "__MODULE_ID__";
-  module.uri = "__MODULE_URI__";
-  module.exports = exports;
-  exe = function(module, exports, require) {
-'''
-commonJSFooter = '''
-  };
-  exe.call(module, module, exports, require);
-  return module.exports;
-})();
-'''
 onModuleLoad = (txId, module, path, text) ->
+  ###
+  ## onModuleLoad(txId, module, path, text) ##
+  _internal_ Fired when a module's file has been loaded. Will then set up
+  the CommonJS harness, and will capture its exports. After this, it will signal
+  to inject() that all items that were waiting on this path should continue checking
+  their depdendencies
+  ###
+  
   # create the commonJS wrapper for this path and execute it
   # suck up the exports, write to the module collection
   # write the collection to the path as well
   # invoke check for completeness
   header = commonJSHeader.replace(/__MODULE_ID__/g, module)
                          .replace(/__MODULE_URI__/g, path)
+                         .replace(/__INJECT_NS__/g, getNamespace())
   runCmd = "#{header}\n#{text}\n#{commonJSFooter}"
   
   # find all require statements
   requires = []
-  text.replace /.*?require[\s]*\([\s]*("|')([\w\\\.\:]+?)('|")[\s]*\).*?/gm, (args...) ->
+  text.replace requireRegex, (args...) ->
     requires.push args[2]
   
+  # internal method to onModuleLoad, which will eval the contents and save them
+  # will then fire all of the handlers associated w/ the path
   runModule = () ->
     try
-      exports = eval(runCmd)
+      exports = context.eval(runCmd)
     catch err
       throw err
     saveModule(module, exports)
@@ -275,6 +406,10 @@ onModuleLoad = (txId, module, path, text) ->
 
 
 checkComplete = (txId) ->
+  ###
+  ## checkComplete(txId) ##
+  _internal_ check if all modules for a txId have loaded. If so, the callback is fired
+  ###
   done = true
   cb = callbackRegistry[txId]
   modules = []
@@ -284,8 +419,11 @@ checkComplete = (txId) ->
     if !done then break
   if done then cb.call(context, modules)
 
-# request a file via XHR        
 sendToXhr = (txId, module, path, cb) ->
+  ###
+  ## sendToXhr(txId, module, path, cb) ##
+  _internal_ request a module at path using xmlHttpRequest. On retrieval, fire off cb
+  ###
   xhr = getXHR()
   xhr.open("GET", path)
   xhr.onreadystatechange = () ->
@@ -294,10 +432,17 @@ sendToXhr = (txId, module, path, cb) ->
 
 # request a file via iframe
 sendToIframe = (txId, module, path, cb) ->
+  ###
+  ## sendToIframe(txId, module, path, cb) ##
+  _internal_ request a module at path using Porthole + iframe. On retrieval, the cb will be fired
+  ###
   xDomainRpc.postMessage("#{txId} #{module} #{path}")
 
-# get an xmlhttp object
 getXHR = () ->
+  ###
+  ## getXHR() ##
+  _internal_ get an XMLHttpRequest object
+  ###
   xmlhttp = false
   if typeof XMLHttpRequest isnt "undefined"
     try
@@ -320,14 +465,17 @@ getXHR = () ->
   if !xmlhttp then throw new Error("Could not create an xmlHttpRequest Object")
   return xmlhttp
 
-# Main Method
-inject = (args...) ->
+inject = (args..., fn) ->
+  ###
+  ## inject(args..., fn) ##
+  Injects a module onto the page and will expose it for running
+  If no args, then the config interface is returned
+  ###
   # if no args, return config interface
   if args.length == 0 then return configInterface
 
   # last arg must be a callback function
-  if typeof(args[args.length - 1]) != "function" then throw new Error("Last argument must be a function")
-  fn = args.pop()
+  if typeof(fn) isnt "function" then throw new Error("Last argument must be a function")
 
   # init the iframe if required
   if config.xd? and !xDomainRpc and !pauseRequired
@@ -342,7 +490,8 @@ inject = (args...) ->
   
   if pauseRequired then loadQueue.push(run)
   else run()
-  
+
+# set context.inject to the main inject object
 context.inject = inject
 
 ###
