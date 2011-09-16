@@ -251,7 +251,7 @@ onModuleLoad = (txId, module, path, text) ->
   
   # find all require statements
   requires = []
-  text.replace /.*?require[\s]*\([\s]*("|')([\w\\]+?)('|")[\s]*\).*?/gm, (args...) ->
+  text.replace /.*?require[\s]*\([\s]*("|')([\w\\\.\:]+?)('|")[\s]*\).*?/gm, (args...) ->
     requires.push args[2]
   
   runModule = () ->

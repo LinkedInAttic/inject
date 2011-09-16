@@ -304,7 +304,7 @@ THE SOFTWARE.
     header = commonJSHeader.replace(/__MODULE_ID__/g, module).replace(/__MODULE_URI__/g, path);
     runCmd = "" + header + "\n" + text + "\n" + commonJSFooter;
     requires = [];
-    text.replace(/.*?require[\s]*\([\s]*("|')([\w\\]+?)('|")[\s]*\).*?/gm, function() {
+    text.replace(/.*?require[\s]*\([\s]*("|')([\w\\\.\:]+?)('|")[\s]*\).*?/gm, function() {
       var args;
       args = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
       return requires.push(args[2]);
