@@ -40,27 +40,21 @@ schemaVersion = 1                   # version of inject()'s localstorage schema
 context = this                      # context is our local scope. Should be "window"
 oldInject = context.inject          # capture what was in the inject.* namespace 
 pauseRequired = false               # can we run immediately? (when using iframe transport, the answer is no)
-loadQueue = []                      # when making iframe calls, there's a queue that can stack up while waiting on everything to load
-config = {}                         # the config options for inject()
-userModules = {}                    # any mappings for module => handling defined by the user
-moduleRegistry = {}                 # a registry of modules that have been loaded
 fileRegistry = null                 # a registry of file text that has been loaded
 fileStorage = null                  # localstorage for files (PersistJS)
 fileStorageToken = "FILEDB"         # a storagetoken identifier we use for PersistJS
 namespace = "inject"                # the namespace for inject() that is publicly reachable
 counter = 0                         # a counter used for transaction IDs
 xDomainRpc = null                   # a cross domain RPC object created by Porthole
+loadQueue = []                      # when making iframe calls, there's a queue that can stack up while waiting on everything to load
+config = {}                         # the config options for inject()
+userModules = {}                    # any mappings for module => handling defined by the user
+moduleRegistry = {}                 # a registry of modules that have been loaded
 modulePathRegistry = {}             # a collection of modules organized by their path information
-jsSuffix = /.*?\.js$/               # Regex for identifying things that end in *.js
 callbackRegistry = {}               # a registry of callbacks keyed by Transaction IDs
 txnRegistry = {}                    # a list of modules that were required for a transaction, keyed by Transaction IDs
 fileOnComplete = {}                 # a list of subscribing transactions for a file's onModuleLoad resolution, keyed by Path
-responseSlicer = ///                # a regular expression for slicing a response from iframe communication into its parts
-  ^(.+?)[\s]                          # (1) Begins with anything up to a space
-  (.+?)[\s]                           # (2) Continues with anything up to a space
-  (.+?)[\s]                           # (3) Continues with anything up to a space
-  ([\w\W]+)$                          # (4) Any text up until the end of the string
-  ///m                                # Supports multiline expressions
+jsSuffix = /.*?\.js$/               # Regex for identifying things that end in *.js
 hostPrefixRegex = /^https?:\/\//    # prefixes for URLs that begin with http/https
 hostSuffixRegex = /^(.*?)(\/.*|$)/  # suffix for URLs used to capture everything up to / or the end of the string
 iframeName = "injectProxy"          # the name for the iframe proxy created (Porthole)
@@ -73,6 +67,12 @@ requireRegex = ///                  # a regex for capturing the require() statem
   [\s]*\)                             # followed by whitespace, and then a closing ) that ends the require() call
   .*?                                 # anything after the closing paren
   ///gm                               # supports multiline, and is global matching
+responseSlicer = ///                # a regular expression for slicing a response from iframe communication into its parts
+  ^(.+?)[\s]                          # (1) Begins with anything up to a space
+  (.+?)[\s]                           # (2) Continues with anything up to a space
+  (.+?)[\s]                           # (3) Continues with anything up to a space
+  ([\w\W]+)$                          # (4) Any text up until the end of the string
+  ///m                                # Supports multiline expressions
 
 ###
 CommonJS wrappers for a header and footer
@@ -88,8 +88,10 @@ with (window) {
     module.uri = "__MODULE_URI__";
     module.exports = exports;
     exe = function(module, exports, require) {
+      __POINTCUT_BEFORE__
 '''
 commonJSFooter = '''
+      __POINTCUT_AFTER__
     };
     exe.call(module, module, exports, require);
     return module.exports;
@@ -116,7 +118,7 @@ configInterface =
     ## inject().modules(modl) ##
     Set handling rules for specific modules
     ###
-    setModules(modl)
+    setUserModules(modl)
     return configInterface
   clear: (version) ->
     ###
@@ -280,6 +282,24 @@ createIframe = () ->
     pieces = event.data.match(responseSlicer)
     onModuleLoad(pieces[1], pieces[2], pieces[3], pieces[4])
 
+getPointcuts = (module) ->
+  ###
+  ## getPointcuts(module) ##
+  _internal_ get the [pointcuts](http://en.wikipedia.org/wiki/Pointcut) for a module if
+  specified
+  ###
+  noop = () -> return
+  pointcuts =
+    before: noop
+    after: noop
+  if !userModules[module] then return pointcuts
+  definition = userModules[module]
+  
+  for cut, fn of pointcuts
+    if definition[cut] then pointcuts[cut] = definition[cut]
+  
+  return pointcuts
+
 normalizePath = (path) ->
   ###
   ## normalizePath(path) ##
@@ -287,35 +307,47 @@ normalizePath = (path) ->
   associated with its identifier
   ###
   lookup = path
+  workingPath = path
   configPath = config.path or ""
   
   # short circuit: already cached
   if modulePathRegistry[path] then return modulePathRegistry[path]
   
-  # short circuit: defined in a file
+  # defined in a user module?
   if userModules[path]
-    path = userModules[path]
-    modulePathRegistry[lookup] = path
-    return path
+    moduleDefinition = userModules[path]
+    
+    # if the definition is a string, use that
+    if typeof(moduleDefinition) is "string"
+      workingPath = moduleDefinition
+    
+    # if the definition is an object and has a path variable
+    if typeof(moduleDefinition) is "object" and moduleDefinition.path
+      # if the path variable is a function, run the function
+      if typeof(moduleDefinition.path) is "function"
+        returnPath = moduleDefinition.path(workingPath)
+        if returnPath isnt false then workingPath = returnPath
+      # id the module definition is a string, use that
+      if typeof(moduleDefinition.path) is "string"
+        workingPath = moduleDefinition.path
   
-  # short circuit: function for path resolution
+  # function for path resolution
   if typeof(configPath) is "function"
-    path = configPath(path)
-    modulePathRegistry[lookup] = path
-    return path
+    returnPath = configPath(workingPath)
+    if returnPath isnt false then workingPath = returnPath
 
   # short circuit: fully qualified path
-  if path.indexOf("http") is 0 or path.indexOf("https") is 0
-    modulePathRegistry[lookup] = path
-    return path
+  if workingPath.indexOf("http") is 0 or workingPath.indexOf("https") is 0
+    modulePathRegistry[lookup] = workingPath
+    return modulePathRegistry[lookup]
   
-  if path.indexOf("/") isnt 0 and typeof(configPath) is "undefined" then throw new Error("Path must be defined")  
-  if path.indexOf("/") isnt 0 and typeof(configPath) is "string" then path = "#{config.path}#{path}"
-  if !jsSuffix.test(path) then path = "#{path}.js"
+  if workingPath.indexOf("/") isnt 0 and typeof(configPath) is "undefined" then throw new Error("Path must be defined")  
+  if workingPath.indexOf("/") isnt 0 and typeof(configPath) is "string" then workingPath = "#{config.path}#{workingPath}"
+  if !jsSuffix.test(workingPath) then workingPath = "#{workingPath}.js"
 
-  modulePathRegistry[lookup] = path
+  modulePathRegistry[lookup] = workingPath
   
-  return path
+  return modulePathRegistry[lookup]
 
 loadModules = (modList, cb) ->
   ###
@@ -368,15 +400,21 @@ onModuleLoad = (txId, module, path, text) ->
   to inject() that all items that were waiting on this path should continue checking
   their depdendencies
   ###
-  
   # create the commonJS wrapper for this path and execute it
   # suck up the exports, write to the module collection
   # write the collection to the path as well
   # invoke check for completeness
+  
+  cuts = getPointcuts(module)
+  cutsStr = {}
+  (cutsStr[cut] = fn.toString().match(/.*?\{([\w\W]*)\}/m)[1]) for cut, fn of cuts
+  
   header = commonJSHeader.replace(/__MODULE_ID__/g, module)
                          .replace(/__MODULE_URI__/g, path)
                          .replace(/__INJECT_NS__/g, getNamespace())
-  runCmd = "#{header}\n#{text}\n#{commonJSFooter}"
+                         .replace(/__POINTCUT_BEFORE__/g, cutsStr.before)
+  footer = commonJSFooter.replace(/__POINTCUT_AFTER__/g, cutsStr.after)
+  runCmd = "#{header}\n#{text}\n#{footer}"
   
   # find all require statements
   requires = []

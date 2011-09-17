@@ -78,40 +78,40 @@ THE SOFTWARE.
   */
   /*
   Constants and Registries used
-  */  var JSON, Persist, Porthole, callbackRegistry, checkComplete, clearFileRegistry, commonJSFooter, commonJSHeader, config, configInterface, context, counter, createIframe, createTxId, fileOnComplete, fileRegistry, fileStorage, fileStorageToken, getFile, getModule, getNamespace, getXHR, hostPrefixRegex, hostSuffixRegex, iframeName, inject, jsSuffix, loadModules, loadQueue, modulePathRegistry, moduleRegistry, namespace, normalizePath, oldInject, onModuleLoad, pauseRequired, requireRegex, responseSlicer, saveFile, saveModule, schemaVersion, sendToIframe, sendToXhr, setConfig, setNamespace, setUserModules, txnRegistry, userModules, xDomainRpc;
+  */  var JSON, Persist, Porthole, callbackRegistry, checkComplete, clearFileRegistry, commonJSFooter, commonJSHeader, config, configInterface, context, counter, createIframe, createTxId, fileOnComplete, fileRegistry, fileStorage, fileStorageToken, getFile, getModule, getNamespace, getPointcuts, getXHR, hostPrefixRegex, hostSuffixRegex, iframeName, inject, jsSuffix, loadModules, loadQueue, modulePathRegistry, moduleRegistry, namespace, normalizePath, oldInject, onModuleLoad, pauseRequired, requireRegex, responseSlicer, saveFile, saveModule, schemaVersion, sendToIframe, sendToXhr, setConfig, setNamespace, setUserModules, txnRegistry, userModules, xDomainRpc;
   var __slice = Array.prototype.slice;
   schemaVersion = 1;
   context = this;
   oldInject = context.inject;
   pauseRequired = false;
-  loadQueue = [];
-  config = {};
-  userModules = {};
-  moduleRegistry = {};
   fileRegistry = null;
   fileStorage = null;
   fileStorageToken = "FILEDB";
   namespace = "inject";
   counter = 0;
   xDomainRpc = null;
+  loadQueue = [];
+  config = {};
+  userModules = {};
+  moduleRegistry = {};
   modulePathRegistry = {};
-  jsSuffix = /.*?\.js$/;
   callbackRegistry = {};
   txnRegistry = {};
   fileOnComplete = {};
-  responseSlicer = /^(.+?)[\s](.+?)[\s](.+?)[\s]([\w\W]+)$/m;
+  jsSuffix = /.*?\.js$/;
   hostPrefixRegex = /^https?:\/\//;
   hostSuffixRegex = /^(.*?)(\/.*|$)/;
   iframeName = "injectProxy";
   requireRegex = /.*?require[\s]*\([\s]*("|')([\w\\/\.\:]+?)('|")[\s]*\).*?/gm;
+  responseSlicer = /^(.+?)[\s](.+?)[\s](.+?)[\s]([\w\W]+)$/m;
   /*
   CommonJS wrappers for a header and footer
   these bookend the included code and insulate the scope so that it doesn't impact inject()
   or anything else.
   this helps secure module bleeding
   */
-  commonJSHeader = 'with (window) {\n  (function() {\n    var module = {}, exports = {}, require = __INJECT_NS__().require(), exe = null;\n    module.id = "__MODULE_ID__";\n    module.uri = "__MODULE_URI__";\n    module.exports = exports;\n    exe = function(module, exports, require) {';
-  commonJSFooter = '  };\n  exe.call(module, module, exports, require);\n  return module.exports;\n})();\n}';
+  commonJSHeader = 'with (window) {\n  (function() {\n    var module = {}, exports = {}, require = __INJECT_NS__().require(), exe = null;\n    module.id = "__MODULE_ID__";\n    module.uri = "__MODULE_URI__";\n    module.exports = exports;\n    exe = function(module, exports, require) {\n      __POINTCUT_BEFORE__';
+  commonJSFooter = '    __POINTCUT_AFTER__\n  };\n  exe.call(module, module, exports, require);\n  return module.exports;\n})();\n}';
   /*
   an interface for configuring inject
   provides a suite of methods that call internal functions or expose needed methods
@@ -134,7 +134,7 @@ THE SOFTWARE.
       /*
           ## inject().modules(modl) ##
           Set handling rules for specific modules
-          */      setModules(modl);
+          */      setUserModules(modl);
       return configInterface;
     },
     clear: function(version) {
@@ -323,42 +323,79 @@ THE SOFTWARE.
       return onModuleLoad(pieces[1], pieces[2], pieces[3], pieces[4]);
     });
   };
+  getPointcuts = function(module) {
+    /*
+      ## getPointcuts(module) ##
+      _internal_ get the [pointcuts](http://en.wikipedia.org/wiki/Pointcut) for a module if
+      specified
+      */    var cut, definition, fn, noop, pointcuts;
+    noop = function() {};
+    pointcuts = {
+      before: noop,
+      after: noop
+    };
+    if (!userModules[module]) {
+      return pointcuts;
+    }
+    definition = userModules[module];
+    for (cut in pointcuts) {
+      fn = pointcuts[cut];
+      if (definition[cut]) {
+        pointcuts[cut] = definition[cut];
+      }
+    }
+    return pointcuts;
+  };
   normalizePath = function(path) {
     /*
       ## normalizePath(path) ##
       _internal_ normalize the path based on the module collection or any functions
       associated with its identifier
-      */    var configPath, lookup;
+      */    var configPath, lookup, moduleDefinition, returnPath, workingPath;
     lookup = path;
+    workingPath = path;
     configPath = config.path || "";
     if (modulePathRegistry[path]) {
       return modulePathRegistry[path];
     }
     if (userModules[path]) {
-      path = userModules[path];
-      modulePathRegistry[lookup] = path;
-      return path;
+      moduleDefinition = userModules[path];
+      if (typeof moduleDefinition === "string") {
+        workingPath = moduleDefinition;
+      }
+      if (typeof moduleDefinition === "object" && moduleDefinition.path) {
+        if (typeof moduleDefinition.path === "function") {
+          returnPath = moduleDefinition.path(workingPath);
+          if (returnPath !== false) {
+            workingPath = returnPath;
+          }
+        }
+        if (typeof moduleDefinition.path === "string") {
+          workingPath = moduleDefinition.path;
+        }
+      }
     }
     if (typeof configPath === "function") {
-      path = configPath(path);
-      modulePathRegistry[lookup] = path;
-      return path;
+      returnPath = configPath(workingPath);
+      if (returnPath !== false) {
+        workingPath = returnPath;
+      }
     }
-    if (path.indexOf("http") === 0 || path.indexOf("https") === 0) {
-      modulePathRegistry[lookup] = path;
-      return path;
+    if (workingPath.indexOf("http") === 0 || workingPath.indexOf("https") === 0) {
+      modulePathRegistry[lookup] = workingPath;
+      return modulePathRegistry[lookup];
     }
-    if (path.indexOf("/") !== 0 && typeof configPath === "undefined") {
+    if (workingPath.indexOf("/") !== 0 && typeof configPath === "undefined") {
       throw new Error("Path must be defined");
     }
-    if (path.indexOf("/") !== 0 && typeof configPath === "string") {
-      path = "" + config.path + path;
+    if (workingPath.indexOf("/") !== 0 && typeof configPath === "string") {
+      workingPath = "" + config.path + workingPath;
     }
-    if (!jsSuffix.test(path)) {
-      path = "" + path + ".js";
+    if (!jsSuffix.test(workingPath)) {
+      workingPath = "" + workingPath + ".js";
     }
-    modulePathRegistry[lookup] = path;
-    return path;
+    modulePathRegistry[lookup] = workingPath;
+    return modulePathRegistry[lookup];
   };
   loadModules = function(modList, cb) {
     /*
@@ -410,9 +447,16 @@ THE SOFTWARE.
       the CommonJS harness, and will capture its exports. After this, it will signal
       to inject() that all items that were waiting on this path should continue checking
       their depdendencies
-      */    var header, requires, runCmd, runModule;
-    header = commonJSHeader.replace(/__MODULE_ID__/g, module).replace(/__MODULE_URI__/g, path).replace(/__INJECT_NS__/g, getNamespace());
-    runCmd = "" + header + "\n" + text + "\n" + commonJSFooter;
+      */    var cut, cuts, cutsStr, fn, footer, header, requires, runCmd, runModule;
+    cuts = getPointcuts(module);
+    cutsStr = {};
+    for (cut in cuts) {
+      fn = cuts[cut];
+      cutsStr[cut] = fn.toString().match(/.*?\{([\w\W]*)\}/m)[1];
+    }
+    header = commonJSHeader.replace(/__MODULE_ID__/g, module).replace(/__MODULE_URI__/g, path).replace(/__INJECT_NS__/g, getNamespace()).replace(/__POINTCUT_BEFORE__/g, cutsStr.before);
+    footer = commonJSFooter.replace(/__POINTCUT_AFTER__/g, cutsStr.after);
+    runCmd = "" + header + "\n" + text + "\n" + footer;
     requires = [];
     text.replace(requireRegex, function() {
       var args;
