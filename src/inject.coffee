@@ -38,11 +38,13 @@ Constants and Registries used
 ###
 schemaVersion = 1                   # version of inject()'s localstorage schema
 context = this                      # context is our local scope. Should be "window"
-oldInject = context.inject          # capture what was in the inject.* namespace 
+oldInject = context.inject          # capture what was in the inject.* namespace
 pauseRequired = false               # can we run immediately? (when using iframe transport, the answer is no)
 fileRegistry = null                 # a registry of file text that has been loaded
 fileStorage = null                  # localstorage for files (PersistJS)
 fileStorageToken = "FILEDB"         # a storagetoken identifier we use for PersistJS
+fileStore = "Inject FileStorage"    # file store to use
+fileExpiration = 604800             # the default time to cache a file for
 namespace = "inject"                # the namespace for inject() that is publicly reachable
 counter = 0                         # a counter used for transaction IDs
 xDomainRpc = null                   # a cross domain RPC object created by Porthole
@@ -150,6 +152,8 @@ setConfig = (cfg) ->
   _internal_ Set the config
   ###
   config = cfg
+  # defaults
+  if !config.fileExpiration? then config.fileExpiration = fileExpiration
 
 setUserModules = (modl) ->
   ###
@@ -171,7 +175,23 @@ saveModule = (module, exports) ->
   _internal_ Save a module by name
   ###
   if moduleRegistry[module] then return
-  moduleRegistry[module] = exports
+  moduleRegistry[module] = exports  
+  
+isExpired = (path) ->
+  ###
+  ## isExpired(mpath) ##
+  _internal_ test if a cached file is expired, if it is, remove it from the cache
+  ###
+  if fileRegistry[path]?.expires > (+new Date()) then return false
+  if fileRegistry[path]? then fileRegistry[path] = {}
+  return true
+
+isCached = (path) ->
+  ###
+  ## isCached(mpath) ##
+  _internal_ test if a file is in the cache and valid (not expired)
+  ###
+  return fileRegistry? and fileRegistry[path]? and fileRegistry[path].content and !isExpired path
 
 getFile = (path, cb) ->
   ###
@@ -181,19 +201,22 @@ getFile = (path, cb) ->
   ###
   token = "#{fileStorageToken}#{schemaVersion}"
   
-  if !fileStorage then fileStorage = new Persist.Store("Inject FileStorage")
+  if !fileStorage then fileStorage = new Persist.Store(fileStore)
   
   if !fileRegistry
     fileStorage.get token, (ok, val) ->
-      if ok and typeof(val) is "string" and val.length > 1 
+      if ok and typeof(val) is "string" and val.length
         fileRegistry = JSON.parse(val)
-        if fileRegistry[path] then return cb(true, fileRegistry[path]) else return cb(false, null)
+        if isCached path then return cb(true, fileRegistry[path].content)
+        else return cb(false, null)
+        
       else
         fileRegistry = {}
         return cb(false, null)
   else
-    if fileRegistry[path] then return cb(true, fileRegistry[path])
-    else cb(false, null)
+    if isCached path then return cb(true, fileRegistry[path].content)
+    else return cb(false, null)
+
     
 saveFile = (path, file) ->
   ###
@@ -203,9 +226,11 @@ saveFile = (path, file) ->
   ###
   token = "#{fileStorageToken}#{schemaVersion}"
   
-  if !fileStorage then fileStorage = new Persist.Store("Inject FileStorage")
-  if fileRegistry[path] and fileRegistry[path].length > 1 then return
-  fileRegistry[path] = file
+  if !fileStorage then fileStorage = new Persist.Store(fileStore)
+  if isCached path then return
+  fileRegistry[path] =
+    content: file
+    expires: config.fileExpiration + (+new Date())
   fileStorage.set token, JSON.stringify(fileRegistry)
   
 clearFileRegistry = (version = schemaVersion) ->
@@ -215,7 +240,7 @@ clearFileRegistry = (version = schemaVersion) ->
   ###
   token = "#{fileStorageToken}#{version}"
   
-  if !fileStorage then fileStorage = new Persist.Store("Inject FileStorage")
+  if !fileStorage then fileStorage = new Persist.Store(fileStore)
   fileStorage.set token, ""
   if version == schemaVersion then fileRegistry = {}
 
@@ -380,7 +405,7 @@ loadModules = (modList, cb) ->
       # listen for evaluation of the module
       fileOnComplete[path].txns.push txId
       
-      if ok and typeof(val) is "string" and val.length > 1
+      if ok and typeof(val) is "string" and val.length
         onModuleLoad(txId, module, path, val)
       else
         # we don't have the file or module, we must retrieve it
