@@ -78,7 +78,8 @@ THE SOFTWARE.
   */
   /*
   Constants and Registries used
-  */  var JSON, Persist, Porthole, callbackRegistry, checkComplete, clearFileRegistry, commonJSFooter, commonJSHeader, config, configInterface, context, counter, createIframe, createTxId, fileExpiration, fileOnComplete, fileRegistry, fileStorage, fileStorageToken, fileStore, getFile, getModule, getNamespace, getPointcuts, getXHR, hostPrefixRegex, hostSuffixRegex, iframeName, inject, isCached, isExpired, jsSuffix, loadModules, loadQueue, modulePathRegistry, moduleRegistry, namespace, normalizePath, oldInject, onModuleLoad, pauseRequired, requireRegex, responseSlicer, saveFile, saveModule, schemaVersion, sendToIframe, sendToXhr, setConfig, setNamespace, setUserModules, txnRegistry, userModules, xDomainRpc;
+  */
+  var JSON, Persist, Porthole, callbackRegistry, checkComplete, clearFileRegistry, commonJSFooter, commonJSHeader, config, configInterface, context, counter, createIframe, createTxId, fileExpiration, fileOnComplete, fileRegistry, fileStorage, fileStorageToken, fileStore, getFile, getModule, getNamespace, getPointcuts, getXHR, hostPrefixRegex, hostSuffixRegex, iframeName, inject, isCached, isExpired, jsSuffix, loadModules, loadQueue, modulePathRegistry, moduleRegistry, namespace, normalizePath, oldInject, onModuleLoad, pauseRequired, requireRegex, responseSlicer, saveFile, saveModule, schemaVersion, sendToIframe, sendToXhr, setConfig, setNamespace, setUserModules, txnRegistry, userModules, xDomainRpc;
   var __slice = Array.prototype.slice;
   schemaVersion = 1;
   context = this;
@@ -152,7 +153,8 @@ THE SOFTWARE.
           ## inject().noConflict(ns) ##
           move inject() to a new location. You will need to set `ns` to a publicly reachable location, identical to where
           you save the returned value from noConflict()
-          */      var currentInject;
+          */
+      var currentInject;
       if (!ns) {
         throw new Error("You must specify a publicly reachable namespace for inject() to work");
       }
@@ -202,7 +204,8 @@ THE SOFTWARE.
     /*
       ## isExpired(mpath) ##
       _internal_ test if a cached file is expired, if it is, remove it from the cache
-      */    var _ref;
+      */
+    var _ref;
     if (((_ref = fileRegistry[path]) != null ? _ref.expires : void 0) > (new Date()).getTime()) {
       return false;
     }
@@ -222,7 +225,8 @@ THE SOFTWARE.
       ## getFile(path, cb) ##
       _internal_ Get a file by its path. Asynchronously calls its callback.
       Uses LocalStorage or UserData if available
-      */    var token;
+      */
+    var token;
     token = "" + fileStorageToken + schemaVersion;
     if (!fileStorage) {
       fileStorage = new Persist.Store(fileStore);
@@ -254,7 +258,8 @@ THE SOFTWARE.
       ## saveFile(path, file) ##
       _internal_ Save a file for resource `path` into LocalStorage or UserData
       Also updates the internal fileRegistry
-      */    var token;
+      */
+    var token;
     token = "" + fileStorageToken + schemaVersion;
     if (!fileStorage) {
       fileStorage = new Persist.Store(fileStore);
@@ -264,7 +269,7 @@ THE SOFTWARE.
     }
     fileRegistry[path] = {
       content: file,
-      expires: config.fileExpiration + (new Date()).getTime()
+      expires: (config.fileExpiration * 1000) + (new Date()).getTime()
     };
     return fileStorage.set(token, JSON.stringify(fileRegistry));
   };
@@ -308,7 +313,8 @@ THE SOFTWARE.
     /*
       ## createIframe() ##
       _internal_ create an iframe to the config.xd.remote location
-      */    var iframe, localSrc, src, trimHost, _ref, _ref2;
+      */
+    var iframe, localSrc, src, trimHost, _ref, _ref2;
     src = config != null ? (_ref = config.xd) != null ? _ref.xhr : void 0 : void 0;
     localSrc = config != null ? (_ref2 = config.xd) != null ? _ref2.inject : void 0 : void 0;
     if (!src) {
@@ -357,7 +363,8 @@ THE SOFTWARE.
       ## getPointcuts(module) ##
       _internal_ get the [pointcuts](http://en.wikipedia.org/wiki/Pointcut) for a module if
       specified
-      */    var cut, definition, fn, noop, pointcuts;
+      */
+    var cut, definition, fn, noop, pointcuts;
     noop = function() {};
     pointcuts = {
       before: noop,
@@ -380,7 +387,8 @@ THE SOFTWARE.
       ## normalizePath(path) ##
       _internal_ normalize the path based on the module collection or any functions
       associated with its identifier
-      */    var configPath, lookup, moduleDefinition, returnPath, workingPath;
+      */
+    var configPath, lookup, moduleDefinition, returnPath, workingPath;
     lookup = path;
     workingPath = path;
     configPath = config.path || "";
@@ -430,7 +438,8 @@ THE SOFTWARE.
     /*
       ## loadModules(modList, cb) ##
       _internal_ load a collection of modules in modList, and once they have all loaded, execute the callback cb
-      */    var module, path, paths, txId, _i, _len, _results;
+      */
+    var module, path, paths, txId, _i, _len, _results;
     txId = createTxId();
     paths = {};
     for (_i = 0, _len = modList.length; _i < _len; _i++) {
@@ -476,7 +485,8 @@ THE SOFTWARE.
       the CommonJS harness, and will capture its exports. After this, it will signal
       to inject() that all items that were waiting on this path should continue checking
       their depdendencies
-      */    var cut, cuts, cutsStr, fn, footer, header, requires, runCmd, runModule;
+      */
+    var cut, cuts, cutsStr, fn, footer, header, requires, runCmd, runModule;
     cuts = getPointcuts(module);
     cutsStr = {};
     for (cut in cuts) {
@@ -522,7 +532,8 @@ THE SOFTWARE.
     /*
       ## checkComplete(txId) ##
       _internal_ check if all modules for a txId have loaded. If so, the callback is fired
-      */    var cb, done, modl, module, modules, _i, _len, _ref;
+      */
+    var cb, done, modl, module, modules, _i, _len, _ref;
     done = true;
     cb = callbackRegistry[txId];
     modules = [];
@@ -547,7 +558,8 @@ THE SOFTWARE.
     /*
       ## sendToXhr(txId, module, path, cb) ##
       _internal_ request a module at path using xmlHttpRequest. On retrieval, fire off cb
-      */    var xhr;
+      */
+    var xhr;
     xhr = getXHR();
     xhr.open("GET", path);
     xhr.onreadystatechange = function() {
@@ -567,7 +579,8 @@ THE SOFTWARE.
     /*
       ## getXHR() ##
       _internal_ get an XMLHttpRequest object
-      */    var xmlhttp;
+      */
+    var xmlhttp;
     xmlhttp = false;
     if (typeof XMLHttpRequest !== "undefined") {
       try {

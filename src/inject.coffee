@@ -60,7 +60,7 @@ xDomainRpc = null                   # a cross domain RPC object (Porthole)
 fileStorageToken = "FILEDB"         # a storagetoken identifier we use (PersistJS)
 fileStore = "Inject FileStorage"    # file store to use
 namespace = "inject"                # the namespace for inject() that is publicly reachable
-fileExpiration = 86400              # the default time to cache a file for (one day)
+fileExpiration = 86400              # the default time (in seconds) to cache a file for (one day)
 counter = 0                         # a counter used for transaction IDs
 loadQueue = []                      # when making iframe calls, there's a queue that can stack up while waiting on everything to load
 userModules = {}                    # any mappings for module => handling defined by the user
@@ -250,7 +250,7 @@ saveFile = (path, file) ->
   if isCached(path) then return
   fileRegistry[path] =
     content: file
-    expires: config.fileExpiration + (new Date()).getTime()
+    expires: (config.fileExpiration * 1000) + (new Date()).getTime()
   fileStorage.set token, JSON.stringify(fileRegistry)
   
 clearFileRegistry = (version = schemaVersion) ->
