@@ -53,23 +53,24 @@ Constants and Registries used
 schemaVersion = 1                   # version of inject()'s localstorage schema
 context = this                      # context is our local scope. Should be "window"
 oldInject = context.inject          # capture what was in the inject.* namespace
-pauseRequired = false               # can we run immediately? (when using iframe transport, the answer is no)
+pauseRequired = false               # can we run immediately? when using iframe transport, the answer is no
 fileRegistry = null                 # a registry of file text that has been loaded
 fileStorage = null                  # localstorage for files (PersistJS)
-fileStorageToken = "FILEDB"         # a storagetoken identifier we use for PersistJS
+xDomainRpc = null                   # a cross domain RPC object (Porthole)
+fileStorageToken = "FILEDB"         # a storagetoken identifier we use (PersistJS)
 fileStore = "Inject FileStorage"    # file store to use
-fileExpiration = 604800             # the default time to cache a file for
 namespace = "inject"                # the namespace for inject() that is publicly reachable
+fileExpiration = 86400              # the default time to cache a file for (one day)
 counter = 0                         # a counter used for transaction IDs
-xDomainRpc = null                   # a cross domain RPC object created by Porthole
 loadQueue = []                      # when making iframe calls, there's a queue that can stack up while waiting on everything to load
-config = {}                         # the config options for inject()
 userModules = {}                    # any mappings for module => handling defined by the user
 moduleRegistry = {}                 # a registry of modules that have been loaded
 modulePathRegistry = {}             # a collection of modules organized by their path information
 callbackRegistry = {}               # a registry of callbacks keyed by Transaction IDs
 txnRegistry = {}                    # a list of modules that were required for a transaction, keyed by Transaction IDs
 fileOnComplete = {}                 # a list of subscribing transactions for a file's onModuleLoad resolution, keyed by Path
+config =                            # This is the default config when no changes are made
+  fileExpiration: fileExpiration    # default file expiry
 jsSuffix = /.*?\.js$/               # Regex for identifying things that end in *.js
 hostPrefixRegex = /^https?:\/\//    # prefixes for URLs that begin with http/https
 hostSuffixRegex = /^(.*?)(\/.*|$)/  # suffix for URLs used to capture everything up to / or the end of the string

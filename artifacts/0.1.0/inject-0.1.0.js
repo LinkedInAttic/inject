@@ -86,20 +86,22 @@ THE SOFTWARE.
   pauseRequired = false;
   fileRegistry = null;
   fileStorage = null;
+  xDomainRpc = null;
   fileStorageToken = "FILEDB";
   fileStore = "Inject FileStorage";
-  fileExpiration = 604800;
   namespace = "inject";
+  fileExpiration = 86400;
   counter = 0;
-  xDomainRpc = null;
   loadQueue = [];
-  config = {};
   userModules = {};
   moduleRegistry = {};
   modulePathRegistry = {};
   callbackRegistry = {};
   txnRegistry = {};
   fileOnComplete = {};
+  config = {
+    fileExpiration: fileExpiration
+  };
   jsSuffix = /.*?\.js$/;
   hostPrefixRegex = /^https?:\/\//;
   hostSuffixRegex = /^(.*?)(\/.*|$)/;

@@ -61,6 +61,22 @@ By default, inject tries to do the best it can, but in complex environments, tha
 * **set config.path to a function** if config.path resolves to a function, the function will be called instead of standard path evaluation
 * **register modules with inject().modules({...})** the .modules() method allows you to specify key/value pairs which supersede path evaluation
 
+Expiring Content
+===
+By default, inject() will cache things for one day (86400 seconds). You can change the default behavior through the config object:
+
+```
+inject().config({
+  fileExpiry: 604800 // files now last for one week
+})
+```
+
+Setting an expiry value of "0" means that client side caching will not be used. There will need to be a balance between caching items in the browser, and letting localStorage also do caching for you. At any time, you can always clear the cache with the below code, for example if a user has not been to your site since your last major code push.
+
+```
+inject().clear()
+```
+
 Cross Domain
 ===
 In CDN-like environments, the data you need to include may be on a separate domain. If that's the case, you'll need to do 3 extra steps to get inject up and running.
