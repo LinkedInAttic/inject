@@ -78,7 +78,7 @@ THE SOFTWARE.
   */
   /*
   Constants and Registries used
-  */  var JSON, Persist, Porthole, callbackRegistry, checkComplete, clearFileRegistry, commonJSFooter, commonJSHeader, config, configInterface, context, counter, createIframe, createTxId, fileOnComplete, fileRegistry, fileStorage, fileStorageToken, getFile, getModule, getNamespace, getPointcuts, getXHR, hostPrefixRegex, hostSuffixRegex, iframeName, inject, jsSuffix, loadModules, loadQueue, modulePathRegistry, moduleRegistry, namespace, normalizePath, oldInject, onModuleLoad, pauseRequired, requireRegex, responseSlicer, saveFile, saveModule, schemaVersion, sendToIframe, sendToXhr, setConfig, setNamespace, setUserModules, txnRegistry, userModules, xDomainRpc;
+  */  var JSON, Persist, Porthole, callbackRegistry, checkComplete, clearFileRegistry, commonJSFooter, commonJSHeader, config, configInterface, context, counter, createIframe, createTxId, fileExpiration, fileOnComplete, fileRegistry, fileStorage, fileStorageToken, fileStore, getFile, getModule, getNamespace, getPointcuts, getXHR, hostPrefixRegex, hostSuffixRegex, iframeName, inject, isCached, isExpired, jsSuffix, loadModules, loadQueue, modulePathRegistry, moduleRegistry, namespace, normalizePath, oldInject, onModuleLoad, pauseRequired, requireRegex, responseSlicer, saveFile, saveModule, schemaVersion, sendToIframe, sendToXhr, setConfig, setNamespace, setUserModules, txnRegistry, userModules, xDomainRpc;
   var __slice = Array.prototype.slice;
   schemaVersion = 1;
   context = this;
@@ -87,6 +87,8 @@ THE SOFTWARE.
   fileRegistry = null;
   fileStorage = null;
   fileStorageToken = "FILEDB";
+  fileStore = "Inject FileStorage";
+  fileExpiration = 604800;
   namespace = "inject";
   counter = 0;
   xDomainRpc = null;
@@ -168,7 +170,10 @@ THE SOFTWARE.
     /*
       ## setConfig(cfg) ##
       _internal_ Set the config
-      */    return config = cfg;
+      */    config = cfg;
+    if (!(config.fileExpiration != null)) {
+      return config.fileExpiration = fileExpiration;
+    }
   };
   setUserModules = function(modl) {
     /*
@@ -191,6 +196,25 @@ THE SOFTWARE.
     }
     return moduleRegistry[module] = exports;
   };
+  isExpired = function(path) {
+    /*
+      ## isExpired(mpath) ##
+      _internal_ test if a cached file is expired, if it is, remove it from the cache
+      */    var _ref;
+    if (((_ref = fileRegistry[path]) != null ? _ref.expires : void 0) > (new Date()).getTime()) {
+      return false;
+    }
+    if (fileRegistry[path] != null) {
+      fileRegistry[path] = {};
+    }
+    return true;
+  };
+  isCached = function(path) {
+    /*
+      ## isCached(mpath) ##
+      _internal_ test if a file is in the cache and valid (not expired)
+      */    return (fileRegistry != null) && (fileRegistry[path] != null) && fileRegistry[path].content && !isExpired(path);
+  };
   getFile = function(path, cb) {
     /*
       ## getFile(path, cb) ##
@@ -199,14 +223,14 @@ THE SOFTWARE.
       */    var token;
     token = "" + fileStorageToken + schemaVersion;
     if (!fileStorage) {
-      fileStorage = new Persist.Store("Inject FileStorage");
+      fileStorage = new Persist.Store(fileStore);
     }
     if (!fileRegistry) {
       return fileStorage.get(token, function(ok, val) {
-        if (ok && typeof val === "string" && val.length > 1) {
+        if (ok && typeof val === "string" && val.length) {
           fileRegistry = JSON.parse(val);
-          if (fileRegistry[path]) {
-            return cb(true, fileRegistry[path]);
+          if (isCached(path)) {
+            return cb(true, fileRegistry[path].content);
           } else {
             return cb(false, null);
           }
@@ -216,8 +240,8 @@ THE SOFTWARE.
         }
       });
     } else {
-      if (fileRegistry[path]) {
-        return cb(true, fileRegistry[path]);
+      if (isCached(path)) {
+        return cb(true, fileRegistry[path].content);
       } else {
         return cb(false, null);
       }
@@ -231,12 +255,15 @@ THE SOFTWARE.
       */    var token;
     token = "" + fileStorageToken + schemaVersion;
     if (!fileStorage) {
-      fileStorage = new Persist.Store("Inject FileStorage");
+      fileStorage = new Persist.Store(fileStore);
     }
-    if (fileRegistry[path] && fileRegistry[path].length > 1) {
+    if (isCached(path)) {
       return;
     }
-    fileRegistry[path] = file;
+    fileRegistry[path] = {
+      content: file,
+      expires: config.fileExpiration + (new Date()).getTime()
+    };
     return fileStorage.set(token, JSON.stringify(fileRegistry));
   };
   clearFileRegistry = function(version) {
@@ -250,7 +277,7 @@ THE SOFTWARE.
       */
     token = "" + fileStorageToken + version;
     if (!fileStorage) {
-      fileStorage = new Persist.Store("Inject FileStorage");
+      fileStorage = new Persist.Store(fileStore);
     }
     fileStorage.set(token, "");
     if (version === schemaVersion) {
@@ -424,7 +451,7 @@ THE SOFTWARE.
       }
       _results.push(getFile(path, function(ok, val) {
         fileOnComplete[path].txns.push(txId);
-        if (ok && typeof val === "string" && val.length > 1) {
+        if (ok && typeof val === "string" && val.length) {
           return onModuleLoad(txId, module, path, val);
         } else {
           if (!fileOnComplete[path].loading) {

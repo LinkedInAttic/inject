@@ -33,6 +33,20 @@ Specifying specific module locations (that pathing could never guess)
 For more details, check out the README or github: https://github.com/Jakobo/inject
 ###
 
+#
+# Conventions and syntax for inject() for contributions
+# 
+# CoffeeScript @ 2 spaces indent
+# 
+# Parentheses () required at all times except:
+# * Statement is single line, single argument: someValue.push pushableItem
+# * Statement is single line, last argument is a callback: someAsyncFunction argOne, argTwo, (cbOne, cbTwo) ->
+# 
+# Over Comment
+#
+# Always run "cake build" and make sure it compiles. Testing is also a bonus
+#
+
 ###
 Constants and Registries used
 ###
@@ -182,7 +196,7 @@ isExpired = (path) ->
   ## isExpired(mpath) ##
   _internal_ test if a cached file is expired, if it is, remove it from the cache
   ###
-  if fileRegistry[path]?.expires > (+new Date()) then return false
+  if fileRegistry[path]?.expires > (new Date()).getTime() then return false
   if fileRegistry[path]? then fileRegistry[path] = {}
   return true
 
@@ -191,7 +205,7 @@ isCached = (path) ->
   ## isCached(mpath) ##
   _internal_ test if a file is in the cache and valid (not expired)
   ###
-  return fileRegistry? and fileRegistry[path]? and fileRegistry[path].content and !isExpired path
+  return fileRegistry? and fileRegistry[path]? and fileRegistry[path].content and !isExpired(path)
 
 getFile = (path, cb) ->
   ###
@@ -204,17 +218,22 @@ getFile = (path, cb) ->
   if !fileStorage then fileStorage = new Persist.Store(fileStore)
   
   if !fileRegistry
+    # With no file registry, attempt to load from local storage
+    # if the token exists, parse it. If the path is cached, then use the cached item
+    # otherwise, mark the item as false
+    # if there is nothing in cache, create the fileRegistry object
     fileStorage.get token, (ok, val) ->
       if ok and typeof(val) is "string" and val.length
         fileRegistry = JSON.parse(val)
-        if isCached path then return cb(true, fileRegistry[path].content)
+        if isCached(path) then return cb(true, fileRegistry[path].content)
         else return cb(false, null)
-        
       else
         fileRegistry = {}
         return cb(false, null)
   else
-    if isCached path then return cb(true, fileRegistry[path].content)
+    # the file registry object exists, so we have loaded the content
+    # if the path is cached, use the cached value, otherwise false
+    if isCached(path) then return cb(true, fileRegistry[path].content)
     else return cb(false, null)
 
     
@@ -227,10 +246,10 @@ saveFile = (path, file) ->
   token = "#{fileStorageToken}#{schemaVersion}"
   
   if !fileStorage then fileStorage = new Persist.Store(fileStore)
-  if isCached path then return
+  if isCached(path) then return
   fileRegistry[path] =
     content: file
-    expires: config.fileExpiration + (+new Date())
+    expires: config.fileExpiration + (new Date()).getTime()
   fileStorage.set token, JSON.stringify(fileRegistry)
   
 clearFileRegistry = (version = schemaVersion) ->
@@ -241,7 +260,7 @@ clearFileRegistry = (version = schemaVersion) ->
   token = "#{fileStorageToken}#{version}"
   
   if !fileStorage then fileStorage = new Persist.Store(fileStore)
-  fileStorage.set token, ""
+  fileStorage.set(token, "")
   if version == schemaVersion then fileRegistry = {}
 
 
