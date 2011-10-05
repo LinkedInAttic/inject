@@ -12,6 +12,12 @@ Some of the awesome roadmap things coming soon(ish)
 * versioning (once we re-expose modules.* interface most likely)
 * localStorage space management (time based + config? LRU? who knows?!)
 
+Let's Start With Examples!
+===
+* XHR Over Local Domain [0.1.0](http://jakobo.github.com/inject/example/0.1.0/sample.html), [0.2.0](http://jakobo.github.com/inject/example/0.2.0/sample.html)
+* XHR to CDN via window.postMessage [0.1.0](http://jakobo.github.com/inject/example/0.1.0/sample2.html), [0.2.0](http://jakobo.github.com/inject/example/0.2.0/sample2.html)
+* Pointcuts: jQuery added as a module [0.1.0](http://jakobo.github.com/inject/example/0.1.0/sample3.html), [0.2.0](http://jakobo.github.com/inject/example/0.2.0/sample.html)
+
 Getting Started
 ===
 First, you'll need to include inject.js somewhere on your page. Preferably before you go injecting all over the place. While not required, you may also want to set up a config in case your JS live in a common directory not immediately under the current page.
@@ -19,9 +25,7 @@ First, you'll need to include inject.js somewhere on your page. Preferably befor
 ```
 <script type="text/javascript" src="http://example.com/inject-0.0.1.js"></script>
 <script type="text/javascript">
-  inject().config({
-    path: "http://example.com/static/js/"
-  });
+require.setModuleRoot("http://example.com/static/js/");
 </script>
 ```
 
@@ -29,9 +33,11 @@ You can then just start injecting modules and off you go!
 
 ```
 // in some file later on
-inject("moduleA", "moduleB", "moduleC/SomePart", function(A, B, C) {
+require("moduleA")
+// or...
+require.ensure("moduleA", "moduleB", "moduleC/SomePart", function(require) {
   // fired when all modules are loaded
-  // if exports.* are set, they'll be available in A, B, and C
+  var A = require("moduleA");
 });
 ```
 
@@ -58,42 +64,36 @@ Path Resolution
 ===
 By default, inject tries to do the best it can, but in complex environments, that's not enough. The following behaviors can change / simplify the injection of modules.
 
-* **set config.path to a function** if config.path resolves to a function, the function will be called instead of standard path evaluation
-* **register modules with inject().modules({...})** the .modules() method allows you to specify key/value pairs which supersede path evaluation
+* **call require.setModuleRoot with a function** if config.path resolves to a function, the function will be called instead of standard path evaluation
+* **register modules with require.manifest({...})** the .modules() method allows you to specify key/value pairs which supersede path evaluation
 
 Expiring Content
 ===
 By default, inject() will cache things for one day (86400 seconds). You can change the default behavior through the config object:
 
 ```
-inject().config({
-  fileExpiry: 604800 // files now last for one week
-})
+require.setExpires(604800);
+// files now last for one week
 ```
 
 Setting an expiry value of "0" means that client side caching will not be used. There will need to be a balance between caching items in the browser, and letting localStorage also do caching for you. At any time, you can always clear the cache with the below code, for example if a user has not been to your site since your last major code push.
 
 ```
-inject().clear()
+require.clearCache()
 ```
 
 Cross Domain
 ===
 In CDN-like environments, the data you need to include may be on a separate domain. If that's the case, you'll need to do 3 extra steps to get inject up and running.
 
-1. **edit relay.html** from the artifacts directory. You'll need to change `PROXY_LOCATIONS` to the location of your relay.html files. You'll need one path on your main server (inject) and one path on the server that contains all your javascript (xhr)
-2. **add to inject().config()** You'll then need to add the config for your XD files (below)
+1. **edit relay.html** from the artifacts directory. You'll need to call require.setCrossDomain(local, remote) with the path to your two proxy files. The "local" is on the same domain as your application code. The "remote" is on the same domain as the JS you intend to load, and should be the same domain you supplied to require.setModuleRoot()
+2. **edit your code** use the same require.setCrossDomain(local, remote) to set up the configuration for cross domain
 3. **upload both relay.html files** to your servers
 
 When you add the XD config, you'll use the same paths you used in #1 above
 
 ```
-inject().config({
-  xd: {
-    xhr: "http://static.example.com/path/to/relay.html",
-    inject: "http://example.com/local/dir/relay.html"
-  }
-});
+require.setCrossDomain("http://static.example.com/path/to/relay.html", "http://example.com/local/dir/relay.html");
 ```
 
 You can then carry on with your injecting. To support the cross domain, we use `window.postMessage` in the browsers that support it, and fall back to fragment transports with window.resize monitoring. To make that happen, we use [Porthole](http://ternarylabs.github.com/porthole/) by the awesome Ternary Labs folks (also MIT License).
@@ -107,4 +107,4 @@ Also Starring
 
 Live Awesomeness
 ===
-We have live examples [here](http://jakobo.github.com/inject/example/0.1.0/sample.html) with Same and Alternate domains. These pages are viewable in the [gh-pages branch](https://github.com/Jakobo/inject/tree/gh-pages). CoralCDN provides the second domain which is a might-handy CDN simulation given it's actually a CDN for the alternate domain.
+These pages are viewable in the [gh-pages branch](https://github.com/Jakobo/inject/tree/gh-pages). CoralCDN provides the second domain which is a might-handy CDN simulation given it's actually a CDN for the alternate domain.
