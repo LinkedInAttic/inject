@@ -2,33 +2,21 @@
 # Inject: Dependency Awesomeness #
 
 Some sample ways to use inject...
-
-    inject("moduleOne", "moduleTwo", "moduleThree", function(a, b, c) {
-      // n args, last is function. Inject those modules, then run this body
-      // modules are available as arguments
-    });
-
-Configuring inject()
-
-    inject().config({
-      // where are your JS files? Can also be a function which will do
-      // lookups for you
-      path: "http://example.com/path/to/js/root",
-      
-      // if your JS files are on a different domain, you'll need to use
-      // relay files. See the readme
-      xd: {
-        inject: "http://local.example.com/path/to/relay.html",
-        xhr: "http://remote.example.com/path/to/relay.html"
-      }
+    var foo = require("moduleName");
+    require.ensure(["moduleOne", "moduleTwo", "moduleThree"], function(require, exports, module) {
+      var foo = require("moduleOne");
     })
 
-Specifying specific module locations (that pathing could never guess)
-
-    inject().modules({
-      // module name, module path
-      moduleName: "http://example.com/location/of/module.js"
-    })
+Configuring Inject
+  require.setModuleRoot("http://example.com/path/to/js/root")
+  require.setCrossDomain("http://local.example.com/path/to/relay.html", "http://remote.example.com/path/to/relay.html")
+  require.manifest({
+    moduleName: "http://local.example.com/path/to/module"
+  }, [weight])
+  require.manifest(function(path) {
+  
+  }, [weight])
+  require.run("appName")
 
 For more details, check out the README or github: https://github.com/Jakobo/inject
 ###
@@ -52,14 +40,13 @@ Constants and Registries used
 ###
 schemaVersion = 1                   # version of inject()'s localstorage schema
 context = this                      # context is our local scope. Should be "window"
-oldInject = context.inject          # capture what was in the inject.* namespace
 pauseRequired = false               # can we run immediately? when using iframe transport, the answer is no
 fileRegistry = null                 # a registry of file text that has been loaded
 fileStorage = null                  # localstorage for files (PersistJS)
 xDomainRpc = null                   # a cross domain RPC object (Porthole)
 fileStorageToken = "FILEDB"         # a storagetoken identifier we use (PersistJS)
 fileStore = "Inject FileStorage"    # file store to use
-namespace = "inject"                # the namespace for inject() that is publicly reachable
+namespace = "Inject"                # the namespace for inject() that is publicly reachable
 fileExpiration = 86400              # the default time (in seconds) to cache a file for (one day)
 counter = 0                         # a counter used for transaction IDs
 loadQueue = []                      # when making iframe calls, there's a queue that can stack up while waiting on everything to load
@@ -100,7 +87,7 @@ this helps secure module bleeding
 commonJSHeader = '''
 with (window) {
   (function() {
-    var module = {}, exports = {}, require = __INJECT_NS__().require(), exe = null;
+    var module = {}, exports = {}, require = __INJECT_NS__.require, exe = null;
     module.id = "__MODULE_ID__";
     module.uri = "__MODULE_URI__";
     module.exports = exports;
@@ -115,52 +102,6 @@ commonJSFooter = '''
   })();
 }
 '''
-
-###
-an interface for configuring inject
-provides a suite of methods that call internal functions or expose needed methods
-###
-configInterface =
-  config: (cfg) ->
-    ###
-    ## inject().config(cfg) ##
-    Set the inject() configuration
-    ###
-    if !cfg.path then throw new Error("Config requires at least path to be set")
-    if typeof(cfg.path) is "string" and cfg.path.lastIndexOf("/") isnt cfg.path.length then cfg.path = "#{cfg.path}/"
-    setConfig(cfg)
-    return configInterface
-  modules: (modl) ->
-    ###
-    ## inject().modules(modl) ##
-    Set handling rules for specific modules
-    ###
-    setUserModules(modl)
-    return configInterface
-  clear: (version) ->
-    ###
-    ## inject().clear(version) ##
-    Clear the inject() file registry for a specified version. If no version is specified, defaults to current
-    ###
-    clearFileRegistry(version)
-  noConflict: (ns) ->
-    ###
-    ## inject().noConflict(ns) ##
-    move inject() to a new location. You will need to set `ns` to a publicly reachable location, identical to where
-    you save the returned value from noConflict()
-    ###
-    if (!ns) then throw new Error("You must specify a publicly reachable namespace for inject() to work")
-    setNamespace(ns)
-    currentInject = context.inject
-    context.inject = oldInject
-    return currentInject
-  require: () ->
-    ###
-    ## inect().require() ##
-    The require interface used when including modules
-    ###
-    return getModule
-
 setConfig = (cfg) ->
   ###
   ## setConfig(cfg) ##
@@ -263,20 +204,6 @@ clearFileRegistry = (version = schemaVersion) ->
   if !fileStorage then fileStorage = new Persist.Store(fileStore)
   fileStorage.set(token, "")
   if version == schemaVersion then fileRegistry = {}
-
-
-setNamespace = (ns) ->
-  ###
-  ## setNamespace(ns) ##
-  _internal_ set the namespace
-  ###
-  namespace = ns
-getNamespace = () ->
-  ###
-  ## getNamespace() ##
-  _internal_ get the namespace
-  ###
-  return namespace
 
 createTxId = () ->
   ###
@@ -456,7 +383,7 @@ onModuleLoad = (txId, module, path, text) ->
   
   header = commonJSHeader.replace(/__MODULE_ID__/g, module)
                          .replace(/__MODULE_URI__/g, path)
-                         .replace(/__INJECT_NS__/g, getNamespace())
+                         .replace(/__INJECT_NS__/g, namespace)
                          .replace(/__POINTCUT_BEFORE__/g, cutsStr.before)
   footer = commonJSFooter.replace(/__POINTCUT_AFTER__/g, cutsStr.after)
   runCmd = "#{header}\n#{text}\n#{footer}"
@@ -548,34 +475,120 @@ getXHR = () ->
   if !xmlhttp then throw new Error("Could not create an xmlHttpRequest Object")
   return xmlhttp
 
-inject = (args..., fn) ->
+###
+Main Payloads: require, require.ensure, etc
+###
+require = (moduleId) ->
   ###
-  ## inject(args..., fn) ##
-  Injects a module onto the page and will expose it for running
-  If no args, then the config interface is returned
+  ## require(moduleId) ##
+  Return the value of a module. This is a synchronous call, meaning the module needs
+  to have already been loaded. If you are unsure about the module's existence, you
+  should be using require.ensure() instead. For modules beyond the first tier, their
+  shallow dependencies are resolved and block, so there is no need for require.ensure()
+  beyond the topmost level.
   ###
-  # if no args, return config interface
-  if args.length == 0 then return configInterface
+  mod = getModule(moduleId)
+  if mod is false then throw new Error("#{moduleId} not loaded")
+  return mod
 
-  # last arg must be a callback function
-  if typeof(fn) isnt "function" then throw new Error("Last argument must be a function")
-
+require.ensure = (moduleList, callback) ->
+  ###
+  ## require.ensure(moduleList, callback) ##
+  Ensure the modules in moduleList (array) are loaded, and then execute callback
+  (function). Use this instead of require() when you need to load shallow dependencies
+  first.
+  ###
   # init the iframe if required
   if config.xd? and !xDomainRpc and !pauseRequired
     createIframe()
     pauseRequired = true
-  
+
   # our default behavior. Load everything
   # then, once everything says its loaded, call the callback
   run = () ->
-    loadModules args, (modules) ->
-      fn.apply(context, modules)
+    loadModules moduleList, () ->
+      module = {}
+      exports = {}
+      module.exports = exports
+      callback.call(context, require, module, exports)
   
   if pauseRequired then loadQueue.push(run)
   else run()
 
-# set context.inject to the main inject object
-context.inject = inject
+require.setModuleRoot = (root) ->
+  ###
+  ## require.setModuleRoot(root) ##
+  set the base path for including your modules. This is used as the default if no
+  items in the manifest can be located.
+  
+  Optionally, you can set root to a function. The return value of that function will
+  be used instead. This can allow for very complex module configurations and branching
+  with multiple CDNs such as in a complex production environment.
+  ###
+  if typeof(root) is "string" and root.lastIndexOf("/") isnt root.length then root = "#{root}/"
+  config.path = root
+
+require.setExpires = (expires) ->
+  ###
+  ## require.setExpires(expires) ##
+  Set the time in seconds that files will persist in localStorage. Setting to 0 will disable
+  localstorage caching.
+  ###
+  config.fileExpiration = expires
+
+require.setCrossDomain = (local, remote) ->
+  ###
+  ## require.setCrossDomain(local, remote) ##
+  Set a pair of URLs to relay files. You must have two relay files in your cross domain setup:
+  
+  * one relay file (local) on the same domain as the page hosting Inject
+  * one relay file (remote) on the domain where you are hosting your root from setModuleRoot()
+  
+  The same require.setCrossDomain statement should be added to BOTH your relay.html files.
+  ###
+  config.xd = {}
+  config.xd.inject = local
+  config.xd.xhr = remote
+
+require.clearCache = (version) ->
+  ###
+  ## require.clearCache(version) ##
+  Remove the localStorage class at version. If no version is specified, the entire cache is cleared.
+  ###
+  clearFileRegistry(version)
+
+require.manifest = (manifest) ->
+  ###
+  ## require.manifest(manifest) ##
+  Provide a custom manifest for Inject. This maps module names to file paths, adds pointcuts, and more.
+  The key is always the module name, and then inside of that key can be either
+  
+  * a String (the path that will be used for resolving that module)
+  * an Object containing
+  ** path (String or Function) a path to use for the module, behaves like setModuleRoot()
+  ** pointcuts (Object) a set of Aspect Oriented functions to run before and after the function.
+  
+  The pointcuts are a unique solution that allows you to require() things like jQuery. A pointcut could,
+  for example add an after() method which sets exports.$ to jQuery.noConflict(). This would restore the
+  window to its unpoluted state and make jQuery actionable as a commonJS module without having to alter
+  the original library.
+  ###
+  setUserModules(manifest)
+
+require.run = (moduleId) ->
+  ###
+  ## require.run(moduleId) ##
+  Execute the specified moduleId. This runs an ensure() to make sure the module has been loaded, and then
+  execute it.
+  ###
+  foo = "bar"
+
+# set context.require to the main inject object
+# set an alternate interface in Inject in case things get clobbered
+context.require = require
+context.Inject = {
+  require: require
+}
 
 ###
 Porthole
