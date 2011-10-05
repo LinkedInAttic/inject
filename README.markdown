@@ -3,6 +3,7 @@ Inject: Dependency Management Got Awesome
 **Inject** (MIT License) is a revolutionary way to manage your dependencies in a *Library Agnostic* way. Some of its major features include:
 
 * CommonJS Compliance in the Browser (exports.*)
+** View the full [CommonJS Support Matrix](https://github.com/Jakobo/inject/wiki/CommonJS-Support)
 * Cross domain retrieval of files (via Porthole)
 * localStorage (load a module once!) w IE 7 support
 * Frustratingly Simple
@@ -17,6 +18,7 @@ Let's Start With Examples!
 * XHR Over Local Domain [0.1.0](http://jakobo.github.com/inject/example/0.1.0/sample.html), [0.2.0](http://jakobo.github.com/inject/example/0.2.0/sample.html)
 * XHR to CDN via window.postMessage [0.1.0](http://jakobo.github.com/inject/example/0.1.0/sample2.html), [0.2.0](http://jakobo.github.com/inject/example/0.2.0/sample2.html)
 * Pointcuts: jQuery added as a module [0.1.0](http://jakobo.github.com/inject/example/0.1.0/sample3.html), [0.2.0](http://jakobo.github.com/inject/example/0.2.0/sample.html)
+
 
 Getting Started
 ===
