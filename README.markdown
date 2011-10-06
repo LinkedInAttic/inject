@@ -3,7 +3,7 @@ Inject: Dependency Management Got Awesome
 **Inject** (MIT License) is a revolutionary way to manage your dependencies in a *Library Agnostic* way. Some of its major features include:
 
 * CommonJS Compliance in the Browser (exports.*)
-** View the full [CommonJS Support Matrix](https://github.com/Jakobo/inject/wiki/CommonJS-Support)
+  * View the full [CommonJS Support Matrix](https://github.com/Jakobo/inject/wiki/CommonJS-Support)
 * Cross domain retrieval of files (via Porthole)
 * localStorage (load a module once!) w IE 7 support
 * Frustratingly Simple
