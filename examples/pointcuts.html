@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <script type="text/javascript" src="inject.js"></script>
+</head>
+<body>
+<h1>Pointcuts</h1>
+<p>Items that haven't been properly externalized can still be captured. In this example, jQuery is loaded using the pointcuts in
+"view source". The "after" cut captures the results of jQuery.noConflict() and stores it as the module.exports. This makes $ available
+just like a developer would expect within their modules.</p>
+
+<p><a href="default.html">Same Domain</a> | <a href="cross-domain.html">Alternate Domain</a> | <a href="pointcuts.html">Pointcuts</a></p>
+
+<p id="output-jq"></p>
+<button id="clearit">Clear Cache</button>
+
+<script type="text/javascript">
+document.getElementById("clearit").onclick = function() {
+  require.clearCache();
+};
+
+require.setModuleRoot("http://localhost:4000/deps");
+
+require.manifest({
+  "jQuery": {
+    path: "./jquery-1.6.4.min.js",
+    after: function() {
+      module.exports = jQuery.noConflict();
+    }
+  }
+});
+
+require.ensure(["foo", "jQuery"], function(require) {
+  var foo = require("foo"),
+      $ = require("jQuery");
+  
+  $("#output-jq").html(foo.sampleString);
+});
+</script>
+</body>
+</html>

@@ -110,3 +110,16 @@ Also Starring
 Live Awesomeness
 ===
 These pages are viewable in the [gh-pages branch](https://github.com/Jakobo/inject/tree/gh-pages). CoralCDN provides the second domain which is a might-handy CDN simulation given it's actually a CDN for the alternate domain.
+
+Test Server
+===
+We also have a nodejs test server if you want to avoid the gh-pages stuff, or simply validate changes locally in an easy environment. Install node, coffeescript, etc, then:
+
+```
+cake build
+cd testserver
+sudo npm install
+node server.js
+```
+
+You can visit http://localhost:4000/default.html to validate everything. We use alternate ports to create the cross domain environment instead of a CDN.

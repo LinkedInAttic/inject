@@ -1,24 +1,24 @@
-VERSION = "0.2.0"
+# VERSION = "0.2.0"
 PROJECT = "inject"
 
 fs = require("fs")
 exec = require("child_process").exec
 path = require("path")
 compiler = "java -jar ./build/gcc/compiler.jar --compilation_level SIMPLE_OPTIMIZATIONS"
-compilerInputFile = "--js ./artifacts/#{PROJECT}-#{VERSION}.js"
-compilerOutputFile = "--js_output_file ./artifacts/#{PROJECT}-#{VERSION}.min.js"
+# compilerInputFile = "--js ./artifacts/#{PROJECT}-#{VERSION}.js"
+# compilerOutputFile = "--js_output_file ./artifacts/#{PROJECT}-#{VERSION}.min.js"
 
 packages = 
   min:
-    name: "#{PROJECT}-#{VERSION}.min.js"
+    name: "#{PROJECT}.min.js"
     headers: [ "./src/copyright-lic-min.js" ]
     files: [
       "./src/inject.coffee"
     ]
-    copy: [ "./src/relay{VERSION}.html" ]
+    copy: [ "./src/relay.html" ]
   full:
     uncompressed: true
-    name: "#{PROJECT}-#{VERSION}.js"
+    name: "#{PROJECT}.js"
     headers: [
       "./src/copyright.js"
       "./src/licenses.js"
@@ -26,7 +26,7 @@ packages =
     files: [
       "./src/inject.coffee"
     ]
-    copy: [ "./src/relay{VERSION}.html" ]
+    copy: [ "./src/relay.html" ]
 
 fileSources = {}
 tmpdir = "./tmp"
@@ -116,8 +116,10 @@ task "build", "Build the Project", ->
     fs.writeFile "#{artifacts}/#{pkg.name}", contents.join("\n\n"), (err) ->
       if err then return cb(err, null)
       for item in pkg.copy
-        fromItem = item.replace(/\{VERSION\}/, "")
-        toItem = item.replace(/\{VERSION\}/, "-#{VERSION}").replace(/^\.\/src\//, "")
+        # fromItem = item.replace(/\{VERSION\}/, "")
+        fromItem = item
+        # .replace(/\{VERSION\}/, "-#{VERSION}")
+        toItem = item.replace(/^\.\/src\//, "")
         copy fromItem, "#{artifacts}/#{toItem}", (err) ->
           if err then return cb(err, null)
           cb(null, null) if --copies is 0

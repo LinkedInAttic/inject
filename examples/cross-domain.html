@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <script type="text/javascript" src="inject.js"></script>
+</head>
+<body>
+<h1>Remote Domain</h1>
+<p>This pulls from the remote domain using iFrame Transports</p>
+
+<p><a href="default.html">Same Domain</a> | <a href="cross-domain.html">Alternate Domain</a> | <a href="pointcuts.html">Pointcuts</a></p>
+
+<p id="output-foo"></p>
+<p id="output-bar"></p>
+<button id="clearit">Clear Cache</button>
+
+<p>We are using <a href="http://localhost:4001">an alternate port</a> for the multi-domain support. It creates a self-contained example</p>
+
+<script type="text/javascript">
+document.getElementById("clearit").onclick = function() {
+  require.clearCache();
+};
+
+require.setModuleRoot("http://localhost:4001/deps");
+require.setCrossDomain("http://localhost:4000/relay.html",
+                       "http://localhost:4001/relay.html");
+
+require.ensure(["foo", "bar"], function(require) {
+  var foo = require("foo"),
+      bar = require("bar");
+  document.getElementById("output-foo").innerHTML = foo.sampleString;
+  
+  var b = new bar.Bar();
+  document.getElementById("output-bar").innerHTML = b.baz();
+});
+</script>
+</body>
+</html>

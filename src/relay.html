@@ -8,8 +8,11 @@ var require = { setCrossDomain: function(l, r) { window.PROXY_LOCATIONS = { inje
 // OTHERWISE, THE SYSTEM WILL NOT KNOW WHERE TO SEND COMMUNICATION TO
 // inject: a relay.html file on the same domain as you're using inject.js
 // xhr: a relay.html file on the same domain as your JS files you are including
+// require.setCrossDomain("http://example.com/path/with/injectJS/relay.html",
+//                        "http://cdn.example.com/path/with/injectJS/relay.html");
 // ----------------------------------------------------------------------------
-require.setCrossDomain("http://example.com/path/with/injectJS/relay.html", "http://cdn.example.com/path/with/injectJS/relay.html");
+require.setCrossDomain("http://localhost:4000/relay.html",
+                       "http://localhost:4001/relay.html");
 // ----------------------------------------------------------------------------
 // That's it, you're done! Don't touch anything else below. It sets up the
 // relay using the two locations you specified.
