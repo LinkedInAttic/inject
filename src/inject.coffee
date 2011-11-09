@@ -62,6 +62,13 @@ jsSuffix = /.*?\.js$/               # Regex for identifying things that end in *
 hostPrefixRegex = /^https?:\/\//    # prefixes for URLs that begin with http/https
 hostSuffixRegex = /^(.*?)(\/.*|$)/  # suffix for URLs used to capture everything up to / or the end of the string
 iframeName = "injectProxy"          # the name for the iframe proxy created (Porthole)
+requireReducerRegex = ///           # a regex used to reduce large files down to just their requires statements
+  require[\s]*\([\s]*                 # the require, whitespace 0+, and an opening (, followed by 0+ whitespace
+  (?:"|')                             # either quote character as a delimeter
+  (?:[\w\\/\.\:]+?)                   # the text contents of the require. A-Z0-9, plus slashes, dots, and colons
+  (?:'|")                             # either quote mark used to close the requires string
+  [\s]*\)                             # 0+ whitespace, followed by the closing parentheses
+  ///
 requireRegex = ///                  # a regex for capturing the require() statements inside of included code
   .*?                                 # anything (non-greedy)
   require[\s]*\([\s]*                 # followed by require, a whitespace character 0+, and an opening ( then more whitespace
@@ -390,6 +397,9 @@ onModuleLoad = (txId, module, path, text) ->
   
   # find all require statements
   requires = []
+  notRequires = text.split(requireReducerRegex)
+  for notReq in notRequires
+    text = text.replace(notReq, "")
   text.replace requireRegex, (args...) ->
     requires.push args[2]
   
