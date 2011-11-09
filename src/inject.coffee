@@ -72,9 +72,9 @@ requireReducerRegex = ///           # a regex used to reduce large files down to
 requireRegex = ///                  # a regex for capturing the require() statements inside of included code
   .*?                                 # anything (non-greedy)
   require[\s]*\([\s]*                 # followed by require, a whitespace character 0+, and an opening ( then more whitespace
-  ("|')                               # followed by a quote
+  (?:"|')                             # followed by a quote
   ([\w\/\.\:]+?)                      # (1) capture word characters, forward slashes, dots, and colons (at least one)
-  ('|")                               # followed by a quote
+  (?:'|")                             # followed by a quote
   [\s]*\)                             # followed by whitespace, and then a closing ) that ends the require() call
   .*?                                 # anything after the closing paren
   ///gm                               # supports multiline, and is global matching
@@ -397,11 +397,13 @@ onModuleLoad = (txId, module, path, text) ->
   
   # find all require statements
   requires = []
-  notRequires = text.split(requireReducerRegex)
-  for notReq in notRequires
-    text = text.replace(notReq, "")
-  text.replace requireRegex, (args...) ->
-    requires.push args[2]
+  jsFragments = text.split(requireReducerRegex)
+  reducedText = text
+  for ignorePiece in jsFragments
+    reducedText = reducedText.replace(ignorePiece, "")
+  requires.push(RegExp.$1) while requireRegex.exec(reducedText)
+  # reducedText.replace requireRegex, (args...) ->
+  #   requires.push args[2]
   
   # internal method to onModuleLoad, which will eval the contents and save them
   # will then fire all of the handlers associated w/ the path
