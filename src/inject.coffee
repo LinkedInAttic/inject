@@ -70,13 +70,11 @@ requireReducerRegex = ///           # a regex used to reduce large files down to
   [\s]*\)                             # 0+ whitespace, followed by the closing parentheses
   ///
 requireRegex = ///                  # a regex for capturing the require() statements inside of included code
-  # .*?                                 # anything (non-greedy)
   require[\s]*\([\s]*                 # followed by require, a whitespace character 0+, and an opening ( then more whitespace
   (?:"|')                             # followed by a quote
   ([\w\/\.\:]+?)                      # (1) capture word characters, forward slashes, dots, and colons (at least one)
   (?:'|")                             # followed by a quote
   [\s]*\)                             # followed by whitespace, and then a closing ) that ends the require() call
-  # .*?                                 # anything after the closing paren
   ///gm                               # supports multiline, and is global matching
 responseSlicer = ///                # a regular expression for slicing a response from iframe communication into its parts
   ^(.+?)[\s]                          # (1) Begins with anything up to a space
