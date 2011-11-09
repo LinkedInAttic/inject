@@ -65,7 +65,8 @@ iframeName = "injectProxy"          # the name for the iframe proxy created (Por
 requireReducerRegex = ///           # a regex used to reduce large files down to just their requires statements
   require[\s]*\([\s]*                 # the require, whitespace 0+, and an opening (, followed by 0+ whitespace
   (?:"|')                             # either quote character as a delimeter
-  (?:[\w\\/\.\:]+?)                   # the text contents of the require. A-Z0-9, plus slashes, dots, and colons
+  (?:[\w\\/\.\:]+?)                   # NOTE: Differ from requireRegex. Non matching for split()
+                                      #   the text contents of the require. A-Z0-9, plus slashes, dots, and colons
   (?:'|")                             # either quote mark used to close the requires string
   [\s]*\)                             # 0+ whitespace, followed by the closing parentheses
   ///
@@ -75,7 +76,7 @@ requireRegex = ///                  # a regex for capturing the require() statem
   ([\w\/\.\:]+?)                      # (1) capture word characters, forward slashes, dots, and colons (at least one)
   (?:'|")                             # followed by a quote
   [\s]*\)                             # followed by whitespace, and then a closing ) that ends the require() call
-  ///gm                               # supports multiline, and is global matching
+  ///gm
 responseSlicer = ///                # a regular expression for slicing a response from iframe communication into its parts
   ^(.+?)[\s]                          # (1) Begins with anything up to a space
   (.+?)[\s]                           # (2) Continues with anything up to a space
@@ -393,15 +394,13 @@ onModuleLoad = (txId, module, path, text) ->
   footer = commonJSFooter.replace(/__POINTCUT_AFTER__/g, cutsStr.after)
   runCmd = "#{header}\n#{text}\n#{footer}"
   
-  # find all require statements
+  # find all require statements: reduce to only the require statements
   requires = []
   jsFragments = text.split(requireReducerRegex)
   reducedText = text
   for ignorePiece in jsFragments
     reducedText = reducedText.replace(ignorePiece, "")
   requires.push(RegExp.$1) while requireRegex.exec(reducedText)
-  # reducedText.replace requireRegex, (args...) ->
-  #   requires.push args[2]
   
   # internal method to onModuleLoad, which will eval the contents and save them
   # will then fire all of the handlers associated w/ the path
