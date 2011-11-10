@@ -42,9 +42,8 @@ schemaVersion = 1                   # version of inject()'s localstorage schema
 context = this                      # context is our local scope. Should be "window"
 pauseRequired = false               # can we run immediately? when using iframe transport, the answer is no
 fileRegistry = null                 # a registry of file text that has been loaded
-fileStorage = null                  # localstorage for files (PersistJS)
 xDomainRpc = null                   # a cross domain RPC object (Porthole)
-fileStorageToken = "FILEDB"         # a storagetoken identifier we use (PersistJS)
+fileStorageToken = "FILEDB"         # a storagetoken identifier we use (lscache)
 fileStore = "Inject FileStorage"    # file store to use
 namespace = "Inject"                # the namespace for inject() that is publicly reachable
 fileExpiration = 86400              # the default time (in seconds) to cache a file for (one day)
@@ -155,21 +154,20 @@ getFile = (path, cb) ->
   ###
   token = "#{fileStorageToken}#{schemaVersion}"
   
-  if !fileStorage then fileStorage = new Persist.Store(fileStore)
-  
+
   if !fileRegistry
     # With no file registry, attempt to load from local storage
     # if the token exists, parse it. If the path is cached, then use the cached item
     # otherwise, mark the item as false
     # if there is nothing in cache, create the fileRegistry object
-    fileStorage.get token, (ok, val) ->
-      if ok and typeof(val) is "string" and val.length
-        fileRegistry = JSON.parse(val)
-        if isCached(path) then return cb(true, fileRegistry[path].content)
-        else return cb(false, null)
-      else
-        fileRegistry = {}
-        return cb(false, null)
+    file = lscache.get token
+    if file and typeof(file) is "string" and file.length
+      fileRegistry = JSON.parse(file)
+      if isCached(path) then return cb(true, fileRegistry[path].content)
+      else return cb(false,null)
+    else
+      fileRegistry = {}
+      return cb(false, null)
   else
     # the file registry object exists, so we have loaded the content
     # if the path is cached, use the cached value, otherwise false
@@ -185,12 +183,11 @@ saveFile = (path, file) ->
   ###
   token = "#{fileStorageToken}#{schemaVersion}"
   
-  if !fileStorage then fileStorage = new Persist.Store(fileStore)
   if isCached(path) then return
   fileRegistry[path] =
     content: file
     expires: (config.fileExpiration * 1000) + (new Date()).getTime()
-  fileStorage.set token, JSON.stringify(fileRegistry)
+  lscache.set token, JSON.stringify(fileRegistry)
   
 clearFileRegistry = (version = schemaVersion) ->
   ###
@@ -199,8 +196,7 @@ clearFileRegistry = (version = schemaVersion) ->
   ###
   token = "#{fileStorageToken}#{version}"
   
-  if !fileStorage then fileStorage = new Persist.Store(fileStore)
-  fileStorage.set(token, "")
+  lscache.set(token, "")
   if version == schemaVersion then fileRegistry = {}
 
 createTxId = () ->
@@ -609,33 +605,13 @@ p=/[\\\"\x00-\x1f\x7f-\x9f\u00ad\u0600-\u0604\u070f\u17b4\u17b5\u200c-\u200f\u20
 "]").replace(/(?:^|:|,)(?:\s*\[)+/g,"")))return d=eval("("+a+")"),typeof e==="function"?c({"":d},""):d;throw new SyntaxError("JSON.parse");}})();
 `
 
-###
-PersistJS
-###
-Persist = null
-`
-Persist=function(){var f,h,g,k,m,j;j=function(){var a=["expires","path","domain"],b=escape,c=unescape,d=document,e,g=function(c,d){var l,e,g,f=[],h=arguments.length>2?arguments[2]:{};f.push(b(c)+"="+b(d));for(l=0;l<a.length;l++)e=a[l],(g=h[e])&&f.push(e+"="+g);h.secure&&f.push("secure");return f.join("; ")};e={set:function(a,b){var c=arguments.length>2?arguments[2]:{},e=new Date;e.setTime(e.getTime());var f={};if(c.expires)c.expires*=864E5,f.expires=new Date(e.getTime()+c.expires),f.expires=f.expires.toGMTString();
-e=["path","domain","secure"];for(i=0;i<e.length;i++)c[e[i]]&&(f[e[i]]=c[e[i]]);c=g(a,b,f);d.cookie=c;return b},has:function(a){var a=b(a),c=d.cookie,e=c.indexOf(a+"="),c=c.substring(0,a.length);return!e&&a!=c||e<0?!1:!0},get:function(a){var a=b(a),e=d.cookie,f=e.indexOf(a+"="),g=f+a.length+1,h=e.substring(0,a.length);if(!f&&a!=h||f<0)return null;a=e.indexOf(";",g);if(a<0)a=e.length;return c(e.substring(g,a))},remove:function(a){var b=e.get(a);d.cookie=g(a,"",{expires:"Thu, 01-Jan-1970 00:00:01 GMT"});
-return b},keys:function(){var a=d.cookie.split("; "),b,e,f=[];for(b=0;b<a.length;b++)e=a[b].split("="),f.push(c(e[0]));return f},all:function(){var a=d.cookie.split("; "),b,e,f=[];for(b=0;b<a.length;b++)e=a[b].split("="),f.push([c(e[0]),c(e[1])]);return f},version:"0.2.1",enabled:!1};e.enabled=function(){var a=new Date,a=a.toGMTString();this.set("__EC_TEST__",a);return this.enabled=this.remove("__EC_TEST__")==a}.call(e);return e}();m=function(){};g=function(a){return"PS"+a.replace(/_/g,"__").replace(/ /g,
-"_s")};C={search_order:"gears,localstorage,whatwg_db,globalstorage,flash,ie,cookie".split(","),name_re:/^[a-z][a-z0-9_ -]+$/i,methods:"init,get,set,remove,load,save".split(","),sql:{version:"1",create:"CREATE TABLE IF NOT EXISTS persist_data (k TEXT UNIQUE NOT NULL PRIMARY KEY, v TEXT NOT NULL)",get:"SELECT v FROM persist_data WHERE k = ?",set:"INSERT INTO persist_data(k, v) VALUES (?, ?)",remove:"DELETE FROM persist_data WHERE k = ?"},flash:{div_id:"_persist_flash_wrap",id:"_persist_flash",path:"persist.swf",
-size:{w:1,h:1},args:{autostart:!0}}};h={gears:{size:-1,test:function(){return window.google&&window.google.gears?!0:!1},methods:{transaction:function(a){var b=this.db;b.execute("BEGIN").close();a.call(this,b);b.execute("COMMIT").close()},init:function(){var a;a=this.db=google.gears.factory.create("beta.database");a.open(g(this.name));a.execute(C.sql.create).close()},get:function(a,b,c){var d,e=C.sql.get;b&&this.transaction(function(f){d=f.execute(e,[a]);d.isValidRow()?b.call(c||this,!0,d.field(0)):
-b.call(c||this,!1,null);d.close()})},set:function(a,b,c,d){var e=C.sql.remove,f=C.sql.set;this.transaction(function(g){g.execute(e,[a]).close();g.execute(f,[a,b]).close();c&&c.call(d||this,!0,b)})},remove:function(a,b,c){var d=C.sql.get;sql=C.sql.remove;this.transaction(function(e){b?(r=e.execute(d,[a]),r.isValidRow()?(val=r.field(0),e.execute(sql,[a]).close(),b.call(c||this,!0,val)):b.call(c||this,!1,null),r.close()):e.execute(sql,[a]).close()})}}},whatwg_db:{size:204800,test:function(){return!window.openDatabase?
-!1:!window.openDatabase("PersistJS Test",C.sql.version,"Persistent database test.",h.whatwg_db.size)?!1:!0},methods:{transaction:function(a){if(!this.db_created){var b=C.sql.create;this.db.transaction(function(a){a.executeSql(b,[],function(){this.db_created=!0})},m)}this.db.transaction(a)},init:function(){this.db=openDatabase(this.name,C.sql.version,this.o.about||"Persistent storage for "+this.name,this.o.size||h.whatwg_db.size)},get:function(a,b,c){var d=C.sql.get;b&&(c=c||this,this.transaction(function(e){e.executeSql(d,
-[a],function(a,d){d.rows.length>0?b.call(c,!0,d.rows.item(0).v):b.call(c,!1,null)})}))},set:function(a,b,c,d){var e=C.sql.remove,f=C.sql.set;this.transaction(function(g){g.executeSql(e,[a],function(){g.executeSql(f,[a,b],function(){c&&c.call(d||this,!0,b)})})});return b},remove:function(a,b,c){var d=C.sql.get;sql=C.sql.remove;this.transaction(function(e){b?e.executeSql(d,[a],function(d,e){if(e.rows.length>0){var f=e.rows.item(0).v;d.executeSql(sql,[a],function(){b.call(c||this,!0,f)})}else b.call(c||
-this,!1,null)}):e.executeSql(sql,[a])})}}},globalstorage:{size:5242880,test:function(){return window.globalStorage?!0:!1},methods:{key:function(a){return g(this.name)+g(a)},init:function(){this.store=globalStorage[this.o.domain]},get:function(a,b,c){a=this.key(a);b&&b.call(c||this,!0,this.store.getItem(a))},set:function(a,b,c,d){a=this.key(a);this.store.setItem(a,b);c&&c.call(d||this,!0,b)},remove:function(a,b,c){var d,a=this.key(a);d=this.store[a];this.store.removeItem(a);b&&b.call(c||this,d!==null,
-d)}}},localstorage:{size:-1,test:function(){return window.localStorage?!0:!1},methods:{key:function(a){return g(this.name)+g(a)},init:function(){this.store=localStorage},get:function(a,b,c){a=this.key(a);b&&b.call(c||this,!0,this.store.getItem(a))},set:function(a,b,c,d){a=this.key(a);this.store.setItem(a,b);c&&c.call(d||this,!0,b)},remove:function(a,b,c){var d,a=this.key(a);d=this.getItem(a);this.store.removeItem(a);b&&b.call(c||this,d!==null,d)}}},ie:{prefix:"_persist_data-",size:65536,test:function(){return window.ActiveXObject?
-!0:!1},make_userdata:function(a){var b=document.createElement("div");b.id=a;b.style.display="none";b.addBehavior("#default#userData");document.body.appendChild(b);return b},methods:{init:function(){var a=h.ie.prefix+g(this.name);this.el=h.ie.make_userdata(a);this.o.defer&&this.load()},get:function(a,b,c){a=g(a);this.o.defer||this.load();a=this.el.getAttribute(a);b&&b.call(c||this,a?!0:!1,a)},set:function(a,b,c,d){a=g(a);this.el.setAttribute(a,b);this.o.defer||this.save();c&&c.call(d||this,!0,b)},
-load:function(){this.el.load(g(this.name))},save:function(){this.el.save(g(this.name))}}},cookie:{delim:":",size:4E3,test:function(){return f.Cookie.enabled?!0:!1},methods:{key:function(a){return this.name+h.cookie.delim+a},get:function(a,b,c,d){a=this.key(a);b=j.get(a);c&&c.call(d||this,b!=null,b)},set:function(a,b,c,d){a=this.key(a);j.set(a,b,this.o);c&&c.call(d||this,!0,b)},remove:function(a,b,c,d){a=this.key(a);b=j.remove(a);c&&c.call(d||this,b!=null,b)}}},flash:{test:function(){return!window.SWFObject||
-!deconcept||!deconcept.SWFObjectUtil?!1:deconcept.SWFObjectUtil.getPlayerVersion().major>=8?!0:!1},methods:{init:function(){if(!h.flash.el){var a,b,c,d=C.flash;c=document.createElement("div");c.id=d.div_id;document.body.appendChild(c);a=new SWFObject(this.o.swf_path||d.path,d.id,d.size.w,d.size.h,"8");for(b in d.args)a.addVariable(b,d.args[b]);a.write(c);h.flash.el=document.getElementById(d.id)}this.el=h.flash.el},get:function(a,b,c){a=g(a);a=this.el.get(this.name,a);b&&b.call(c||this,a!==null,a)},
-set:function(a,b,c,d){a=g(a);this.el.set(this.name,a,b);c&&c.call(d||this,!0,b)},remove:function(a,b,c){a=g(a);a=this.el.remove(this.name,a);b&&b.call(c||this,!0,a)}}}};k=function(){var a,b,c,d;c=C.methods;var e=C.search_order;for(a=0,b=c.length;a<b;a++)f.Store.prototype[c[a]]=m;f.type=null;f.size=-1;for(a=0,b=e.length;!f.type&&a<b;a++)if(c=h[e[a]],c.test())for(d in f.type=e[a],f.size=c.size,c.methods)f.Store.prototype[d]=c.methods[d];f._init=!0};f={VERSION:"0.1.0",type:null,size:0,add:function(a){h[a.id]=
-a;C.search_order=[a.id].concat(C.search_order);k()},remove:function(a){var b=C.search_order.indexOf(a);b<0||(C.search_order.splice(b,1),delete h[a],k())},Cookie:j,Store:function(a,b){if(!C.name_re.exec(a))throw Error("Invalid name");if(!f.type)throw Error("No suitable storage found");b=b||{};this.name=a;b.domain=b.domain||location.hostname||"localhost.localdomain";this.o=b;b.expires=b.expires||730;b.path=b.path||"/";this.init()}};k();return f}();
-`
 
 ###
 lscache library
 ###
+lscache=null
 `
-var lscache=function(){var e;try{e=!!localStorage.getItem}catch(k){e=false}var h=window.JSON!=null;return{set:function(a,b,g){if(e){if(typeof b!="string"){if(!h)return;try{b=JSON.stringify(b)}catch(l){return}}try{localStorage.setItem(a,b)}catch(i){if(i.name==="QUOTA_EXCEEDED_ERR"||i.name=="NS_ERROR_DOM_QUOTA_REACHED"){for(var d,f=[],c=0;c<localStorage.length;c++)if(d=localStorage.key(c),d.indexOf("-cacheexpiration")>-1){var j=d.split("-cacheexpiration")[0];f.push({key:j,expiration:parseInt(localStorage[d],
+lscache=function(){var e;try{e=!!localStorage.getItem}catch(k){e=false}var h=window.JSON!=null;return{set:function(a,b,g){if(e){if(typeof b!="string"){if(!h)return;try{b=JSON.stringify(b)}catch(l){return}}try{localStorage.setItem(a,b)}catch(i){if(i.name==="QUOTA_EXCEEDED_ERR"||i.name=="NS_ERROR_DOM_QUOTA_REACHED"){for(var d,f=[],c=0;c<localStorage.length;c++)if(d=localStorage.key(c),d.indexOf("-cacheexpiration")>-1){var j=d.split("-cacheexpiration")[0];f.push({key:j,expiration:parseInt(localStorage[d],
 10)})}f.sort(function(a,b){return a.expiration-b.expiration});c=0;for(d=Math.min(30,f.length);c<d;c++)localStorage.removeItem(f[c].key),localStorage.removeItem(f[c].key+"-cacheexpiration");localStorage.setItem(a,b)}else return}g?localStorage.setItem(a+"-cacheexpiration",Math.floor((new Date).getTime()/6E4)+g):localStorage.removeItem(a+"-cacheexpiration")}},get:function(a){function b(a){if(h)try{return JSON.parse(localStorage.getItem(a))}catch(b){return localStorage.getItem(a)}else return localStorage.getItem(a)}
 if(!e)return null;if(localStorage.getItem(a+"-cacheexpiration")){var g=parseInt(localStorage.getItem(a+"-cacheexpiration"),10);if(Math.floor((new Date).getTime()/6E4)>=g)localStorage.removeItem(a),localStorage.removeItem(a+"-cacheexpiration");else return b(a)}else if(localStorage.getItem(a))return b(a);return null},remove:function(a){if(!e)return null;localStorage.removeItem(a);localStorage.removeItem(a+"-cacheexpiration")}}}();
 `
