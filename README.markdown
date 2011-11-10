@@ -1,6 +1,6 @@
 Inject: Dependency Management Got Awesome
 ===
-**Inject** (MIT License) is a revolutionary way to manage your dependencies in a *Library Agnostic* way. Some of its major features include:
+**Inject** (Apache Software License 2.0) is a revolutionary way to manage your dependencies in a *Library Agnostic* way. Some of its major features include:
 
 Latest Stable: 0.1.0<br>
 master: 0.2.0 (dev)
@@ -101,12 +101,13 @@ When you add the XD config, you'll use the same paths you used in #1 above
 require.setCrossDomain("http://static.example.com/path/to/relay.html", "http://example.com/local/dir/relay.html");
 ```
 
-You can then carry on with your injecting. To support the cross domain, we use `window.postMessage` in the browsers that support it, and fall back to fragment transports with window.resize monitoring. To make that happen, we use [Porthole](http://ternarylabs.github.com/porthole/) by the awesome Ternary Labs folks (also MIT License).
+You can then carry on with your injecting. To support the cross domain, we use `window.postMessage` in the browsers that support it, and fall back to fragment transports with window.resize monitoring. To make that happen, we use [Porthole](http://ternarylabs.github.com/porthole/) by the awesome Ternary Labs folks (MIT License).
 
 Also Starring
 ===
 * Porthole: Cross Domain Communication
 * PersistJS: LocalStorage and More
+* lscache: LocalStorage
 * JSON: Stringy Object Deliciousness
 * Google Closure Compiler
 
