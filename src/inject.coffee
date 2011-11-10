@@ -384,7 +384,7 @@ onModuleLoad = (txId, module, path, text) ->
                          .replace(/__INJECT_NS__/g, namespace)
                          .replace(/__POINTCUT_BEFORE__/g, cutsStr.before)
   footer = commonJSFooter.replace(/__POINTCUT_AFTER__/g, cutsStr.after)
-  runCmd = "#{header}\n#{text}\n#{footer}"
+  runCmd = "#{header}\n#{text}\n#{footer}\n//@ sourceURL=#{path}"
   
   # find all require statements
   requires = []
