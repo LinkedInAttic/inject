@@ -630,3 +630,12 @@ load:function(){this.el.load(g(this.name))},save:function(){this.el.save(g(this.
 set:function(a,b,c,d){a=g(a);this.el.set(this.name,a,b);c&&c.call(d||this,!0,b)},remove:function(a,b,c){a=g(a);a=this.el.remove(this.name,a);b&&b.call(c||this,!0,a)}}}};k=function(){var a,b,c,d;c=C.methods;var e=C.search_order;for(a=0,b=c.length;a<b;a++)f.Store.prototype[c[a]]=m;f.type=null;f.size=-1;for(a=0,b=e.length;!f.type&&a<b;a++)if(c=h[e[a]],c.test())for(d in f.type=e[a],f.size=c.size,c.methods)f.Store.prototype[d]=c.methods[d];f._init=!0};f={VERSION:"0.1.0",type:null,size:0,add:function(a){h[a.id]=
 a;C.search_order=[a.id].concat(C.search_order);k()},remove:function(a){var b=C.search_order.indexOf(a);b<0||(C.search_order.splice(b,1),delete h[a],k())},Cookie:j,Store:function(a,b){if(!C.name_re.exec(a))throw Error("Invalid name");if(!f.type)throw Error("No suitable storage found");b=b||{};this.name=a;b.domain=b.domain||location.hostname||"localhost.localdomain";this.o=b;b.expires=b.expires||730;b.path=b.path||"/";this.init()}};k();return f}();
 `
+
+###
+lscache library
+###
+`
+var lscache=function(){var e;try{e=!!localStorage.getItem}catch(k){e=false}var h=window.JSON!=null;return{set:function(a,b,g){if(e){if(typeof b!="string"){if(!h)return;try{b=JSON.stringify(b)}catch(l){return}}try{localStorage.setItem(a,b)}catch(i){if(i.name==="QUOTA_EXCEEDED_ERR"||i.name=="NS_ERROR_DOM_QUOTA_REACHED"){for(var d,f=[],c=0;c<localStorage.length;c++)if(d=localStorage.key(c),d.indexOf("-cacheexpiration")>-1){var j=d.split("-cacheexpiration")[0];f.push({key:j,expiration:parseInt(localStorage[d],
+10)})}f.sort(function(a,b){return a.expiration-b.expiration});c=0;for(d=Math.min(30,f.length);c<d;c++)localStorage.removeItem(f[c].key),localStorage.removeItem(f[c].key+"-cacheexpiration");localStorage.setItem(a,b)}else return}g?localStorage.setItem(a+"-cacheexpiration",Math.floor((new Date).getTime()/6E4)+g):localStorage.removeItem(a+"-cacheexpiration")}},get:function(a){function b(a){if(h)try{return JSON.parse(localStorage.getItem(a))}catch(b){return localStorage.getItem(a)}else return localStorage.getItem(a)}
+if(!e)return null;if(localStorage.getItem(a+"-cacheexpiration")){var g=parseInt(localStorage.getItem(a+"-cacheexpiration"),10);if(Math.floor((new Date).getTime()/6E4)>=g)localStorage.removeItem(a),localStorage.removeItem(a+"-cacheexpiration");else return b(a)}else if(localStorage.getItem(a))return b(a);return null},remove:function(a){if(!e)return null;localStorage.removeItem(a);localStorage.removeItem(a+"-cacheexpiration")}}}();
+`

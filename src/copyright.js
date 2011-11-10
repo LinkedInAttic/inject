@@ -1,5 +1,5 @@
 /*
 Library: Inject
 Homepage: https://github.com/jakobo/inject
-License: MIT License
+License: Apache 2.0 License
 */
