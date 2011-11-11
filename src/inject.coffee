@@ -46,7 +46,7 @@ xDomainRpc = null                   # a cross domain RPC object (Porthole)
 fileStorageToken = "FILEDB"         # a storagetoken identifier we use (lscache)
 fileStore = "Inject FileStorage"    # file store to use
 namespace = "Inject"                # the namespace for inject() that is publicly reachable
-fileExpiration = 86400              # the default time (in seconds) to cache a file for (one day)
+fileExpiration = 1440              # the default time (in minutes lscache) to cache a file for (one day)
 counter = 0                         # a counter used for transaction IDs
 loadQueue = []                      # when making iframe calls, there's a queue that can stack up while waiting on everything to load
 userModules = {}                    # any mappings for module => handling defined by the user
@@ -129,22 +129,13 @@ saveModule = (module, exports) ->
   ###
   if moduleRegistry[module] then return
   moduleRegistry[module] = exports  
-  
-isExpired = (path) ->
-  ###
-  ## isExpired(mpath) ##
-  _internal_ test if a cached file is expired, if it is, remove it from the cache
-  ###
-  if fileRegistry[path]?.expires > (new Date()).getTime() then return false
-  if fileRegistry[path]? then fileRegistry[path] = {}
-  return true
 
 isCached = (path) ->
   ###
   ## isCached(mpath) ##
-  _internal_ test if a file is in the cache and valid (not expired)
+  _internal_ test if a file is in the cache validity has been moved to lscache
   ###
-  return fileRegistry? and fileRegistry[path]? and fileRegistry[path].content and !isExpired(path)
+  return fileRegistry? and fileRegistry[path]?
 
 getFile = (path, cb) ->
   ###
@@ -152,28 +143,27 @@ getFile = (path, cb) ->
   _internal_ Get a file by its path. Asynchronously calls its callback.
   Uses LocalStorage or UserData if available
   ###
-  token = "#{fileStorageToken}#{schemaVersion}"
+  token = "#{fileStorageToken}#{schemaVersion}#{path}"
   
-
   if !fileRegistry
+    fileRegistry = {}
+
+  if fileRegistry[path] and fileRegistry[path].length
+    # the file registry object exists, so we have loaded the content
+    # return the content with the cb set to true
+    return cb(true, fileRegistry[path])
+  else
     # With no file registry, attempt to load from local storage
     # if the token exists, parse it. If the path is cached, then use the cached item
     # otherwise, mark the item as false
     # if there is nothing in cache, create the fileRegistry object
-    file = lscache.get token
+    file = lscache.get(token)
     if file and typeof(file) is "string" and file.length
-      fileRegistry = JSON.parse(file)
-      if isCached(path) then return cb(true, fileRegistry[path].content)
-      else return cb(false,null)
+      fileRegistry[path] = file
+      return cb(true, fileRegistry[path])
     else
-      fileRegistry = {}
       return cb(false, null)
-  else
-    # the file registry object exists, so we have loaded the content
-    # if the path is cached, use the cached value, otherwise false
-    if isCached(path) then return cb(true, fileRegistry[path].content)
-    else return cb(false, null)
-
+  
     
 saveFile = (path, file) ->
   ###
@@ -181,22 +171,22 @@ saveFile = (path, file) ->
   _internal_ Save a file for resource `path` into LocalStorage or UserData
   Also updates the internal fileRegistry
   ###
-  token = "#{fileStorageToken}#{schemaVersion}"
+  token = "#{fileStorageToken}#{schemaVersion}#{path}"
   
   if isCached(path) then return
-  fileRegistry[path] =
-    content: file
-    expires: (config.fileExpiration * 1000) + (new Date()).getTime()
-  lscache.set token, JSON.stringify(fileRegistry)
+  fileRegistry[path] = file
+  # using minutes convention because lscache  does the expire conversion in added minutes
+  lscache.set(token, file, config.fileExpiration)
   
 clearFileRegistry = (version = schemaVersion) ->
   ###
   ## clearFileRegistry(version = schemaVersion) ##
   _internal_ Clears the internal file registry at `version`
+  clearing all local storage keys that relate to the fileStorageToken and version
   ###
   token = "#{fileStorageToken}#{version}"
   
-  lscache.set(token, "")
+  lscache.remove(lkey) for lkey,file of localStorage when lkey.indexOf(token) isnt -1 
   if version == schemaVersion then fileRegistry = {}
 
 createTxId = () ->
