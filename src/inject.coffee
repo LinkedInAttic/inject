@@ -570,7 +570,16 @@ require.run = (moduleId) ->
 # set an alternate interface in Inject in case things get clobbered
 context.require = require
 context.Inject = {
-  require: require
+  require: require,
+  debug: {
+    fileRegistry: fileRegistry,
+    loadQueue: loadQueue,
+    userModules: userModules,
+    moduleRegistry: moduleRegistry,
+    modulePathRegistry: modulePathRegistry,
+    callbackRegistry: callbackRegistry,
+    txnRegistry: txnRegistry
+  }  
 }
 
 ###
