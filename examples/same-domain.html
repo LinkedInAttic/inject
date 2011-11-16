@@ -7,7 +7,7 @@
 <h1>Local Domain</h1>
 <p>This pulls from the local domain using XMLHttpRequest</p>
 
-<p><a href="default.html">Same Domain</a> | <a href="cross-domain.html">Alternate Domain</a> | <a href="pointcuts.html">Pointcuts</a></p>
+<p><a href="index.html">Back to examples</a></p>
 
 <p id="output-foo"></p>
 <p id="output-bar"></p>
@@ -24,7 +24,7 @@ require.ensure(["foo", "bar"], function(require) {
   var foo = require("foo"),
       bar = require("bar");
   document.getElementById("output-foo").innerHTML = foo.sampleString;
-  
+
   var b = new bar.Bar();
   document.getElementById("output-bar").innerHTML = b.baz();
 });

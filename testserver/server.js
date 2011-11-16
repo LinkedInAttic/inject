@@ -25,4 +25,4 @@ function server(request, response) {
 http.createServer(server).listen(4000);
 http.createServer(server).listen(4001);
 sys.log("inject() testserver running on ports 4000 and 4001");
-sys.log("http://localhost:4000/default.html");
+sys.log("http://localhost:4000/index.html");
