@@ -17,10 +17,16 @@ Some of the awesome roadmap things coming soon(ish)
 
 Let's Start With Examples!
 ===
-* XHR Over Local Domain [0.1.0](http://jakobo.github.com/inject/example/0.1.0/sample.html), [0.2.0](http://jakobo.github.com/inject/example/0.2.0/sample.html)
-* XHR to CDN via window.postMessage [0.1.0](http://jakobo.github.com/inject/example/0.1.0/sample2.html), [0.2.0](http://jakobo.github.com/inject/example/0.2.0/sample2.html)
-* Pointcuts: jQuery added as a module [0.1.0](http://jakobo.github.com/inject/example/0.1.0/sample3.html), [0.2.0](http://jakobo.github.com/inject/example/0.2.0/sample.html)
+We have a nodejs test server for both the examples and development. Install node, npm, & coffeescript, then:
 
+```
+cake build
+cd testserver
+sudo npm install
+node server.js
+```
+
+You can visit http://localhost:4000/default.html to validate everything. We use alternate ports to create the cross domain environment instead of a CDN, but the effect is the same.
 
 Getting Started
 ===
@@ -107,16 +113,3 @@ Also Starring
 * Porthole: Cross Domain Communication
 * lscache: LocalStorage
 * Google Closure Compiler
-
-Test Server
-===
-We also have a nodejs test server if you want to avoid the gh-pages stuff, or simply validate changes locally in an easy environment. Install node, coffeescript, etc, then:
-
-```
-cake build
-cd testserver
-sudo npm install
-node server.js
-```
-
-You can visit http://localhost:4000/default.html to validate everything. We use alternate ports to create the cross domain environment instead of a CDN.
