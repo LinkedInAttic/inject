@@ -10,12 +10,6 @@ Porthole
 Copyright (c) 2011 Ternary Labs. All Rights Reserved.
 MIT License (see below)
 
-Persist (c) 2008 Paul Duncan (paul@pablotron.org)
-MIT License (see below)
-
-JSON
-Public Domain
-
 APACHE SOFTWARE LICENSE 2.0
 ===
 Licensed under the Apache License, Version 2.0 (the "License");
