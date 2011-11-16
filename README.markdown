@@ -8,13 +8,12 @@ master: 0.2.0 (dev)
 * CommonJS Compliance in the Browser (exports.*)
   * View the full [CommonJS Support Matrix](https://github.com/Jakobo/inject/wiki/CommonJS-Support)
 * Cross domain retrieval of files (via Porthole)
-* localStorage (load a module once!) w IE 7 support
+* localStorage (load a module once)
 * Frustratingly Simple
 
 Some of the awesome roadmap things coming soon(ish)
 
 * versioning (once we re-expose modules.* interface most likely)
-* localStorage space management (time based + config? LRU? who knows?!)
 
 Let's Start With Examples!
 ===
@@ -40,7 +39,7 @@ You can then just start injecting modules and off you go!
 // in some file later on
 require("moduleA")
 // or...
-require.ensure("moduleA", "moduleB", "moduleC/SomePart", function(require) {
+require.ensure(["moduleA", "moduleB", "moduleC/SomePart"], function(require, exports, module) {
   // fired when all modules are loaded
   var A = require("moduleA");
 });
@@ -74,10 +73,10 @@ By default, inject tries to do the best it can, but in complex environments, tha
 
 Expiring Content
 ===
-By default, inject() will cache things for one day (86400 seconds). You can change the default behavior through the config object:
+By default, inject() will cache things for one day (1440 minutes). You can change the default behavior through the config object:
 
 ```
-require.setExpires(604800);
+require.setExpires(10080);
 // files now last for one week
 ```
 
@@ -106,14 +105,9 @@ You can then carry on with your injecting. To support the cross domain, we use `
 Also Starring
 ===
 * Porthole: Cross Domain Communication
-* PersistJS: LocalStorage and More
 * lscache: LocalStorage
 * JSON: Stringy Object Deliciousness
 * Google Closure Compiler
-
-Live Awesomeness
-===
-These pages are viewable in the [gh-pages branch](https://github.com/Jakobo/inject/tree/gh-pages). CoralCDN provides the second domain which is a might-handy CDN simulation given it's actually a CDN for the alternate domain.
 
 Test Server
 ===
