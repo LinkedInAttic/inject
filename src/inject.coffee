@@ -88,6 +88,13 @@ with (window) {
     module.id = "__MODULE_ID__";
     module.uri = "__MODULE_URI__";
     module.exports = exports;
+    module.setExports = function( xobj) {
+      if(typeof(module.exports) === "function"){
+        throw new Error("Module Exports has already been defined");
+      }
+      module.exports = xobj;
+      return module.exports;
+    }
     exe = function(module, exports, require) {
       __POINTCUT_BEFORE__
 '''
