@@ -106,7 +106,6 @@ Also Starring
 ===
 * Porthole: Cross Domain Communication
 * lscache: LocalStorage
-* JSON: Stringy Object Deliciousness
 * Google Closure Compiler
 
 Test Server
