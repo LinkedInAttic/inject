@@ -566,11 +566,61 @@ require.run = (moduleId) ->
   ###
   foo = "bar"
 
+define = (moduleId, deps, callback) ->
+  ###
+  ## define(moduleId, deps, callback) ##
+  Define a module with moduleId, run require.ensure to make sure all dependency modules have been loaded, and then
+  apply the callback function with an array of dependency module objects, add the callback return and moduleId into
+  moduleRegistry list.
+  ###
+  # Allow for anonymous functions, adjust args appropriately
+  if typeof moduleId isnt 'string'
+    callback = deps
+    deps = moduleId
+    moduleId = null
+
+  # This module have no dependencies
+  if Object.prototype.toString.call(deps) isnt '[object Array]'
+    callback = deps
+    deps = []
+
+  # Strip out 'require', 'exports', 'module' in deps array for require.ensure
+  strippedDeps = []
+  strippedDeps.push dep for dep in deps when dep isnt 'exports' and dep isnt 'require' and dep isnt 'module'
+
+  require.ensure(strippedDeps, (require, module, exports) ->
+    # already defined: require, module, exports
+    # create an array with all dependency modules object
+    args = []
+    for dep in deps
+      switch dep
+        when "require" then args.push(require)
+        when "exports" then args.push(exports)
+        when "module" then args.push(module)
+        else args.push(require(dep))
+
+    # if callback is an object, save it to exports
+    # if callback is a function, apply it with args, save the return object to exports
+    if typeof callback is 'function'
+      callback.apply(context, args);
+    if typeof callback is 'object'
+      exports = callback
+
+    # save moduleId, exports into module list
+    saveModule(moduleId, exports);
+  )
+
+# To allow a clear indicator that a global define function conforms to the AMD API
+define.amd = {};
+
 # set context.require to the main inject object
+# set context.define to the main inject object
 # set an alternate interface in Inject in case things get clobbered
 context.require = require
+context.define = define
 context.Inject = {
   require: require,
+  define: define,
   debug: {
     fileRegistry: fileRegistry,
     loadQueue: loadQueue,
