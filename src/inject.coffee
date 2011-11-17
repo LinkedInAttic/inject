@@ -88,9 +88,11 @@ with (window) {
     module.id = "__MODULE_ID__";
     module.uri = "__MODULE_URI__";
     module.exports = exports;
-    module.setExports = function( xobj) {
-      if(typeof(module.exports) === "function"){
-        throw new Error("Module Exports has already been defined");
+    module.setExports = function(xobj) {
+      for (var name in module.exports) {
+        if (module.exports.hasOwnProperty(name)) {
+          throw new Error("module.setExports() failed: Module Exports has already been defined");
+        }
       }
       module.exports = xobj;
       return module.exports;
