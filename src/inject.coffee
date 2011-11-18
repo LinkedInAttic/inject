@@ -566,11 +566,10 @@ require.manifest = (manifest) ->
 
 require.run = (moduleId) ->
   ###
-  ## require.run(moduleId) ##
+  ## TODO require.run(moduleId) ##
   Execute the specified moduleId. This runs an ensure() to make sure the module has been loaded, and then
   execute it.
   ###
-  foo = "bar"
 
 define = (moduleId, deps, callback) ->
   ###
