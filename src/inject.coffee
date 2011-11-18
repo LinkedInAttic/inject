@@ -312,7 +312,7 @@ loadModules = (modList, cb) ->
   ###
   
   # shortcut. If modList is undefined, then call the callback
-  if modList.length is 0 then cb.apply(context, [])
+  if modList.length is 0 then return cb.apply(context, [])
   
   # for each item in the mod list
   # resolve it to a full url for file access
