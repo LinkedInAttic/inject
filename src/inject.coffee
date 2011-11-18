@@ -409,11 +409,12 @@ checkComplete = (txId) ->
   done = true
   cb = callbackRegistry[txId]
   modules = []
-  for module in txnRegistry[txId]
-    modl = getModule(module)
-    if modl is false then done = false else modules.push(modl)
-    if !done then break
-  if done
+  if txnRegistry[txId]
+    for module in txnRegistry[txId]
+      modl = getModule(module)
+      if modl is false then done = false else modules.push(modl)
+      if !done then break
+  if done and cb
     delete callbackRegistry[txId]
     delete txnRegistry[txId]
     cb.apply(context, modules)
