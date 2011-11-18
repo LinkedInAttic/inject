@@ -2,11 +2,10 @@
 <html>
 <head>
   <script type="text/javascript" src="inject.js"></script>
-  <script type="text/javascript" src="deps/jquery-1.6.4.min.js"></script>
+  <script type="text/javascript" src="deps/jquery-1.7.js"></script>
   <script type="text/javascript">
     require.setModuleRoot("http://localhost:4000/deps");
   </script>
-  <script type="text/javascript" src="./deps/qux.amd.js"></script>
 </head>
 <body>
 <h1>Asynchronous Module Definition</h1>
@@ -23,13 +22,13 @@ document.getElementById("clearit").onclick = function() {
   require.clearCache();
 };
 
-$(document).ready(function() {
-  require.ensure(["qux.amd"], function(require){
-    var qux = require('qux.amd').qux;
-  
-    $("#output-sampleString").html(new qux().sampleString);
-    $("#output-Qux").html(new qux().Qux());
-  });
+// intentionally destroy $
+jQuery.noConflict;
+$ = null;
+
+require.ensure([], function() {
+  var $ = require("jquery");
+  $("#output-sampleString").html("jQuery was loaded using a define() native jQuery 1.7");
 });
 </script>
 </body>
