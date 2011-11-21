@@ -64,7 +64,7 @@ iframeName = "injectProxy"          # the name for the iframe proxy created (Por
 requireRegex = ///                  # a regex for capturing the require() statements inside of included code
   require[\s]*\([\s]*                 # followed by require, a whitespace character 0+, and an opening ( then more whitespace
   (?:"|')                             # followed by a quote
-  ([\w\/\.\:]+?)                      # (1) capture word characters, forward slashes, dots, and colons (at least one)
+  ([\w/\.\:]+?)                       # (1) capture word characters, forward slashes, dots, and colons (at least one)
   (?:'|")                             # followed by a quote
   [\s]*\)                             # followed by whitespace, and then a closing ) that ends the require() call
   ///gm
