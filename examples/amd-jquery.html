@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <script type="text/javascript" src="inject.js"></script>
+  <script type="text/javascript" src="deps/jquery-1.7.js"></script>
+  <script type="text/javascript">
+    require.setModuleRoot("http://localhost:4000/deps");
+  </script>
+</head>
+<body>
+<h1>Asynchronous Module Definition</h1>
+<p>The Asynchronous Module Definition (AMD) API specifies a mechanism for defining modules such that the module and its dependencies can be asynchronously loaded.</p>
+
+<p><a href="index.html">Back to examples</a></p>
+
+<p id="output-jQueryLoaded"></p>
+<button id="clearit">Clear Cache</button>
+
+<script type="text/javascript">
+document.getElementById("clearit").onclick = function() {
+  require.clearCache();
+};
+
+// intentionally destroy $
+jQuery.noConflict;
+$ = null;
+
+require.ensure([], function() {
+  var $ = require("jquery");
+  $("#output-jQueryLoaded").html("jQuery was loaded using a define() native jQuery 1.7");
+});
+</script>
+</body>
+</html>
