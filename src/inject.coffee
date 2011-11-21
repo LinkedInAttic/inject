@@ -320,6 +320,9 @@ loadModules = (modList, cb) ->
   _internal_ load a collection of modules in modList, and once they have all loaded, execute the callback cb
   ###
   
+  # shortcut. If modList is undefined, then call the callback
+  if modList.length is 0 then return cb.apply(context, [])
+  
   # for each item in the mod list
   # resolve it to a full url for file access
   # if it has been loaded, flag done & go on
@@ -415,11 +418,15 @@ checkComplete = (txId) ->
   done = true
   cb = callbackRegistry[txId]
   modules = []
-  for module in txnRegistry[txId]
-    modl = getModule(module)
-    if modl is false then done = false else modules.push(modl)
-    if !done then break
-  if done then cb.call(context, modules)
+  if txnRegistry[txId]
+    for module in txnRegistry[txId]
+      modl = getModule(module)
+      if modl is false then done = false else modules.push(modl)
+      if !done then break
+  if done and cb
+    delete callbackRegistry[txId]
+    delete txnRegistry[txId]
+    cb.apply(context, modules)
 
 sendToXhr = (txId, module, path, cb) ->
   ###
@@ -569,17 +576,71 @@ require.manifest = (manifest) ->
 
 require.run = (moduleId) ->
   ###
-  ## require.run(moduleId) ##
+  ## TODO require.run(moduleId) ##
   Execute the specified moduleId. This runs an ensure() to make sure the module has been loaded, and then
   execute it.
   ###
-  foo = "bar"
+
+define = (moduleId, deps, callback) ->
+  ###
+  ## define(moduleId, deps, callback) ##
+  Define a module with moduleId, run require.ensure to make sure all dependency modules have been loaded, and then
+  apply the callback function with an array of dependency module objects, add the callback return and moduleId into
+  moduleRegistry list.
+  ###
+  # Allow for anonymous functions, adjust args appropriately
+  if typeof moduleId isnt "string"
+    callback = deps
+    deps = moduleId
+    moduleId = null
+
+  # This module have no dependencies
+  if Object.prototype.toString.call(deps) isnt "[object Array]"
+    callback = deps
+    deps = []
+
+  # Strip out 'require', 'exports', 'module' in deps array for require.ensure
+  strippedDeps = []
+  strippedDeps.push dep for dep in deps when dep isnt "exports" and dep isnt "require" and dep isnt "module"
+
+  require.ensure(strippedDeps, (require, module, exports) ->
+    # already defined: require, module, exports
+    # create an array with all dependency modules object
+    args = []
+    for dep in deps
+      switch dep
+        when "require" then args.push(require)
+        when "exports" then args.push(exports)
+        when "module" then args.push(module)
+        else args.push(require(dep))
+
+    # if callback is an object, save it to exports
+    # if callback is a function, apply it with args, save the return object to exports
+    if typeof callback is 'function'
+      returnValue = callback.apply(context, args);
+      count = 0
+      count++ for own item in module.exports
+      exports = returnValue if count is 0 and typeof(returnValue) isnt "undefined"
+    else if typeof callback is 'object'
+      exports = callback
+
+    # save moduleId, exports into module list
+    # we only save modules with an ID
+    if moduleId then saveModule(moduleId, exports);
+  )
+
+# To allow a clear indicator that a global define function conforms to the AMD API
+define.amd =
+  jQuery: true # jQuery requires explicitly defining inside of define.amd
 
 # set context.require to the main inject object
+# set context.define to the main inject object
 # set an alternate interface in Inject in case things get clobbered
 context.require = require
+context.define = define
 context.Inject = {
   require: require,
+  define: define,
   debug: {
     fileRegistry: fileRegistry,
     loadQueue: loadQueue,
