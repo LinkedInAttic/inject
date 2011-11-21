@@ -589,7 +589,7 @@ define = (moduleId, deps, callback) ->
   moduleRegistry list.
   ###
   # Allow for anonymous functions, adjust args appropriately
-  if typeof moduleId isnt "string"
+  if typeof(moduleId) isnt "string"
     callback = deps
     deps = moduleId
     moduleId = null
@@ -601,7 +601,8 @@ define = (moduleId, deps, callback) ->
 
   # Strip out 'require', 'exports', 'module' in deps array for require.ensure
   strippedDeps = []
-  strippedDeps.push dep for dep in deps when dep isnt "exports" and dep isnt "require" and dep isnt "module"
+  for dep in deps
+    if dep isnt "exports" and dep isnt "require" and dep isnt "module" then strippedDeps.push(dep)
 
   require.ensure(strippedDeps, (require, module, exports) ->
     # already defined: require, module, exports
@@ -616,12 +617,12 @@ define = (moduleId, deps, callback) ->
 
     # if callback is an object, save it to exports
     # if callback is a function, apply it with args, save the return object to exports
-    if typeof callback is 'function'
+    if typeof(callback) is 'function'
       returnValue = callback.apply(context, args);
       count = 0
       count++ for own item in module.exports
       exports = returnValue if count is 0 and typeof(returnValue) isnt "undefined"
-    else if typeof callback is 'object'
+    else if typeof(callback) is 'object'
       exports = callback
 
     # save moduleId, exports into module list
