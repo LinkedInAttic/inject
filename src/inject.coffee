@@ -166,12 +166,15 @@ getFile = (path, cb) ->
     # if the token exists, parse it. If the path is cached, then use the cached item
     # otherwise, mark the item as false
     # if there is nothing in cache, create the fileRegistry object
-    file = lscache.get(token)
-    if file and typeof(file) is "string" and file.length
-      fileRegistry[path] = file
-      return cb(true, fileRegistry[path])
-    else
+    if config.fileExpiration is 0
       return cb(false, null)
+    else
+      file = lscache.get(token)
+      if file and typeof(file) is "string" and file.length
+        fileRegistry[path] = file
+        return cb(true, fileRegistry[path])
+      else
+        return cb(false, null)
   
     
 saveFile = (path, file) ->
