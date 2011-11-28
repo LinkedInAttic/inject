@@ -157,6 +157,9 @@ getFile = (path, cb) ->
   if !fileRegistry
     fileRegistry = {}
 
+  if config.fileExpiration is 0
+    return cb(false, null)
+
   if fileRegistry[path] and fileRegistry[path].length
     # the file registry object exists, so we have loaded the content
     # return the content with the cb set to true
@@ -166,15 +169,13 @@ getFile = (path, cb) ->
     # if the token exists, parse it. If the path is cached, then use the cached item
     # otherwise, mark the item as false
     # if there is nothing in cache, create the fileRegistry object
-    if config.fileExpiration is 0
-      return cb(false, null)
+    
+    file = lscache.get(token)
+    if file and typeof(file) is "string" and file.length
+      fileRegistry[path] = file
+      return cb(true, fileRegistry[path])
     else
-      file = lscache.get(token)
-      if file and typeof(file) is "string" and file.length
-        fileRegistry[path] = file
-        return cb(true, fileRegistry[path])
-      else
-        return cb(false, null)
+      return cb(false, null)
   
     
 saveFile = (path, file) ->
