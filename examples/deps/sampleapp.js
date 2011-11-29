@@ -1,9 +1,9 @@
 function run() {
-  require("bar");
   var $ = require("jquery");
   require("jquery.ui.core");
   require("jquery.ui.widget");
   require("jquery.ui.button");
+  require("bar");
 
   $("a.button").button();
 }

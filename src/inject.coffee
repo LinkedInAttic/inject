@@ -55,6 +55,7 @@ rulesDirty = false                  # a dirty flag for the rules
 sortedRules = []                    # a sorted state for the rules
 moduleRegistry = {}                 # a registry of modules that have been loaded
 modulePathRegistry = {}             # a collection of modules organized by their path information
+executionRegistry = {}              # a registry for execution blocks by moduleName
 callbackRegistry = {}               # a registry of callbacks keyed by Transaction IDs
 txnRegistry = {}                    # a list of modules that were required for a transaction, keyed by Transaction IDs
 fileOnComplete = {}                 # a list of subscribing transactions for a file's onModuleLoad resolution, keyed by Path
@@ -346,7 +347,6 @@ loadModules = (modList, cb) ->
   (paths[module] = normalizePath(module).resolvedPath) for module in modList
   txnRegistry[txId] = 
     list: modList
-    run: {}
   callbackRegistry[txId] = cb
   
   # paths now has everything we need to include
@@ -400,29 +400,36 @@ onModuleLoad = (txId, module, path, text) ->
   # find all require statements
   requires = []
   requires.push(RegExp.$1) while requireRegex.exec(text)
-  
-  # internal method to onModuleLoad, which will eval the contents and save them
-  # will then fire all of the handlers associated w/ the path
 
-  # by this point we have a list of modules we should load in order
-  # because of dependency hell.
-  # [one, two, three]
-  # if two is lagging, we should see
-  # one: runs ok (ready) FINISH
-  # three: sees one ok (ready), sees two is not available (!ready), queues self (!ready)
-  # two: sees one okay (ready), sees self & runs ok (ready), sees three in queue and runs (ready)
+  # internal method to onModuleLoad
+  # this attempts to run the given module after all dependencies have loaded
+  # if a dependency is missing, it puts the resolution into the executionRegistry
+  # under the module name. This allows for alternate asynchronous transactions
+  # to access the runModule step and generate the module. This globally-accessed
+  # registry is necessary to avoid a long-running response in the shallow dependency
+  # resolution jamming everything up.
   runModule = () ->
     ready = true
     execRan = false
     
+    # internal method to runModule
+    # this attempts to  eval the contents and perform the save
+    # it's the final step in module running and has a check to ensure
+    # it can only be ran once in the event of asynchronous pathways
     execStep = () ->
       # abort early if we have ran this once already
       if execRan then return else execRan = true
       
+      # clean up entry in execution registry
+      delete executionRegistry[mod];
+  
+      # attempt to eval() the module
       try
         exports = context.eval(runCmd)
       catch err
         throw err
+      
+      # save result
       saveModule(module, exports)
       saveFile(path, text)
 
@@ -432,30 +439,23 @@ onModuleLoad = (txId, module, path, text) ->
         checkComplete(txn)
     
     # here's the dependency management loop
+    # for each module in the transaction...
+    # ... if it is itself and we're ready, run it
+    # ... if it is itself and we're not ready, queue it
+    # ... if it is not itself and we're ready, try to resolve it ...
+    # ... ... if we can resolve it either in getModule or the executionRegistry, we're good
+    # ... ... otherwise remove the ready state
+    # note: ready = false kills the loop moving onward, as there's no point in resolving
     for mod in txnRegistry[txId].list
       if mod is module
         # if self
-        if ready is true
-          # found ourself and we're in the ready state
-            console.log "found #{mod} as self (#{ready}): exec"
-            execStep()
-        else
-          # found ourself and we're in the !ready state
-          console.log "found #{mod} as self (#{ready}): queue"
-          txnRegistry[txId].run[mod] = execStep
+        if ready is true then execStep() else executionRegistry[mod] = execStep
       else
         # not self
-        if ready is true
-          # still in a ready state, attempt to getModule
-          if getModule(mod) is false
-            # module not available, check run queue
-            if txnRegistry[txId].run[mod]
-              console.log "#{mod} (#{ready}) has exec: run"
-              txnRegistry[txId].run[mod]()
-            else
-              # not in run queue, enter failed state
-              console.log "#{mod} (#{ready}) no exec: ready = false"
-              ready = false
+        if ready is true and getModule(mod) is false
+          # still in ready state, but the dependency doesn't seem to be there
+          # look in the executionRegistry. If there, run it, else remove the ready state
+          if executionRegistry[mod] then executionRegistry[mod]() else ready = false
 
   # load deps if they exist
   if requires.length > 0
