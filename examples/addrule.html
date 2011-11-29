@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <script type="text/javascript" src="inject.js"></script>
+  <script type="text/javascript">
+    require.setModuleRoot("http://localhost:4000/deps");
+    require.addRule(/^jquery$/, {
+      path: "jquery-1.7.js",
+      pointcuts: {
+        after: function() {
+          module.setExports(jQuery.noConflict());
+          delete window["jQuery"];
+        }
+      }
+    });
+    require.addRule(/jquery\.ui/, {
+      path: function(module) {
+        return "jqueryui/"+module+".min.js"
+      },
+      pointcuts: {
+        before: function() {
+          var jQuery = require("jquery");
+        },
+        after: function() {
+          module.setExports(jQuery);
+        }
+      }
+    });
+  </script>
+  <style>
+    .ui-button-text { color: red; }
+  </style>
+</head>
+<body>
+<h1>jQuery UI using addRule()</h1>
+<p>In this example, we're loading jQuery UI on top of jQuery 1.7. The purpose of this is to show how addRule works. We've set up examples for jquery itself and the jquery.ui namespace. For the more complex jQuery UI items, we have added pointcuts to all the applicable modules, ensuring jQuery is available in each UI item's scope.</p>
+
+<p>The button below will turn red once it gets a class of "ui-button-text", caused by the jQuery UI call.</p>
+
+<p>For added impact, we slowed down a jQuery dependency: jquery.ui.widget.min.js to 5 seconds to demonstrate how only the modules that depend on it directly block. You will need to clear your cache to reintroduce the lag for browsers that intelligently cache content.</p>
+
+<p><a href="index.html">Back to examples</a></p>
+
+<p><a href="#" class="button">I turn into a jQuery button</a></p>
+
+<p id="output-foo"></p>
+
+<button id="clearit">Clear Cache</button>
+
+<script type="text/javascript">
+document.getElementById("clearit").onclick = function() {
+  require.clearCache();
+};
+</script>
+
+<script type="text/javascript">
+require.clearCache();
+require.ensure(["sampleapp"], function() {
+  var app = require("sampleapp");
+  app.run();
+});
+</script>
+<script type="text/javascript">
+require.ensure(["foo"], function() {
+  var foo = require("foo")
+  document.getElementById("output-foo").innerHTML = foo.baz;
+});
+</script>
+</body>
+</html>

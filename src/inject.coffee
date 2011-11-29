@@ -50,6 +50,9 @@ fileExpiration = 1440              # the default time (in minutes lscache) to ca
 counter = 0                         # a counter used for transaction IDs
 loadQueue = []                      # when making iframe calls, there's a queue that can stack up while waiting on everything to load
 userModules = {}                    # any mappings for module => handling defined by the user
+rules = []                          # a collection of rules to run
+rulesDirty = false                  # a dirty flag for the rules
+sortedRules = []                    # a sorted state for the rules
 moduleRegistry = {}                 # a registry of modules that have been loaded
 modulePathRegistry = {}             # a collection of modules organized by their path information
 callbackRegistry = {}               # a registry of callbacks keyed by Transaction IDs
@@ -247,12 +250,28 @@ createIframe = () ->
     pieces = event.data.match(responseSlicer)
     onModuleLoad(pieces[1], pieces[2], pieces[3], pieces[4])
 
-getPointcuts = (module) ->
+getPointcuts = (path) ->
   ###
-  ## getPointcuts(module) ##
+  ## getPointcuts(path) ##
   _internal_ get the [pointcuts](http://en.wikipedia.org/wiki/Pointcut) for a module if
   specified
   ###
+  cuts = normalizePath(path).pointcuts
+  beforeCut = [";"]
+  afterCut = [";"]
+  
+  for cut in cuts.before
+    beforeCut.push(cut.toString().match(/.*?\{([\w\W]*)\}/m)[1])
+  for cut in cuts.after
+    afterCut.push(cut.toString().match(/.*?\{([\w\W]*)\}/m)[1])
+  
+  beforeCut.push(";")
+  afterCut.push(";")
+  return {
+    before: beforeCut.join(";\n")
+    after: afterCut.join(";\n")
+  }
+  
   noop = () -> return
   pointcuts =
     before: noop
@@ -271,48 +290,43 @@ normalizePath = (path) ->
   _internal_ normalize the path based on the module collection or any functions
   associated with its identifier
   ###
-  lookup = path
   workingPath = path
+  pointcuts =
+    before: []
+    after: []
   configPath = config.path or ""
   
   # short circuit: already cached
-  if modulePathRegistry[path] then return modulePathRegistry[path]
+  if rulesDirty is false and modulePathRegistry[path] then return modulePathRegistry[path]
   
-  # defined in a user module?
-  if userModules[path]
-    moduleDefinition = userModules[path]
-    
-    # if the definition is a string, use that
-    if typeof(moduleDefinition) is "string"
-      workingPath = moduleDefinition
-    
-    # if the definition is an object and has a path variable
-    if typeof(moduleDefinition) is "object" and moduleDefinition.path
-      # if the path variable is a function, run the function
-      if typeof(moduleDefinition.path) is "function"
-        returnPath = moduleDefinition.path(workingPath)
-        if returnPath isnt false then workingPath = returnPath
-      # id the module definition is a string, use that
-      if typeof(moduleDefinition.path) is "string"
-        workingPath = moduleDefinition.path
+  # check rulesets
+  if rulesDirty
+    rulesDirty = false
+    rules.sort (a, b) ->
+      return b.weight - a.weight
+  for rule in rules
+    # start with workingPath, and begin applying rules
+    isMatch = if typeof(rule.key) is "string" then (rule.key.toLowerCase() is workingPath.toLowerCase()) else rule.key.test(workingPath)
+    if isMatch is false then continue
+    # adjust the path and store any relevant pointcuts
+    workingPath = if typeof(rule.path) is "string" then rule.path else rule.path(workingPath)
+    if rule?.pointcuts?.before then pointcuts.before.push(rule.pointcuts.before)
+    if rule?.pointcuts?.after then pointcuts.after.push(rule.pointcuts.after)
   
-  # function for path resolution
-  if typeof(configPath) is "function"
-    returnPath = configPath(workingPath)
-    if returnPath isnt false then workingPath = returnPath
-
-  # short circuit: fully qualified path
-  if workingPath.indexOf("http") is 0 or workingPath.indexOf("https") is 0
-    modulePathRegistry[lookup] = workingPath
-    return modulePathRegistry[lookup]
-  
-  if workingPath.indexOf("/") isnt 0 and typeof(configPath) is "undefined" then throw new Error("Path must be defined")  
-  if workingPath.indexOf("/") isnt 0 and typeof(configPath) is "string" then workingPath = "#{config.path}#{workingPath}"
+  # apply global rules for all paths
+  if workingPath.indexOf("/") isnt 0
+    if typeof(configPath) is "undefined" then throw new Error("Module Root must be defined")  
+    else if typeof(configPath) is "string" then workingPath = "#{config.path}#{workingPath}"
+    else if typeof(configPath) is "function" then workingPath = configPath(workingPath)
   if !jsSuffix.test(workingPath) then workingPath = "#{workingPath}.js"
-
-  modulePathRegistry[lookup] = workingPath
   
-  return modulePathRegistry[lookup]
+  # with all rules applied, we can store more complex data in modulePathRegistry
+  modulePathRegistry[path] =
+    originalPath: path
+    resolvedPath: workingPath
+    pointcuts: pointcuts
+  
+  return modulePathRegistry[path]
 
 loadModules = (modList, cb) ->
   ###
@@ -329,8 +343,10 @@ loadModules = (modList, cb) ->
   # else, queue the module.
   txId = createTxId()
   paths = {}
-  (paths[module] = normalizePath(module)) for module in modList
-  txnRegistry[txId] = modList
+  (paths[module] = normalizePath(module).resolvedPath) for module in modList
+  txnRegistry[txId] = 
+    list: modList
+    run: {}
   callbackRegistry[txId] = cb
   
   # paths now has everything we need to include
@@ -372,16 +388,13 @@ onModuleLoad = (txId, module, path, text) ->
   # suck up the exports, write to the module collection
   # write the collection to the path as well
   # invoke check for completeness
-  
   cuts = getPointcuts(module)
-  cutsStr = {}
-  (cutsStr[cut] = fn.toString().match(/.*?\{([\w\W]*)\}/m)[1]) for cut, fn of cuts
-  
+    
   header = commonJSHeader.replace(/__MODULE_ID__/g, module)
                          .replace(/__MODULE_URI__/g, path)
                          .replace(/__INJECT_NS__/g, namespace)
-                         .replace(/__POINTCUT_BEFORE__/g, cutsStr.before)
-  footer = commonJSFooter.replace(/__POINTCUT_AFTER__/g, cutsStr.after)
+                         .replace(/__POINTCUT_BEFORE__/g, cuts.before)
+  footer = commonJSFooter.replace(/__POINTCUT_AFTER__/g, cuts.after)
   runCmd = "#{header}\n#{text}\n#{footer}\n//@ sourceURL=#{path}"
   
   # find all require statements
@@ -390,19 +403,61 @@ onModuleLoad = (txId, module, path, text) ->
   
   # internal method to onModuleLoad, which will eval the contents and save them
   # will then fire all of the handlers associated w/ the path
+
+  # by this point we have a list of modules we should load in order
+  # because of dependency hell.
+  # [one, two, three]
+  # if two is lagging, we should see
+  # one: runs ok (ready) FINISH
+  # three: sees one ok (ready), sees two is not available (!ready), queues self (!ready)
+  # two: sees one okay (ready), sees self & runs ok (ready), sees three in queue and runs (ready)
   runModule = () ->
-    try
-      exports = context.eval(runCmd)
-    catch err
-      throw err
-    saveModule(module, exports)
-    saveFile(path, text)
+    ready = true
+    execRan = false
     
-    # fire all oncompletes that may be waiting
-    fileOnComplete[path].loading = false
-    for txn in fileOnComplete[path].txns
-      checkComplete(txn)
-  
+    execStep = () ->
+      # abort early if we have ran this once already
+      if execRan then return else execRan = true
+      
+      try
+        exports = context.eval(runCmd)
+      catch err
+        throw err
+      saveModule(module, exports)
+      saveFile(path, text)
+
+      # fire all oncompletes that may be waiting
+      fileOnComplete[path].loading = false
+      for txn in fileOnComplete[path].txns
+        checkComplete(txn)
+    
+    # here's the dependency management loop
+    for mod in txnRegistry[txId].list
+      if mod is module
+        # if self
+        if ready is true
+          # found ourself and we're in the ready state
+            console.log "found #{mod} as self (#{ready}): exec"
+            execStep()
+        else
+          # found ourself and we're in the !ready state
+          console.log "found #{mod} as self (#{ready}): queue"
+          txnRegistry[txId].run[mod] = execStep
+      else
+        # not self
+        if ready is true
+          # still in a ready state, attempt to getModule
+          if getModule(mod) is false
+            # module not available, check run queue
+            if txnRegistry[txId].run[mod]
+              console.log "#{mod} (#{ready}) has exec: run"
+              txnRegistry[txId].run[mod]()
+            else
+              # not in run queue, enter failed state
+              console.log "#{mod} (#{ready}) no exec: ready = false"
+              ready = false
+
+  # load deps if they exist
   if requires.length > 0
     loadModules requires, () ->
       runModule()
@@ -419,7 +474,7 @@ checkComplete = (txId) ->
   cb = callbackRegistry[txId]
   modules = []
   if txnRegistry[txId]
-    for module in txnRegistry[txId]
+    for module in txnRegistry[txId].list
       modl = getModule(module)
       if modl is false then done = false else modules.push(modl)
       if !done then break
@@ -573,6 +628,23 @@ require.manifest = (manifest) ->
   the original library.
   ###
   setUserModules(manifest)
+
+require.addRule = (match, weight = null, ruleSet = null) ->
+  if ruleSet is null
+    # weight (optional) omitted
+    ruleSet = weight
+    weight = rules.length
+  if typeof(ruleSet) is "string"
+    usePath = ruleSet
+    ruleSet =
+      path: usePath
+  rules.push({
+    key: match
+    weight: weight
+    pointcuts: ruleSet.pointcuts or null
+    path: ruleSet.path or null
+  })
+  rulesDirty = true
 
 require.run = (moduleId) ->
   ###
