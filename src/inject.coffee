@@ -157,9 +157,6 @@ getFile = (path, cb) ->
   if !fileRegistry
     fileRegistry = {}
 
-  if config.fileExpiration is 0
-    return cb(false, null)
-
   if fileRegistry[path] and fileRegistry[path].length
     # the file registry object exists, so we have loaded the content
     # return the content with the cb set to true
@@ -170,12 +167,16 @@ getFile = (path, cb) ->
     # otherwise, mark the item as false
     # if there is nothing in cache, create the fileRegistry object
     
-    file = lscache.get(token)
-    if file and typeof(file) is "string" and file.length
-      fileRegistry[path] = file
-      return cb(true, fileRegistry[path])
-    else
-      return cb(false, null)
+    if config.fileExpiration is 0
+       return cb(false, null)
+    else   
+      file = lscache.get(token)
+      
+      if file and typeof(file) is "string" and file.length
+        fileRegistry[path] = file
+        return cb(true, fileRegistry[path])
+      else
+        return cb(false, null)
   
     
 saveFile = (path, file) ->
@@ -184,6 +185,7 @@ saveFile = (path, file) ->
   _internal_ Save a file for resource `path` into LocalStorage or UserData
   Also updates the internal fileRegistry
   ###
+  
   token = "#{fileStorageToken}#{schemaVersion}#{path}"
   
   if isCached(path) then return
