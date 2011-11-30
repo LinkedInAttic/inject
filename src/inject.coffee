@@ -38,29 +38,25 @@ For more details, check out the README or github: https://github.com/Jakobo/inje
 ###
 Constants and Registries used
 ###
+undef = undef                       # undefined
 schemaVersion = 1                   # version of inject()'s localstorage schema
 context = this                      # context is our local scope. Should be "window"
 pauseRequired = false               # can we run immediately? when using iframe transport, the answer is no
-fileRegistry = null                 # a registry of file text that has been loaded
+MODULE_ROOT = null
+FILE_EXPIRES = 1440
+XD_INJECT = null
+XD_XHR = null
+_db =                               # internal database of modules and transactions
+  moduleRegistry: {}                # a registry of modules that have been loaded
+  transactionRegistry: {}           # a registry of transaction ids and what modules were associated
+  transactionRegistryCounter: 0     # a unique id for transactionRegistry
+  loadQueue: []
+  rulesQueue: []
 xDomainRpc = null                   # a cross domain RPC object (Porthole)
 fileStorageToken = "FILEDB"         # a storagetoken identifier we use (lscache)
 fileStore = "Inject FileStorage"    # file store to use
 namespace = "Inject"                # the namespace for inject() that is publicly reachable
-fileExpiration = 1440              # the default time (in minutes lscache) to cache a file for (one day)
-counter = 0                         # a counter used for transaction IDs
-loadQueue = []                      # when making iframe calls, there's a queue that can stack up while waiting on everything to load
 userModules = {}                    # any mappings for module => handling defined by the user
-rules = []                          # a collection of rules to run
-rulesDirty = false                  # a dirty flag for the rules
-sortedRules = []                    # a sorted state for the rules
-moduleRegistry = {}                 # a registry of modules that have been loaded
-modulePathRegistry = {}             # a collection of modules organized by their path information
-executionRegistry = {}              # a registry for execution blocks by moduleName
-callbackRegistry = {}               # a registry of callbacks keyed by Transaction IDs
-txnRegistry = {}                    # a list of modules that were required for a transaction, keyed by Transaction IDs
-fileOnComplete = {}                 # a list of subscribing transactions for a file's onModuleLoad resolution, keyed by Path
-config =                            # This is the default config when no changes are made
-  fileExpiration: fileExpiration    # default file expiry
 jsSuffix = /.*?\.js$/               # Regex for identifying things that end in *.js
 hostPrefixRegex = /^https?:\/\//    # prefixes for URLs that begin with http/https
 hostSuffixRegex = /^(.*?)(\/.*|$)/  # suffix for URLs used to capture everything up to / or the end of the string
@@ -112,107 +108,171 @@ commonJSFooter = '''
   })();
 }
 '''
-setConfig = (cfg) ->
-  ###
-  ## setConfig(cfg) ##
-  _internal_ Set the config
-  ###
-  config = cfg
-  # defaults
-  if !config.fileExpiration? then config.fileExpiration = fileExpiration
+
+# ### This section is the getters and setters for the internal database
+# ### do not manipulate the db{} object directly
+# ##########
+# {} added for folding in TextMate
+db = {
+  module:
+    create: (moduleId) ->
+      registry = _db.moduleRegistry
+      if !registry[moduleId]
+        registry[moduleId] = {
+          exports: null
+          path: null
+          file: null
+          loading: false
+          rulesApplied: false
+          transactions: []
+          exec: null
+          pointcuts:
+            before: []
+            after: []
+        }
+    getExports: (moduleId) ->
+      registry = _db.moduleRegistry
+      if registry[moduleId]?.exports then return registry[moduleId].exports
+      if registry[moduleId]?.exec
+        registry[moduleId].exec()
+        registry[moduleId].exec = null
+        return registry[moduleId].exports
+      return false
+    setExports: (moduleId, exports) ->
+      registry = _db.moduleRegistry
+      db.module.create(moduleId)
+      registry[moduleId].exports = exports
+    getPointcuts: (moduleId) ->
+      registry = _db.moduleRegistry
+      if registry[moduleId]?.pointcuts then return registry[moduleId].pointcuts
+    setPointcuts: (moduleId, pointcuts) ->
+      registry = _db.moduleRegistry
+      db.module.create(moduleId)
+      registry[moduleId].pointcuts = pointcuts
+    getRulesApplied: (moduleId) ->
+      registry = _db.moduleRegistry
+      if registry[moduleId]?.rulesApplied then return registry[moduleId].rulesApplied else return false
+    setRulesApplied: (moduleId, rulesApplied) ->
+      registry = _db.moduleRegistry
+      db.module.create(moduleId)
+      registry[moduleId].rulesApplied = rulesApplied
+    getPath: (moduleId) ->
+      registry = _db.moduleRegistry
+      if registry[moduleId]?.path then return registry[moduleId].path else return false
+    setPath: (moduleId, path) ->
+      registry = _db.moduleRegistry
+      db.module.create(moduleId)
+      registry[moduleId].path = path
+    getFile: (moduleId) ->
+      registry = _db.moduleRegistry
+      path = db.module.getPath(moduleId)
+      token = "#{fileStorageToken}#{schemaVersion}#{path}"
+      if registry[moduleId]?.file then return registry[moduleId].file
+      file = lscache.get(token)
+      if file and typeof(file) is "string" and file.length
+        db.module.setFile(moduleId, file)
+        return file
+      return false
+    setFile: (moduleId, file) ->
+      registry = _db.moduleRegistry
+      db.module.create(moduleId)
+      registry[moduleId].file = file
+      path = db.module.getPath(moduleId)
+      token = "#{fileStorageToken}#{schemaVersion}#{path}"
+      lscache.set(token, file, FILE_EXPIRES)
+    clearAllFiles: () ->
+      registry = _db.moduleRegistry
+      for own moduleId, data of registry
+        data.file = null
+        data.loading = false
+    getTransactions: (moduleId) ->
+      registry = _db.moduleRegistry
+      if registry[moduleId]?.transactions then return registry[moduleId].transactions else return false
+    addTransaction: (moduleId, txnId) ->
+      registry = _db.moduleRegistry
+      db.module.create(moduleId)
+      registry[moduleId].transactions.push(txnId)
+    removeTransaction: (moduleId, txnId) ->
+      registry = _db.moduleRegistry
+      db.module.create(moduleId)
+      newTransactions = []
+      for testTxnId of registry[moduleId].transactions
+        if testTxnId isnt txnId then newTransactions.push(testTxnId)
+      registry[moduleId].transactions = newTransactions
+    getLoading: (moduleId) ->
+      registry = _db.moduleRegistry
+      if registry[moduleId]?.loading then return registry[moduleId].loading else return false
+    setLoading: (moduleId, loading) ->
+      registry = _db.moduleRegistry
+      db.module.create(moduleId)
+      registry[moduleId].loading = loading
+  txn:
+    create: () ->
+      registry = _db.transactionRegistry
+      counter = "txn_#{_db.transactionRegistryCounter++}"
+      registry[counter] = {
+        callback: null
+        modules: null
+      }
+      return counter
+    setCallback: (txnId, callback) ->
+      registry = _db.transactionRegistry
+      registry[txnId].callback = callback
+    getCallback: (txnId) ->
+      registry = _db.transactionRegistry
+      return registry[txnId].callback or ()->
+    setModules: (txnId, modules) ->
+      registry = _db.transactionRegistry
+      registry[txnId].modules = modules
+    getModules: (txnId) ->
+      registry = _db.transactionRegistry
+      return registry[txnId].modules or []
+    delete: (txnId) ->
+      registry = _db.transactionRegistry
+      registry[txnId] = undef
+      delete registry[txnId]
+  queue:
+    load:
+      add: (item) ->
+        _db.loadQueue.push(item)
+      get: () ->
+        return _db.loadQueue
+    rules:
+      add: (item) ->
+        _db.rulesQueue.push(item)
+        _db.rulesQueueDirty = true
+      get: () ->
+        if _db.rulesQueueDirty
+          _db.rulesQueueDirty = false
+          _db.rulesQueue.sort (a, b) ->
+            return b.weight - a.weight
+        return _db.rulesQueue
+}
+# ##########
+# ### End getter/setter db section
 
 setUserModules = (modl) ->
   ###
   ## setUserModules(modl) ##
   _internal_ Set the collection of user defined modules
   ###
-  userModules = modl
+  userModules = modl 
 
-getModule = (module) ->
-  ###
-  ## getModule(module) ##
-  _internal_ Get a module by name
-  ###
-  return moduleRegistry[module] or false
-
-saveModule = (module, exports) ->
-  ###
-  ## saveModule(module, exports) ##
-  _internal_ Save a module by name
-  ###
-  if moduleRegistry[module] then return
-  moduleRegistry[module] = exports  
-
-isCached = (path) ->
-  ###
-  ## isCached(mpath) ##
-  _internal_ test if a file is in the cache validity has been moved to lscache
-  ###
-  return fileRegistry? and fileRegistry[path]?
-
-getFile = (path, cb) ->
-  ###
-  ## getFile(path, cb) ##
-  _internal_ Get a file by its path. Asynchronously calls its callback.
-  Uses LocalStorage or UserData if available
-  ###
-  token = "#{fileStorageToken}#{schemaVersion}#{path}"
-  
-  if !fileRegistry
-    fileRegistry = {}
-
-  if fileRegistry[path] and fileRegistry[path].length
-    # the file registry object exists, so we have loaded the content
-    # return the content with the cb set to true
-    return cb(true, fileRegistry[path])
-  else
-    # With no file registry, attempt to load from local storage
-    # if the token exists, parse it. If the path is cached, then use the cached item
-    # otherwise, mark the item as false
-    # if there is nothing in cache, create the fileRegistry object
-    file = lscache.get(token)
-    if file and typeof(file) is "string" and file.length
-      fileRegistry[path] = file
-      return cb(true, fileRegistry[path])
-    else
-      return cb(false, null)
-  
-    
-saveFile = (path, file) ->
-  ###
-  ## saveFile(path, file) ##
-  _internal_ Save a file for resource `path` into LocalStorage or UserData
-  Also updates the internal fileRegistry
-  ###
-  token = "#{fileStorageToken}#{schemaVersion}#{path}"
-  
-  if isCached(path) then return
-  fileRegistry[path] = file
-  # using minutes convention because lscache  does the expire conversion in added minutes
-  lscache.set(token, file, config.fileExpiration)
-  
 clearFileRegistry = (version = schemaVersion) ->
   ###
   ## clearFileRegistry(version = schemaVersion) ##
+  CLEANUPOK
   _internal_ Clears the internal file registry at `version`
   clearing all local storage keys that relate to the fileStorageToken and version
   ###
   token = "#{fileStorageToken}#{version}"
-  
   lscache.remove(lkey) for lkey,file of localStorage when lkey.indexOf(token) isnt -1 
-  if version == schemaVersion then fileRegistry = {}
-
-createTxId = () ->
-  ###
-  ## createTxId() ##
-  _internal_ create a transaction id
-  ###
-  return "txn_#{counter++}"
+  if version is schemaVersion then db.module.clearAllFiles()
 
 createIframe = () ->
   ###
   ## createIframe() ##
-  _internal_ create an iframe to the config.xd.remote location
+  _internal_ create an iframe to the XD_XHR location
   ###
   src = config?.xd?.xhr
   localSrc = config?.xd?.inject
@@ -237,9 +297,9 @@ createIframe = () ->
   document.body.insertBefore(iframe, document.body.firstChild)
   
   # Create a proxy window to send to and receive message from the guest iframe
-  xDomainRpc = new Porthole.WindowProxy(config.xd.xhr+"#xhr", iframeName);
+  xDomainRpc = new Porthole.WindowProxy(XD_XHR+"#xhr", iframeName);
   xDomainRpc.addEventListener (event) ->
-    if trimHost(event.origin) isnt trimHost(config.xd.xhr) then return
+    if trimHost(event.origin) isnt trimHost(XD_XHR) then return
     
     # Ready init
     if event.data is "READY"
@@ -251,13 +311,13 @@ createIframe = () ->
     pieces = event.data.match(responseSlicer)
     onModuleLoad(pieces[1], pieces[2], pieces[3], pieces[4])
 
-getPointcuts = (path) ->
+getFormattedPointcuts = (moduleId) ->
   ###
-  ## getPointcuts(path) ##
+  ## getFormattedPointcuts(moduleId) ##
   _internal_ get the [pointcuts](http://en.wikipedia.org/wiki/Pointcut) for a module if
   specified
   ###
-  cuts = normalizePath(path).pointcuts
+  cuts = db.module.getPointcuts(moduleId)
   beforeCut = [";"]
   afterCut = [";"]
   
@@ -285,27 +345,74 @@ getPointcuts = (path) ->
   
   return pointcuts
 
-normalizePath = (path) ->
+
+loadModules = (modList, callback) ->
   ###
-  ## normalizePath(path) ##
+  ## loadModules(modList, callback) ##
+  _internal_ load a collection of modules in modList, and once they have all loaded, execute the callback cb
+  ###
+  
+  # shortcut. If modList is undefined, then call the callback
+  if modList.length is 0 then return callback.apply(context, [])
+  
+  # 1. create transaction
+  # 2. make a request in paralell to load everything
+  # 3. let onLoad callbacks resolve per transaction
+  txnId = db.txn.create()
+  missingModules = []
+  foundModules = []
+  for module in modList
+    db.module.addTransaction(module, txnId)
+    if !db.module.getExports(module) then missingModules.push(module) else foundModules.push(module)
+  
+  # check: if no missing modules, we are okay to run the callback
+  if missingModules.length is 0 then return callback.apply(context, foundModules)
+  
+  # we were unable to shortcut anything. put callback into the registry for this txnId
+  # store the modules associated with this txnId
+  db.txn.setCallback(txnId, callback)
+  db.txn.setModules(txnId, modList)
+  
+  # for each missing module
+  # mark module as loading
+  download(module) for module in missingModules
+
+download = (moduleId) ->
+  ###
+  ## download(module) ##
+  _internal_ download a module, and then hand off to processing
+  ###
+  # shortcut if already downloading, there's nothing to do.
+  if db.module.getLoading() then return
+  
+  # flag as loading
+  db.module.setLoading(moduleId, true)
+  
+  # apply the ruleset for this module if we haven't yet
+  applyRules(moduleId) if db.module.getRulesApplied() is false
+  
+  # check for file
+  file = db.module.getFile(moduleId)
+  if file then onDownload(moduleId, file)
+  
+  # does not exist locally, download
+  if XD_INJECT and XD_XHR
+    sendToIframe(moduleId, onDownload)
+  else
+    sendToXhr(moduleId, onDownload)
+
+applyRules = (moduleId) ->
+  ###
+  ## applyRules(moduleId) ##
   _internal_ normalize the path based on the module collection or any functions
   associated with its identifier
   ###
-  workingPath = path
+  workingPath = moduleId
   pointcuts =
     before: []
     after: []
-  configPath = config.path or ""
   
-  # short circuit: already cached
-  if rulesDirty is false and modulePathRegistry[path] then return modulePathRegistry[path]
-  
-  # check rulesets
-  if rulesDirty
-    rulesDirty = false
-    rules.sort (a, b) ->
-      return b.weight - a.weight
-  for rule in rules
+  for rule in db.queue.rules.get()
     # start with workingPath, and begin applying rules
     isMatch = if typeof(rule.key) is "string" then (rule.key.toLowerCase() is workingPath.toLowerCase()) else rule.key.test(workingPath)
     if isMatch is false then continue
@@ -316,81 +423,66 @@ normalizePath = (path) ->
   
   # apply global rules for all paths
   if workingPath.indexOf("/") isnt 0
-    if typeof(configPath) is "undefined" then throw new Error("Module Root must be defined")  
-    else if typeof(configPath) is "string" then workingPath = "#{config.path}#{workingPath}"
-    else if typeof(configPath) is "function" then workingPath = configPath(workingPath)
+    if typeof(MODULE_ROOT) is "undefined" then throw new Error("Module Root must be defined")  
+    else if typeof(MODULE_ROOT) is "string" then workingPath = "#{MODULE_ROOT}#{workingPath}"
+    else if typeof(MODULE_ROOT) is "function" then workingPath = MODULE_ROOT(workingPath)
   if !jsSuffix.test(workingPath) then workingPath = "#{workingPath}.js"
   
-  # with all rules applied, we can store more complex data in modulePathRegistry
-  modulePathRegistry[path] =
-    originalPath: path
-    resolvedPath: workingPath
-    pointcuts: pointcuts
-  
-  return modulePathRegistry[path]
+  db.module.setPath(moduleId, workingPath)
+  db.module.setPointcuts(moduleId, pointcuts)
+  db.module.setRulesApplied(moduleId, true)
 
-loadModules = (modList, cb) ->
-  ###
-  ## loadModules(modList, cb) ##
-  _internal_ load a collection of modules in modList, and once they have all loaded, execute the callback cb
-  ###
+
+onDownload = (moduleId, file) ->
+  # before we go any further, store these file contents in the db
+  db.module.setFile(moduleId, file)
   
-  # shortcut. If modList is undefined, then call the callback
-  if modList.length is 0 then return cb.apply(context, [])
-  
-  # for each item in the mod list
-  # resolve it to a full url for file access
-  # if it has been loaded, flag done & go on
-  # else, queue the module.
-  txId = createTxId()
-  paths = {}
-  (paths[module] = normalizePath(module).resolvedPath) for module in modList
-  txnRegistry[txId] = 
-    list: modList
-  callbackRegistry[txId] = cb
-  
-  # paths now has everything we need to include
-  # if xd params are set, add them to the queue for iframe dispatch
-  for module, path of paths
-    if !fileOnComplete[path]
-      fileOnComplete[path] =
-        txns: []
-        loading: false
-    
-    # do we have it locally?
-    if getModule(module) then paths[module] = getModule(module)
-    # Check localStorage and load
-    getFile path, (ok, val) ->
-      # listen for evaluation of the module
-      fileOnComplete[path].txns.push txId
+  # get transactions for this module
+  for txnId in db.module.getTransactions(moduleId)
+    ready = true
+    modules = []
+    for txnModuleId in db.txn.getModules(txnId)
+      if ready is false then break
       
-      if ok and typeof(val) is "string" and val.length
-        onModuleLoad(txId, module, path, val)
-      else
-        # we don't have the file or module, we must retrieve it
-        # if it's already loading, we just wait
-        if (!fileOnComplete[path].loading)
-          fileOnComplete[path].loading = true
-          if config.xd?
-            sendToIframe(txId, module, path, onModuleLoad)
-          else
-            sendToXhr(txId, module, path, onModuleLoad)
-
-onModuleLoad = (txId, module, path, text) ->
-  ###
-  ## onModuleLoad(txId, module, path, text) ##
-  _internal_ Fired when a module's file has been loaded. Will then set up
-  the CommonJS harness, and will capture its exports. After this, it will signal
-  to inject() that all items that were waiting on this path should continue checking
-  their depdendencies
-  ###
-  # create the commonJS wrapper for this path and execute it
-  # suck up the exports, write to the module collection
-  # write the collection to the path as well
-  # invoke check for completeness
-  cuts = getPointcuts(module)
+      # 1. attempt to get the exports (already compiled elsewhere)
+      exports = db.module.getExports(txnModuleId)
+      if exports isnt false
+        modules.push(exports)
+        continue
+      
+      # 2. if we are in "ready" (no failures yet) and there is a file
+      # but we just haven't ran it yet, then execute the file,
+      # capture the exports, and continue
+      # todo: does this repeat multiple times?
+      if ready and db.module.getFile(txnModuleId)
+        executeFile(txnModuleId)
+        exports = db.module.getExports(txnModuleId)
+        modules.push(exports)
+        continue
+      
+      # 3. we did not have the module, or the file
+      # remove the ready state. That means nobody else will run
+      ready = false
     
-  header = commonJSHeader.replace(/__MODULE_ID__/g, module)
+    # if we are ready, then modules[] contains the required calls
+    # first, clean up the transactions, then
+    # we can execute the callback associated with this txnId
+    callback = db.txn.getCallback(txnId)
+    for txnModuleId in db.txn.getModules(txnId)
+      db.module.removeTransaction(txnModuleId, txnId)
+    db.txn.delete(txnId)
+    callback.apply(context, modules)
+
+executeFile = (moduleId) ->
+  ###
+  ## executeFile(moduleId) ##
+  _internal_ attempts to execute a file with a CommonJS scope
+  and store the exports
+  ###
+  cuts = getFormattedPointcuts(moduleId)
+  path = db.module.getPath(moduleId)
+  text = db.module.getFile(moduleId)
+  header = commonJSHeader.replace(/__MODULE_ID__/g, moduleId)
                          .replace(/__MODULE_URI__/g, path)
                          .replace(/__INJECT_NS__/g, namespace)
                          .replace(/__POINTCUT_BEFORE__/g, cuts.before)
@@ -399,112 +491,48 @@ onModuleLoad = (txId, module, path, text) ->
   
   # find all require statements
   requires = []
-  requires.push(RegExp.$1) while requireRegex.exec(text)
+  requires.push(RegExp.$1) while requireRegex.exec(db.module.getFile(moduleId))
 
-  # internal method to onModuleLoad
-  # this attempts to run the given module after all dependencies have loaded
-  # if a dependency is missing, it puts the resolution into the executionRegistry
-  # under the module name. This allows for alternate asynchronous transactions
-  # to access the runModule step and generate the module. This globally-accessed
-  # registry is necessary to avoid a long-running response in the shallow dependency
-  # resolution jamming everything up.
-  runModule = () ->
-    ready = true
-    execRan = false
-    
-    # internal method to runModule
-    # this attempts to  eval the contents and perform the save
-    # it's the final step in module running and has a check to ensure
-    # it can only be ran once in the event of asynchronous pathways
-    execStep = () ->
-      # abort early if we have ran this once already
-      if execRan then return else execRan = true
-      
-      # clean up entry in execution registry
-      delete executionRegistry[mod];
-  
-      # attempt to eval() the module
-      try
-        exports = context.eval(runCmd)
-      catch err
-        throw err
-      
-      # save result
-      saveModule(module, exports)
-      saveFile(path, text)
+  execModule = () ->
+    # attempt to eval() the module
+    try
+      exports = context.eval(runCmd)
+    catch err
+      throw err
+    # save exports
+    db.module.setExports(moduleId, exports)
 
-      # fire all oncompletes that may be waiting
-      fileOnComplete[path].loading = false
-      for txn in fileOnComplete[path].txns
-        checkComplete(txn)
-    
-    # here's the dependency management loop
-    # for each module in the transaction...
-    # ... if it is itself and we're ready, run it
-    # ... if it is itself and we're not ready, queue it
-    # ... if it is not itself and we're ready, try to resolve it ...
-    # ... ... if we can resolve it either in getModule or the executionRegistry, we're good
-    # ... ... otherwise remove the ready state
-    # note: ready = false kills the loop moving onward, as there's no point in resolving
-    for mod in txnRegistry[txId].list
-      if mod is module
-        # if self
-        if ready is true then execStep() else executionRegistry[mod] = execStep
-      else
-        # not self
-        if ready is true and getModule(mod) is false
-          # still in ready state, but the dependency doesn't seem to be there
-          # look in the executionRegistry. If there, run it, else remove the ready state
-          if executionRegistry[mod] then executionRegistry[mod]() else ready = false
-
-  # load deps if they exist
   if requires.length > 0
-    loadModules requires, () ->
-      runModule()
+    loadModules(requires, execModule)
   else
-    runModule()
+    execModule()
 
-
-checkComplete = (txId) ->
+sendToXhr = (moduleId, callback) ->
   ###
-  ## checkComplete(txId) ##
-  _internal_ check if all modules for a txId have loaded. If so, the callback is fired
-  ###
-  done = true
-  cb = callbackRegistry[txId]
-  modules = []
-  if txnRegistry[txId]
-    for module in txnRegistry[txId].list
-      modl = getModule(module)
-      if modl is false then done = false else modules.push(modl)
-      if !done then break
-  if done and cb
-    delete callbackRegistry[txId]
-    delete txnRegistry[txId]
-    cb.apply(context, modules)
-
-sendToXhr = (txId, module, path, cb) ->
-  ###
-  ## sendToXhr(txId, module, path, cb) ##
+  ## sendToXhr(moduleId, callback) ##
+  CLEANUPOK
   _internal_ request a module at path using xmlHttpRequest. On retrieval, fire off cb
   ###
+  path = db.module.getPath(moduleId)
   xhr = getXHR()
   xhr.open("GET", path)
   xhr.onreadystatechange = () ->
-    if xhr.readyState == 4 and xhr.status == 200 then cb.call(context, txId, module, path, xhr.responseText)
+    if xhr.readyState == 4 and xhr.status == 200 then callback.call(context, moduleId, xhr.responseText)
   xhr.send(null)
 
-# request a file via iframe
-sendToIframe = (txId, module, path, cb) ->
+sendToIframe = (moduleId, callback) ->
   ###
   ## sendToIframe(txId, module, path, cb) ##
+  CLEANUPOK
   _internal_ request a module at path using Porthole + iframe. On retrieval, the cb will be fired
   ###
-  xDomainRpc.postMessage("#{txId} #{module} #{path}")
+  path = db.module.getPath(moduleId)
+  xDomainRpc.postMessage("#{moduleId} #{path}")
 
 getXHR = () ->
   ###
   ## getXHR() ##
+  CLEANUPOK
   _internal_ get an XMLHttpRequest object
   ###
   xmlhttp = false
@@ -535,43 +563,47 @@ Main Payloads: require, require.ensure, etc
 require = (moduleId) ->
   ###
   ## require(moduleId) ##
+  CLEANUPOK
   Return the value of a module. This is a synchronous call, meaning the module needs
   to have already been loaded. If you are unsure about the module's existence, you
   should be using require.ensure() instead. For modules beyond the first tier, their
   shallow dependencies are resolved and block, so there is no need for require.ensure()
   beyond the topmost level.
   ###
-  mod = getModule(moduleId)
+  mod = db.module.getExports(moduleId)
   if mod is false then throw new Error("#{moduleId} not loaded")
   return mod
 
 require.ensure = (moduleList, callback) ->
   ###
   ## require.ensure(moduleList, callback) ##
+  CLEANUPOK
   Ensure the modules in moduleList (array) are loaded, and then execute callback
   (function). Use this instead of require() when you need to load shallow dependencies
   first.
   ###
   # init the iframe if required
-  if config.xd? and !xDomainRpc and !pauseRequired
+  if XD_XHR? and !xDomainRpc and !pauseRequired
     createIframe()
     pauseRequired = true
+  
+  ensureExecutionCallback = () ->
+    module = {}
+    exports = {}
+    module.exports = exports
+    callback.call(context, require, module, exports)
 
   # our default behavior. Load everything
   # then, once everything says its loaded, call the callback
   run = () ->
-    loadModules moduleList, () ->
-      module = {}
-      exports = {}
-      module.exports = exports
-      callback.call(context, require, module, exports)
-  
-  if pauseRequired then loadQueue.push(run)
+    loadModules(moduleList, ensureExecutionCallback)
+  if pauseRequired then db.queue.load.add(run)
   else run()
 
 require.setModuleRoot = (root) ->
   ###
   ## require.setModuleRoot(root) ##
+  CLEANUPOK
   set the base path for including your modules. This is used as the default if no
   items in the manifest can be located.
   
@@ -580,19 +612,21 @@ require.setModuleRoot = (root) ->
   with multiple CDNs such as in a complex production environment.
   ###
   if typeof(root) is "string" and root.lastIndexOf("/") isnt root.length then root = "#{root}/"
-  config.path = root
+  MODULE_ROOT = root
 
 require.setExpires = (expires) ->
   ###
   ## require.setExpires(expires) ##
+  CLEANUPOK
   Set the time in seconds that files will persist in localStorage. Setting to 0 will disable
   localstorage caching.
   ###
-  config.fileExpiration = expires
+  FILE_EXPIRES = expires
 
 require.setCrossDomain = (local, remote) ->
   ###
   ## require.setCrossDomain(local, remote) ##
+  CLEANUPOK
   Set a pair of URLs to relay files. You must have two relay files in your cross domain setup:
   
   * one relay file (local) on the same domain as the page hosting Inject
@@ -600,13 +634,13 @@ require.setCrossDomain = (local, remote) ->
   
   The same require.setCrossDomain statement should be added to BOTH your relay.html files.
   ###
-  config.xd = {}
-  config.xd.inject = local
-  config.xd.xhr = remote
+  XD_INJECT = local
+  XD_XHR = remote
 
 require.clearCache = (version) ->
   ###
   ## require.clearCache(version) ##
+  CLEANUPOK
   Remove the localStorage class at version. If no version is specified, the entire cache is cleared.
   ###
   clearFileRegistry(version)
@@ -614,6 +648,7 @@ require.clearCache = (version) ->
 require.manifest = (manifest) ->
   ###
   ## require.manifest(manifest) ##
+  CLEANUPOK
   Provide a custom manifest for Inject. This maps module names to file paths, adds pointcuts, and more.
   The key is always the module name, and then inside of that key can be either
   
@@ -627,9 +662,13 @@ require.manifest = (manifest) ->
   window to its unpoluted state and make jQuery actionable as a commonJS module without having to alter
   the original library.
   ###
-  setUserModules(manifest)
+  throw new Error("TODO: Convert to addRule commands")
 
 require.addRule = (match, weight = null, ruleSet = null) ->
+  ###
+  TODO DOC
+  CLEANUPOK
+  ###
   if ruleSet is null
     # weight (optional) omitted
     ruleSet = weight
@@ -638,13 +677,12 @@ require.addRule = (match, weight = null, ruleSet = null) ->
     usePath = ruleSet
     ruleSet =
       path: usePath
-  rules.push({
+  db.queue.rules.add({
     key: match
     weight: weight
     pointcuts: ruleSet.pointcuts or null
     path: ruleSet.path or null
   })
-  rulesDirty = true
 
 require.run = (moduleId) ->
   ###
@@ -699,7 +737,7 @@ define = (moduleId, deps, callback) ->
 
     # save moduleId, exports into module list
     # we only save modules with an ID
-    if moduleId then saveModule(moduleId, exports);
+    if moduleId then db.module.setExports(moduleId, exports);
   )
 
 # To allow a clear indicator that a global define function conforms to the AMD API
@@ -714,15 +752,8 @@ context.define = define
 context.Inject = {
   require: require,
   define: define,
-  debug: {
-    fileRegistry: fileRegistry,
-    loadQueue: loadQueue,
-    userModules: userModules,
-    moduleRegistry: moduleRegistry,
-    modulePathRegistry: modulePathRegistry,
-    callbackRegistry: callbackRegistry,
-    txnRegistry: txnRegistry
-  }  
+  debug: () ->
+    console?.dir(_db)
 }
 
 ###
