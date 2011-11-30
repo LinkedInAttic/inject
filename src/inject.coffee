@@ -38,21 +38,23 @@ For more details, check out the README or github: https://github.com/Jakobo/inje
 ###
 Constants and Registries used
 ###
+userConfig =
+  moduleRoot: null                  # the module root location
+  fileExpires: 1440                 # the default expiry for items in lscache (in minutes)
+  xd:
+    inject: null                    # the location of the relay.html file, same domain as inject
+    xhr: null                       # the location of the relay.html file, same domain as moduleRoot
 undef = undef                       # undefined
 schemaVersion = 1                   # version of inject()'s localstorage schema
 context = this                      # context is our local scope. Should be "window"
 pauseRequired = false               # can we run immediately? when using iframe transport, the answer is no
-MODULE_ROOT = null
-FILE_EXPIRES = 1440
-XD_INJECT = null
-XD_XHR = null
 _db =                               # internal database of modules and transactions
   moduleRegistry: {}                # a registry of modules that have been loaded
   transactionRegistry: {}           # a registry of transaction ids and what modules were associated
   transactionRegistryCounter: 0     # a unique id for transactionRegistry
-  loadQueue: []
-  rulesQueue: []
-  fileQueue: []
+  loadQueue: []                     # a queue used when performing iframe based cross domain loads
+  rulesQueue: []                    # the collection of rules for processing
+  fileQueue: []                     # a list of callbacks waiting on a file download
 xDomainRpc = null                   # a cross domain RPC object (Porthole)
 fileStorageToken = "FILEDB"         # a storagetoken identifier we use (lscache)
 fileStore = "Inject FileStorage"    # file store to use
@@ -70,10 +72,8 @@ requireRegex = ///                  # a regex for capturing the require() statem
   [\s]*\)                             # followed by whitespace, and then a closing ) that ends the require() call
   ///gm
 responseSlicer = ///                # a regular expression for slicing a response from iframe communication into its parts
-  ^(.+?)[\s]                          # (1) Begins with anything up to a space
-  (.+?)[\s]                           # (2) Continues with anything up to a space
-  (.+?)[\s]                           # (3) Continues with anything up to a space
-  ([\w\W]+)$                          # (4) Any text up until the end of the string
+  ^(.+?)[\s]                          # (1) Anything up to a space (module id)
+  ([\w\W]+)$                          # (2) Any text up until the end of the string
   ///m                                # Supports multiline expressions
 
 ###
@@ -111,7 +111,7 @@ commonJSFooter = '''
 '''
 
 # ### This section is the getters and setters for the internal database
-# ### do not manipulate the db{} object directly
+# ### do not manipulate the _db object directly
 # ##########
 # {} added for folding in TextMate
 db = {
@@ -130,6 +130,7 @@ db = {
           loading: false
           rulesApplied: false
           requires: []
+          staticRequires: []
           transactions: []
           exec: null
           pointcuts:
@@ -162,6 +163,13 @@ db = {
       registry = _db.moduleRegistry
       db.module.create(moduleId)
       registry[moduleId].requires = requires
+    getStaticRequires: (moduleId) ->
+      registry = _db.moduleRegistry
+      if registry[moduleId]?.staticRequires then return registry[moduleId].staticRequires
+    setStaticRequires: (moduleId, staticRequires) ->
+      registry = _db.moduleRegistry
+      db.module.create(moduleId)
+      registry[moduleId].staticRequires = staticRequires
     getRulesApplied: (moduleId) ->
       registry = _db.moduleRegistry
       if registry[moduleId]?.rulesApplied then return registry[moduleId].rulesApplied else return false
@@ -192,7 +200,7 @@ db = {
       registry[moduleId].file = file
       path = db.module.getPath(moduleId)
       token = "#{fileStorageToken}#{schemaVersion}#{path}"
-      lscache.set(token, file, FILE_EXPIRES)
+      lscache.set(token, file, userConfig.fileExpires)
     clearAllFiles: () ->
       registry = _db.moduleRegistry
       for own moduleId, data of registry
@@ -249,6 +257,8 @@ db = {
           _db.rulesQueue.sort (a, b) ->
             return b.weight - a.weight
         return _db.rulesQueue
+      size: () ->
+        return _db.rulesQueue.length
     file:
       add: (moduleId, item) ->
         if !_db.fileQueue[moduleId] then !_db.fileQueue[moduleId] = []
@@ -371,9 +381,11 @@ class treeNode
       # have finished the tree
       return output
 
+
 setUserModules = (modl) ->
   ###
   ## setUserModules(modl) ##
+  TODO: refactor into addRule commands
   _internal_ Set the collection of user defined modules
   ###
   userModules = modl 
@@ -381,7 +393,6 @@ setUserModules = (modl) ->
 clearFileRegistry = (version = schemaVersion) ->
   ###
   ## clearFileRegistry(version = schemaVersion) ##
-  CLEANUPOK
   _internal_ Clears the internal file registry at `version`
   clearing all local storage keys that relate to the fileStorageToken and version
   ###
@@ -392,10 +403,10 @@ clearFileRegistry = (version = schemaVersion) ->
 createIframe = () ->
   ###
   ## createIframe() ##
-  _internal_ create an iframe to the XD_XHR location
+  _internal_ create an iframe to the xhr location
   ###
-  src = config?.xd?.xhr
-  localSrc = config?.xd?.inject
+  src = userConfig?.xd?.xhr
+  localSrc = userConfig?.xd?.inject
   if !src then throw new Error("Configuration requires xd.remote to be defined")
   if !localSrc then throw new Error("Configuration requires xd.local to be defined")
   
@@ -417,9 +428,9 @@ createIframe = () ->
   document.body.insertBefore(iframe, document.body.firstChild)
   
   # Create a proxy window to send to and receive message from the guest iframe
-  xDomainRpc = new Porthole.WindowProxy(XD_XHR+"#xhr", iframeName);
+  xDomainRpc = new Porthole.WindowProxy(userConfig.xd.xhr+"#xhr", iframeName);
   xDomainRpc.addEventListener (event) ->
-    if trimHost(event.origin) isnt trimHost(XD_XHR) then return
+    if trimHost(event.origin) isnt trimHost(userConfig.xd.xhr) then return
     
     # Ready init
     if event.data is "READY"
@@ -429,7 +440,7 @@ createIframe = () ->
       return
     
     pieces = event.data.match(responseSlicer)
-    onModuleLoad(pieces[1], pieces[2], pieces[3], pieces[4])
+    processCallbacks(pieces[1], pieces[2])
 
 getFormattedPointcuts = (moduleId) ->
   ###
@@ -521,14 +532,6 @@ downloadTree = (tree, callback) ->
   # apply the ruleset for this module if we haven't yet
   applyRules(moduleId) if db.module.getRulesApplied() is false
   
-  # run all callbacks for a given file
-  processCallbacks = (moduleId, file) ->
-    console.log "processing callbacks for #{moduleId}"
-    db.module.setLoading(moduleId, false)
-    cbs = db.queue.file.get(moduleId)
-    db.queue.file.clear(moduleId)
-    cb(moduleId, file) for cb in cbs
-  
   # the callback every module has when it has been loaded
   onDownloadComplete = (moduleId, file) ->
     console.log "retrieved #{moduleId}"
@@ -548,7 +551,7 @@ downloadTree = (tree, callback) ->
   download = () ->
     db.module.setLoading(moduleId, true)
     console.log "downloading #{moduleId}"
-    if XD_INJECT and XD_XHR
+    if userConfig.xd.inject and userConfig.xd.xhr
       sendToIframe(moduleId, processCallbacks)
     else
       sendToXhr(moduleId, processCallbacks)
@@ -563,6 +566,14 @@ downloadTree = (tree, callback) ->
   file = db.module.getFile(moduleId)
   if file and file.length > 0 then processCallbacks(moduleId, file) else download()
 
+# run all callbacks for a given file
+processCallbacks = (moduleId, file) ->
+  console.log "processing callbacks for #{moduleId}"
+  db.module.setLoading(moduleId, false)
+  cbs = db.queue.file.get(moduleId)
+  db.queue.file.clear(moduleId)
+  cb(moduleId, file) for cb in cbs
+
 analyzeFile = (moduleId) ->
   ###
   ## analyzeFile(moduleId) ##
@@ -574,6 +585,9 @@ analyzeFile = (moduleId) ->
     req = RegExp.$1
     requires.push(req) if uniques[req] isnt true
     uniques[req] = true
+  for staticReq in db.module.getStaticRequires(moduleId)
+    requires.push(staticReq) if uniques[staticReq] isnt true
+    uniques[staticReq] = true
   db.module.setRequires(moduleId, requires)
 
 applyRules = (moduleId) ->
@@ -598,9 +612,9 @@ applyRules = (moduleId) ->
   
   # apply global rules for all paths
   if workingPath.indexOf("/") isnt 0
-    if typeof(MODULE_ROOT) is "undefined" then throw new Error("Module Root must be defined")  
-    else if typeof(MODULE_ROOT) is "string" then workingPath = "#{MODULE_ROOT}#{workingPath}"
-    else if typeof(MODULE_ROOT) is "function" then workingPath = MODULE_ROOT(workingPath)
+    if typeof(userConfig.moduleRoot) is "undefined" then throw new Error("Module Root must be defined")  
+    else if typeof(userConfig.moduleRoot) is "string" then workingPath = "#{userConfig.moduleRoot}#{workingPath}"
+    else if typeof(userConfig.moduleRoot) is "function" then workingPath = userConfig.moduleRoot(workingPath)
   if !jsSuffix.test(workingPath) then workingPath = "#{workingPath}.js"
   
   db.module.setPath(moduleId, workingPath)
@@ -710,7 +724,7 @@ require.ensure = (moduleList, callback) ->
   first.
   ###
   # init the iframe if required
-  if XD_XHR? and !xDomainRpc and !pauseRequired
+  if userConfig.xd.xhr? and !xDomainRpc and !pauseRequired
     createIframe()
     pauseRequired = true
   
@@ -739,7 +753,7 @@ require.setModuleRoot = (root) ->
   with multiple CDNs such as in a complex production environment.
   ###
   if typeof(root) is "string" and root.lastIndexOf("/") isnt root.length then root = "#{root}/"
-  MODULE_ROOT = root
+  userConfig.moduleRoot = root
 
 require.setExpires = (expires) ->
   ###
@@ -748,7 +762,7 @@ require.setExpires = (expires) ->
   Set the time in seconds that files will persist in localStorage. Setting to 0 will disable
   localstorage caching.
   ###
-  FILE_EXPIRES = expires
+  userConfig.fileExpires = expires
 
 require.setCrossDomain = (local, remote) ->
   ###
@@ -761,8 +775,8 @@ require.setCrossDomain = (local, remote) ->
   
   The same require.setCrossDomain statement should be added to BOTH your relay.html files.
   ###
-  XD_INJECT = local
-  XD_XHR = remote
+  userConfig.xd.inject = local
+  userConfig.xd.xhr = remote
 
 require.clearCache = (version) ->
   ###
@@ -775,7 +789,6 @@ require.clearCache = (version) ->
 require.manifest = (manifest) ->
   ###
   ## require.manifest(manifest) ##
-  CLEANUPOK
   Provide a custom manifest for Inject. This maps module names to file paths, adds pointcuts, and more.
   The key is always the module name, and then inside of that key can be either
   
@@ -789,17 +802,22 @@ require.manifest = (manifest) ->
   window to its unpoluted state and make jQuery actionable as a commonJS module without having to alter
   the original library.
   ###
-  throw new Error("TODO: Convert to addRule commands")
+  for own item, rules of manifest
+    ruleSet =
+      path: rules.path or null
+      pointcuts:
+        before: rules.before or null
+        after: rules.after or null
+    require.addRule(item, ruleSet)
 
 require.addRule = (match, weight = null, ruleSet = null) ->
   ###
   TODO DOC
-  CLEANUPOK
   ###
   if ruleSet is null
     # weight (optional) omitted
     ruleSet = weight
-    weight = rules.length
+    weight = db.queue.rules.size()
   if typeof(ruleSet) is "string"
     usePath = ruleSet
     ruleSet =
@@ -831,7 +849,7 @@ define = (moduleId, deps, callback) ->
     deps = moduleId
     moduleId = null
 
-  # This module have no dependencies
+  # This module has no dependencies
   if Object.prototype.toString.call(deps) isnt "[object Array]"
     callback = deps
     deps = []
@@ -841,6 +859,7 @@ define = (moduleId, deps, callback) ->
   for dep in deps
     if dep isnt "exports" and dep isnt "require" and dep isnt "module" then strippedDeps.push(dep)
 
+  db.module.setStaticRequires(moduleId, strippedDeps)
   require.ensure(strippedDeps, (require, module, exports) ->
     # already defined: require, module, exports
     # create an array with all dependency modules object
