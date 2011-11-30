@@ -52,6 +52,7 @@ _db =                               # internal database of modules and transacti
   transactionRegistryCounter: 0     # a unique id for transactionRegistry
   loadQueue: []
   rulesQueue: []
+  fileQueue: []
 xDomainRpc = null                   # a cross domain RPC object (Porthole)
 fileStorageToken = "FILEDB"         # a storagetoken identifier we use (lscache)
 fileStore = "Inject FileStorage"    # file store to use
@@ -116,6 +117,10 @@ commonJSFooter = '''
 db = {
   module:
     create: (moduleId) ->
+      ###
+      ## create(moduleId) ##
+      create a registry entry for tracking a module
+      ###
       registry = _db.moduleRegistry
       if !registry[moduleId]
         registry[moduleId] = {
@@ -124,6 +129,7 @@ db = {
           file: null
           loading: false
           rulesApplied: false
+          requires: []
           transactions: []
           exec: null
           pointcuts:
@@ -149,6 +155,13 @@ db = {
       registry = _db.moduleRegistry
       db.module.create(moduleId)
       registry[moduleId].pointcuts = pointcuts
+    getRequires: (moduleId) ->
+      registry = _db.moduleRegistry
+      if registry[moduleId]?.requires then return registry[moduleId].requires
+    setRequires: (moduleId, requires) ->
+      registry = _db.moduleRegistry
+      db.module.create(moduleId)
+      registry[moduleId].requires = requires
     getRulesApplied: (moduleId) ->
       registry = _db.moduleRegistry
       if registry[moduleId]?.rulesApplied then return registry[moduleId].rulesApplied else return false
@@ -208,29 +221,18 @@ db = {
       registry[moduleId].loading = loading
   txn:
     create: () ->
-      registry = _db.transactionRegistry
-      counter = "txn_#{_db.transactionRegistryCounter++}"
-      registry[counter] = {
-        callback: null
-        modules: null
-      }
-      return counter
-    setCallback: (txnId, callback) ->
-      registry = _db.transactionRegistry
-      registry[txnId].callback = callback
-    getCallback: (txnId) ->
-      registry = _db.transactionRegistry
-      return registry[txnId].callback or ()->
-    setModules: (txnId, modules) ->
-      registry = _db.transactionRegistry
-      registry[txnId].modules = modules
-    getModules: (txnId) ->
-      registry = _db.transactionRegistry
-      return registry[txnId].modules or []
-    delete: (txnId) ->
-      registry = _db.transactionRegistry
-      registry[txnId] = undef
-      delete registry[txnId]
+      id = _db.transactionRegistryCounter++
+      _db.transactionRegistry[id] = 0
+      return id
+    add: (txnId) ->
+      _db.transactionRegistry[txnId]++
+    subtract: (txnId) ->
+      _db.transactionRegistry[txnId]--
+    get: (txnId) ->
+      return _db.transactionRegistry[txnId]
+    remove: (txnId) ->
+      _db.transactionRegistry[txnId] = null
+      delete _db.transactionRegistry[txnId]
   queue:
     load:
       add: (item) ->
@@ -247,9 +249,127 @@ db = {
           _db.rulesQueue.sort (a, b) ->
             return b.weight - a.weight
         return _db.rulesQueue
+    file:
+      add: (moduleId, item) ->
+        if !_db.fileQueue[moduleId] then !_db.fileQueue[moduleId] = []
+        _db.fileQueue[moduleId].push(item)
+      get: (moduleId) ->
+        if _db.fileQueue[moduleId] then return _db.fileQueue[moduleId] else return []
+      clear: (moduleId) ->
+        if _db.fileQueue[moduleId] then _db.fileQueue[moduleId] = []
 }
 # ##########
 # ### End getter/setter db section
+
+class treeNode
+  ###
+  ## treeNode [class] ##
+  _internal_ used for constructing the dependency tree
+  once built, we can perform a post-order traversal which identifies
+  the order we are supposed to execute our required files
+  ###
+  constructor: (value) ->
+    ###
+    ## constructor(value) ##
+    set the value for the node, create null values for parent, left right
+    ###
+    @value = value
+    @children = []
+    @parent = null
+    @left = null
+    @right = null
+  getValue: () ->
+    ###
+    ## getValue() ##
+    get the value of the node
+    ###
+    return @value
+  addChild: (node) ->
+    ###
+    ## addChild(node) ##
+    add a child node to the existing tree. Creates left, right, and parent relationships
+    ###
+    if @children.length > 0
+      rightChild = @children[@children.length - 1]
+      node.setLeft(rightChild)
+      rightChild.setRight(node)
+    @children.push(node)
+    node.setParent(this)
+  getChildren: () ->
+    ###
+    ## getChildren() ##
+    get the children for the existing tree
+    ###
+    return @children
+  setLeft: (node) ->
+    ###
+    ## setLeft(node) ##
+    set the sibling to the left of this current node
+    ###
+    @left = node
+  getLeft: () ->
+    ###
+    ## getLeft() ##
+    get the left / previous sibling
+    ###
+    return @left
+  setRight: (node) ->
+    ###
+    ## setRight(node) ##
+    set the sibling to the right of this current node
+    ###
+    @right = node
+  getRight: () ->
+    ###
+    ## getRight() ##
+    get the right / next sibling
+    ###
+    return @right
+  setParent: (node) ->
+    ###
+    ## setParent(node) ##
+    set the parent of this node
+    ###
+    @parent = node
+  getParent: () ->
+    ###
+    ## getParent() ##
+    get the parent of this node
+    ###
+    return @parent
+  postOrder: () ->
+    ###
+    ## postOrder() ##
+    Perform a post-order traversal of the tree, and return an array
+    of the values. The order for post-order is left, right, parent
+    ###
+    output = []
+    currentNode = this
+    direction = null
+    while (currentNode)
+      # attempt to move down
+      if currentNode.getChildren().length > 0 and direction isnt "up"
+        direction = "down"
+        currentNode = currentNode.getChildren()[0]
+        continue
+      
+      # deepest point, record
+      output.push(currentNode.getValue())
+      
+      # attempt to move right
+      if currentNode.getRight()
+        direction = "right"
+        currentNode = currentNode.getRight()
+        continue
+      
+      # attempt to move up
+      if currentNode.getParent()
+        direction = "up"
+        currentNode = currentNode.getParent()
+        continue
+      
+      # have finished the tree
+      return output
 
 setUserModules = (modl) ->
   ###
@@ -305,7 +425,7 @@ createIframe = () ->
     if event.data is "READY"
       xDomainRpc.postMessage("READYREADY")
       pauseRequired = false
-      item() for item in loadQueue
+      item() for item in db.queue.load.get()
       return
     
     pieces = event.data.match(responseSlicer)
@@ -345,6 +465,17 @@ getFormattedPointcuts = (moduleId) ->
   
   return pointcuts
 
+dispatchTreeDownload = (id, tree, node, callback) ->
+  tree.addChild(node)
+  if db.module.getLoading(node.getValue()) is false
+    db.txn.add(id)
+    context.setTimeout( () ->
+      downloadTree node, () ->
+        db.txn.subtract(id)
+        if db.txn.get(id) is 0
+          db.txn.remove(id)
+          callback()
+    )
 
 loadModules = (modList, callback) ->
   ###
@@ -353,55 +484,97 @@ loadModules = (modList, callback) ->
   ###
   
   # shortcut. If modList is undefined, then call the callback
-  if modList.length is 0 then return callback.apply(context, [])
+  if modList.length is 0
+    context.setTimeout(
+      callback.apply(context, [])
+    )
+    return
   
-  # 1. create transaction
-  # 2. make a request in paralell to load everything
-  # 3. let onLoad callbacks resolve per transaction
-  txnId = db.txn.create()
-  missingModules = []
-  foundModules = []
-  for module in modList
-    db.module.addTransaction(module, txnId)
-    if !db.module.getExports(module) then missingModules.push(module) else foundModules.push(module)
+  # Tree based traversal. For each module, we'll create a transaction
+  # and each transaction will have its own dependency tree
+  tree = new new treeNode(null)
+  id = db.txn.create()
   
-  # check: if no missing modules, we are okay to run the callback
-  if missingModules.length is 0 then return callback.apply(context, foundModules)
+  # internal method. After all branches of the tree have resolved
+  # we can execute post-order all the modules. We can load them into
+  # exports and run the callback
+  execute = () ->
+    executionOrder = tree.postOrder()
+    for moduleId in executionOrder
+      if moduleId is null then continue
+      executeFile(moduleId)
+    # everything executed. collect exports
+    exports = []
+    for moduleId in modList
+      exports.push(db.module.getExports(moduleId))
+    callback.apply(context, exports)
+    return
   
-  # we were unable to shortcut anything. put callback into the registry for this txnId
-  # store the modules associated with this txnId
-  db.txn.setCallback(txnId, callback)
-  db.txn.setModules(txnId, modList)
-  
-  # for each missing module
-  # mark module as loading
-  download(module) for module in missingModules
+  for moduleId in modList
+    node = new new treeNode(moduleId)
+    dispatchTreeDownload(id, tree, node, execute)
 
-download = (moduleId, callback = null) ->
-  ###
-  ## download(module) ##
-  _internal_ download a module, and then hand off to processing
-  ###
-  # shortcut if already downloading, there's nothing to do.
-  if db.module.getLoading() then return
-  
-  # flag as loading
-  db.module.setLoading(moduleId, true)
+downloadTree = (tree, callback) ->
+  moduleId = tree.getValue()
+  console.log "continuing dispatch of #{moduleId}"
   
   # apply the ruleset for this module if we haven't yet
   applyRules(moduleId) if db.module.getRulesApplied() is false
   
-  # check for file
-  file = db.module.getFile(moduleId)
-  if file then onDownload(moduleId, file)
+  # run all callbacks for a given file
+  processCallbacks = (moduleId, file) ->
+    console.log "processing callbacks for #{moduleId}"
+    db.module.setLoading(moduleId, false)
+    cbs = db.queue.file.get(moduleId)
+    db.queue.file.clear(moduleId)
+    cb(moduleId, file) for cb in cbs
   
-  # does not exist locally, download
-  if XD_INJECT and XD_XHR
-    sendToIframe moduleId, (moduleId, file) ->
-      if callback then callback(moduleId) else onDownload(moduleId, file)
-  else
-    sendToXhr moduleId, (moduleId, file) ->
-      if callback then callback(moduleId) else onDownload(moduleId, file)
+  # the callback every module has when it has been loaded
+  onDownloadComplete = (moduleId, file) ->
+    console.log "retrieved #{moduleId}"
+    db.module.setFile(moduleId, file)
+    analyzeFile(moduleId)
+    requires = db.module.getRequires(moduleId)
+    console.log "#{moduleId} requires #{requires}"
+    id = db.txn.create()
+    for req in requires
+      node = new treeNode(req)
+      dispatchTreeDownload(id, tree, node, callback)
+    if db.txn.get(id) is 0
+      db.txn.remove(id)
+      context.setTimeout(callback)
+  
+  # download a file over xhr or cross domain
+  download = () ->
+    db.module.setLoading(moduleId, true)
+    console.log "downloading #{moduleId}"
+    if XD_INJECT and XD_XHR
+      sendToIframe(moduleId, processCallbacks)
+    else
+      sendToXhr(moduleId, processCallbacks)
+  
+  # queue our results when the file completes
+  db.queue.file.add(moduleId, onDownloadComplete)
+  
+  # if already loading, queue for later
+  if db.module.getLoading(moduleId) then return
+  
+  # short cut. if downloaded, callback
+  file = db.module.getFile(moduleId)
+  if file and file.length > 0 then processCallbacks(moduleId, file) else download()
+
+analyzeFile = (moduleId) ->
+  ###
+  ## analyzeFile(moduleId) ##
+  _internal_ scan a module's file for dependencies and record them
+  ###
+  requires = []
+  uniques = {}
+  while requireRegex.exec(db.module.getFile(moduleId))
+    req = RegExp.$1
+    requires.push(req) if uniques[req] isnt true
+    uniques[req] = true
+  db.module.setRequires(moduleId, requires)
 
 applyRules = (moduleId) ->
   ###
@@ -434,62 +607,15 @@ applyRules = (moduleId) ->
   db.module.setPointcuts(moduleId, pointcuts)
   db.module.setRulesApplied(moduleId, true)
 
-
-onDownload = (moduleId, file) ->
-  # before we go any further, store these file contents in the db
-  db.module.setFile(moduleId, file)
-  db.module.setLoading(moduleId, false)
-  
-  # todo: download all dependencies using download(moduleId, callback)
-  # deps = getDependencies(moduleId)
-  # for each, call download() with callback
-  # once all dependencies have been downloaded, I don't know
-  # i gave up here for the day
-  # move the below into a callback to run when all dependencies
-  # are downloaded
-  
-  # get transactions for this module
-  for txnId in db.module.getTransactions(moduleId)
-    ready = true
-    modules = []
-    for txnModuleId in db.txn.getModules(txnId)
-      if ready is false then break
-      
-      # 1. attempt to get the exports (already compiled elsewhere)
-      exports = db.module.getExports(txnModuleId)
-      if exports isnt false
-        modules.push(exports)
-        continue
-      
-      # 2. if we are in "ready" (no failures yet) and there is a file
-      # but we just haven't ran it yet, then execute the file,
-      # capture the exports, and continue
-      # todo: if executeFile triggers dependencies, we cannot advance
-      if ready and db.module.getFile(txnModuleId)
-        executeFile(txnModuleId)
-        exports = db.module.getExports(txnModuleId)
-        modules.push(exports)
-        continue
-      
-      # 3. we did not have the module, or the file
-      # remove the ready state. That means nobody else will run
-      ready = false
-    
-    # if we are ready, then modules[] contains the required calls
-    # first, clean up the transactions, then
-    # we can execute the callback associated with this txnId
-    callback = db.txn.getCallback(txnId)
-    for txnModuleId in db.txn.getModules(txnId)
-      db.module.removeTransaction(txnModuleId, txnId)
-    db.txn.delete(txnId)
-    callback.apply(context, modules)
-
 executeFile = (moduleId) ->
   ###
   ## executeFile(moduleId) ##
   _internal_ attempts to execute a file with a CommonJS scope
   and store the exports
   ###
+  
+  if db.module.getExports(moduleId) then return
+  
   cuts = getFormattedPointcuts(moduleId)
   path = db.module.getPath(moduleId)
   text = db.module.getFile(moduleId)
@@ -499,24 +625,14 @@ executeFile = (moduleId) ->
                          .replace(/__POINTCUT_BEFORE__/g, cuts.before)
   footer = commonJSFooter.replace(/__POINTCUT_AFTER__/g, cuts.after)
   runCmd = "#{header}\n#{text}\n#{footer}\n//@ sourceURL=#{path}"
-  
-  # find all require statements
-  requires = []
-  requires.push(RegExp.$1) while requireRegex.exec(db.module.getFile(moduleId))
 
-  execModule = () ->
-    # attempt to eval() the module
-    try
-      exports = context.eval(runCmd)
-    catch err
-      throw err
-    # save exports
-    db.module.setExports(moduleId, exports)
-
-  if requires.length > 0
-    loadModules(requires, execModule)
-  else
-    execModule()
+  # todo: circular dependency resolution
+  try
+    exports = context.eval(runCmd)
+  catch err
+    throw err
+  # save exports
+  db.module.setExports(moduleId, exports)
 
 sendToXhr = (moduleId, callback) ->
   ###
