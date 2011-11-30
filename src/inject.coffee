@@ -377,7 +377,7 @@ loadModules = (modList, callback) ->
   # mark module as loading
   download(module) for module in missingModules
 
-download = (moduleId) ->
+download = (moduleId, callback = null) ->
   ###
   ## download(module) ##
   _internal_ download a module, and then hand off to processing
@@ -397,9 +397,11 @@ download = (moduleId) ->
   
   # does not exist locally, download
   if XD_INJECT and XD_XHR
-    sendToIframe(moduleId, onDownload)
+    sendToIframe moduleId, (moduleId, file) ->
+      if callback then callback(moduleId) else onDownload(moduleId, file)
   else
-    sendToXhr(moduleId, onDownload)
+    sendToXhr moduleId, (moduleId, file) ->
+      if callback then callback(moduleId) else onDownload(moduleId, file)
 
 applyRules = (moduleId) ->
   ###
@@ -436,6 +438,15 @@ applyRules = (moduleId) ->
 onDownload = (moduleId, file) ->
   # before we go any further, store these file contents in the db
   db.module.setFile(moduleId, file)
+  db.module.setLoading(moduleId, false)
+  
+  # todo: download all dependencies using download(moduleId, callback)
+  # deps = getDependencies(moduleId)
+  # for each, call download() with callback
+  # once all dependencies have been downloaded, I don't know
+  # i gave up here for the day
+  # move the below into a callback to run when all dependencies
+  # are downloaded
   
   # get transactions for this module
   for txnId in db.module.getTransactions(moduleId)
@@ -453,7 +464,7 @@ onDownload = (moduleId, file) ->
       # 2. if we are in "ready" (no failures yet) and there is a file
       # but we just haven't ran it yet, then execute the file,
       # capture the exports, and continue
-      # todo: does this repeat multiple times?
+      # todo: if executeFile triggers dependencies, we cannot advance
       if ready and db.module.getFile(txnModuleId)
         executeFile(txnModuleId)
         exports = db.module.getExports(txnModuleId)
