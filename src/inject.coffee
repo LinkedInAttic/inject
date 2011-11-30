@@ -503,7 +503,7 @@ loadModules = (modList, callback) ->
   
   # Tree based traversal. For each module, we'll create a transaction
   # and each transaction will have its own dependency tree
-  tree = new new treeNode(null)
+  tree = new treeNode(null)
   id = db.txn.create()
   
   # internal method. After all branches of the tree have resolved
@@ -522,7 +522,7 @@ loadModules = (modList, callback) ->
     return
   
   for moduleId in modList
-    node = new new treeNode(moduleId)
+    node = new treeNode(moduleId)
     dispatchTreeDownload(id, tree, node, execute)
 
 downloadTree = (tree, callback) ->
