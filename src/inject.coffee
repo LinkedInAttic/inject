@@ -117,12 +117,12 @@ db = {
   to reduce maintenance headaches, all accessing is done through this
   object, and not the _db object
   ###
-  module:
+  "module":
     ###
     ## db.module{} ##
     These functions manipulate the module registry
     ###
-    create: (moduleId) ->
+    "create": (moduleId) ->
       ###
       ## create(moduleId) ##
       create a registry entry for tracking a module
@@ -141,7 +141,7 @@ db = {
           "pointcuts":
             "before": []
             "after": []
-    getExports: (moduleId) ->
+    "getExports": (moduleId) ->
       ###
       ## getExports(moduleId) ##
       get the exports for a given moduleId
@@ -153,7 +153,7 @@ db = {
         registry[moduleId].exec = null
         return registry[moduleId].exports
       return false
-    setExports: (moduleId, exports) ->
+    "setExports": (moduleId, exports) ->
       ###
       ## setExports(moduleId, exports) ##
       set the exports for moduleId
@@ -161,14 +161,14 @@ db = {
       registry = _db.moduleRegistry
       db.module.create(moduleId)
       registry[moduleId].exports = exports
-    getPointcuts: (moduleId) ->
+    "getPointcuts": (moduleId) ->
       ###
       ## getPointcuts(moduleId) ##
       get the pointcuts for a given moduleId
       ###
       registry = _db.moduleRegistry
       if registry[moduleId]?.pointcuts then return registry[moduleId].pointcuts
-    setPointcuts: (moduleId, pointcuts) ->
+    "setPointcuts": (moduleId, pointcuts) ->
       ###
       ## setPointcuts(moduleId, pointcuts) ##
       set the pointcuts for moduleId
@@ -176,14 +176,14 @@ db = {
       registry = _db.moduleRegistry
       db.module.create(moduleId)
       registry[moduleId].pointcuts = pointcuts
-    getRequires: (moduleId) ->
+    "getRequires": (moduleId) ->
       ###
       ## getRequires(moduleId) ##
       get the requires for a given moduleId found at runtime
       ###
       registry = _db.moduleRegistry
       if registry[moduleId]?.requires then return registry[moduleId].requires
-    setRequires: (moduleId, requires) ->
+    "setRequires": (moduleId, requires) ->
       ###
       ## setRequires(moduleId, requires) ##
       set the runtime dependencies for moduleId
@@ -191,14 +191,14 @@ db = {
       registry = _db.moduleRegistry
       db.module.create(moduleId)
       registry[moduleId].requires = requires
-    getStaticRequires: (moduleId) ->
+    "getStaticRequires": (moduleId) ->
       ###
       ## getStaticRequires(moduleId) ##
       get the requires for a given moduleId found at declaration time (static dependencies)
       ###
       registry = _db.moduleRegistry
       if registry[moduleId]?.staticRequires then return registry[moduleId].staticRequires
-    setStaticRequires: (moduleId, staticRequires) ->
+    "setStaticRequires": (moduleId, staticRequires) ->
       ###
       ## setStaticRequires(moduleId, staticRequires) ##
       set the staticRequires for moduleId, found at declaration time
@@ -206,7 +206,7 @@ db = {
       registry = _db.moduleRegistry
       db.module.create(moduleId)
       registry[moduleId].staticRequires = staticRequires
-    getRulesApplied: (moduleId) ->
+    "getRulesApplied": (moduleId) ->
       ###
       ## getRulesApplied(moduleId) ##
       get the status of the rulesApplied flag. It's set when it has passed through
@@ -214,7 +214,7 @@ db = {
       ###
       registry = _db.moduleRegistry
       if registry[moduleId]?.rulesApplied then return registry[moduleId].rulesApplied else return false
-    setRulesApplied: (moduleId, rulesApplied) ->
+    "setRulesApplied": (moduleId, rulesApplied) ->
       ###
       ## setRulesApplied(moduleId, rulesApplied) ##
       set the rules applied flag for moduleId once all rules have been applied
@@ -222,14 +222,14 @@ db = {
       registry = _db.moduleRegistry
       db.module.create(moduleId)
       registry[moduleId].rulesApplied = rulesApplied
-    getPath: (moduleId) ->
+    "getPath": (moduleId) ->
       ###
       ## getPath(moduleId) ##
       get the resolved path for a given moduleId
       ###
       registry = _db.moduleRegistry
       if registry[moduleId]?.path then return registry[moduleId].path else return false
-    setPath: (moduleId, path) ->
+    "setPath": (moduleId, path) ->
       ###
       ## setPath(moduleId, path) ##
       set the path for moduleId
@@ -237,7 +237,7 @@ db = {
       registry = _db.moduleRegistry
       db.module.create(moduleId)
       registry[moduleId].path = path
-    getFile: (moduleId) ->
+    "getFile": (moduleId) ->
       ###
       ## getFile(moduleId) ##
       get the file for a given moduleId. If it doesn't exist in the registry,
@@ -255,7 +255,7 @@ db = {
         db.module.setFile(moduleId, file)
         return file
       return false
-    setFile: (moduleId, file) ->
+    "setFile": (moduleId, file) ->
       ###
       ## setFile(moduleId, file) ##
       set the file contents for moduleId, and update localStorage
@@ -266,7 +266,7 @@ db = {
       path = db.module.getPath(moduleId)
       token = "#{fileStorageToken}#{schemaVersion}#{path}"
       lscache.set(token, file, userConfig.fileExpires)
-    clearAllFiles: () ->
+    "clearAllFiles": () ->
       ###
       ## clearAllFiles() ##
       remove all files from the registry. It sets them all back to an unloaded state
@@ -275,7 +275,7 @@ db = {
       for own moduleId, data of registry
         data.file = null
         data.loading = false
-    getLoading: (moduleId) ->
+    "getLoading": (moduleId) ->
       ###
       ## getLoading(moduleId) ##
       get the status of the loading flag. It's set when an item begins download,
@@ -283,7 +283,7 @@ db = {
       ###
       registry = _db.moduleRegistry
       if registry[moduleId]?.loading then return registry[moduleId].loading else return false
-    setLoading: (moduleId, loading) ->
+    "setLoading": (moduleId, loading) ->
       ###
       ## setLoading(moduleId, loading) ##
       set the loading flag for moduleId, It's set when an item begins download
@@ -291,12 +291,12 @@ db = {
       registry = _db.moduleRegistry
       db.module.create(moduleId)
       registry[moduleId].loading = loading
-  txn:
+  "txn":
     ###
     ## db.txn{} ##
     These methods manipulate the transaction registry
     ###
-    create: () ->
+    "create": () ->
       ###
       ## create() ##
       Create a transaction so we can count outstanding requests
@@ -304,73 +304,73 @@ db = {
       id = _db.transactionRegistryCounter++
       _db.transactionRegistry[id] = 0
       return id
-    add: (txnId) ->
+    "add": (txnId) ->
       ###
       ## add(txnId) ##
       increment the counter for a given transaction id
       ###
       _db.transactionRegistry[txnId]++
-    subtract: (txnId) ->
+    "subtract": (txnId) ->
       ###
       ## subtract(txnId) ##
       decrement the counter for a given transaction id
       ###
       _db.transactionRegistry[txnId]--
-    get: (txnId) ->
+    "get": (txnId) ->
       ###
       ## get(txnId) ##
       Get the number of outstanding transactions for a given transaction id
       ###
       return _db.transactionRegistry[txnId]
-    remove: (txnId) ->
+    "remove": (txnId) ->
       ###
       ## remove(txnId) ##
       Remove a transaction entry from the registry
       ###
       _db.transactionRegistry[txnId] = null
       delete _db.transactionRegistry[txnId]
-  queue:
-    load:
+  "queue":
+    "load":
       ###
       ## db.queue.load{} ##
       these methods affect the load queue, tracking callback requests
       when loading is blocked for a cross domain iframe
       ###
-      add: (item) ->
+      "add": (item) ->
         _db.loadQueue.push(item)
-      get: () ->
+      "get": () ->
         return _db.loadQueue
-    rules:
+    "rules":
       ###
       ## db.queue.rules{} ##
       these methods affect the rules queue, tracking rules placed into
       the system via addRule(). Any time the rules are dirty, we sort them
       on get()
       ###
-      add: (item) ->
+      "add": (item) ->
         _db.rulesQueue.push(item)
         _db.rulesQueueDirty = true
-      get: () ->
+      "get": () ->
         if _db.rulesQueueDirty
           _db.rulesQueueDirty = false
           _db.rulesQueue.sort (a, b) ->
             return b.weight - a.weight
         return _db.rulesQueue
-      size: () ->
+      "size": () ->
         return _db.rulesQueue.length
-    file:
+    "file":
       ###
       ## db.queue.file{} ##
       these methods affect the file queue, used for tracking pending callbacks
       when a file is being downloaded. It supports a clear() method to remove
       all pending callbacks after the queue has been ran.
       ###
-      add: (moduleId, item) ->
+      "add": (moduleId, item) ->
         if !_db.fileQueue[moduleId] then !_db.fileQueue[moduleId] = []
         _db.fileQueue[moduleId].push(item)
-      get: (moduleId) ->
+      "get": (moduleId) ->
         if _db.fileQueue[moduleId] then return _db.fileQueue[moduleId] else return []
-      clear: (moduleId) ->
+      "clear": (moduleId) ->
         if _db.fileQueue[moduleId] then _db.fileQueue[moduleId] = []
 }
 
