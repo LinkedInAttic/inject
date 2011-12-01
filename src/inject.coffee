@@ -947,10 +947,14 @@ require.addRule = (match, weight = null, ruleSet = null) ->
 
 require.run = (moduleId) ->
   ###
-  ## TODO require.run(moduleId) ##
-  Execute the specified moduleId. This runs an ensure() to make sure the module has been loaded, and then
-  execute it.
+  ## require.run(moduleId) ##
+  Try to getFile for moduleId, if the file exists, execute the file, if not, load this file and run it
   ###
+  if db.module.getFile(moduleId) is false
+    loadModules([moduleId], () ->)
+  else
+    db.module.setExports(moduleId, null)
+    executeFile(moduleId);
 
 define = (moduleId, deps, callback) ->
   ###
