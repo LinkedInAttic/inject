@@ -7,19 +7,26 @@ var nStatic = require("node-static"),
 
 function server(request, response) {
   // serve from inject
-  injectServer.serve(request, response, function(err, result) {
-    if ((err != null ? err.status : void 0) === 404) {
-      // serve from example
-      exampleServer.serve(request, response, function(err, result) {
-        if ((err != null ? err.status : void 0) === 404) {
-          // not found in either static
-          sys.error("Error serving " + request.url + " - " + request.message);
-          response.writeHead(err.status, err.headers);
-          return response.end();
-        }
-      });
-    }
-  });
+  if(request.url === '/deps/jqueryui/jquery.ui.widget.min.js') {
+    return setTimeout(function() {
+      exampleServer.serve(request, response, function(err, result) {});
+    }, 5000);
+  }
+  else {
+    injectServer.serve(request, response, function(err, result) {
+      if ((err != null ? err.status : void 0) === 404) {
+        // serve from example
+        exampleServer.serve(request, response, function(err, result) {
+          if ((err != null ? err.status : void 0) === 404) {
+            // not found in either static
+            sys.error("Error serving " + request.url + " - " + request.message);
+            response.writeHead(err.status, err.headers);
+            return response.end();
+          }
+        });
+      }
+    });
+  }
 }
 
 http.createServer(server).listen(4000);
