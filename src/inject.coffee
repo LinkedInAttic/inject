@@ -381,15 +381,6 @@ class treeNode
       # have finished the tree
       return output
 
-
-setUserModules = (modl) ->
-  ###
-  ## setUserModules(modl) ##
-  TODO: refactor into addRule commands
-  _internal_ Set the collection of user defined modules
-  ###
-  userModules = modl 
-
 clearFileRegistry = (version = schemaVersion) ->
   ###
   ## clearFileRegistry(version = schemaVersion) ##
