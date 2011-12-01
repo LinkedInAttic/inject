@@ -247,7 +247,7 @@ db = {
       token = "#{fileStorageToken}#{schemaVersion}#{path}"
       if registry[moduleId]?.file then return registry[moduleId].file
       
-      if userConfig.fileExpiration is 0 then return false
+      if userConfig.fileExpires is 0 then return false
 
       file = lscache.get(token)
       if file and typeof(file) is "string" and file.length
