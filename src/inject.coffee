@@ -641,6 +641,7 @@ define.amd =
 # set context.define to the main inject object
 # set an alternate interface in Inject in case things get clobbered
 context['require'] = require
+context['define'] = define
 context['Inject'] = {
   'require': require,
   'define': define,
