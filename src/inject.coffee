@@ -65,18 +65,17 @@ jsSuffix = /.*?\.js$/               # Regex for identifying things that end in *
 hostPrefixRegex = /^https?:\/\//    # prefixes for URLs that begin with http/https
 hostSuffixRegex = /^(.*?)(\/.*|$)/  # suffix for URLs used to capture everything up to / or the end of the string
 iframeName = "injectProxy"          # the name for the iframe proxy created (Porthole)
-requireRegex = ///                  # a regex for capturing the require() statements inside of included code
-  require[\s]*\([\s]*                 # followed by require, a whitespace character 0+, and an opening ( then more whitespace
-  (?:"|')                             # followed by a quote
-  ([\w/\.\:]+?)                       # (1) capture word characters, forward slashes, dots, and colons (at least one)
-  (?:'|")                             # followed by a quote
-  [\s]*\)                             # followed by whitespace, and then a closing ) that ends the require() call
-  ///gm
 responseSlicer = ///                # a regular expression for slicing a response from iframe communication into its parts
   ^(.+?)[\s]                          # (1) Anything up to a space (module id)
   ([\w\W]+)$                          # (2) Any text up until the end of the string
   ///m                                # Supports multiline expressions
-
+requireRegex = null
+requireEnsureRegex = null
+`
+// requireRegexes from Yabble Copyright (c) 2010 James Brantly
+requireRegex = /(?:^|[^\w\$_.])require\s*\(\s*("[^"\\]*(?:\\.[^"\\]*)*"|'[^'\\]*(?:\\.[^'\\]*)*')\s*\)/g;
+requireEnsureRegex = /(?:^|[^\w\$_.])require.ensure\s*\(\s*(\[("[^"\\]*(?:\\.[^"\\]*)*"|'[^'\\]*(?:\\.[^'\\]*)*'|\s*|,)*\])/g;
+`
 ###
 CommonJS wrappers for a header and footer
 these bookend the included code and insulate the scope so that it doesn't impact inject()
@@ -691,13 +690,24 @@ analyzeFile = (moduleId) ->
   ###
   requires = []
   uniques = {}
-  while requireRegex.exec(db.module.getFile(moduleId))
-    req = RegExp.$1
-    requires.push(req) if uniques[req] isnt true
-    uniques[req] = true
+  require = (item) ->
+    requires.push(item) if uniques[item] isnt true
+    uniques[item] = true
+  require.ensure = (items) ->
+    require(item) for item in items
+  
+  # collect runtime requirements
+  reqs = []
+  file = db.module.getFile(moduleId)
+  reqs.push(match[0]) while (match = requireRegex.exec(file))
+  reqs.push(match[0]) while (match = requireEnsureRegex.exec(file))
+  if reqs?.length > 0 then eval(reqs.join(";"))
+  
+  # collect static requirements such as in define()
   for staticReq in db.module.getStaticRequires(moduleId)
     requires.push(staticReq) if uniques[staticReq] isnt true
     uniques[staticReq] = true
+  
   db.module.setRequires(moduleId, requires)
 
 applyRules = (moduleId) ->
