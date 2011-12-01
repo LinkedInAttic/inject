@@ -220,10 +220,7 @@ createIframe = () ->
     host = host.replace(hostPrefixRegex, "").replace(hostSuffixRegex, "$1")
     return host
   
-  try
-    iframe = document.createElement("<iframe name=\"" + iframeName + "\"/>")
-  catch err
-    iframe = document.createElement("iframe")
+  iframe = document.createElement("iframe")
   iframe.name = iframeName
   iframe.src = src+"#xhr"
   iframe.style.width = iframe.style.height = "1px"
@@ -255,8 +252,8 @@ getPointcuts = (module) ->
   ###
   noop = () -> return
   pointcuts =
-    before: noop
-    after: noop
+    'before': noop
+    'after': noop
   if !userModules[module] then return pointcuts
   definition = userModules[module]
   
@@ -273,7 +270,7 @@ normalizePath = (path) ->
   ###
   lookup = path
   workingPath = path
-  configPath = config.path or ""
+  configPath = config['path'] or ""
   
   # short circuit: already cached
   if modulePathRegistry[path] then return modulePathRegistry[path]
@@ -289,12 +286,12 @@ normalizePath = (path) ->
     # if the definition is an object and has a path variable
     if typeof(moduleDefinition) is "object" and moduleDefinition.path
       # if the path variable is a function, run the function
-      if typeof(moduleDefinition.path) is "function"
-        returnPath = moduleDefinition.path(workingPath)
+      if typeof(moduleDefinition['path']) is "function"
+        returnPath = moduleDefinition['path'](workingPath)
         if returnPath isnt false then workingPath = returnPath
       # id the module definition is a string, use that
-      if typeof(moduleDefinition.path) is "string"
-        workingPath = moduleDefinition.path
+      if typeof(moduleDefinition['path']) is "string"
+        workingPath = moduleDefinition['path']
   
   # function for path resolution
   if typeof(configPath) is "function"
@@ -307,7 +304,7 @@ normalizePath = (path) ->
     return modulePathRegistry[lookup]
   
   if workingPath.indexOf("/") isnt 0 and typeof(configPath) is "undefined" then throw new Error("Path must be defined")  
-  if workingPath.indexOf("/") isnt 0 and typeof(configPath) is "string" then workingPath = "#{config.path}#{workingPath}"
+  if workingPath.indexOf("/") isnt 0 and typeof(configPath) is "string" then workingPath = "#{config['path']}#{workingPath}"
   if !jsSuffix.test(workingPath) then workingPath = "#{workingPath}.js"
 
   modulePathRegistry[lookup] = workingPath
@@ -322,7 +319,7 @@ loadModules = (modList, cb) ->
   
   # shortcut. If modList is undefined, then call the callback
   if modList.length is 0 then return cb.apply(context, [])
-  
+
   # for each item in the mod list
   # resolve it to a full url for file access
   # if it has been loaded, flag done & go on
@@ -380,8 +377,8 @@ onModuleLoad = (txId, module, path, text) ->
   header = commonJSHeader.replace(/__MODULE_ID__/g, module)
                          .replace(/__MODULE_URI__/g, path)
                          .replace(/__INJECT_NS__/g, namespace)
-                         .replace(/__POINTCUT_BEFORE__/g, cutsStr.before)
-  footer = commonJSFooter.replace(/__POINTCUT_AFTER__/g, cutsStr.after)
+                         .replace(/__POINTCUT_BEFORE__/g, cutsStr['before'])
+  footer = commonJSFooter.replace(/__POINTCUT_AFTER__/g, cutsStr['after'])
   runCmd = "#{header}\n#{text}\n#{footer}\n//@ sourceURL=#{path}"
   
   # find all require statements
@@ -620,7 +617,7 @@ define = (moduleId, deps, callback) ->
     if typeof(callback) is 'function'
       returnValue = callback.apply(context, args);
       count = 0
-      count++ for own item in module.exports
+      count++ for own item in module['exports']
       exports = returnValue if count is 0 and typeof(returnValue) isnt "undefined"
     else if typeof(callback) is 'object'
       exports = callback
@@ -637,21 +634,27 @@ define.amd =
 # set context.require to the main inject object
 # set context.define to the main inject object
 # set an alternate interface in Inject in case things get clobbered
-context.require = require
-context.define = define
-context.Inject = {
-  require: require,
-  define: define,
-  debug: {
-    fileRegistry: fileRegistry,
-    loadQueue: loadQueue,
-    userModules: userModules,
-    moduleRegistry: moduleRegistry,
-    modulePathRegistry: modulePathRegistry,
-    callbackRegistry: callbackRegistry,
-    txnRegistry: txnRegistry
+context['require'] = require
+context['Inject'] = {
+  'require': require,
+  'define': define,
+  'debug': {
+    'fileRegistry': fileRegistry,
+    'loadQueue': loadQueue,
+    'userModules': userModules,
+    'moduleRegistry': moduleRegistry,
+    'modulePathRegistry': modulePathRegistry,
+    'callbackRegistry': callbackRegistry,
+    'txnRegistry': txnRegistry
   }  
 }
+context['require']['ensure'] = require.ensure;
+context['require']['setModuleRoot'] = require.setModuleRoot;
+context['require']['setExpires'] = require.setExpires;
+context['require']['setCrossDomain'] = require.setCrossDomain;
+context['require']['clearCache'] = require.clearCache;
+context['require']['manifest'] = require.manifest;
+context['require']['run'] = require.run;
 
 ###
 Porthole
