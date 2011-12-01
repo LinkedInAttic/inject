@@ -40,22 +40,22 @@ For more details, check out the README or github: https://github.com/Jakobo/inje
 Constants and Registries used
 ###
 userConfig =
-  moduleRoot: null                  # the module root location
-  fileExpires: 1440                 # the default expiry for items in lscache (in minutes)
-  xd:
-    inject: null                    # the location of the relay.html file, same domain as inject
-    xhr: null                       # the location of the relay.html file, same domain as moduleRoot
+  "moduleRoot": null                # the module root location
+  "fileExpires": 1440               # the default expiry for items in lscache (in minutes)
+  "xd":
+    "inject": null                  # the location of the relay.html file, same domain as inject
+    "xhr": null                     # the location of the relay.html file, same domain as moduleRoot
 undef = undef                       # undefined
 schemaVersion = 1                   # version of inject()'s localstorage schema
 context = this                      # context is our local scope. Should be "window"
 pauseRequired = false               # can we run immediately? when using iframe transport, the answer is no
 _db =                               # internal database of modules and transactions
-  moduleRegistry: {}                # a registry of modules that have been loaded
-  transactionRegistry: {}           # a registry of transaction ids and what modules were associated
-  transactionRegistryCounter: 0     # a unique id for transactionRegistry
-  loadQueue: []                     # a queue used when performing iframe based cross domain loads
-  rulesQueue: []                    # the collection of rules for processing
-  fileQueue: []                     # a list of callbacks waiting on a file download
+  "moduleRegistry": {}              # a registry of modules that have been loaded
+  "transactionRegistry": {}         # a registry of transaction ids and what modules were associated
+  "transactionRegistryCounter": 0   # a unique id for transactionRegistry
+  "loadQueue": []                   # a queue used when performing iframe based cross domain loads
+  "rulesQueue": []                  # the collection of rules for processing
+  "fileQueue": []                   # a list of callbacks waiting on a file download
 xDomainRpc = null                   # a cross domain RPC object (Porthole)
 fileStorageToken = "FILEDB"         # a storagetoken identifier we use (lscache)
 fileStore = "Inject FileStorage"    # file store to use
@@ -129,19 +129,18 @@ db = {
       ###
       registry = _db.moduleRegistry
       if !registry[moduleId]
-        registry[moduleId] = {
-          exports: null
-          path: null
-          file: null
-          loading: false
-          rulesApplied: false
-          requires: []
-          staticRequires: []
-          exec: null
-          pointcuts:
-            before: []
-            after: []
-        }
+        registry[moduleId] =
+          "exports": null
+          "path": null
+          "file": null
+          "loading": false
+          "rulesApplied": false
+          "requires": []
+          "staticRequires": []
+          "exec": null
+          "pointcuts":
+            "before": []
+            "after": []
     getExports: (moduleId) ->
       ###
       ## getExports(moduleId) ##
@@ -248,6 +247,9 @@ db = {
       path = db.module.getPath(moduleId)
       token = "#{fileStorageToken}#{schemaVersion}#{path}"
       if registry[moduleId]?.file then return registry[moduleId].file
+      
+      if userConfig.fileExpiration is 0 then return false
+
       file = lscache.get(token)
       if file and typeof(file) is "string" and file.length
         db.module.setFile(moduleId, file)
@@ -481,7 +483,7 @@ class treeNode
       
       # have finished the tree
       return output
-
+  
 clearFileRegistry = (version = schemaVersion) ->
   ###
   ## clearFileRegistry(version = schemaVersion) ##
@@ -489,9 +491,15 @@ clearFileRegistry = (version = schemaVersion) ->
   clearing all local storage keys that relate to the fileStorageToken and version
   ###
   token = "#{fileStorageToken}#{version}"
-  for id in localStorage.length
-    key = localStorage.key(id)
-    if key.indexOf(token) isnt -1 then lscache.remove(key)
+  keys = []
+  `
+  for (var i = 0; i < localStorage.length; i++) {
+    var key = localStorage.key(i);
+    if (key.indexOf(token) !== -1) keys.push(key)
+  }
+  `
+  for key in keys
+    localStorage.removeItem(key)
   if version is schemaVersion then db.module.clearAllFiles()
 
 createIframe = () ->
@@ -509,10 +517,7 @@ createIframe = () ->
     host = host.replace(hostPrefixRegex, "").replace(hostSuffixRegex, "$1")
     return host
   
-  try
-    iframe = document.createElement("<iframe name=\"" + iframeName + "\"/>")
-  catch err
-    iframe = document.createElement("iframe")
+  iframe = document.createElement("iframe")
   iframe.name = iframeName
   iframe.src = src+"#xhr"
   iframe.style.width = iframe.style.height = "1px"
@@ -560,8 +565,8 @@ getFormattedPointcuts = (moduleId) ->
   
   noop = () -> return
   pointcuts =
-    before: noop
-    after: noop
+    'before': noop
+    'after': noop
   if !userModules[module] then return pointcuts
   definition = userModules[module]
   
@@ -743,6 +748,7 @@ executeFile = (moduleId) ->
                          .replace(/__INJECT_NS__/g, namespace)
                          .replace(/__POINTCUT_BEFORE__/g, cuts.before)
   footer = commonJSFooter.replace(/__POINTCUT_AFTER__/g, cuts.after)
+  
   runCmd = "#{header}\n#{text}\n#{footer}\n//@ sourceURL=#{path}"
   
   # todo: circular dependency resolution
@@ -986,7 +992,7 @@ define = (moduleId, deps, callback) ->
     if typeof(callback) is 'function'
       returnValue = callback.apply(context, args);
       count = 0
-      count++ for own item in module.exports
+      count++ for own item in module['exports']
       exports = returnValue if count is 0 and typeof(returnValue) isnt "undefined"
     else if typeof(callback) is 'object'
       exports = callback
@@ -1004,14 +1010,21 @@ define.amd =
 # set context.require to the main inject object
 # set context.define to the main inject object
 # set an alternate interface in Inject in case things get clobbered
-context.require = require
-context.define = define
-context.Inject = {
-  require: require,
-  define: define,
-  debug: () ->
+context['require'] = require
+context['define'] = define
+context['Inject'] = {
+  'require': require,
+  'define': define,
+  'debug': () ->
     console?.dir(_db)
 }
+context['require']['ensure'] = require.ensure;
+context['require']['setModuleRoot'] = require.setModuleRoot;
+context['require']['setExpires'] = require.setExpires;
+context['require']['setCrossDomain'] = require.setCrossDomain;
+context['require']['clearCache'] = require.clearCache;
+context['require']['manifest'] = require.manifest;
+context['require']['run'] = require.run;
 
 ###
 Porthole
