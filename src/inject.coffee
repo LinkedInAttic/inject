@@ -3,20 +3,21 @@
 
 Some sample ways to use inject...
     var foo = require("moduleName");
+    
+    // -- or --
+    
     require.ensure(["moduleOne", "moduleTwo", "moduleThree"], function(require, exports, module) {
       var foo = require("moduleOne");
     })
+    
+    // -- or --
+    
+    require.run("mySampleApplication")
 
 Configuring Inject
   require.setModuleRoot("http://example.com/path/to/js/root")
   require.setCrossDomain("http://local.example.com/path/to/relay.html", "http://remote.example.com/path/to/relay.html")
-  require.manifest({
-    moduleName: "http://local.example.com/path/to/module"
-  }, [weight])
-  require.manifest(function(path) {
-  
-  }, [weight])
-  require.run("appName")
+  require.addRule(moduleName, "http://local.example.com/path/to/module")
 
 For more details, check out the README or github: https://github.com/Jakobo/inject
 ###
@@ -520,18 +521,15 @@ loadModules = (modList, callback) ->
 
 downloadTree = (tree, callback) ->
   moduleId = tree.getValue()
-  console.log "continuing dispatch of #{moduleId}"
   
   # apply the ruleset for this module if we haven't yet
   applyRules(moduleId) if db.module.getRulesApplied() is false
   
   # the callback every module has when it has been loaded
   onDownloadComplete = (moduleId, file) ->
-    console.log "retrieved #{moduleId}"
     db.module.setFile(moduleId, file)
     analyzeFile(moduleId)
     requires = db.module.getRequires(moduleId)
-    console.log "#{moduleId} requires #{requires}"
     id = db.txn.create()
     for req in requires
       node = new treeNode(req)
@@ -543,7 +541,6 @@ downloadTree = (tree, callback) ->
   # download a file over xhr or cross domain
   download = () ->
     db.module.setLoading(moduleId, true)
-    console.log "downloading #{moduleId}"
     if userConfig.xd.inject and userConfig.xd.xhr
       sendToIframe(moduleId, processCallbacks)
     else
@@ -561,7 +558,6 @@ downloadTree = (tree, callback) ->
 
 # run all callbacks for a given file
 processCallbacks = (moduleId, file) ->
-  console.log "processing callbacks for #{moduleId}"
   db.module.setLoading(moduleId, false)
   cbs = db.queue.file.get(moduleId)
   db.queue.file.clear(moduleId)
