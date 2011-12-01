@@ -81,7 +81,6 @@ responseSlicer = ///                # a regular expression for slicing a respons
 CommonJS wrappers for a header and footer
 these bookend the included code and insulate the scope so that it doesn't impact inject()
 or anything else.
-this helps secure module bleeding
 ###
 commonJSHeader = '''
 with (window) {
@@ -111,12 +110,18 @@ commonJSFooter = '''
 }
 '''
 
-# ### This section is the getters and setters for the internal database
-# ### do not manipulate the _db object directly
-# ##########
-# {} added for folding in TextMate
 db = {
+  ###
+  ## db{} ##
+  this is the database for all registries and queues
+  to reduce maintenance headaches, all accessing is done through this
+  object, and not the _db object
+  ###
   module:
+    ###
+    ## db.module{} ##
+    These functions manipulate the module registry
+    ###
     create: (moduleId) ->
       ###
       ## create(moduleId) ##
@@ -132,13 +137,16 @@ db = {
           rulesApplied: false
           requires: []
           staticRequires: []
-          transactions: []
           exec: null
           pointcuts:
             before: []
             after: []
         }
     getExports: (moduleId) ->
+      ###
+      ## getExports(moduleId) ##
+      get the exports for a given moduleId
+      ###
       registry = _db.moduleRegistry
       if registry[moduleId]?.exports then return registry[moduleId].exports
       if registry[moduleId]?.exec
@@ -147,45 +155,95 @@ db = {
         return registry[moduleId].exports
       return false
     setExports: (moduleId, exports) ->
+      ###
+      ## setExports(moduleId, exports) ##
+      set the exports for moduleId
+      ###
       registry = _db.moduleRegistry
       db.module.create(moduleId)
       registry[moduleId].exports = exports
     getPointcuts: (moduleId) ->
+      ###
+      ## getPointcuts(moduleId) ##
+      get the pointcuts for a given moduleId
+      ###
       registry = _db.moduleRegistry
       if registry[moduleId]?.pointcuts then return registry[moduleId].pointcuts
     setPointcuts: (moduleId, pointcuts) ->
+      ###
+      ## setPointcuts(moduleId, pointcuts) ##
+      set the pointcuts for moduleId
+      ###
       registry = _db.moduleRegistry
       db.module.create(moduleId)
       registry[moduleId].pointcuts = pointcuts
     getRequires: (moduleId) ->
+      ###
+      ## getRequires(moduleId) ##
+      get the requires for a given moduleId found at runtime
+      ###
       registry = _db.moduleRegistry
       if registry[moduleId]?.requires then return registry[moduleId].requires
     setRequires: (moduleId, requires) ->
+      ###
+      ## setRequires(moduleId, requires) ##
+      set the runtime dependencies for moduleId
+      ###
       registry = _db.moduleRegistry
       db.module.create(moduleId)
       registry[moduleId].requires = requires
     getStaticRequires: (moduleId) ->
+      ###
+      ## getStaticRequires(moduleId) ##
+      get the requires for a given moduleId found at declaration time (static dependencies)
+      ###
       registry = _db.moduleRegistry
       if registry[moduleId]?.staticRequires then return registry[moduleId].staticRequires
     setStaticRequires: (moduleId, staticRequires) ->
+      ###
+      ## setStaticRequires(moduleId, staticRequires) ##
+      set the staticRequires for moduleId, found at declaration time
+      ###
       registry = _db.moduleRegistry
       db.module.create(moduleId)
       registry[moduleId].staticRequires = staticRequires
     getRulesApplied: (moduleId) ->
+      ###
+      ## getRulesApplied(moduleId) ##
+      get the status of the rulesApplied flag. It's set when it has passed through
+      the rules queue
+      ###
       registry = _db.moduleRegistry
       if registry[moduleId]?.rulesApplied then return registry[moduleId].rulesApplied else return false
     setRulesApplied: (moduleId, rulesApplied) ->
+      ###
+      ## setRulesApplied(moduleId, rulesApplied) ##
+      set the rules applied flag for moduleId once all rules have been applied
+      ###
       registry = _db.moduleRegistry
       db.module.create(moduleId)
       registry[moduleId].rulesApplied = rulesApplied
     getPath: (moduleId) ->
+      ###
+      ## getPath(moduleId) ##
+      get the resolved path for a given moduleId
+      ###
       registry = _db.moduleRegistry
       if registry[moduleId]?.path then return registry[moduleId].path else return false
     setPath: (moduleId, path) ->
+      ###
+      ## setPath(moduleId, path) ##
+      set the path for moduleId
+      ###
       registry = _db.moduleRegistry
       db.module.create(moduleId)
       registry[moduleId].path = path
     getFile: (moduleId) ->
+      ###
+      ## getFile(moduleId) ##
+      get the file for a given moduleId. If it doesn't exist in the registry,
+      look for the object in localStorage. Return false if no matches are found
+      ###
       registry = _db.moduleRegistry
       path = db.module.getPath(moduleId)
       token = "#{fileStorageToken}#{schemaVersion}#{path}"
@@ -196,6 +254,10 @@ db = {
         return file
       return false
     setFile: (moduleId, file) ->
+      ###
+      ## setFile(moduleId, file) ##
+      set the file contents for moduleId, and update localStorage
+      ###
       registry = _db.moduleRegistry
       db.module.create(moduleId)
       registry[moduleId].file = file
@@ -203,52 +265,86 @@ db = {
       token = "#{fileStorageToken}#{schemaVersion}#{path}"
       lscache.set(token, file, userConfig.fileExpires)
     clearAllFiles: () ->
+      ###
+      ## clearAllFiles() ##
+      remove all files from the registry. It sets them all back to an unloaded state
+      ###
       registry = _db.moduleRegistry
       for own moduleId, data of registry
         data.file = null
         data.loading = false
-    getTransactions: (moduleId) ->
-      registry = _db.moduleRegistry
-      if registry[moduleId]?.transactions then return registry[moduleId].transactions else return false
-    addTransaction: (moduleId, txnId) ->
-      registry = _db.moduleRegistry
-      db.module.create(moduleId)
-      registry[moduleId].transactions.push(txnId)
-    removeTransaction: (moduleId, txnId) ->
-      registry = _db.moduleRegistry
-      db.module.create(moduleId)
-      newTransactions = []
-      for testTxnId of registry[moduleId].transactions
-        if testTxnId isnt txnId then newTransactions.push(testTxnId)
-      registry[moduleId].transactions = newTransactions
     getLoading: (moduleId) ->
+      ###
+      ## getLoading(moduleId) ##
+      get the status of the loading flag. It's set when an item begins download,
+      and cleared when the download completes and the file is saved
+      ###
       registry = _db.moduleRegistry
       if registry[moduleId]?.loading then return registry[moduleId].loading else return false
     setLoading: (moduleId, loading) ->
+      ###
+      ## setLoading(moduleId, loading) ##
+      set the loading flag for moduleId, It's set when an item begins download
+      ###
       registry = _db.moduleRegistry
       db.module.create(moduleId)
       registry[moduleId].loading = loading
   txn:
+    ###
+    ## db.txn{} ##
+    These methods manipulate the transaction registry
+    ###
     create: () ->
+      ###
+      ## create() ##
+      Create a transaction so we can count outstanding requests
+      ###
       id = _db.transactionRegistryCounter++
       _db.transactionRegistry[id] = 0
       return id
     add: (txnId) ->
+      ###
+      ## add(txnId) ##
+      increment the counter for a given transaction id
+      ###
       _db.transactionRegistry[txnId]++
     subtract: (txnId) ->
+      ###
+      ## subtract(txnId) ##
+      decrement the counter for a given transaction id
+      ###
       _db.transactionRegistry[txnId]--
     get: (txnId) ->
+      ###
+      ## get(txnId) ##
+      Get the number of outstanding transactions for a given transaction id
+      ###
       return _db.transactionRegistry[txnId]
     remove: (txnId) ->
+      ###
+      ## remove(txnId) ##
+      Remove a transaction entry from the registry
+      ###
       _db.transactionRegistry[txnId] = null
       delete _db.transactionRegistry[txnId]
   queue:
     load:
+      ###
+      ## db.queue.load{} ##
+      these methods affect the load queue, tracking callback requests
+      when loading is blocked for a cross domain iframe
+      ###
       add: (item) ->
         _db.loadQueue.push(item)
       get: () ->
         return _db.loadQueue
     rules:
+      ###
+      ## db.queue.rules{} ##
+      these methods affect the rules queue, tracking rules placed into
+      the system via addRule(). Any time the rules are dirty, we sort them
+      on get()
+      ###
       add: (item) ->
         _db.rulesQueue.push(item)
         _db.rulesQueueDirty = true
@@ -261,6 +357,12 @@ db = {
       size: () ->
         return _db.rulesQueue.length
     file:
+      ###
+      ## db.queue.file{} ##
+      these methods affect the file queue, used for tracking pending callbacks
+      when a file is being downloaded. It supports a clear() method to remove
+      all pending callbacks after the queue has been ran.
+      ###
       add: (moduleId, item) ->
         if !_db.fileQueue[moduleId] then !_db.fileQueue[moduleId] = []
         _db.fileQueue[moduleId].push(item)
@@ -269,8 +371,6 @@ db = {
       clear: (moduleId) ->
         if _db.fileQueue[moduleId] then _db.fileQueue[moduleId] = []
 }
-# ##########
-# ### End getter/setter db section
 
 class treeNode
   ###
@@ -471,6 +571,13 @@ getFormattedPointcuts = (moduleId) ->
   return pointcuts
 
 dispatchTreeDownload = (id, tree, node, callback) ->
+  ###
+  ## dispatchTreeDownload(id, tree, node, callback) ##
+  _internal_ this is used to decouple the execution of a subtree when in a loop
+  It uses setTimeout() to fully decouple the item, and yield to the page which
+  may be doing other tasks. When all children have completed, callback() is
+  invoked
+  ###
   tree.addChild(node)
   if db.module.getLoading(node.getValue()) is false
     db.txn.add(id)
@@ -520,6 +627,11 @@ loadModules = (modList, callback) ->
     dispatchTreeDownload(id, tree, node, execute)
 
 downloadTree = (tree, callback) ->
+  ###
+  ## downloadTree(tree, callback) ##
+  download the current item and its dependencies, storing the results in a tree
+  when all items have finished loading, invoke callback()
+  ###
   moduleId = tree.getValue()
   
   # apply the ruleset for this module if we haven't yet
@@ -556,8 +668,12 @@ downloadTree = (tree, callback) ->
   file = db.module.getFile(moduleId)
   if file and file.length > 0 then processCallbacks(moduleId, file) else download()
 
-# run all callbacks for a given file
 processCallbacks = (moduleId, file) ->
+  ###
+  ## processCallbacks(moduleId, file) ##
+  _internal_ given a module ID and file, disable the loading flag for the module
+  then locate all callbacks that have been queued- dispatch them
+  ###
   db.module.setLoading(moduleId, false)
   cbs = db.queue.file.get(moduleId)
   db.queue.file.clear(moduleId)
@@ -628,7 +744,7 @@ executeFile = (moduleId) ->
                          .replace(/__POINTCUT_BEFORE__/g, cuts.before)
   footer = commonJSFooter.replace(/__POINTCUT_AFTER__/g, cuts.after)
   runCmd = "#{header}\n#{text}\n#{footer}\n//@ sourceURL=#{path}"
-
+  
   # todo: circular dependency resolution
   try
     exports = context.eval(runCmd)
@@ -722,7 +838,7 @@ require.ensure = (moduleList, callback) ->
     exports = {}
     module.exports = exports
     callback.call(context, require, module, exports)
-
+  
   # our default behavior. Load everything
   # then, once everything says its loaded, call the callback
   run = () ->
@@ -801,7 +917,12 @@ require.manifest = (manifest) ->
 
 require.addRule = (match, weight = null, ruleSet = null) ->
   ###
-  TODO DOC
+  ## require.addRule(match, [weight], ruleset) ##
+  Add a rule that matches the given match, and apply ruleset to it
+  * match: a regex or string to match against
+  * weight: [optional] a numeric weight. Higher numbered weights run later
+  * ruleset: a string containing a 1:1 replacement for match, or an object literal that
+    contains path or pointcuts information
   ###
   if ruleSet is null
     # weight (optional) omitted
@@ -837,17 +958,17 @@ define = (moduleId, deps, callback) ->
     callback = deps
     deps = moduleId
     moduleId = null
-
+  
   # This module has no dependencies
   if Object.prototype.toString.call(deps) isnt "[object Array]"
     callback = deps
     deps = []
-
+  
   # Strip out 'require', 'exports', 'module' in deps array for require.ensure
   strippedDeps = []
   for dep in deps
     if dep isnt "exports" and dep isnt "require" and dep isnt "module" then strippedDeps.push(dep)
-
+  
   db.module.setStaticRequires(moduleId, strippedDeps)
   require.ensure(strippedDeps, (require, module, exports) ->
     # already defined: require, module, exports
@@ -859,7 +980,7 @@ define = (moduleId, deps, callback) ->
         when "exports" then args.push(exports)
         when "module" then args.push(module)
         else args.push(require(dep))
-
+  
     # if callback is an object, save it to exports
     # if callback is a function, apply it with args, save the return object to exports
     if typeof(callback) is 'function'
@@ -869,11 +990,12 @@ define = (moduleId, deps, callback) ->
       exports = returnValue if count is 0 and typeof(returnValue) isnt "undefined"
     else if typeof(callback) is 'object'
       exports = callback
-
+  
     # save moduleId, exports into module list
     # we only save modules with an ID
     if moduleId then db.module.setExports(moduleId, exports);
   )
+
 
 # To allow a clear indicator that a global define function conforms to the AMD API
 define.amd =
