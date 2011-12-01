@@ -397,7 +397,9 @@ clearFileRegistry = (version = schemaVersion) ->
   clearing all local storage keys that relate to the fileStorageToken and version
   ###
   token = "#{fileStorageToken}#{version}"
-  lscache.remove(lkey) for lkey,file of localStorage when lkey.indexOf(token) isnt -1 
+  for id in localStorage.length
+    key = localStorage.key(id)
+    if key.indexOf(token) isnt -1 then lscache.remove(key)
   if version is schemaVersion then db.module.clearAllFiles()
 
 createIframe = () ->
