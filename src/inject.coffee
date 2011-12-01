@@ -602,7 +602,7 @@ loadModules = (modList, callback) ->
   # shortcut. If modList is undefined, then call the callback
   if modList.length is 0
     context.setTimeout(
-      callback.apply(context, [])
+      () -> callback.apply(context, [])
     )
     return
   
