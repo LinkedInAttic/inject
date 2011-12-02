@@ -72,7 +72,7 @@ responseSlicer = ///                # a regular expression for slicing a respons
 requireRegex = null
 requireEnsureRegex = null
 `
-// requireRegexes from Yabble Copyright (c) 2010 James Brantly
+// requireRegexes from Yabble - James Brantly
 requireRegex = /(?:^|[^\w\$_.])require\s*\(\s*("[^"\\]*(?:\\.[^"\\]*)*"|'[^'\\]*(?:\\.[^'\\]*)*')\s*\)/g;
 requireEnsureRegex = /(?:^|[^\w\$_.])require.ensure\s*\(\s*(\[("[^"\\]*(?:\\.[^"\\]*)*"|'[^'\\]*(?:\\.[^'\\]*)*'|\s*|,)*\])/g;
 `
