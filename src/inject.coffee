@@ -247,7 +247,7 @@ db = {
       token = "#{fileStorageToken}#{schemaVersion}#{path}"
       if registry[moduleId]?.file then return registry[moduleId].file
       
-      if userConfig.fileExpiration is 0 then return false
+      if userConfig.fileExpires is 0 then return false
 
       file = lscache.get(token)
       if file and typeof(file) is "string" and file.length
@@ -602,7 +602,7 @@ loadModules = (modList, callback) ->
   # shortcut. If modList is undefined, then call the callback
   if modList.length is 0
     context.setTimeout(
-      callback.apply(context, [])
+      () -> callback.apply(context, [])
     )
     return
   
