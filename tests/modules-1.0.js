@@ -1,12 +1,39 @@
 module("CommonJS: Modules 1.0 - same domain, no cache", {
   setup: function() {
-    require.setModuleRoot("http://localhost:4004/requires/modules-1.0");
+    if (localStorage) {
+      localStorage.clear();
+    }
+    Inject.reset();
+    require.setModuleRoot("http://localhost:4000/tests/requires/modules-1.0");
   },
   teardown: function() {
-    require.clearCache();
+    if (localStorage) {
+      localStorage.clear();
+    }
   }
 });
 
-asyncTest("program.js", 1, function() {
+asyncTest("run program.js", 3, function() {
+  require.run("program");
+});
+
+module("CommonJS: Modules 1.0 - same domain, no cache", {
+  setup: function() {
+    if (localStorage) {
+      localStorage.clear();
+    }
+    Inject.reset();
+    require.setModuleRoot("http://localhost:4001/tests/requires/modules-1.0");
+    require.setCrossDomain("http://localhost:4000/relay.html",
+                           "http://localhost:4001/relay.html");
+  },
+  teardown: function() {
+    if (localStorage) {
+      localStorage.clear();
+    }
+  }
+});
+
+asyncTest("run program.js", 3, function() {
   require.run("program");
 });

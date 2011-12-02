@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <script type="text/javascript" src="inject.js"></script>
+  <script type="text/javascript" src="/inject.js"></script>
 </head>
 <body>
 <h1>Remote Domain</h1>
@@ -20,7 +20,7 @@ document.getElementById("clearit").onclick = function() {
   require.clearCache();
 };
 
-require.setModuleRoot("http://localhost:4001/deps");
+require.setModuleRoot("http://localhost:4001/examples/deps");
 require.setCrossDomain("http://localhost:4000/relay.html",
                        "http://localhost:4001/relay.html");
 

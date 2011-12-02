@@ -5,3 +5,5 @@ exports.add = function() {
   }
   return sum;
 };
+
+ok(true, "math.js loaded");

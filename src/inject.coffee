@@ -39,23 +39,12 @@ For more details, check out the README or github: https://github.com/Jakobo/inje
 ###
 Constants and Registries used
 ###
-userConfig =
-  "moduleRoot": null                # the module root location
-  "fileExpires": 1440               # the default expiry for items in lscache (in minutes)
-  "xd":
-    "inject": null                  # the location of the relay.html file, same domain as inject
-    "xhr": null                     # the location of the relay.html file, same domain as moduleRoot
+userConfig = {}                     # user configuration options (see reset)
 undef = undef                       # undefined
 schemaVersion = 1                   # version of inject()'s localstorage schema
 context = this                      # context is our local scope. Should be "window"
 pauseRequired = false               # can we run immediately? when using iframe transport, the answer is no
-_db =                               # internal database of modules and transactions
-  "moduleRegistry": {}              # a registry of modules that have been loaded
-  "transactionRegistry": {}         # a registry of transaction ids and what modules were associated
-  "transactionRegistryCounter": 0   # a unique id for transactionRegistry
-  "loadQueue": []                   # a queue used when performing iframe based cross domain loads
-  "rulesQueue": []                  # the collection of rules for processing
-  "fileQueue": []                   # a list of callbacks waiting on a file download
+_db = {}                            # internal database of modules and transactions (see reset)
 xDomainRpc = null                   # a cross domain RPC object (Porthole)
 fileStorageToken = "FILEDB"         # a storagetoken identifier we use (lscache)
 fileStore = "Inject FileStorage"    # file store to use
@@ -339,6 +328,8 @@ db = {
         _db.loadQueue.push(item)
       "get": () ->
         return _db.loadQueue
+      "clear": () ->
+        _db.loadQueue = []
     "rules":
       ###
       ## db.queue.rules{} ##
@@ -482,7 +473,25 @@ class treeNode
       
       # have finished the tree
       return output
-  
+
+reset = () ->
+  _db =                               # internal database of modules and transactions
+    "moduleRegistry": {}              # a registry of modules that have been loaded
+    "transactionRegistry": {}         # a registry of transaction ids and what modules were associated
+    "transactionRegistryCounter": 0   # a unique id for transactionRegistry
+    "loadQueue": []                   # a queue used when performing iframe based cross domain loads
+    "rulesQueue": []                  # the collection of rules for processing
+    "fileQueue": []                   # a list of callbacks waiting on a file download
+    
+  userConfig =
+    "moduleRoot": null                # the module root location
+    "fileExpires": 1440               # the default expiry for items in lscache (in minutes)
+    "xd":
+      "inject": null                  # the location of the relay.html file, same domain as inject
+      "xhr": null                     # the location of the relay.html file, same domain as moduleRoot
+reset()
+
+
 clearFileRegistry = (version = schemaVersion) ->
   ###
   ## clearFileRegistry(version = schemaVersion) ##
@@ -534,11 +543,13 @@ createIframe = () ->
     if event.data is "READY"
       xDomainRpc.postMessage("READYREADY")
       pauseRequired = false
-      item() for item in db.queue.load.get()
+      queue = db.queue.load.get()
+      db.queue.load.clear()
+      item() for item in queue
       return
-    
-    pieces = event.data.match(responseSlicer)
-    processCallbacks(pieces[1], pieces[2])
+    else
+      pieces = event.data.match(responseSlicer)
+      processCallbacks(pieces[1], pieces[2])
 
 getFormattedPointcuts = (moduleId) ->
   ###
@@ -961,7 +972,7 @@ require.run = (moduleId) ->
   Try to getFile for moduleId, if the file exists, execute the file, if not, load this file and run it
   ###
   if db.module.getFile(moduleId) is false
-    loadModules([moduleId], () ->)
+    require.ensure([moduleId], () ->)
   else
     db.module.setExports(moduleId, null)
     executeFile(moduleId);
@@ -1029,6 +1040,7 @@ context['define'] = define
 context['Inject'] = {
   'require': require,
   'define': define,
+  'reset': reset,
   'debug': () ->
     console?.dir(_db)
 }

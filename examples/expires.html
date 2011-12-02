@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <script type="text/javascript" src="inject.js"></script>
+  <script type="text/javascript" src="/inject.js"></script>
 </head>
 <body>
 <h1>Local Domain Expires Example</h1>
@@ -18,7 +18,7 @@ document.getElementById("clearit").onclick = function() {
   require.clearCache();
 };
 
-require.setModuleRoot("http://localhost:4000/deps");
+require.setModuleRoot("http://localhost:4000/examples/deps");
 
 require.ensure(["foo", "bar"], function(require) {
   var foo = require("foo"),
