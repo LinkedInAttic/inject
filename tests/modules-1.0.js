@@ -17,7 +17,7 @@ asyncTest("run program.js", 4, function() {
   require.run("program");
 });
 
-
+// ----------------------------------------------------------------------
 
 module("CommonJS: Modules 1.0 - different domain", {
   setup: function() {

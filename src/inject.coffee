@@ -594,8 +594,8 @@ dispatchTreeDownload = (id, tree, node, callback) ->
   invoked
   ###
   tree.addChild(node)
+  db.txn.add(id)
   if db.module.getLoading(node.getValue()) is false
-    db.txn.add(id)
     context.setTimeout( () ->
       downloadTree node, () ->
         db.txn.subtract(id)
@@ -603,6 +603,14 @@ dispatchTreeDownload = (id, tree, node, callback) ->
           db.txn.remove(id)
           callback()
     )
+  else
+    # module is loading. add a callback to reduce counter by 1
+    # instead of invoking a downloadTree() call
+    db.queue.file.add node.getValue(), () ->
+      db.txn.subtract(id)
+      if db.txn.get(id) is 0
+        db.txn.remove(id)
+        callback()
 
 loadModules = (modList, callback) ->
   ###

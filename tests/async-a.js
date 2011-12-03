@@ -22,7 +22,7 @@ asyncTest("require.ensure", 3, function() {
   });
 });
 
-
+// ----------------------------------------------------------------------
 
 module("Async/A - alternate domain", {
   setup: function() {

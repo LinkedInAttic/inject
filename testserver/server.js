@@ -27,6 +27,19 @@ function server(request, response) {
       exampleServer.serve(request, response, function(err, result) {});
     }, 5000);
   }
+  
+  if(request.url === '/requires/modules-1.1.1/ensure-overlap/multiply.js') {
+    // delayed server call for the ensure-overlap unit test in modules 1.1.1 spec
+    return setTimeout(function() {
+      unitTestingServer.serve(request, response, function(err, result) {});
+    }, 300);
+  }
+  
+  if(request.url === '/favicon.ico') {
+    // return empty response for favico... keeps the logs clear
+    return response.end();
+  }
+  
   else {
     // normal serving
     injectServer.serve(request, response, function(err, result) {
