@@ -121,6 +121,8 @@ db = {
           "exports": null
           "path": null
           "file": null
+          "amd": false
+          "amdCallbackQueue": []
           "loading": false
           "rulesApplied": false
           "requires": []
@@ -263,6 +265,44 @@ db = {
       for own moduleId, data of registry
         data.file = null
         data.loading = false
+    "getAmd": (moduleId) ->
+      ###
+      ## getAmd(moduleId) ##
+      get the status of the amd flag. It's set when a module is defined use AMD
+      ###
+      registry = _db.moduleRegistry
+      if registry[moduleId]?.amd then return registry[moduleId].amd else return false
+    "setAmd": (moduleId, isAmd) ->
+      ###
+      ## setAmd(moduleId, isAmd) ##
+      set the amd flag for moduleId, It's set when a module is defined use AMD
+      ###
+      registry = _db.moduleRegistry
+      db.module.create(moduleId)
+      registry[moduleId].amd = isAmd
+    "getAmdCallbackQueue": (moduleId) ->
+      ###
+      ## getAmdCallbackQueue(moduleId) ##
+      get defined module callback list
+      ###
+      registry = _db.moduleRegistry
+      if registry[moduleId]?.amdCallbackQueue then return registry[moduleId].amdCallbackQueue else return false
+    "addAmdCallback": (moduleId, callback) ->
+      ###
+      ## addAmdCallback(moduleId, callback) ##
+      add callback function into defined module amd callback list
+      ###
+      registry = _db.moduleRegistry
+      db.module.create(moduleId)
+      registry[moduleId].amdCallbackQueue.push(callback)
+    "clearAmdCallback": (moduleId) ->
+      ###
+      ## clearAmdCallback(moduleId) ##
+      clear defined module callback list
+      ###
+      registry = _db.moduleRegistry
+      db.module.create(moduleId)
+      registry[moduleId].amdCallbackQueue = []
     "getLoading": (moduleId) ->
       ###
       ## getLoading(moduleId) ##
@@ -601,8 +641,12 @@ dispatchTreeDownload = (id, tree, node, callback) ->
         db.txn.subtract(id)
         if db.txn.get(id) is 0
           db.txn.remove(id)
-          callback()
-    )
+          moduleId = node.getValue()
+          if db.module.getAmd(moduleId) is true and db.module.getExports(moduleId) is false
+            db.module.addAmdCallback(moduleId,callback);
+          else
+            callback()
+    ) 
   else
     # module is loading. add a callback to reduce counter by 1
     # instead of invoking a downloadTree() call
@@ -610,7 +654,11 @@ dispatchTreeDownload = (id, tree, node, callback) ->
       db.txn.subtract(id)
       if db.txn.get(id) is 0
         db.txn.remove(id)
-        callback()
+        moduleId = node.getValue()
+        if db.module.getAmd(moduleId) is true and db.module.getExports(moduleId) is false
+          db.module.addAmdCallback(moduleId,callback);
+        else
+          callback()
 
 loadModules = (modList, callback) ->
   ###
@@ -671,7 +719,10 @@ downloadTree = (tree, callback) ->
       dispatchTreeDownload(id, tree, node, callback)
     if db.txn.get(id) is 0
       db.txn.remove(id)
-      context.setTimeout(callback)
+      if db.module.getAmd(moduleId) is true and db.module.getExports(moduleId) is false
+        db.module.addAmdCallback(moduleId,() -> context.setTimeout(callback));
+      else
+        context.setTimeout(callback)
   
   # download a file over xhr or cross domain
   download = () ->
@@ -1002,7 +1053,8 @@ define = (moduleId, deps, callback) ->
   if Object.prototype.toString.call(deps) isnt "[object Array]"
     callback = deps
     deps = []
-  
+  if moduleId then db.module.setAmd(moduleId, true)
+
   # Strip out 'require', 'exports', 'module' in deps array for require.ensure
   strippedDeps = []
   for dep in deps
@@ -1032,7 +1084,12 @@ define = (moduleId, deps, callback) ->
   
     # save moduleId, exports into module list
     # we only save modules with an ID
-    if moduleId then db.module.setExports(moduleId, exports);
+    if moduleId
+      db.module.setExports(moduleId, exports)
+      amdCallbackQueue = db.module.getAmdCallbackQueue(moduleId)
+      for amdCallback in amdCallbackQueue
+        amdCallback()
+      db.module.clearAmdCallback(moduleId)
   )
 
 
