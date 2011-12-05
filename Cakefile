@@ -1,158 +1,121 @@
-# VERSION = "0.2.0"
+VERSION = "0.2.0"
 PROJECT = "inject"
 
 fs = require("fs")
 exec = require("child_process").exec
 path = require("path")
 compiler = "java -jar ./build/gcc/compiler.jar --compilation_level SIMPLE_OPTIMIZATIONS"
-# compilerInputFile = "--js ./artifacts/#{PROJECT}-#{VERSION}.js"
-# compilerOutputFile = "--js_output_file ./artifacts/#{PROJECT}-#{VERSION}.min.js"
 
-packages = 
-  min:
-    name: "#{PROJECT}.min.js"
-    headers: [ "./src/copyright-lic-min.js" ]
-    files: [
-      "./src/inject.coffee"
-    ]
-    copy: [ "./src/relay.html" ]
-  full:
-    uncompressed: true
-    name: "#{PROJECT}.js"
-    headers: [
-      "./src/copyright.js"
-      "./src/licenses.js"
-    ]
-    files: [
-      "./src/inject.coffee"
-    ]
-    copy: [ "./src/relay.html" ]
+option '', '--with-ie',      'Add IE 6/7 support. Adds a localStorage and JSON shim. Both are required for lscache'
+option '', '--without-xd',   'Remove Porthole. Porthole is only used when requiring files cross-domain.'
+option '', '--without-json', 'Force JSON support to be dropped.'
+option '', '--compilation-level [LEVEL]', 'Level to compile output js to. Defaults to compiling both SIMPLE_OPTIMIZATIONS and WHITESPACE_ONLY. If WHITESPACE_ONLY is selected then pretty formatting is used'
+task "build", "Builds inject library", (options)->
+  supportIE = !!options['with-ie']
+  supportJSON = supportIE and !!options['without-json']
+  supportXD = !options['without-xd']
+  compilationLevel = options['compilation-level'] || 'SIMPLE_OPTIMIZATIONS'
 
-fileSources = {}
-tmpdir = "./tmp"
-artifacts = "./artifacts/dev"
+  src = 'src/'
+  tmp = 'tmp/'
+  files = [
+    {
+      src: "lscache.js"
+      out: "lscache_#{VERSION}.js"
+      type: 'js'
+    }
+    {
+      src: "inject2.coffee"
+      out: "inject_#{VERSION}.js"
+      type: 'coffee'
+    }
+  ]
 
-task "build", "Build the Project", ->
-  readSrc = (file, cb) ->
-    if file.indexOf(".coffee") == -1
-      # read file into slot
-      console.log "Reading #{file}"
-      fs.readFile "#{file}", "utf8", (err, contents) ->
-        if err then return cb(err, null)
-        cb(null, contents)
-  
-  compile = (file, cb) ->
-    exec "coffee --output #{tmpdir} --compile #{file}", (err, stdout, stderr) ->
-      if err then return cb(err, null)
-      jsName = path.basename(file.replace(/\.coffee$/, ".js"))
-      readSrc "#{tmpdir}/#{jsName}", (err, JScontents) ->
-        if err then return cb(err, null)
-        compress "#{tmpdir}/#{jsName}", (err, GCCcontents) ->
-          if err then return cb(err, null)
-          cb(null, [JScontents, GCCcontents])
-  
-  compress = (file, cb) ->
-    if file.indexOf(tmpdir) isnt 0
-      err = new Error("Can only compress items in tempdir")
-      return cb(err, null)
-    
-    exec "java -jar ./build/gcc/compiler.jar --compilation_level SIMPLE_OPTIMIZATIONS --js #{file} --js_output_file #{file}.gcc", (err, stdout, stderr) ->
-      if err then return cb(err, null)
-      gccName = path.basename("#{file}.gcc")
-      readSrc "#{tmpdir}/#{gccName}", (err, contents) ->
-        if err then return cb(err, null)
-        cb(null, contents)
-  
-  copyArchive = {}
+  if supportXD
+    files.unshift(
+      {
+        src: "porthole.js"
+        out: "porthole_#{VERSION}.js"
+        type: 'js'
+      }
+      {
+        src: "relay.html"
+        out: "relay.html"
+        type: 'html'
+      }
+    )
+  if supportJSON
+    files.unshift({
+      src: "'json.js"
+      out: "'json_#{VERSION}.js"
+      type: 'js'
+    })
+  if supportIE
+    files.unshift({
+      src: "localstorage-shim.js"
+      out: "localstorage-shim_#{VERSION}.js"
+      type: 'js'
+    })
+
+
+  #add licenses/copyright notices first
+  files.unshift({
+    src: "licenses.js"
+    out: "liceses_#{VERSION}.js"
+    type: 'js'
+  }
+  {
+    src: "copyright.js"
+    out: "copyright_#{VERSION}.js"
+    type: 'js'
+  })
+
+  compilerFiles = []
+
   copy = (from, to, cb) ->
-    key = "#{from}::#{to}"
-    if copyArchive[key] then return cb(null, null)
-    
-    copyArchive[key] = true
     console.log "Copy #{from} => #{to}"
     srcFile = fs.createReadStream("#{from}");
     outFile = fs.createWriteStream("#{to}");
     srcFile.once "open", () ->
       require("util").pump srcFile, outFile, () ->
         cb(null, null)
-  
-  namespace = (file) ->
-    file = file.replace(/[^a-zA-Z0-9\.\_\-]/g, "_")
-  
-  readInAllFiles = (allFiles, cb) ->
-    remaining = allFiles.length
-    
-    innerCompile = (file) ->
-      # this is a coffeescript file
-      compile file, (err, contents) ->
-        if err then return cb(err, null)
-        fileSources[namespace(file)] = contents[1]
-        fileSources["!"+namespace(file)] = contents[0]
-        cb() if --remaining is 0
-    
-    innerRead = (file) ->
-      # regular JS file
-      readSrc file, (err, contents) ->
-        if err then return cb(err, null)
-        fileSources[namespace(file)] = contents
-        cb() if --remaining is 0
-    
-    for file in allFiles
-      if file.indexOf(".coffee") isnt -1
-        innerCompile(file)
-      if file.indexOf(".js") isnt -1
-        innerRead(file)
-  
-  assemble = (pkg, cb) ->
-    contents = []
-    copies = pkg.copy.length
-    useUncompressed = pkg.uncompressed is true
-    for name in pkg.headers
-      content = if useUncompressed and fileSources["!"+namespace(name)] then fileSources["!"+namespace(name)] else fileSources[namespace(name)]
-      contents.push content
-    for name in pkg.files
-      content = if useUncompressed and fileSources["!"+namespace(name)] then fileSources["!"+namespace(name)] else fileSources[namespace(name)]
-      contents.push content
-    fs.writeFile "#{artifacts}/#{pkg.name}", contents.join("\n\n"), (err) ->
-      if err then return cb(err, null)
-      for item in pkg.copy
-        # fromItem = item.replace(/\{VERSION\}/, "")
-        fromItem = item
-        # .replace(/\{VERSION\}/, "-#{VERSION}")
-        toItem = item.replace(/^\.\/src\//, "")
-        copy fromItem, "#{artifacts}/#{toItem}", (err) ->
-          if err then return cb(err, null)
-          cb(null, null) if --copies is 0
-  
-  cleanup = (cb) ->
-    exec "rm -rf #{tmpdir}", (err, stdout, stderr) ->
-      if err then return cb(err, null)
-      cb(null, null)
-  
-  complete = () ->
-    console.log "Done!"
-  
-  # main
-  files = []
-  fileCache = {}
-  pkgCount = 0
-  for pkg, contents of packages
-    pkgCount++
-    for file in contents.files
-      if !fileCache[file]
-        files.push(file)
-        fileCache[file] = true
-    for file in contents.headers
-      if !fileCache[file]
-        files.push(file)
-        fileCache[file] = true
-  
-  readInAllFiles files, (err) ->
-    throw err if err
-    for pkg, contents of packages
-      assemble contents, (err) ->
+
+  closureCompile = (prettyPrint = false, cb = ->)->
+    file = "#{tmp}/#{PROJECT}_#{VERSION}_#{compilationLevel}.js"
+    jsFiles = compilerFiles.join(' --js ')
+    formatting = if prettyPrint then "--formatting pretty_print" else ""
+    output_wrapper = "'(function() {%output%}.call(this)'"
+    console.log "java -jar ./build/gcc/compiler.jar #{formatting} --js #{jsFiles} --output_wrapper #{output_wrapper} --compilation_level #{compilationLevel} --js_output_file #{file}"
+    exec "java -jar ./build/gcc/compiler.jar #{formatting} --js #{jsFiles} --output_wrapper #{output_wrapper} --compilation_level #{compilationLevel} --js_output_file #{file}", (err, compiledSource, stderr) ->
+      throw err if err
+      cb && cb(file)
+
+
+  isDoneCopying = (count) ->
+    if count is files.length
+      closureCompile compilationLevel is "WHITESPACE_ONLY", (compiledFile, err) ->
+        console.log 'done compiling', compiledFile
+      console.log 'done copying'
+
+
+  compileCoffeescript = (file, cb) ->
+    exec "coffee --bare --compile #{tmp}#{file.out}", (err, stdout, stderr) ->
+      throw err if err
+      cb(err, file)
+
+
+  copyCallbackCount = 0
+  for file in files
+    if /\.js$/.test(file.out)
+      compilerFiles.push(tmp + file.out)
+
+    ((file) ->
+      copy src + file.src, tmp + file.out, (err, o) ->
         throw err if err
-        if --pkgCount is 0
-          cleanup () ->
-            throw err if err
-            complete()
+        if file.type is 'coffee'
+          compileCoffeescript file, (err, oFile) ->
+            console.log 'compile coffeescript',file
+            isDoneCopying ++copyCallbackCount
+        else
+          isDoneCopying ++copyCallbackCount
+    )(file)
