@@ -121,6 +121,7 @@ db = {
           "exports": null
           "path": null
           "file": null
+          "amd": false
           "loading": false
           "rulesApplied": false
           "requires": []
@@ -263,6 +264,21 @@ db = {
       for own moduleId, data of registry
         data.file = null
         data.loading = false
+    "getAmd": (moduleId) ->
+      ###
+      ## getAmd(moduleId) ##
+      get the status of the amd flag. It's set when a module is defined use AMD
+      ###
+      registry = _db.moduleRegistry
+      if registry[moduleId]?.amd then return registry[moduleId].amd else return false
+    "setAmd": (moduleId, isAmd) ->
+      ###
+      ## setAmd(moduleId, isAmd) ##
+      set the amd flag for moduleId, It's set when a module is defined use AMD
+      ###
+      registry = _db.moduleRegistry
+      db.module.create(moduleId)
+      registry[moduleId].amd = isAmd
     "getLoading": (moduleId) ->
       ###
       ## getLoading(moduleId) ##
@@ -362,6 +378,20 @@ db = {
         if _db.fileQueue[moduleId] then return _db.fileQueue[moduleId] else return []
       "clear": (moduleId) ->
         if _db.fileQueue[moduleId] then _db.fileQueue[moduleId] = []
+    "amd":
+      ###
+      ## db.queue.amd{} ##
+      these methods affect the amd queue, used for tracking pending amd callbacks
+      when a defined module file is being downloaded. It supports a clear() method to remove
+      all pending callbacks after the queue has been ran.
+      ###
+      "add": (moduleId, item) ->
+        if !_db.amdQueue[moduleId] then !_db.amdQueue[moduleId] = []
+        _db.amdQueue[moduleId].push(item)
+      "get": (moduleId) ->
+        if _db.amdQueue[moduleId] then return _db.amdQueue[moduleId] else return []
+      "clear": (moduleId) ->
+        if _db.amdQueue[moduleId] then _db.amdQueue[moduleId] = []
 }
 
 class treeNode
@@ -482,6 +512,7 @@ reset = () ->
     "loadQueue": []                   # a queue used when performing iframe based cross domain loads
     "rulesQueue": []                  # the collection of rules for processing
     "fileQueue": []                   # a list of callbacks waiting on a file download
+    "amdQueue": []                    # a list of callbacks waiting on a defined module file download and execute
     
   userConfig =
     "moduleRoot": null                # the module root location
@@ -601,8 +632,12 @@ dispatchTreeDownload = (id, tree, node, callback) ->
         db.txn.subtract(id)
         if db.txn.get(id) is 0
           db.txn.remove(id)
-          callback()
-    )
+          moduleId = node.getValue()
+          if db.module.getAmd(moduleId) is true and db.module.getExports(moduleId) is false
+            db.queue.amd.add(moduleId,callback);
+          else
+            callback()
+    ) 
   else
     # module is loading. add a callback to reduce counter by 1
     # instead of invoking a downloadTree() call
@@ -610,7 +645,11 @@ dispatchTreeDownload = (id, tree, node, callback) ->
       db.txn.subtract(id)
       if db.txn.get(id) is 0
         db.txn.remove(id)
-        callback()
+        moduleId = node.getValue()
+        if db.module.getAmd(moduleId) is true and db.module.getExports(moduleId) is false
+          db.queue.amd.add(moduleId,callback);
+        else
+          callback()
 
 loadModules = (modList, callback) ->
   ###
@@ -671,7 +710,10 @@ downloadTree = (tree, callback) ->
       dispatchTreeDownload(id, tree, node, callback)
     if db.txn.get(id) is 0
       db.txn.remove(id)
-      context.setTimeout(callback)
+      if db.module.getAmd(moduleId) is true and db.module.getExports(moduleId) is false
+        db.queue.amd.add(moduleId,() -> context.setTimeout(callback));
+      else
+        context.setTimeout(callback)
   
   # download a file over xhr or cross domain
   download = () ->
@@ -1002,7 +1044,8 @@ define = (moduleId, deps, callback) ->
   if Object.prototype.toString.call(deps) isnt "[object Array]"
     callback = deps
     deps = []
-  
+  if moduleId then db.module.setAmd(moduleId, true)
+
   # Strip out 'require', 'exports', 'module' in deps array for require.ensure
   strippedDeps = []
   for dep in deps
@@ -1032,7 +1075,12 @@ define = (moduleId, deps, callback) ->
   
     # save moduleId, exports into module list
     # we only save modules with an ID
-    if moduleId then db.module.setExports(moduleId, exports);
+    if moduleId
+      db.module.setExports(moduleId, exports)
+      amdCallbackQueue = db.queue.amd.get(moduleId)
+      for amdCallback in amdCallbackQueue
+        amdCallback()
+      db.queue.amd.clear(moduleId)
   )
 
 
