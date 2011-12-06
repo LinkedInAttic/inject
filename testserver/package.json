@@ -5,7 +5,7 @@
   "author":         "Jakob Heuser",
   "private":        true,
   "dependencies": {
-    "paperboy":     "0.5.7"
+    "paperboy":     "0.0.2"
   },
   "engine":         "node >= 0.4.10"
 }
