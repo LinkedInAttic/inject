@@ -108,11 +108,6 @@ task "build", "Builds inject library", (options)->
       files = mod.files || []
       if mod.modules and mod.modules.length > 0
         for mod in mod.modules.reverse()
-          ###
-          for dFile in recurseModules(config.modules[mod])
-            if files.indexOf(dFile) is -1
-              files.push dFile
-          ###
           files = recurseModules(config.modules[mod]).concat(files)
       return if mod.enabled isnt false then files else mod.files
 
@@ -187,7 +182,6 @@ task "build", "Builds inject library", (options)->
   createClosureModules = (moduleStr, cb = ->) ->
     moduleDir = path.normalize("#{config.tmp}/modules/")
     formatting = if compilationLevel is 'WHITESPACE_ONLY' then '--formatting pretty_print' else ''
-    console.log "java -jar ./build/gcc/compiler.jar #{formatting} --module_wrapper 'main:(function() {%s}.call(this)' --module_output_path_prefix #{moduleDir} --compilation_level #{compilationLevel} #{moduleStr}"
     exec "java -jar ./build/gcc/compiler.jar #{formatting} --module_wrapper 'main:(function() {%s}.call(this)' --module_output_path_prefix #{moduleDir} --compilation_level #{compilationLevel} #{moduleStr}", (err, stdout, stderr) ->
       throw err if err
       cb stdout, stderr
@@ -210,9 +204,9 @@ task "build", "Builds inject library", (options)->
 
   unclean = (cb = ->) ->
     fs.mkdir config.tmp, (err) ->
-      console.error err if err and err.errno isnt 47
+      console.error err if err and err.errno isnt 47 # 47 is directory already exists. This is ok for the purposes of this function
       fs.mkdir config.out, (err) ->
-        console.error err if err and err.errno isnt 47
+        console.error err if err and err.errno isnt 47 # directory already exists.
         cb()
 
   #MAIN
