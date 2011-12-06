@@ -1,158 +1,237 @@
-# VERSION = "0.2.0"
+#VERSION = "0.2.1"
 PROJECT = "inject"
 
-fs = require("fs")
-exec = require("child_process").exec
 path = require("path")
-compiler = "java -jar ./build/gcc/compiler.jar --compilation_level SIMPLE_OPTIMIZATIONS"
-# compilerInputFile = "--js ./artifacts/#{PROJECT}-#{VERSION}.js"
-# compilerOutputFile = "--js_output_file ./artifacts/#{PROJECT}-#{VERSION}.min.js"
+fs= require("fs")
+exec = require("child_process").exec
 
-packages = 
-  min:
-    name: "#{PROJECT}.min.js"
-    headers: [ "./src/copyright-lic-min.js" ]
-    files: [
-      "./src/inject.coffee"
-    ]
-    copy: [ "./src/relay.html" ]
-  full:
-    uncompressed: true
-    name: "#{PROJECT}.js"
-    headers: [
-      "./src/copyright.js"
-      "./src/licenses.js"
-    ]
-    files: [
-      "./src/inject.coffee"
-    ]
-    copy: [ "./src/relay.html" ]
+option '', '--config-file [FILE]', 'Load in a json file as config. Defaults to: null.'
+option '', '--project-name [NAME]', 'Used in default config to specify final output for raw and min "targets". Defaults to: "inject".'
+option '', '--project-version [VERSION]', 'Used in default config to add version folders to "out" directory. Defaults to: "dev".'
+option '', '--temporary-directory [DIR]', 'Where to save temporary files. Gets deleted after build. Defaults to: "./tmp/".'
+option '', '--output-directory [DIR]', 'Where to save compressed/compiled files. Defaults to: "./artifacts/".'
+option '', '--with-ie',      'Add IE 6/7 support. Adds a localStorage and JSON shim (by default, named: ie-localstorage-json-shim.js). Both are required for lscache. Defaults to true.'
+option '', '--without-xd',   'Remove Porthole. Porthole is only used when requiring files cross-domain. Defaults to false.'
+option '', '--without-json', 'Force JSON support to be dropped. Defaults to false.'
+option '', '--compilation-level [LEVEL]', 'Level to compile output js to. If WHITESPACE_ONLY is selected then pretty formatting is used. Defaults to SIMPLE_OPTIMIZATIONS.'
+task "build", "Builds inject library", (options)->
 
-fileSources = {}
-tmpdir = "./tmp"
-artifacts = "./artifacts/dev"
+  configFile = options['config-file']
+  PROJECT = options['project-name'] or 'inject'
+  VERSION = options['project-version'] or 'dev'
+  supportIE = !options['with-ie']
+  supportJSON = supportIE and !!options['without-json']
+  supportXD = !options['without-xd']
+  compilationLevel = options['compilation-level'] or 'SIMPLE_OPTIMIZATIONS'
 
-task "build", "Build the Project", ->
-  readSrc = (file, cb) ->
-    if file.indexOf(".coffee") == -1
-      # read file into slot
-      console.log "Reading #{file}"
-      fs.readFile "#{file}", "utf8", (err, contents) ->
-        if err then return cb(err, null)
-        cb(null, contents)
-  
-  compile = (file, cb) ->
-    exec "coffee --output #{tmpdir} --compile #{file}", (err, stdout, stderr) ->
-      if err then return cb(err, null)
-      jsName = path.basename(file.replace(/\.coffee$/, ".js"))
-      readSrc "#{tmpdir}/#{jsName}", (err, JScontents) ->
-        if err then return cb(err, null)
-        compress "#{tmpdir}/#{jsName}", (err, GCCcontents) ->
-          if err then return cb(err, null)
-          cb(null, [JScontents, GCCcontents])
-  
-  compress = (file, cb) ->
-    if file.indexOf(tmpdir) isnt 0
-      err = new Error("Can only compress items in tempdir")
-      return cb(err, null)
-    
-    exec "java -jar ./build/gcc/compiler.jar --compilation_level SIMPLE_OPTIMIZATIONS --js #{file} --js_output_file #{file}.gcc", (err, stdout, stderr) ->
-      if err then return cb(err, null)
-      gccName = path.basename("#{file}.gcc")
-      readSrc "#{tmpdir}/#{gccName}", (err, contents) ->
-        if err then return cb(err, null)
-        cb(null, contents)
-  
-  copyArchive = {}
-  copy = (from, to, cb) ->
-    key = "#{from}::#{to}"
-    if copyArchive[key] then return cb(null, null)
-    
-    copyArchive[key] = true
-    console.log "Copy #{from} => #{to}"
-    srcFile = fs.createReadStream("#{from}");
-    outFile = fs.createWriteStream("#{to}");
-    srcFile.once "open", () ->
-      require("util").pump srcFile, outFile, () ->
-        cb(null, null)
-  
-  namespace = (file) ->
-    file = file.replace(/[^a-zA-Z0-9\.\_\-]/g, "_")
-  
-  readInAllFiles = (allFiles, cb) ->
-    remaining = allFiles.length
-    
-    innerCompile = (file) ->
-      # this is a coffeescript file
-      compile file, (err, contents) ->
-        if err then return cb(err, null)
-        fileSources[namespace(file)] = contents[1]
-        fileSources["!"+namespace(file)] = contents[0]
-        cb() if --remaining is 0
-    
-    innerRead = (file) ->
-      # regular JS file
-      readSrc file, (err, contents) ->
-        if err then return cb(err, null)
-        fileSources[namespace(file)] = contents
-        cb() if --remaining is 0
-    
-    for file in allFiles
-      if file.indexOf(".coffee") isnt -1
-        innerCompile(file)
-      if file.indexOf(".js") isnt -1
-        innerRead(file)
-  
-  assemble = (pkg, cb) ->
-    contents = []
-    copies = pkg.copy.length
-    useUncompressed = pkg.uncompressed is true
-    for name in pkg.headers
-      content = if useUncompressed and fileSources["!"+namespace(name)] then fileSources["!"+namespace(name)] else fileSources[namespace(name)]
-      contents.push content
-    for name in pkg.files
-      content = if useUncompressed and fileSources["!"+namespace(name)] then fileSources["!"+namespace(name)] else fileSources[namespace(name)]
-      contents.push content
-    fs.writeFile "#{artifacts}/#{pkg.name}", contents.join("\n\n"), (err) ->
-      if err then return cb(err, null)
-      for item in pkg.copy
-        # fromItem = item.replace(/\{VERSION\}/, "")
-        fromItem = item
-        # .replace(/\{VERSION\}/, "-#{VERSION}")
-        toItem = item.replace(/^\.\/src\//, "")
-        copy fromItem, "#{artifacts}/#{toItem}", (err) ->
-          if err then return cb(err, null)
-          cb(null, null) if --copies is 0
-  
-  cleanup = (cb) ->
-    exec "rm -rf #{tmpdir}", (err, stdout, stderr) ->
-      if err then return cb(err, null)
-      cb(null, null)
-  
-  complete = () ->
-    console.log "Done!"
-  
-  # main
-  files = []
-  fileCache = {}
-  pkgCount = 0
-  for pkg, contents of packages
-    pkgCount++
-    for file in contents.files
-      if !fileCache[file]
-        files.push(file)
-        fileCache[file] = true
-    for file in contents.headers
-      if !fileCache[file]
-        files.push(file)
-        fileCache[file] = true
-  
-  readInAllFiles files, (err) ->
-    throw err if err
-    for pkg, contents of packages
-      assemble contents, (err) ->
+  config = {
+    src: 'src/'
+    tmp: options['temporary-directory'] or 'tmp/'
+    out: options['output-directory'] or "artifacts/#{VERSION}/"
+    modules : {
+      'header': {
+        files: ['copyright.js','licenses.js']
+      }
+      'ieCompat':{
+        enabled: supportIE
+        compilationLevel: compilationLevel
+        files:['localstorage-shim.js','json.js']
+      }
+      'crossDomain':{
+        enabled:supportXD
+        files:['relay.html','porthole.js']
+      }
+      'inject':{
+        files:['lscache.js','inject.coffee']
+        modules: ['crossDomain']
+      }
+      'main' :{
+        compilationLevel:'WHITESPACE_ONLY'
+        formatting:'pretty_print'
+        modules:['header','inject']
+      }
+      'min':{
+        compilationLevel: compilationLevel
+        modules:['main']
+      }
+    }
+    outMappings: {
+      ieCompat: "ie-localstorage-json-shim.js"
+      main:     "#{PROJECT}.js"
+      min:      "#{PROJECT}.min.js"
+    }
+  }
+
+  if configFile
+    try
+      config = JSON.parse(fs.readFileSync(configFile))
+    catch e
+      console.error "Error loading configFile: #{configFile}", e
+
+  compileCoffeescript = (file = '', toDir = '', cb = ->) ->
+    console.log "Compiling coffeescript #{file} => #{toDir}"
+    name = (file.match(/\/([^\/]+)\.coffee$/i)||[]).pop()
+    exec "coffee --bare --output #{toDir} --compile #{file}", (err, stdout, stderr) ->
+      throw err if err
+      cb toDir + name + '.js'
+
+  copy = (from = '', toDir = '', cb = ->) ->
+    console.log "Copy #{from} => #{toDir}"
+    if from and toDir
+      exec "cp #{from} #{toDir}", (err) ->
         throw err if err
-        if --pkgCount is 0
-          cleanup () ->
-            throw err if err
-            complete()
+        cb null
+    else cb from
+
+  processConfig = (newStyle = false, cb = ->) ->
+    loopCount = 0
+    totalFiles = 0
+    updateFileReference = (ref, i, file) ->
+      # if file was modified above, update the reference
+      if file
+        ref.files[i] = file
+      # if file is null, remove the reference
+      else
+        ref.files.splice(i,1)
+
+      if ++loopCount is totalFiles
+        finalizeConfig()
+
+    finalizeConfig = ->
+      if newStyle
+        for moduleName, mod of config.modules
+          mod.files = recurseModules(mod)
+          delete mod.modules
+      cb()
+
+    recurseModules = (mod) ->
+      files = mod.files || []
+      if mod.modules and mod.modules.length > 0
+        for mod in mod.modules.reverse()
+          files = recurseModules(config.modules[mod]).concat(files)
+      return if mod.enabled isnt false then files else mod.files
+
+    #loop through all files and compile or copy
+    for moduleName, mod of config.modules
+      if mod.files and mod.enabled isnt false
+        # must loop backwards since we're modifying the array
+        for i in [mod.files.length - 1..0] by -1
+
+          # prefix with the path to the tmp folder and make sure it's a real path
+          file = path.normalize config.src + mod.files[i]
+
+          # if it's coffeescript then compile and update reference to the file
+          if /\.coffee$/.test(file)
+            compileCoffeescript file, config.tmp, updateFileReference.bind null, mod, i
+
+          # if it's anything but js, just copy it and remove the reference to this file
+          else if !/\.js$/.test(file)
+            copy file, config.out, updateFileReference.bind null, mod, i
+
+          # else, update the reference anyways
+          else
+            updateFileReference mod, i, file
+
+          #keep track of files for callback
+          totalFiles += 1
+
+
+  createClosureModulesStr = (cb = ->) ->
+    #expected syntax: --module MODULE_NAME:FILE_COUNT:DEP,DEP,DEP --js FILE
+    compilerModules = []
+    for moduleName, mod of config.modules
+      files = mod.files or []
+      deps = mod.modules or []
+      length = if mod.enabled isnt false then files.length else 0
+      str = [moduleName,length].join(':')
+      if deps and deps.length > 0
+        str += ':' + deps.join(',')
+      if files.length > 0 and mod.enabled isnt false
+        str += ' --js ' + files.join(' --js ')
+      compilerModules.push(str)
+    cb('--module ' + compilerModules.join(' --module '))
+
+  createClosureCompilerCmd = (allDoneCallback, execFn = ->) ->
+
+    allDoneFn = ->
+      if ++callbackCount is mappingsCount
+        allDoneCallback()
+
+    mappingsCount = 0
+    callbackCount = 0
+    for moduleName, path of config.outMappings
+      mappingsCount += 1
+      mod = config.modules[moduleName]
+      cmdCompilationLevel = mod.compilationLevel or compilationLevel
+      formatting = if cmdCompilationLevel is 'WHITESPACE_ONLY' then '--formatting pretty_print' else ''
+      output_wrapper = "'(function() {%output%}).call(this)'"
+      cmd = "--js_output_file #{config.out}/#{path} #{formatting} --output_wrapper #{output_wrapper} --compilation_level #{cmdCompilationLevel} --js "
+      files = mod.files or []
+
+      if mod.enabled isnt false
+        console.log 'Created cmd to compile module: ', moduleName
+        execFn(cmd + files.join(' --js '), allDoneFn)
+      else
+        allDoneFn
+
+  execClosureCmd = (cmd, cb = ->) ->
+    exec "java -jar ./build/gcc/compiler.jar #{cmd}", (err, stdout, stderr) ->
+      throw err if err
+      cb stdout, stderr
+
+  createClosureModules = (moduleStr, cb = ->) ->
+    moduleDir = path.normalize("#{config.tmp}/modules/")
+    formatting = if compilationLevel is 'WHITESPACE_ONLY' then '--formatting pretty_print' else ''
+    exec "java -jar ./build/gcc/compiler.jar #{formatting} --module_wrapper 'main:(function() {%s}.call(this)' --module_output_path_prefix #{moduleDir} --compilation_level #{compilationLevel} #{moduleStr}", (err, stdout, stderr) ->
+      throw err if err
+      cb stdout, stderr
+
+  moveArtifacts = (cb = ->) ->
+    callbacksCount = 0
+    fileCount = 0
+    moduleDir = "#{config.tmp}/modules"
+    for moduleName, path of config.outMappings
+      if config.modules[moduleName].enabled isnt false
+        ++fileCount
+        copy "#{moduleDir}/#{moduleName}.js", "#{config.out}/#{path}", () ->
+          if ++callbacksCount is fileCount
+            cb()
+
+  clean = (cb = ->) ->
+    exec "rm -rf #{config.tmp}", (err) ->
+      console.error err if err
+      cb()
+
+  unclean = (cb = ->) ->
+    fs.mkdir config.tmp, (err) ->
+      console.error err if err and err.errno isnt 47 # 47 is directory already exists. This is ok for the purposes of this function
+      fs.mkdir config.out, (err) ->
+        console.error err if err and err.errno isnt 47 # directory already exists.
+        cb()
+
+  #MAIN
+  unclean ->
+    console.log 'Created working directories.'
+    processConfig true, ->
+      console.log 'Processed config.'
+      allDone = () ->
+        clean ->
+          console.log 'Build complete.'
+      createClosureCompilerCmd allDone, (cmd, callback) ->
+        execClosureCmd cmd, callback
+
+  #OLD MAIN
+  ###
+  processConfig false, ->
+    console.log 'Processed config.'
+    createClosureModulesStr (moduleStr) ->
+      console.log 'Created Closure Compiler modules.'
+      createClosureModules moduleStr, (stdout, stderr) ->
+        if !!stderr
+          console.error 'Error running closure compiler', stdout, stderr
+        else console.log 'Created compiler modules.'
+        moveArtifacts ->
+          console.log 'Moved compiler modules to output directory.'
+          clean ->
+            console.log 'Build complete.'
+  ###
