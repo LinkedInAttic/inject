@@ -122,7 +122,6 @@ db = {
           "path": null
           "file": null
           "amd": false
-          "amdCallbackQueue": []
           "loading": false
           "rulesApplied": false
           "requires": []
@@ -280,29 +279,6 @@ db = {
       registry = _db.moduleRegistry
       db.module.create(moduleId)
       registry[moduleId].amd = isAmd
-    "getAmdCallbackQueue": (moduleId) ->
-      ###
-      ## getAmdCallbackQueue(moduleId) ##
-      get defined module callback list
-      ###
-      registry = _db.moduleRegistry
-      if registry[moduleId]?.amdCallbackQueue then return registry[moduleId].amdCallbackQueue else return false
-    "addAmdCallback": (moduleId, callback) ->
-      ###
-      ## addAmdCallback(moduleId, callback) ##
-      add callback function into defined module amd callback list
-      ###
-      registry = _db.moduleRegistry
-      db.module.create(moduleId)
-      registry[moduleId].amdCallbackQueue.push(callback)
-    "clearAmdCallback": (moduleId) ->
-      ###
-      ## clearAmdCallback(moduleId) ##
-      clear defined module callback list
-      ###
-      registry = _db.moduleRegistry
-      db.module.create(moduleId)
-      registry[moduleId].amdCallbackQueue = []
     "getLoading": (moduleId) ->
       ###
       ## getLoading(moduleId) ##
@@ -402,6 +378,20 @@ db = {
         if _db.fileQueue[moduleId] then return _db.fileQueue[moduleId] else return []
       "clear": (moduleId) ->
         if _db.fileQueue[moduleId] then _db.fileQueue[moduleId] = []
+    "amd":
+      ###
+      ## db.queue.amd{} ##
+      these methods affect the amd queue, used for tracking pending amd callbacks
+      when a defined module file is being downloaded. It supports a clear() method to remove
+      all pending callbacks after the queue has been ran.
+      ###
+      "add": (moduleId, item) ->
+        if !_db.amdQueue[moduleId] then !_db.amdQueue[moduleId] = []
+        _db.amdQueue[moduleId].push(item)
+      "get": (moduleId) ->
+        if _db.amdQueue[moduleId] then return _db.amdQueue[moduleId] else return []
+      "clear": (moduleId) ->
+        if _db.amdQueue[moduleId] then _db.amdQueue[moduleId] = []
 }
 
 class treeNode
@@ -522,6 +512,7 @@ reset = () ->
     "loadQueue": []                   # a queue used when performing iframe based cross domain loads
     "rulesQueue": []                  # the collection of rules for processing
     "fileQueue": []                   # a list of callbacks waiting on a file download
+    "amdQueue": []                    # a list of callbacks waiting on a defined module file download and execute
     
   userConfig =
     "moduleRoot": null                # the module root location
@@ -643,7 +634,7 @@ dispatchTreeDownload = (id, tree, node, callback) ->
           db.txn.remove(id)
           moduleId = node.getValue()
           if db.module.getAmd(moduleId) is true and db.module.getExports(moduleId) is false
-            db.module.addAmdCallback(moduleId,callback);
+            db.queue.amd.add(moduleId,callback);
           else
             callback()
     ) 
@@ -656,7 +647,7 @@ dispatchTreeDownload = (id, tree, node, callback) ->
         db.txn.remove(id)
         moduleId = node.getValue()
         if db.module.getAmd(moduleId) is true and db.module.getExports(moduleId) is false
-          db.module.addAmdCallback(moduleId,callback);
+          db.queue.amd.add(moduleId,callback);
         else
           callback()
 
@@ -720,7 +711,7 @@ downloadTree = (tree, callback) ->
     if db.txn.get(id) is 0
       db.txn.remove(id)
       if db.module.getAmd(moduleId) is true and db.module.getExports(moduleId) is false
-        db.module.addAmdCallback(moduleId,() -> context.setTimeout(callback));
+        db.queue.amd.add(moduleId,() -> context.setTimeout(callback));
       else
         context.setTimeout(callback)
   
@@ -1086,10 +1077,10 @@ define = (moduleId, deps, callback) ->
     # we only save modules with an ID
     if moduleId
       db.module.setExports(moduleId, exports)
-      amdCallbackQueue = db.module.getAmdCallbackQueue(moduleId)
+      amdCallbackQueue = db.queue.amd.get(moduleId)
       for amdCallback in amdCallbackQueue
         amdCallback()
-      db.module.clearAmdCallback(moduleId)
+      db.queue.amd.clear(moduleId)
   )
 
 

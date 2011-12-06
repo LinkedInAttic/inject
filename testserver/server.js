@@ -28,6 +28,13 @@ function server(request, response) {
     }, 5000);
   }
   
+  if(request.url === '/deps/bar.js') {
+    // delayed server call for the jquery ui example
+    return setTimeout(function() {
+      exampleServer.serve(request, response, function(err, result) {});
+    }, 3000);
+  }
+  
   if(request.url === '/requires/modules-1.1.1/ensure-overlap/multiply.js') {
     // delayed server call for the ensure-overlap unit test in modules 1.1.1 spec
     return setTimeout(function() {
