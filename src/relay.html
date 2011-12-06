@@ -111,15 +111,13 @@ function trimHost(host) {
 }
 
 // makes an xhr, posts response
-function doXmlHttpRequest(txId, module, path) {
+function doXmlHttpRequest(module, path) {
   var xhr = getXHR();
   xhr.open("GET", path);
   xhr.onreadystatechange = function() {
     if (xhr.readyState === 4 && xhr.status === 200) {
       xDomainRpc.postMessage([
-        txId,
         module,
-        path,
         xhr.responseText
       ].join(" "));
     }

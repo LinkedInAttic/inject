@@ -1058,4 +1058,3 @@ context['require']['setExpires'] = require.setExpires;
 context['require']['setCrossDomain'] = require.setCrossDomain;
 context['require']['clearCache'] = require.clearCache;
 context['require']['manifest'] = require.manifest;
-context['require']['run'] = require.run;
