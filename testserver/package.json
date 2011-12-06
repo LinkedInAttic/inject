@@ -1,11 +1,11 @@
 {
-  "name":        "inject-testserver",
-  "version":     "0.0.1",
-  "description": "Test Server for inject()",
-  "author":      "Jakob Heuser",
-  "private":     true,
+  "name":           "inject-testserver",
+  "version":        "0.0.1",
+  "description":    "Test Server for inject()",
+  "author":         "Jakob Heuser",
+  "private":        true,
   "dependencies": {
-    "node-static":        "0.5.7"
+    "paperboy":     "0.5.7"
   },
-  "engine":      "node >= 0.4.10"
+  "engine":         "node >= 0.4.10"
 }
