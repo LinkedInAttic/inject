@@ -626,30 +626,24 @@ dispatchTreeDownload = (id, tree, node, callback) ->
   ###
   tree.addChild(node)
   db.txn.add(id)
+  afterDownload = () ->
+    db.txn.subtract(id)
+    if db.txn.get(id) is 0
+      db.txn.remove(id)
+      moduleId = node.getValue()
+      if db.module.getAmd(moduleId) is true and db.module.getExports(moduleId) is false
+        db.queue.amd.add(moduleId,callback);
+      else
+        callback()
+
   if db.module.getLoading(node.getValue()) is false
     context.setTimeout( () ->
-      downloadTree node, () ->
-        db.txn.subtract(id)
-        if db.txn.get(id) is 0
-          db.txn.remove(id)
-          moduleId = node.getValue()
-          if db.module.getAmd(moduleId) is true and db.module.getExports(moduleId) is false
-            db.queue.amd.add(moduleId,callback);
-          else
-            callback()
+      downloadTree(node, afterDownload)
     ) 
   else
     # module is loading. add a callback to reduce counter by 1
     # instead of invoking a downloadTree() call
-    db.queue.file.add node.getValue(), () ->
-      db.txn.subtract(id)
-      if db.txn.get(id) is 0
-        db.txn.remove(id)
-        moduleId = node.getValue()
-        if db.module.getAmd(moduleId) is true and db.module.getExports(moduleId) is false
-          db.queue.amd.add(moduleId,callback);
-        else
-          callback()
+    db.queue.file.add(node.getValue(), afterDownload)
 
 loadModules = (modList, callback) ->
   ###
