@@ -26,7 +26,7 @@ sudo npm install
 node server.js
 ```
 
-You can visit http://localhost:4000/default.html to validate everything. We use alternate ports to create the cross domain environment instead of a CDN, but the effect is the same.
+You can visit http://localhost:4000/examples/ for viewing some sample code, or http://localhost:4000/tests for running our unit test suite. We use alternate ports to create the cross domain environment instead of a CDN.
 
 Getting Started
 ===
@@ -75,7 +75,7 @@ Path Resolution
 By default, inject tries to do the best it can, but in complex environments, that's not enough. The following behaviors can change / simplify the injection of modules.
 
 * **call require.setModuleRoot with a function** if config.path resolves to a function, the function will be called instead of standard path evaluation
-* **register modules with require.manifest({...})** the .modules() method allows you to specify key/value pairs which supersede path evaluation
+* **use require.addRule(match, rules)** the addRule() syntax allows you to match regex statements against a module path, and resolve items dynamically
 
 Expiring Content
 ===

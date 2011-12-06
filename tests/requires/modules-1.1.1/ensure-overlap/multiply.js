@@ -1,0 +1,1 @@
+exports.multiply = function(val) { return val*2; };
