@@ -5,19 +5,21 @@ path = require("path")
 fs= require("fs")
 exec = require("child_process").exec
 
+option '', '--config-file [FILE]', 'Load in a json file as config. Defaults to: null.'
 option '', '--project-name [NAME]', 'Used in default config to specify final output for raw and min "targets". Defaults to: "inject".'
-option '', '--project-version [VERSION]', 'Used in default config to add version folders to "out" directory. Defaults to an empty string.'
+option '', '--project-version [VERSION]', 'Used in default config to add version folders to "out" directory. Defaults to: "dev".'
 option '', '--temporary-directory [DIR]', 'Where to save temporary files. Gets deleted after build. Defaults to: "./tmp/".'
 option '', '--output-directory [DIR]', 'Where to save compressed/compiled files. Defaults to: "./artifacts/".'
-option '', '--with-ie',      'Add IE 6/7 support. Adds a localStorage and JSON shim. Both are required for lscache. Defaults to false.'
+option '', '--with-ie',      'Add IE 6/7 support. Adds a localStorage and JSON shim (by default, named: ie-localstorage-json-shim.js). Both are required for lscache. Defaults to true.'
 option '', '--without-xd',   'Remove Porthole. Porthole is only used when requiring files cross-domain. Defaults to false.'
 option '', '--without-json', 'Force JSON support to be dropped. Defaults to false.'
 option '', '--compilation-level [LEVEL]', 'Level to compile output js to. If WHITESPACE_ONLY is selected then pretty formatting is used. Defaults to SIMPLE_OPTIMIZATIONS.'
 task "build", "Builds inject library", (options)->
 
+  configFile = options['config-file']
   PROJECT = options['project-name'] or 'inject'
-  VERSION = options['project-version'] or ''
-  supportIE = !!options['with-ie']
+  VERSION = options['project-version'] or 'dev'
+  supportIE = !options['with-ie']
   supportJSON = supportIE and !!options['without-json']
   supportXD = !options['without-xd']
   compilationLevel = options['compilation-level'] or 'SIMPLE_OPTIMIZATIONS'
@@ -32,6 +34,7 @@ task "build", "Builds inject library", (options)->
       }
       'ieCompat':{
         enabled: supportIE
+        compilationLevel: compilationLevel
         files:['localstorage-shim.js','json.js']
       }
       'crossDomain':{
@@ -39,13 +42,13 @@ task "build", "Builds inject library", (options)->
         files:['relay.html','porthole.js']
       }
       'inject':{
-        files:['inject.coffee']
+        files:['lscache.js','inject.coffee']
         modules: ['crossDomain']
       }
       'main' :{
         compilationLevel:'WHITESPACE_ONLY'
         formatting:'pretty_print'
-        modules:['header','ieCompat','inject']
+        modules:['header','inject']
       }
       'min':{
         compilationLevel: compilationLevel
@@ -59,6 +62,12 @@ task "build", "Builds inject library", (options)->
     }
   }
 
+  if configFile
+    try
+      config = JSON.parse(fs.readFileSync(configFile))
+    catch e
+      console.error "Error loading configFile: #{configFile}", e
+
   compileCoffeescript = (file = '', toDir = '', cb = ->) ->
     console.log "Compiling coffeescript #{file} => #{toDir}"
     name = (file.match(/\/([^\/]+)\.coffee$/i)||[]).pop()
@@ -69,32 +78,43 @@ task "build", "Builds inject library", (options)->
   copy = (from = '', toDir = '', cb = ->) ->
     console.log "Copy #{from} => #{toDir}"
     if from and toDir
-      srcFile = fs.createReadStream("#{from}");
-      outFile = fs.createWriteStream("#{toDir}");
-      srcFile.once "open", () ->
-        require("util").pump srcFile, outFile, () ->
-          cb null
+      exec "cp #{from} #{toDir}", (err) ->
+        throw err if err
+        cb null
     else cb from
 
-  processConfig = (cb = ->) ->
-
+  processConfig = (newStyle = false, cb = ->) ->
     loopCount = 0
     totalFiles = 0
-    for name, mod of config.modules
-      if mod.enabled isnt false
-        totalFiles += (mod.files or []).length
-
     updateFileReference = (ref, i, file) ->
       # if file was modified above, update the reference
       if file
-        ref[i] = file
+        ref.files[i] = file
       # if file is null, remove the reference
       else
-        ref.splice(i,1)
+        ref.files.splice(i,1)
 
       if ++loopCount is totalFiles
-        cb()
+        finalizeConfig()
 
+    finalizeConfig = ->
+      if newStyle
+        for moduleName, mod of config.modules
+          mod.files = recurseModules(mod)
+          delete mod.modules
+      cb()
+
+    recurseModules = (mod) ->
+      files = mod.files || []
+      if mod.modules and mod.modules.length > 0
+        for mod in mod.modules.reverse()
+          ###
+          for dFile in recurseModules(config.modules[mod])
+            if files.indexOf(dFile) is -1
+              files.push dFile
+          ###
+          files = recurseModules(config.modules[mod]).concat(files)
+      return if mod.enabled isnt false then files else mod.files
 
     #loop through all files and compile or copy
     for moduleName, mod of config.modules
@@ -107,17 +127,22 @@ task "build", "Builds inject library", (options)->
 
           # if it's coffeescript then compile and update reference to the file
           if /\.coffee$/.test(file)
-            compileCoffeescript file, config.tmp, updateFileReference.bind null, mod.files, i
+            compileCoffeescript file, config.tmp, updateFileReference.bind null, mod, i
 
           # if it's anything but js, just copy it and remove the reference to this file
           else if !/\.js$/.test(file)
-            copy file, config.out, updateFileReference.bind null, mod.files, i
+            copy file, config.out, updateFileReference.bind null, mod, i
 
           # else, update the reference anyways
           else
-            updateFileReference mod.files, i, file
+            updateFileReference mod, i, file
 
-  createClosureModules = (cb = ->) ->
+          #keep track of files for callback
+          totalFiles += 1
+
+
+  createClosureModulesStr = (cb = ->) ->
+    #expected syntax: --module MODULE_NAME:FILE_COUNT:DEP,DEP,DEP --js FILE
     compilerModules = []
     for moduleName, mod of config.modules
       files = mod.files or []
@@ -131,7 +156,35 @@ task "build", "Builds inject library", (options)->
       compilerModules.push(str)
     cb('--module ' + compilerModules.join(' --module '))
 
-  execClosureCompiler = (moduleStr, cb = ->) ->
+  createClosureCompilerCmd = (allDoneCallback, execFn = ->) ->
+
+    allDoneFn = ->
+      if ++callbackCount is mappingsCount
+        allDoneCallback()
+
+    mappingsCount = 0
+    callbackCount = 0
+    for moduleName, path of config.outMappings
+      mappingsCount += 1
+      mod = config.modules[moduleName]
+      cmdCompilationLevel = mod.compilationLevel or compilationLevel
+      formatting = if cmdCompilationLevel is 'WHITESPACE_ONLY' then '--formatting pretty_print' else ''
+      output_wrapper = "'(function() {%output%}).call(this)'"
+      cmd = "--js_output_file #{config.out}/#{path} #{formatting} --output_wrapper #{output_wrapper} --compilation_level #{cmdCompilationLevel} --js "
+      files = mod.files or []
+
+      if mod.enabled isnt false
+        console.log 'Created cmd to compile module: ', moduleName
+        execFn(cmd + files.join(' --js '), allDoneFn)
+      else
+        allDoneFn
+
+  execClosureCmd = (cmd, cb = ->) ->
+    exec "java -jar ./build/gcc/compiler.jar #{cmd}", (err, stdout, stderr) ->
+      throw err if err
+      cb stdout, stderr
+
+  createClosureModules = (moduleStr, cb = ->) ->
     moduleDir = path.normalize("#{config.tmp}/modules/")
     formatting = if compilationLevel is 'WHITESPACE_ONLY' then '--formatting pretty_print' else ''
     console.log "java -jar ./build/gcc/compiler.jar #{formatting} --module_wrapper 'main:(function() {%s}.call(this)' --module_output_path_prefix #{moduleDir} --compilation_level #{compilationLevel} #{moduleStr}"
@@ -151,17 +204,35 @@ task "build", "Builds inject library", (options)->
             cb()
 
   clean = (cb = ->) ->
-    exec "rm -rf #{config.tmp}", (err,stdout) ->
-      throw err if err
+    exec "rm -rf #{config.tmp}", (err) ->
+      console.error err if err
       cb()
 
+  unclean = (cb = ->) ->
+    fs.mkdir config.tmp, (err) ->
+      console.error err if err and err.errno isnt 47
+      fs.mkdir config.out, (err) ->
+        console.error err if err and err.errno isnt 47
+        cb()
 
   #MAIN
-  processConfig ->
+  unclean ->
+    console.log 'Created working directories.'
+    processConfig true, ->
+      console.log 'Processed config.'
+      allDone = () ->
+        clean ->
+          console.log 'Build complete.'
+      createClosureCompilerCmd allDone, (cmd, callback) ->
+        execClosureCmd cmd, callback
+
+  #OLD MAIN
+  ###
+  processConfig false, ->
     console.log 'Processed config.'
-    createClosureModules (moduleStr) ->
+    createClosureModulesStr (moduleStr) ->
       console.log 'Created Closure Compiler modules.'
-      execClosureCompiler moduleStr, (stdout, stderr) ->
+      createClosureModules moduleStr, (stdout, stderr) ->
         if !!stderr
           console.error 'Error running closure compiler', stdout, stderr
         else console.log 'Created compiler modules.'
@@ -169,3 +240,4 @@ task "build", "Builds inject library", (options)->
           console.log 'Moved compiler modules to output directory.'
           clean ->
             console.log 'Build complete.'
+  ###
