@@ -64,7 +64,7 @@ requireEnsureRegex = null
 `
 // requireRegexes from Yabble - James Brantly
 requireRegex = /(?:^|[^\w\$_.])require\s*\(\s*("[^"\\]*(?:\\.[^"\\]*)*"|'[^'\\]*(?:\\.[^'\\]*)*')\s*\)/g;
-requireEnsureRegex = /(?:^|[^\w\$_.])require.ensure\s*\(\s*(\[("[^"\\]*(?:\\.[^"\\]*)*"|'[^'\\]*(?:\\.[^'\\]*)*'|\s*|,)*\])/g;
+// requireEnsureRegex = /(?:^|[^\w\$_.])require.ensure\s*\(\s*(\[("[^"\\]*(?:\\.[^"\\]*)*"|'[^'\\]*(?:\\.[^'\\]*)*'|\s*|,)*\])/g;
 `
 ###
 CommonJS wrappers for a header and footer
@@ -783,7 +783,7 @@ analyzeFile = (moduleId) ->
   reqs = []
   file = db.module.getFile(moduleId)
   reqs.push(match[0]) while (match = requireRegex.exec(file))
-  reqs.push(match[0]) while (match = requireEnsureRegex.exec(file))
+  # reqs.push(match[0]) while (match = requireEnsureRegex.exec(file))
   if reqs?.length > 0 then eval(reqs.join(";"))
 
   # collect static requirements such as in define()
