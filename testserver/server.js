@@ -1,5 +1,4 @@
-var nStatic = require("node-static"),
-    path = require("path"),
+var path = require("path"),
     http = require("http"),
     sys = require("sys"),
     paperboy = require("paperboy"),
