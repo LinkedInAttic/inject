@@ -21,3 +21,18 @@ asyncTest("require.ensure", 3, function() {
     start();
   });
 });
+
+// require.ensure was running dependencies at compile time
+asyncTest("#58 require.ensure runtime dependencies only", 1, function() {
+  require.ensure(["bug_58"], function(require) {
+    var runner = require("bug_58");
+    runner.runTest(false); // do not include subfile
+  });
+});
+
+asyncTest("#58 require.ensure runtime dependencies only", 3, function() {
+  require.ensure(["bug_58"], function(require) {
+    var runner = require("bug_58");
+    runner.runTest(true); // include subfile
+  });
+});

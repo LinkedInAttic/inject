@@ -61,10 +61,14 @@ responseSlicer = ///                # a regular expression for slicing a respons
   ///m                                # Supports multiline expressions
 requireRegex = null
 requireEnsureRegex = null
+commentRegex = null
 `
 // requireRegexes from Yabble - James Brantly
 requireRegex = /(?:^|[^\w\$_.])require\s*\(\s*("[^"\\]*(?:\\.[^"\\]*)*"|'[^'\\]*(?:\\.[^'\\]*)*')\s*\)/g;
-requireEnsureRegex = /(?:^|[^\w\$_.])require.ensure\s*\(\s*(\[("[^"\\]*(?:\\.[^"\\]*)*"|'[^'\\]*(?:\\.[^'\\]*)*'|\s*|,)*\])/g;
+// requireEnsureRegex = /(?:^|[^\w\$_.])require.ensure\s*\(\s*(\[("[^"\\]*(?:\\.[^"\\]*)*"|'[^'\\]*(?:\\.[^'\\]*)*'|\s*|,)*\])/g;
+
+// commentRegex from RequireJS
+commentRegex = /(\/\*([\s\S]*?)\*\/|([^:]|^)\/\/(.*)$)/mg;
 `
 ###
 CommonJS wrappers for a header and footer
@@ -781,9 +785,9 @@ analyzeFile = (moduleId) ->
 
   # collect runtime requirements
   reqs = []
-  file = db.module.getFile(moduleId)
+  file = db.module.getFile(moduleId).replace(commentRegex, "")
   reqs.push(match[0]) while (match = requireRegex.exec(file))
-  reqs.push(match[0]) while (match = requireEnsureRegex.exec(file))
+  # reqs.push(match[0]) while (match = requireEnsureRegex.exec(file))
   if reqs?.length > 0 then eval(reqs.join(";"))
 
   # collect static requirements such as in define()
