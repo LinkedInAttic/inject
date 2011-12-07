@@ -667,7 +667,6 @@ loadModules = (modList, callback) ->
   # exports and run the callback
   execute = () ->
     executionOrder = tree.postOrder()
-    db.tree.add(tree)
     for moduleId in executionOrder
       if moduleId is null then continue
       executeFile(moduleId)
