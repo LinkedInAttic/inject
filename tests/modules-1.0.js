@@ -17,3 +17,6 @@ asyncTest("run program.js", 4, function() {
   require.run("program");
 });
 
+asyncTest("compliance", 7, function() {
+  require.run("compliance");
+});

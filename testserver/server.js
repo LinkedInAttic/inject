@@ -15,12 +15,10 @@ function createServer(path) {
     .error(function(statCode, msg) {
       res.writeHead(statCode, {'Content-Type': 'text/plain'});
       res.end("Error " + statCode);
-      log(statCode, req.url, ip, msg);
     })
     .otherwise(function(err) {
       res.writeHead(404, {'Content-Type': 'text/plain'});
       res.end("Error 404: File not found");
-      log(404, req.url, ip, err);
     });
   };
 }

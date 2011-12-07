@@ -115,8 +115,9 @@ function doXmlHttpRequest(module, path) {
   var xhr = getXHR();
   xhr.open("GET", path);
   xhr.onreadystatechange = function() {
-    if (xhr.readyState === 4 && xhr.status === 200) {
+    if (xhr.readyState === 4) {
       xDomainRpc.postMessage([
+        xhr.status,
         module,
         xhr.responseText
       ].join(" "));
