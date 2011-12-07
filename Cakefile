@@ -14,6 +14,7 @@ option '', '--with-ie',      'Add IE 6/7 support. Adds a localStorage and JSON s
 option '', '--without-xd',   'Remove Porthole. Porthole is only used when requiring files cross-domain. Defaults to false.'
 option '', '--without-json', 'Force JSON support to be dropped. Defaults to false.'
 option '', '--compilation-level [LEVEL]', 'Level to compile output js to. If WHITESPACE_ONLY is selected then pretty formatting is used. Defaults to SIMPLE_OPTIMIZATIONS.'
+
 task "build", "Builds inject library", (options)->
 
   configFile = options['config-file']
@@ -203,10 +204,10 @@ task "build", "Builds inject library", (options)->
       cb()
 
   unclean = (cb = ->) ->
-    fs.mkdir config.tmp, (err) ->
-      console.error err if err and err.errno isnt 47 # 47 is directory already exists. This is ok for the purposes of this function
-      fs.mkdir config.out, (err) ->
-        console.error err if err and err.errno isnt 47 # directory already exists.
+    fs.mkdir config.tmp, 0777, (err) ->
+      console.error err if err and err.errno isnt 47 and err.errno isnt 17 # 47 is directory already exists. This is ok for the purposes of this function
+      fs.mkdir config.out, 0777, (err) ->
+        console.error err if err and err.errno isnt 47 and err.errno isnt 17 # directory already exists.
         cb()
 
   #MAIN
