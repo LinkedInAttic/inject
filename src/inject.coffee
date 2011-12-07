@@ -802,6 +802,13 @@ executeFile = (moduleId) ->
   ###
 
   if db.module.getExports(moduleId) then return
+  
+  # before going futher, execute all of its required modules
+  # right now, we're leaving this as recursive
+  for requiredModuleId in db.module.getRequires(moduleId)
+    executeFile(requiredModuleId)
+  for requiredModuleId in db.module.getStaticRequires(moduleId)
+    executeFile(requiredModuleId)
 
   cuts = getFormattedPointcuts(moduleId)
   path = db.module.getPath(moduleId)

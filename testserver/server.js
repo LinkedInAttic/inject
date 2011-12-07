@@ -65,8 +65,8 @@ function server(request, response) {
   if(request.url === '/requires/amd/delay.js') {
     // delayed server call 2 sec for amd ensure overlap unit test in amd
     return setTimeout(function() {
-      unitTestingServer.serve(request, response, function(err, result) {});
-    }, 2000);
+      serve(request, response, function(err, result) {});
+    }, 300);
   }
   if (request.url === '/favicon.ico') {
     // return empty response for favico... keeps the logs clear
