@@ -1,4 +1,4 @@
-module("Asynchronous Module Definition - require.ensure with delayed module", {
+module("Asynchronous Module Definition", {
   setup: function() {
     if (localStorage) {
       localStorage.clear();
@@ -13,7 +13,7 @@ module("Asynchronous Module Definition - require.ensure with delayed module", {
   }
 });
 
-asyncTest("require.ensure", 5, function() {
+asyncTest("#56 require.ensure with delay", 5, function() {
   var calls = 2;
   
   // ---------------
