@@ -392,18 +392,6 @@ db = {
         if _db.amdQueue[moduleId] then return _db.amdQueue[moduleId] else return []
       "clear": (moduleId) ->
         if _db.amdQueue[moduleId] then _db.amdQueue[moduleId] = []
-  "tree":
-    ###
-    ## db.tree[] ##
-    these methods add a completed tree object for each require.ensure() call
-    the goal is to help debugging
-    ###
-    "add": (item) ->
-      treeObj = {
-        "structure": item,
-        "postOrder": item.postOrder()
-      }
-      _db.tree.push(treeObj)
 }
 
 class treeNode
@@ -525,7 +513,6 @@ reset = () ->
     "rulesQueue": []                  # the collection of rules for processing
     "fileQueue": []                   # a list of callbacks waiting on a file download
     "amdQueue": []                    # a list of callbacks waiting on a defined module file download and execute
-    "tree": []                        # a list of tree objects for each require.ensure() call, for debugging
   userConfig =
     "moduleRoot": null                # the module root location
     "fileExpires": 1440               # the default expiry for items in lscache (in minutes)
@@ -672,7 +659,6 @@ loadModules = (modList, callback) ->
 
   # Tree based traversal. For each module, we'll create a transaction
   # and each transaction will have its own dependency tree
-  tree = new treeNode("_root_")
   id = db.txn.create()
 
   # internal method. After all branches of the tree have resolved
