@@ -26,6 +26,11 @@ iFrame proxy abc.com->abc.com: forwardMessageEvent(event)
  */
 var Porthole = (typeof Porthole == "undefined") || !Porthole ? {} : Porthole;
 
+// anonymous function added by jakobo @github. Leaked global
+(function() {
+  var targetWindow = null;
+  
+
 Porthole = {
 	/**
 	 * Utility function to output to console
@@ -364,3 +369,5 @@ Porthole.WindowProxyDispatcher = {
 		}
 	}
 };
+
+})(); // end anonymous function jakobo @ github for inject
