@@ -30,28 +30,7 @@ You can visit http://localhost:4000/examples/ for viewing some sample code, or h
 
 Getting Started
 ===
-First, you'll need to include inject.js somewhere on your page. Preferably before you go injecting all over the place. While not required, you may also want to set up a config in case your JS live in a common directory not immediately under the current page.
-
-```
-<script type="text/javascript" src="http://example.com/inject-0.0.1.js"></script>
-<script type="text/javascript">
-require.setModuleRoot("http://example.com/static/js/");
-</script>
-```
-
-You can then just start injecting modules and off you go!
-
-```
-// in some file later on
-require("moduleA")
-// or...
-require.ensure(["moduleA", "moduleB", "moduleC/SomePart"], function(require, exports, module) {
-  // fired when all modules are loaded
-  var A = require("moduleA");
-});
-```
-
-By default, modules map to `path` + `moduleName` + `".js"`. If you have a much more complex scheme, you can map things manually using the `modules()` config or by passing a function to `config.path` for resolving paths yourself.
+We've put together a [Getting Started With inject Guide](https://github.com/Jakobo/inject/wiki) which is a launching point to all to functionality inject has to offer. If you're already familiar with CommonJS-style modules, than you can probably start right there.
 
 Writing CommonJS Compliant Modules
 ===
@@ -70,15 +49,17 @@ exports.duck = waterfowl
 
 If you injected this file, you could then say `var duck = new moduleName.duck()` and instantiate your object.
 
-Path Resolution
+API Notes
 ===
+Path Resolution
+---
 By default, inject tries to do the best it can, but in complex environments, that's not enough. The following behaviors can change / simplify the injection of modules.
 
 * **call require.setModuleRoot with a function** if config.path resolves to a function, the function will be called instead of standard path evaluation
 * **use require.addRule(match, rules)** the addRule() syntax allows you to match regex statements against a module path, and resolve items dynamically
 
 Expiring Content
-===
+---
 By default, inject() will cache things for one day (1440 minutes). You can change the default behavior through the config object:
 
 ```
@@ -93,7 +74,7 @@ require.clearCache()
 ```
 
 Cross Domain
-===
+---
 In CDN-like environments, the data you need to include may be on a separate domain. If that's the case, you'll need to do 3 extra steps to get inject up and running.
 
 1. **edit relay.html** from the artifacts directory. You'll need to call require.setCrossDomain(local, remote) with the path to your two proxy files. The "local" is on the same domain as your application code. The "remote" is on the same domain as the JS you intend to load, and should be the same domain you supplied to require.setModuleRoot()
@@ -111,5 +92,5 @@ You can then carry on with your injecting. To support the cross domain, we use `
 Also Starring
 ===
 * Porthole: Cross Domain Communication
-* lscache: LocalStorage
+* lscache: LocalStorage Cache Provider
 * Google Closure Compiler
