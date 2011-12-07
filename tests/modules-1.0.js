@@ -49,3 +49,8 @@ asyncTest("#57 require from cache simulates an OK 200", 3, function() {
     });
   });
 });
+
+// requiring a module that has commented lines- those lines should not run
+asyncTest("#59 require() statements in commented lines should be ignored", 1, function() {
+  require.run("bug_59");
+});
