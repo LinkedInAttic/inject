@@ -55,8 +55,9 @@ hostPrefixRegex = /^https?:\/\//    # prefixes for URLs that begin with http/htt
 hostSuffixRegex = /^(.*?)(\/.*|$)/  # suffix for URLs used to capture everything up to / or the end of the string
 iframeName = "injectProxy"          # the name for the iframe proxy created (Porthole)
 responseSlicer = ///                # a regular expression for slicing a response from iframe communication into its parts
-  ^(.+?)[\s]                          # (1) Anything up to a space (module id)
-  ([\w\W]+)$                          # (2) Any text up until the end of the string
+  ^(.+?)[\s]+                         # (1) Anything up to a space (status code)
+  ([\w\W]+?)[\s]+                     # (2) Anything up to a space (moduleid)
+  ([\w\W]+)$                          # (3) Any text up until the end of the string (file)
   ///m                                # Supports multiline expressions
 requireRegex = null
 requireEnsureRegex = null
@@ -118,6 +119,7 @@ db = {
       registry = _db.moduleRegistry
       if !registry[moduleId]
         registry[moduleId] =
+          "failed": false
           "exports": null
           "path": null
           "file": null
@@ -136,6 +138,10 @@ db = {
       get the exports for a given moduleId
       ###
       registry = _db.moduleRegistry
+      
+      # if failed, return false outright
+      if db.module.getFailed(moduleId) then return false
+      
       if registry[moduleId]?.exports then return registry[moduleId].exports
       if registry[moduleId]?.exec
         registry[moduleId].exec()
@@ -264,6 +270,21 @@ db = {
       for own moduleId, data of registry
         data.file = null
         data.loading = false
+    "getFailed": (moduleId) ->
+      ###
+      ## getFailed(moduleId) ##
+      get the status of the failed flag. It's set when a module fails to load
+      ###
+      registry = _db.moduleRegistry
+      if registry[moduleId]?.failed then return registry[moduleId].failed else return false
+    "setFailed": (moduleId, failed) ->
+      ###
+      ## setFailed(moduleId, failed) ##
+      get the status of the failed flag. It's set when a module fails to load
+      ###
+      registry = _db.moduleRegistry
+      db.module.create(moduleId)
+      registry[moduleId].failed = failed
     "getAmd": (moduleId) ->
       ###
       ## getAmd(moduleId) ##
@@ -579,7 +600,7 @@ createIframe = () ->
       return
     else
       pieces = event.data.match(responseSlicer)
-      processCallbacks(pieces[1], pieces[2])
+      processCallbacks(pieces[1], pieces[2], pieces[3])
 
 getFormattedPointcuts = (moduleId) ->
   ###
@@ -695,8 +716,13 @@ downloadTree = (tree, callback) ->
   # the callback every module has when it has been loaded
   onDownloadComplete = (moduleId, file) ->
     db.module.setFile(moduleId, file)
-    analyzeFile(moduleId)
-    requires = db.module.getRequires(moduleId)
+
+    if file
+      analyzeFile(moduleId)
+      requires = db.module.getRequires(moduleId)
+    else
+      requires = []
+    
     id = db.txn.create()
     for req in requires
       node = new treeNode(req)
@@ -725,12 +751,16 @@ downloadTree = (tree, callback) ->
   file = db.module.getFile(moduleId)
   if file and file.length > 0 then processCallbacks(moduleId, file) else download()
 
-processCallbacks = (moduleId, file) ->
+processCallbacks = (status, moduleId, file) ->
   ###
   ## processCallbacks(moduleId, file) ##
   _internal_ given a module ID and file, disable the loading flag for the module
   then locate all callbacks that have been queued- dispatch them
   ###
+  if 1*status isnt 200
+    file = false
+    db.module.setFailed(moduleId, true);
+  
   db.module.setLoading(moduleId, false)
   cbs = db.queue.file.get(moduleId)
   db.queue.file.clear(moduleId)
@@ -839,7 +869,7 @@ sendToXhr = (moduleId, callback) ->
   xhr = getXHR()
   xhr.open("GET", path)
   xhr.onreadystatechange = () ->
-    if xhr.readyState == 4 and xhr.status == 200 then callback.call(context, moduleId, xhr.responseText)
+    if xhr.readyState is 4 then return callback.call(context, xhr.status, moduleId, xhr.responseText)
   xhr.send(null)
 
 sendToIframe = (moduleId, callback) ->
