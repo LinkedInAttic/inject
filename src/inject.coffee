@@ -659,6 +659,7 @@ loadModules = (modList, callback) ->
 
   # Tree based traversal. For each module, we'll create a transaction
   # and each transaction will have its own dependency tree
+  tree = new treeNode(null)
   id = db.txn.create()
 
   # internal method. After all branches of the tree have resolved
@@ -668,7 +669,7 @@ loadModules = (modList, callback) ->
     executionOrder = tree.postOrder()
     db.tree.add(tree)
     for moduleId in executionOrder
-      if moduleId is "_root_" then continue
+      if moduleId is null then continue
       executeFile(moduleId)
     # everything executed. collect exports
     exports = []
