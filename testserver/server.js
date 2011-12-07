@@ -62,12 +62,18 @@ function server(request, response) {
       serve(request, response, function(err, result) {});
     }, 5000);
   }
-  
+  if(request.url === '/requires/amd/delay.js') {
+    // delayed server call 2 sec for amd ensure overlap unit test in amd
+    return setTimeout(function() {
+      unitTestingServer.serve(request, response, function(err, result) {});
+    }, 2000);
+  }
   if (request.url === '/favicon.ico') {
     // return empty response for favico... keeps the logs clear
     return response.end();
   }
   
+  // standard serving call
   return serve(request, response);
 }
 
