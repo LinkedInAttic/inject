@@ -749,7 +749,7 @@ downloadTree = (tree, callback) ->
 
   # short cut. if downloaded, callback
   file = db.module.getFile(moduleId)
-  if file and file.length > 0 then processCallbacks(moduleId, file) else download()
+  if file and file.length > 0 then processCallbacks(200, moduleId, file) else download()
 
 processCallbacks = (status, moduleId, file) ->
   ###
