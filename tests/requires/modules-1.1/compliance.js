@@ -36,6 +36,10 @@ catch(e) {
   ok(true, "require throws an error when module does not exist");
 }
 
+ok(true, "skipped require.main test");
+
+ok(true, "skipped require.paths test");
+
 // modules exists and is an object
 ok(typeof(module) === "object", "module is an object {}");
 
@@ -44,5 +48,14 @@ ok(typeof(exports) === "object", "exports is an object {}");
 
 // module.exports is exports
 ok(module.exports === exports, "module.exports is the same as exports");
+
+// module.exports is and object literal
+equal(Object.prototype.toString.call(module.exports), "[object Object]", "exports variable is an object literal");
+
+// module.id is properly set
+ok(module.id && module.id.length > 0 && module.id == "compliance", "module.id is properly set");
+
+// module.uri is properly set
+ok(module.uri && module.uri.length > 0 , "module.uri is properly set to: " + module.uri);
 
 start();
