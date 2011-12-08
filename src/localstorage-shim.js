@@ -1,4 +1,4 @@
-/** Content-Type: multipart/related; boundary="_IE_LOCALSTORAGE_SHIM"
+/**@preserve Content-Type: multipart/related; boundary="_IE_LOCALSTORAGE_SHIM"
 
 --_IE_LOCALSTORAGE_SHIM
 Content-Location:storeone
@@ -13,7 +13,6 @@ Content-Transfer-Encoding:base64
 R0lGODlhAQABAIABAP///wAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==
 
 --_IE_LOCALSTORAGE_SHIM--
-@license
 */
 (function() {
   var DEBUG = true,
