@@ -1,5 +1,5 @@
 exports.runTest = function(includeSubfile) {
-  count = 2;
+  var count = 2;
   
   function doStart() {
     if (--count === 0) {
