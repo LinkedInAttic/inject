@@ -36,6 +36,7 @@ task "build", "Builds inject library", (options)->
       'ieCompat':{
         enabled: supportIE
         compilationLevel: compilationLevel
+        output_wrapper: '%output%'
         files:['localstorage-shim.js','json.js']
       }
       'crossDomain':{
@@ -165,7 +166,7 @@ task "build", "Builds inject library", (options)->
       mod = config.modules[moduleName]
       cmdCompilationLevel = mod.compilationLevel or compilationLevel
       formatting = if cmdCompilationLevel is 'WHITESPACE_ONLY' then '--formatting pretty_print' else ''
-      output_wrapper = "'(function() {%output%}).call(this)'"
+      output_wrapper = mod.output_wrapper || "'(function() {%output%}).call(this)'"
       cmd = "--js_output_file #{config.out}/#{path} #{formatting} --output_wrapper #{output_wrapper} --compilation_level #{cmdCompilationLevel} --js "
       files = mod.files or []
 
