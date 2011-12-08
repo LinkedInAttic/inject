@@ -13,9 +13,19 @@ module("CommonJS: Modules 1.1.1", {
   }
 });
 
+asyncTest("compliance", 13, function() {
+  require.run("compliance");
+});
+
 asyncTest("run program.js", 5, function() {
   require.run("program");
 });
+
+asyncTest("module identifiers", 6, function() {
+  
+  require.run("identifiers/terms");
+  
+} );
 
 asyncTest("#56 require.ensure overlapping dependencies", 3, function() {
   /*
