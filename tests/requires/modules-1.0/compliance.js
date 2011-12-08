@@ -16,6 +16,14 @@ catch(e) {
   ok(true, "require does not accept things that are not string");
 }
 
+try {
+  require(1);
+  ok(false, "require does not accept integers");
+}
+catch(e) {
+  ok(true, "require does not accept integers");
+}
+
 // require returns an export
 // -- skipped -- validated in base module code
 
