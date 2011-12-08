@@ -726,17 +726,24 @@ downloadTree = (tree, callback) ->
       requires = db.module.getRequires(moduleId)
     else
       requires = []
-    
-    id = db.txn.create()
-    for req in requires
-      node = new treeNode(req)
-      dispatchTreeDownload(id, tree, node, callback)
-    if db.txn.get(id) is 0
-      db.txn.remove(id)
-      if db.module.getAmd(moduleId) is true and db.module.getExports(moduleId) is false
-        db.queue.amd.add(moduleId,() -> context.setTimeout(callback));
+
+    processCallback = (id, cb) ->
+      if db.module.getAmd(id) is true and db.module.getExports(id) is false
+        db.queue.amd.add(id,() -> context.setTimeout(cb));
       else
-        context.setTimeout(callback)
+        context.setTimeout(cb)
+
+    if requires.length > 0
+      id = db.txn.create()
+      for req in requires
+        node = new treeNode(req)
+        dispatchTreeDownload(id, tree, node, callback)
+      if db.txn.get(id) is 0
+        db.txn.remove(id)
+        processCallback(moduleId, callback)
+    else
+      processCallback(moduleId, callback)
+
   # download a file over xhr or cross domain
   download = () ->
     db.module.setLoading(moduleId, true)
