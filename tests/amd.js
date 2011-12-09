@@ -13,7 +13,7 @@ module("Asynchronous Module Definition", {
   }
 });
 
-asyncTest("basic", 5, function() {
+asyncTest("basic", 6, function() {
   var calls = 2;
   
   // ---------------
@@ -30,6 +30,11 @@ asyncTest("basic", 5, function() {
   define('d', ['exports', 'a', 'b', 'c'], function(exports, a ,b ,c) {
     exports.name = "d";
     exports.b = b.name + ' from d';
+  });
+  define(['exports', 'a'], function(exports, a) {
+    var name = a.name + " from anon define";
+    
+    ok(true, "anon define loaded");
   });
   // ---------------
   
