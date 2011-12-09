@@ -81,7 +81,7 @@ or anything else.
 commonJSHeader = '''
 with (window) {
   (function() {
-    var __module = {}, __exports = {}, __require = __INJECT_NS__.require, __exe = null, __retVal;
+    var __module = {}, __exports = {}, __require = __INJECT_NS__.require, __exe = null, __retVal, __useRet;
     __module.id = "__MODULE_ID__";
     __module.uri = "__MODULE_URI__";
     __module.exports = __exports;
@@ -101,10 +101,19 @@ commonJSFooter = '''
       __POINTCUT_AFTER__
     };
     __retVal = __exe.call(__module, __module, __exports, __require);
-    if (__retVal) {
+    __useRet = true;
+    if (typeof(__module.exports) === "object") {
+      for (var name in __module.exports) {
+        if (__module.exports.hasOwnProperty(name)) {
+          __useRet = false;
+          break;
+        }
+      }
+    }
+    if (__retVal && __useRet) {
       __module.setExports(__retVal);
     }
-    return __module.exports;
+    return __module;
   })();
 }
 '''
@@ -845,6 +854,7 @@ applyRules = (moduleId) ->
   db.module.setPointcuts(moduleId, pointcuts)
   db.module.setRulesApplied(moduleId, true)
 
+anonDefineStack = []
 executeFile = (moduleId) ->
   ###
   ## executeFile(moduleId) ##
@@ -853,6 +863,8 @@ executeFile = (moduleId) ->
   ###
 
   if db.module.getExports(moduleId) then return
+  
+  anonDefineStack.unshift(moduleId);
   
   # before going futher, execute all of its required modules
   # right now, we're leaving this as recursive
@@ -874,11 +886,11 @@ executeFile = (moduleId) ->
 
   # todo: circular dependency resolution
   try
-    exports = context.eval(runCmd)
+    module = context.eval(runCmd)
   catch err
     throw err
   # save exports
-  db.module.setExports(moduleId, exports)
+  db.module.setExports(moduleId, module.exports)
 
 sendToXhr = (moduleId, callback) ->
   ###
@@ -1113,7 +1125,7 @@ define = (moduleId, deps, callback) ->
   if typeof(moduleId) isnt "string"
     callback = deps
     deps = moduleId
-    moduleId = null
+    moduleId = anonDefineStack[0] || null
 
   # This module has no dependencies
   if Object.prototype.toString.call(deps) isnt "[object Array]"
@@ -1123,7 +1135,7 @@ define = (moduleId, deps, callback) ->
     db.module.setAmd(moduleId, true)
     db.module.setLoading(moduleId, true)
 
-  ensureDeps = if typeof(callback) is "function" then extractRequires(Function.prototype.toString.call(callback)) else []
+  inFunctionDeps = if typeof(callback) is "function" then extractRequires(Function.prototype.toString.call(callback)) else []
 
   # Strip out 'require', 'exports', 'module' in deps array for require.ensure
   strippedDeps = []
@@ -1132,7 +1144,7 @@ define = (moduleId, deps, callback) ->
 
   db.module.setStaticRequires(moduleId, strippedDeps)
   # require the ensure deps first
-  require.ensure ensureDeps, (require, module, exports) ->
+  require.ensure inFunctionDeps, (require, module, exports) ->
     # then do the normal require for stripped dependencies
     require.ensure strippedDeps, (require, module, exports) ->
       # if callback is an object, save it to exports
