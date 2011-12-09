@@ -17,7 +17,7 @@ asyncTest("basic", 6, function() {
   var calls = 2;
   
   // ---------------
-  // emulate the same process of <script src="amd/a1.js"></script>
+  // emulate the same process of <script src="amd/?.js"></script>
   define('a', {
     name: 'a'
   });
