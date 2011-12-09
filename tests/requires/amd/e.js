@@ -1,5 +1,5 @@
 define(['exports', 'a'], function(exports, a) {
-  var name = a.name + " from anon define";
-  
+  equal(a.name, "a", "get a name from e");
   ok(true, "anon define loaded");
 });
+

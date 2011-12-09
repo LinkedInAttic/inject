@@ -13,69 +13,52 @@ module("Asynchronous Module Definition", {
   }
 });
 
-asyncTest("basic", 6, function() {
-  var calls = 2;
-  
-  // ---------------
-  // emulate the same process of <script src="amd/?.js"></script>
-  define('a', {
-    name: 'a'
-  });
-  define('b', [], function() {
-    return {name: 'b'};
-  });
-  define('c', ['exports'], function(exports) {
-    exports.name = "c";
-  });
-  define('d', ['exports', 'a', 'b', 'c'], function(exports, a ,b ,c) {
-    exports.name = "d";
-    exports.b = b.name + ' from d';
-  });
-  define(['exports', 'a'], function(exports, a) {
-    var name = a.name + " from anon define";
-    
-    ok(true, "anon define loaded");
-  });
-  // ---------------
-  
-  require.ensure(["a", "b", "c", "d"], function(require) {
-    var a = require("a"),
-        b = require("b"),
-        c = require("c"),
-        d = require("d");
-    
+asyncTest("basic - a", 1, function() {
+  require.ensure(["a"], function(require) {
+    var a = require("a");
     equal(a.name, "a", "get a name");
+    start();
+  });
+});
+
+asyncTest("basic - b", 1, function() {
+  require.ensure(["b"], function(require) {
+    var b = require("b");
     equal(b.name, "b", "get b name");
+    start();
+  });
+});
+
+asyncTest("basic - c", 1, function() {
+  require.ensure(["c"], function(require) {
+    var c = require("c");
     equal(c.name, "c", "get c name");
+    start();
+  });
+});
+
+asyncTest("basic - d", 2, function() {
+  require.ensure(["d"], function(require) {
+    var d = require("d");
     equal(d.name, "d", "get d name");
     equal(d.b, "b from d", "get b from d");
     start();
   });
 });
 
-asyncTest("#56 require.ensure with delay", 5, function() {
-  var calls = 2;
-  
-  // ---------------
-  // emulate the same process of <script src="amd/increment.delay.js"></script>
-  define('increment.delay', ['exports', 'math', 'delay'], function(exports, math, delay) {
-    exports.inc = function(val) {
-      return math.add(val, 1);
-    };
-    exports.isDelayed = true;
-    exports.delayedBy = delay.delay.duration;
-    
-    ok(true, "Module increment.delay loaded");
-
-    if (--calls === 0) { start(); }
+asyncTest("basic - e", 3, function() {
+  require.ensure(["e"], function() {
+    ok(true, "anon define ensure callback executed");
+    start();
   });
-  // ---------------
-  
+});
+
+asyncTest("#56 require.ensure with delay", 5, function() {
   require.ensure(["increment.delay"], function(require) {
     var delayInc = require("increment.delay");
     equal(delayInc.inc(5), 6, "increments");
     equal(delayInc.delayedBy, 2000, "delayedBy");
-    if (--calls === 0) { start(); }
+    start();
   });
 });
 

@@ -3,7 +3,7 @@ define('increment.delay', ['exports', 'math', 'delay'], function(exports, math, 
     return math.add(val, 1);
   };
   exports.isDelayed = true;
-  exports.delayedBy = delay.delay.delayTime;
+  exports.delayedBy = delay.delay.duration;
   
   ok(true, "Module increment.delay loaded");
 });

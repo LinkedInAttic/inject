@@ -655,7 +655,7 @@ dispatchTreeDownload = (id, tree, node, callback) ->
     if db.txn.get(id) is 0
       db.txn.remove(id)
       moduleId = node.getValue()
-      if db.module.getAmd(moduleId) is true and db.module.getExports(moduleId) is false
+      if db.module.getAmd(moduleId) and db.module.getLoading(moduleId)
         db.queue.amd.add(moduleId,callback);
       else
         callback()
@@ -728,7 +728,7 @@ downloadTree = (tree, callback) ->
       requires = []
 
     processCallback = (id, cb) ->
-      if db.module.getAmd(id) is true and db.module.getExports(id) is false
+      if db.module.getAmd(id) and db.module.getLoading(id)
         db.queue.amd.add(id,() -> context.setTimeout(cb));
       else
         context.setTimeout(cb)
@@ -771,8 +771,8 @@ processCallbacks = (status, moduleId, file) ->
   if 1*status isnt 200
     file = false
     db.module.setFailed(moduleId, true);
-  
-  db.module.setLoading(moduleId, false)
+  if db.module.getAmd(moduleId) is false
+    db.module.setLoading(moduleId, false)
   cbs = db.queue.file.get(moduleId)
   db.queue.file.clear(moduleId)
   cb(moduleId, file) for cb in cbs
@@ -951,6 +951,18 @@ require.ensure = (moduleList, callback) ->
     createIframe()
     pauseRequired = true
 
+  count = 0
+  checkForAmd = () ->
+    for moduleId in moduleList
+      if db.module.getAmd(moduleId) and db.module.getLoading(moduleId)
+        count++;
+        db.queue.amd.add(moduleId, () ->
+          if --count is 0
+            ensureExecutionCallback()
+        );
+    if count is 0
+      ensureExecutionCallback()
+
   ensureExecutionCallback = () ->
     module = {}
     exports = {}
@@ -960,7 +972,7 @@ require.ensure = (moduleList, callback) ->
   # our default behavior. Load everything
   # then, once everything says its loaded, call the callback
   run = () ->
-    loadModules(moduleList, ensureExecutionCallback)
+    loadModules(moduleList, checkForAmd)
   if pauseRequired then db.queue.load.add(run)
   else run()
 
@@ -1085,7 +1097,9 @@ define = (moduleId, deps, callback) ->
   if Object.prototype.toString.call(deps) isnt "[object Array]"
     callback = deps
     deps = []
-  if moduleId then db.module.setAmd(moduleId, true)
+  if moduleId
+    db.module.setAmd(moduleId, true)
+    db.module.setLoading(moduleId, true)
 
   # Strip out 'require', 'exports', 'module' in deps array for require.ensure
   strippedDeps = []
@@ -1118,6 +1132,7 @@ define = (moduleId, deps, callback) ->
     # we only save modules with an ID
     if moduleId
       db.module.setExports(moduleId, exports)
+      db.module.setLoading(moduleId, false)
       amdCallbackQueue = db.queue.amd.get(moduleId)
       for amdCallback in amdCallbackQueue
         amdCallback()
