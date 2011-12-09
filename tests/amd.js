@@ -13,6 +13,41 @@ module("Asynchronous Module Definition", {
   }
 });
 
+asyncTest("basic", 5, function() {
+  var calls = 2;
+  
+  // ---------------
+  // emulate the same process of <script src="amd/a1.js"></script>
+  define('a', {
+    name: 'a'
+  });
+  define('b', [], function() {
+    return {name: 'b'};
+  });
+  define('c', ['exports'], function(exports) {
+    exports.name = "c";
+  });
+  define('d', ['exports', 'a', 'b', 'c'], function(exports, a ,b ,c) {
+    exports.name = "d";
+    exports.b = b.name + ' from d';
+  });
+  // ---------------
+  
+  require.ensure(["a", "b", "c", "d"], function(require) {
+    var a = require("a"),
+        b = require("b"),
+        c = require("c"),
+        d = require("d");
+    
+    equal(a.name, "a", "get a name");
+    equal(b.name, "b", "get b name");
+    equal(c.name, "c", "get c name");
+    equal(d.name, "d", "get d name");
+    equal(d.b, "b from d", "get b from d");
+    start();
+  });
+});
+
 asyncTest("#56 require.ensure with delay", 5, function() {
   var calls = 2;
   
