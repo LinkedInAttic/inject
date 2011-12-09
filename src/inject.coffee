@@ -933,6 +933,7 @@ require = (moduleId) ->
   shallow dependencies are resolved and block, so there is no need for require.ensure()
   beyond the topmost level.
   ###
+  if typeof(moduleId) isnt "string" then throw new Error("moduleId must be of type String")
   mod = db.module.getExports(moduleId)
   if mod is false then throw new Error("#{moduleId} not loaded")
   return mod
