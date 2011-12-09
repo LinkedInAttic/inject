@@ -59,6 +59,9 @@ responseSlicer = ///                # a regular expression for slicing a respons
   ([\w\W]+?)[\s]+                     # (2) Anything up to a space (moduleid)
   ([\w\W]+)$                          # (3) Any text up until the end of the string (file)
   ///m                                # Supports multiline expressions
+functionRegex = /^[\s\(]*function[^(]*\(([^)]*)\)/
+functionNewlineRegex = /\/\/.*?[\r\n]|\/\*(?:.|[\r\n])*?\*\//g
+functionSpaceRegex = /\s+/g
 requireRegex = null
 requireEnsureRegex = null
 commentRegex = null
@@ -78,27 +81,30 @@ or anything else.
 commonJSHeader = '''
 with (window) {
   (function() {
-    var module = {}, exports = {}, require = __INJECT_NS__.require, exe = null;
-    module.id = "__MODULE_ID__";
-    module.uri = "__MODULE_URI__";
-    module.exports = exports;
-    module.setExports = function(xobj) {
-      for (var name in module.exports) {
-        if (module.exports.hasOwnProperty(name)) {
+    var __module = {}, __exports = {}, __require = __INJECT_NS__.require, __exe = null, __retVal;
+    __module.id = "__MODULE_ID__";
+    __module.uri = "__MODULE_URI__";
+    __module.exports = __exports;
+    __module.setExports = function(xobj) {
+      for (var name in __module.exports) {
+        if (__module.exports.hasOwnProperty(name)) {
           throw new Error("module.setExports() failed: Module Exports has already been defined");
         }
       }
-      module.exports = xobj;
-      return module.exports;
+      __module.exports = xobj;
+      return __module.exports;
     }
-    exe = function(module, exports, require) {
+    __exe = function(module, exports, require) {
       __POINTCUT_BEFORE__
 '''
 commonJSFooter = '''
       __POINTCUT_AFTER__
     };
-    exe.call(module, module, exports, require);
-    return module.exports;
+    __retVal = __exe.call(__module, __module, __exports, __require);
+    if (__retVal) {
+      __module.setExports(__retVal);
+    }
+    return __module.exports;
   })();
 }
 '''
@@ -777,32 +783,36 @@ processCallbacks = (status, moduleId, file) ->
   db.queue.file.clear(moduleId)
   cb(moduleId, file) for cb in cbs
 
-analyzeFile = (moduleId) ->
-  ###
-  ## analyzeFile(moduleId) ##
-  _internal_ scan a module's file for dependencies and record them
-  ###
+extractRequires = (file, staticReqs = []) ->
   requires = []
   uniques = {}
   require = (item) ->
     requires.push(item) if uniques[item] isnt true
     uniques[item] = true
-  require.ensure = (items) ->
-    require(item) for item in items
-
   # collect runtime requirements
   reqs = []
-  file = db.module.getFile(moduleId).replace(commentRegex, "")
+  file = file.replace(commentRegex, "")
   reqs.push(match[0]) while (match = requireRegex.exec(file))
-  # reqs.push(match[0]) while (match = requireEnsureRegex.exec(file))
-  if reqs?.length > 0 then eval(reqs.join(";"))
-
-  # collect static requirements such as in define()
-  for staticReq in db.module.getStaticRequires(moduleId)
+  if reqs?.length > 0
+    try
+      eval(reqs.join(";"))
+    catch err
+      console?.log "Invalid require() syntax found in file: " + reqs.join(";")
+      throw err
+  
+  for staticReq in staticReqs
     requires.push(staticReq) if uniques[staticReq] isnt true
     uniques[staticReq] = true
+  
+  return requires
 
-  db.module.setRequires(moduleId, requires)
+analyzeFile = (moduleId) ->
+  ###
+  ## analyzeFile(moduleId) ##
+  _internal_ scan a module's file for dependencies and record them
+  ###
+  reqs = extractRequires(db.module.getFile(moduleId), db.module.getStaticRequires(moduleId))
+  db.module.setRequires(moduleId, reqs)
 
 applyRules = (moduleId) ->
   ###
@@ -873,7 +883,6 @@ executeFile = (moduleId) ->
 sendToXhr = (moduleId, callback) ->
   ###
   ## sendToXhr(moduleId, callback) ##
-  CLEANUPOK
   _internal_ request a module at path using xmlHttpRequest. On retrieval, fire off cb
   ###
   path = db.module.getPath(moduleId)
@@ -886,16 +895,29 @@ sendToXhr = (moduleId, callback) ->
 sendToIframe = (moduleId, callback) ->
   ###
   ## sendToIframe(txId, module, path, cb) ##
-  CLEANUPOK
   _internal_ request a module at path using Porthole + iframe. On retrieval, the cb will be fired
   ###
   path = db.module.getPath(moduleId)
   xDomainRpc.postMessage("#{moduleId} #{path}")
 
+getFunctionArgs = (fn) ->
+  names = fn.toString().match(functionRegex)[1]
+    .replace(functionNewlineRegex, '')
+    .replace(functionSpaceRegex, '').split(',');
+  if names.length is 1 and !names[0] then return [] else return names;
+
+###
+function argumentNames(fn) {
+  var names = fn.toString().match(/^[\s\(]*function[^(]*\(([^)]*)\)/)[1]
+    .replace(/\/\/.*?[\r\n]|\/\*(?:.|[\r\n])*?\*\//g, '')
+    .replace(/\s+/g, '').split(',');
+  return names.length == 1 && !names[0] ? [] : names;
+}
+###
+
 getXHR = () ->
   ###
   ## getXHR() ##
-  CLEANUPOK
   _internal_ get an XMLHttpRequest object
   ###
   xmlhttp = false
@@ -923,16 +945,21 @@ getXHR = () ->
 ###
 Main Payloads: require, require.ensure, etc
 ###
-require = (moduleId) ->
+require = (moduleId, callback = ->) ->
   ###
-  ## require(moduleId) ##
-  CLEANUPOK
+  ## require(moduleId, [callback]) ##
   Return the value of a module. This is a synchronous call, meaning the module needs
   to have already been loaded. If you are unsure about the module's existence, you
   should be using require.ensure() instead. For modules beyond the first tier, their
   shallow dependencies are resolved and block, so there is no need for require.ensure()
   beyond the topmost level.
+  
+  require() also supports an array + function syntax, which creates compliance with the
+  AMD specification.
   ###
+  if Object.prototype.toString.call(moduleId) is "[object Array]"
+    return define(moduleId, callback)
+  
   if typeof(moduleId) isnt "string" then throw new Error("moduleId must be of type String")
   mod = db.module.getExports(moduleId)
   if mod is false then throw new Error("#{moduleId} not loaded")
@@ -941,7 +968,6 @@ require = (moduleId) ->
 require.ensure = (moduleList, callback) ->
   ###
   ## require.ensure(moduleList, callback) ##
-  CLEANUPOK
   Ensure the modules in moduleList (array) are loaded, and then execute callback
   (function). Use this instead of require() when you need to load shallow dependencies
   first.
@@ -979,7 +1005,6 @@ require.ensure = (moduleList, callback) ->
 require.setModuleRoot = (root) ->
   ###
   ## require.setModuleRoot(root) ##
-  CLEANUPOK
   set the base path for including your modules. This is used as the default if no
   items in the manifest can be located.
 
@@ -993,7 +1018,6 @@ require.setModuleRoot = (root) ->
 require.setExpires = (expires) ->
   ###
   ## require.setExpires(expires) ##
-  CLEANUPOK
   Set the time in seconds that files will persist in localStorage. Setting to 0 will disable
   localstorage caching.
   ###
@@ -1002,7 +1026,6 @@ require.setExpires = (expires) ->
 require.setCrossDomain = (local, remote) ->
   ###
   ## require.setCrossDomain(local, remote) ##
-  CLEANUPOK
   Set a pair of URLs to relay files. You must have two relay files in your cross domain setup:
 
   * one relay file (local) on the same domain as the page hosting Inject
@@ -1016,7 +1039,6 @@ require.setCrossDomain = (local, remote) ->
 require.clearCache = (version) ->
   ###
   ## require.clearCache(version) ##
-  CLEANUPOK
   Remove the localStorage class at version. If no version is specified, the entire cache is cleared.
   ###
   clearFileRegistry(version)
@@ -1101,43 +1123,48 @@ define = (moduleId, deps, callback) ->
     db.module.setAmd(moduleId, true)
     db.module.setLoading(moduleId, true)
 
+  ensureDeps = if typeof(callback) is "function" then extractRequires(Function.prototype.toString.call(callback)) else []
+
   # Strip out 'require', 'exports', 'module' in deps array for require.ensure
   strippedDeps = []
   for dep in deps
     if dep isnt "exports" and dep isnt "require" and dep isnt "module" then strippedDeps.push(dep)
 
   db.module.setStaticRequires(moduleId, strippedDeps)
-  require.ensure(strippedDeps, (require, module, exports) ->
-    # already defined: require, module, exports
-    # create an array with all dependency modules object
-    args = []
-    for dep in deps
-      switch dep
-        when "require" then args.push(require)
-        when "exports" then args.push(exports)
-        when "module" then args.push(module)
-        else args.push(require(dep))
+  # require the ensure deps first
+  require.ensure ensureDeps, (require, module, exports) ->
+    # then do the normal require for stripped dependencies
+    require.ensure strippedDeps, (require, module, exports) ->
+      # if callback is an object, save it to exports
+      # if callback is a function, apply it with args, save the return object to exports
+      if typeof(callback) is 'function'
+        # already defined: require, module, exports
+        # create an array with all dependency modules object in the order
+        # of the callback function
+        argOrder = getFunctionArgs(callback)
+        args = []
+        for arg in argOrder
+          switch arg
+            when "require" then args.push(require)
+            when "exports" then args.push(exports)
+            when "module" then args.push(module)
+            else args.push(require(arg))
+        returnValue = callback.apply(context, args);
+        count = 0
+        count++ for own item in module['exports']
+        exports = returnValue if count is 0 and typeof(returnValue) isnt "undefined"
+      else if typeof(callback) is 'object'
+        exports = callback
 
-    # if callback is an object, save it to exports
-    # if callback is a function, apply it with args, save the return object to exports
-    if typeof(callback) is 'function'
-      returnValue = callback.apply(context, args);
-      count = 0
-      count++ for own item in module['exports']
-      exports = returnValue if count is 0 and typeof(returnValue) isnt "undefined"
-    else if typeof(callback) is 'object'
-      exports = callback
-
-    # save moduleId, exports into module list
-    # we only save modules with an ID
-    if moduleId
-      db.module.setExports(moduleId, exports)
-      db.module.setLoading(moduleId, false)
-      amdCallbackQueue = db.queue.amd.get(moduleId)
-      for amdCallback in amdCallbackQueue
-        amdCallback()
-      db.queue.amd.clear(moduleId)
-  )
+      # save moduleId, exports into module list
+      # we only save modules with an ID
+      if moduleId
+        db.module.setExports(moduleId, exports)
+        db.module.setLoading(moduleId, false)
+        amdCallbackQueue = db.queue.amd.get(moduleId)
+        for amdCallback in amdCallbackQueue
+          amdCallback()
+        db.queue.amd.clear(moduleId)
 
 
 # To allow a clear indicator that a global define function conforms to the AMD API
