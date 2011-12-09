@@ -13,7 +13,7 @@ module("Asynchronous Module Definition", {
   }
 });
 
-asyncTest("basic - a", 1, function() {
+asyncTest("basic - name, object", 1, function() {
   require.ensure(["a"], function(require) {
     var a = require("a");
     equal(a.name, "a", "get a name");
@@ -21,7 +21,7 @@ asyncTest("basic - a", 1, function() {
   });
 });
 
-asyncTest("basic - b", 1, function() {
+asyncTest("basic - name, dependencies (empty), function", 1, function() {
   require.ensure(["b"], function(require) {
     var b = require("b");
     equal(b.name, "b", "get b name");
@@ -29,7 +29,7 @@ asyncTest("basic - b", 1, function() {
   });
 });
 
-asyncTest("basic - c", 1, function() {
+asyncTest("basic - name, dependencies, function", 1, function() {
   require.ensure(["c"], function(require) {
     var c = require("c");
     equal(c.name, "c", "get c name");
@@ -37,7 +37,7 @@ asyncTest("basic - c", 1, function() {
   });
 });
 
-asyncTest("basic - d", 2, function() {
+asyncTest("basic - name, dependencies (with exports), function", 2, function() {
   require.ensure(["d"], function(require) {
     var d = require("d");
     equal(d.name, "d", "get d name");
@@ -46,7 +46,7 @@ asyncTest("basic - d", 2, function() {
   });
 });
 
-asyncTest("basic - e", 3, function() {
+asyncTest("basic - dependencies (with exports), function", 3, function() {
   require.ensure(["e"], function() {
     ok(true, "anon define ensure callback executed");
     start();
