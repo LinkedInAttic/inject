@@ -693,31 +693,25 @@ loadModules = (modList, callback) ->
   # internal method. After all branches of the tree have resolved
   # we can execute post-order all the modules. We can load them into
   # exports and run the callback
+  outstandingAMDModules = 0
   execute = () ->
+    amdComplete = () ->
+      exports = []
+      for moduleId in modList
+        exports.push(db.module.getExports(moduleId))
+      callback.apply(context, exports)
+
     executionOrder = tree.postOrder()
     for moduleId in executionOrder
       if moduleId is null then continue
+      # check if moduleId is amd. if there's amd in the tree
+      # add a callback to manage the count
       executeFile(moduleId)
-    # everything executed. collect exports
-    exports = []
-    for moduleId in modList
-      exports.push(db.module.getExports(moduleId))
-    callback.apply(context, exports)
-    return
-
-###
-This goes here
-  outstandingAMDModules = 0
-  checkForAmd = () ->
-    for moduleId in moduleList
       if db.module.getAmd(moduleId) and db.module.getLoading(moduleId)
-        outstandingAMDModules++;
+        outstandingAMDModules++
         db.queue.amd.add moduleId, () ->
-          if --outstandingAMDModules is 0
-            ensureExecutionCallback()
-    if outstandingAMDModules is 0
-      ensureExecutionCallback()
-###
+          if --outstandingAMDModules is 0 then amdComplete()
+    if outstandingAMDModules is 0 then amdComplete()
 
   for moduleId in modList
     node = new treeNode(moduleId)
