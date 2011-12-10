@@ -79,43 +79,23 @@ these bookend the included code and insulate the scope so that it doesn't impact
 or anything else.
 ###
 commonJSHeader = '''
-with (window) {
-  (function() {
-    var __module = {}, __exports = {}, __require = __INJECT_NS__.require, __exe = null, __retVal, __useRet;
-    __module.id = "__MODULE_ID__";
-    __module.uri = "__MODULE_URI__";
-    __module.exports = __exports;
-    __module.setExports = function(xobj) {
-      for (var name in __module.exports) {
-        if (__module.exports.hasOwnProperty(name)) {
-          throw new Error("module.setExports() failed: Module Exports has already been defined");
-        }
-      }
-      __module.exports = xobj;
-      return __module.exports;
-    }
-    __exe = function(module, exports, require) {
+(function() {
+  with (window) {
+    var __module = __INJECT_NS__.createModule("__MODULE_ID__", "__MODULE_URI__"),
+        __require = __INJECT_NS__.require,
+        __exe = null;
+    __exe = function(require, module, exports) {
       __POINTCUT_BEFORE__
 '''
 commonJSFooter = '''
       __POINTCUT_AFTER__
     };
-    __retVal = __exe.call(__module, __module, __exports, __require);
-    __useRet = true;
-    if (typeof(__module.exports) === "object") {
-      for (var name in __module.exports) {
-        if (__module.exports.hasOwnProperty(name)) {
-          __useRet = false;
-          break;
-        }
-      }
-    }
-    if (__retVal && __useRet) {
-      __module.setExports(__retVal);
-    }
+    __INJECT_NS__.defineAs(__module.id);
+    __exe.call(__module, __require, __module, __module.exports);
+    __INJECT_NS__.undefineAs();
     return __module;
-  })();
-}
+  }
+})();
 '''
 
 db = {
@@ -432,6 +412,13 @@ db = {
         if _db.amdQueue[moduleId] then return _db.amdQueue[moduleId] else return []
       "clear": (moduleId) ->
         if _db.amdQueue[moduleId] then _db.amdQueue[moduleId] = []
+    "define":
+      "add": (moduleId) ->
+        _db.defineQueue.unshift(moduleId)
+      "remove": () ->
+        _db.defineQueue.shift()
+      "peek": () ->
+        return _db.defineQueue[0]
 }
 
 class treeNode
@@ -553,6 +540,7 @@ reset = () ->
     "rulesQueue": []                  # the collection of rules for processing
     "fileQueue": []                   # a list of callbacks waiting on a file download
     "amdQueue": []                    # a list of callbacks waiting on a defined module file download and execute
+    "defineQueue": []
   userConfig =
     "moduleRoot": null                # the module root location
     "fileExpires": 1440               # the default expiry for items in lscache (in minutes)
@@ -880,7 +868,8 @@ executeFile = (moduleId) ->
                          .replace(/__MODULE_URI__/g, path)
                          .replace(/__INJECT_NS__/g, namespace)
                          .replace(/__POINTCUT_BEFORE__/g, cuts.before)
-  footer = commonJSFooter.replace(/__POINTCUT_AFTER__/g, cuts.after)
+  footer = commonJSFooter.replace(/__INJECT_NS__/g, namespace)
+                         .replace(/__POINTCUT_AFTER__/g, cuts.after)
 
   runCmd = "#{header}\n#{text}\n#{footer}\n//@ sourceURL=#{path}"
 
@@ -890,7 +879,7 @@ executeFile = (moduleId) ->
   catch err
     throw err
   # save exports
-  db.module.setExports(moduleId, module.exports)
+  db.module.setExports(module.id, module.exports)
 
 sendToXhr = (moduleId, callback) ->
   ###
@@ -954,6 +943,18 @@ getXHR = () ->
   if !xmlhttp then throw new Error("Could not create an xmlHttpRequest Object")
   return xmlhttp
 
+createModule = (id, uri) ->
+  module = {}
+  module["id"] = id || null
+  module["uri"] = uri || null
+  module["exports"] = {}
+  module["setExports"] = (xobj) ->
+    for own name in module["exports"]
+      throw new Error("cannot setExports when exports have already been set")
+    module["exports"] = xobj
+    return module["exports"]
+  return module
+
 ###
 Main Payloads: require, require.ensure, etc
 ###
@@ -970,12 +971,24 @@ require = (moduleId, callback = ->) ->
   AMD specification.
   ###
   if Object.prototype.toString.call(moduleId) is "[object Array]"
-    return define(moduleId, callback)
+    # amd require returns the modules in the order specified, not standard require.ensure
+    return require.ensure(moduleId, callback)
   
   if typeof(moduleId) isnt "string" then throw new Error("moduleId must be of type String")
   mod = db.module.getExports(moduleId)
   if mod is false then throw new Error("#{moduleId} not loaded")
   return mod
+  
+require.run = (moduleId) ->
+  ###
+  ## require.run(moduleId) ##
+  Try to getFile for moduleId, if the file exists, execute the file, if not, load this file and run it
+  ###
+  if db.module.getFile(moduleId) is false
+    require.ensure([moduleId], () ->)
+  else
+    db.module.setExports(moduleId, null)
+    executeFile(moduleId);
 
 require.ensure = (moduleList, callback) ->
   ###
@@ -989,23 +1002,21 @@ require.ensure = (moduleList, callback) ->
     createIframe()
     pauseRequired = true
 
-  count = 0
+  outstandingAMDModules = 0
   checkForAmd = () ->
     for moduleId in moduleList
       if db.module.getAmd(moduleId) and db.module.getLoading(moduleId)
-        count++;
-        db.queue.amd.add(moduleId, () ->
-          if --count is 0
+        outstandingAMDModules++;
+        db.queue.amd.add moduleId, () ->
+          if --outstandingAMDModules is 0
             ensureExecutionCallback()
-        );
-    if count is 0
+    if outstandingAMDModules is 0
       ensureExecutionCallback()
 
   ensureExecutionCallback = () ->
-    module = {}
-    exports = {}
-    module.exports = exports
-    callback.call(context, require, module, exports)
+    module = createModule();
+    exports = module.exports;
+    callback.call(context, Inject.require, module, exports)
 
   # our default behavior. Load everything
   # then, once everything says its loaded, call the callback
@@ -1013,6 +1024,135 @@ require.ensure = (moduleList, callback) ->
     loadModules(moduleList, checkForAmd)
   if pauseRequired then db.queue.load.add(run)
   else run()
+
+define = (moduleId, deps = ["require", "exports", "module"], callback) ->
+  # Allow for anonymous functions, adjust args appropriately
+  if typeof(moduleId) isnt "string"
+    callback = deps
+    deps = moduleId
+    moduleId = null || db.queue.define.peek()
+
+  # This module has no dependencies
+  if Object.prototype.toString.call(deps) isnt "[object Array]"
+    callback = deps
+    deps = []
+
+  db.module.setAmd(moduleId, true)
+  db.module.setLoading(moduleId, true)
+  
+  # if we have a callback, scan it for dependencies
+  inFunctionDeps = if typeof(callback) is "function" then extractRequires(Function.prototype.toString.call(callback)) else []
+  
+  # get dependencies from the array provided, remove "exports", "require", and "module" as they are not
+  # true dependencies
+  strippedDeps = []
+  uniqueDeps = {}
+  for dep in deps
+    if dep isnt "exports" and dep isnt "require" and dep isnt "module" and !uniqueDeps[dep]
+      strippedDeps.push(dep)
+      uniqueDeps[dep] = true
+  db.module.setStaticRequires(moduleId, strippedDeps)
+  
+  # combine the static dependencies with runtime dependencies, as one giant request
+  allDeps = strippedDeps
+  for dep in inFunctionDeps
+    if dep isnt "exports" and dep isnt "require" and dep isnt "module" and !uniqueDeps[dep]
+      allDeps.push(dep)
+      uniqueDeps[dep] = true
+  
+  # request all dependencies via require.ensure with a callback. We do not care about order here
+  require.ensure allDeps, (ensureRequire, ensureModule, ensureExports) ->
+    # run the callback if it is a function
+    if typeof(callback) is "function"
+      args = []
+      for dep in deps
+        switch dep
+          when "require" then args.push(ensureRequire)
+          when "exports" then args.push(ensureModule)
+          when "module" then args.push(ensureExports)
+          else args.push(require(dep))
+      returnValue = callback.apply(context, args);
+      exportsSet = false
+      for own item in ensureModule.exports
+        exportsSet = true
+      if exportsSet is false
+        # exports were not set, returnValue is likely the export
+        ensureModule.setExports(returnValue)
+    else
+      # callback is an object
+      ensureModule.setExports(callback)
+    
+    # ensureModule should now contain everything we need in order to save this module
+    db.module.setExports(ensureModule.id, ensureModule.exports)
+    db.module.setLoading(ensureModule.id, false)
+    amdCallbackQueue = db.queue.amd.get(moduleId)
+    for amdCallback in amdCallbackQueue
+      amdCallback()
+    db.queue.amd.clear(moduleId)
+
+# define = (moduleId, deps, callback) ->
+#   ###
+#   ## define(moduleId, deps, callback) ##
+#   Define a module with moduleId, run require.ensure to make sure all dependency modules have been loaded, and then
+#   apply the callback function with an array of dependency module objects, add the callback return and moduleId into
+#   moduleRegistry list.
+#   ###
+#   # Allow for anonymous functions, adjust args appropriately
+#   if typeof(moduleId) isnt "string"
+#     callback = deps
+#     deps = moduleId
+#     moduleId = anonDefineStack[0] || null
+# 
+#   # This module has no dependencies
+#   if Object.prototype.toString.call(deps) isnt "[object Array]"
+#     callback = deps
+#     deps = []
+#   if moduleId
+#     db.module.setAmd(moduleId, true)
+#     db.module.setLoading(moduleId, true)
+# 
+#   inFunctionDeps = if typeof(callback) is "function" then extractRequires(Function.prototype.toString.call(callback)) else []
+# 
+#   # Strip out 'require', 'exports', 'module' in deps array for require.ensure
+#   strippedDeps = []
+#   for dep in deps
+#     if dep isnt "exports" and dep isnt "require" and dep isnt "module" then strippedDeps.push(dep)
+# 
+#   db.module.setStaticRequires(moduleId, strippedDeps)
+#   # require the ensure deps first
+#   require.ensure inFunctionDeps, (require, module, exports) ->
+#     # then do the normal require for stripped dependencies
+#     require.ensure strippedDeps, (require, module, exports) ->
+#       # if callback is an object, save it to exports
+#       # if callback is a function, apply it with args, save the return object to exports
+#       if typeof(callback) is 'function'
+#         # already defined: require, module, exports
+#         # create an array with all dependency modules object in the order
+#         # of the callback function
+#         argOrder = getFunctionArgs(callback)
+#         args = []
+#         for arg in argOrder
+#           switch arg
+#             when "require" then args.push(require)
+#             when "exports" then args.push(exports)
+#             when "module" then args.push(module)
+#             else args.push(require(arg))
+#         returnValue = callback.apply(context, args);
+#         count = 0
+#         count++ for own item in module['exports']
+#         exports = returnValue if count is 0 and typeof(returnValue) isnt "undefined"
+#       else if typeof(callback) is 'object'
+#         exports = callback
+# 
+#       # save moduleId, exports into module list
+#       # we only save modules with an ID
+#       if moduleId
+#         db.module.setExports(moduleId, exports)
+#         db.module.setLoading(moduleId, false)
+#         amdCallbackQueue = db.queue.amd.get(moduleId)
+#         for amdCallback in amdCallbackQueue
+#           amdCallback()
+#         db.queue.amd.clear(moduleId)
 
 require.setModuleRoot = (root) ->
   ###
@@ -1103,81 +1243,6 @@ require.addRule = (match, weight = null, ruleSet = null) ->
     path: ruleSet.path or null
   })
 
-require.run = (moduleId) ->
-  ###
-  ## require.run(moduleId) ##
-  Try to getFile for moduleId, if the file exists, execute the file, if not, load this file and run it
-  ###
-  if db.module.getFile(moduleId) is false
-    require.ensure([moduleId], () ->)
-  else
-    db.module.setExports(moduleId, null)
-    executeFile(moduleId);
-
-define = (moduleId, deps, callback) ->
-  ###
-  ## define(moduleId, deps, callback) ##
-  Define a module with moduleId, run require.ensure to make sure all dependency modules have been loaded, and then
-  apply the callback function with an array of dependency module objects, add the callback return and moduleId into
-  moduleRegistry list.
-  ###
-  # Allow for anonymous functions, adjust args appropriately
-  if typeof(moduleId) isnt "string"
-    callback = deps
-    deps = moduleId
-    moduleId = anonDefineStack[0] || null
-
-  # This module has no dependencies
-  if Object.prototype.toString.call(deps) isnt "[object Array]"
-    callback = deps
-    deps = []
-  if moduleId
-    db.module.setAmd(moduleId, true)
-    db.module.setLoading(moduleId, true)
-
-  inFunctionDeps = if typeof(callback) is "function" then extractRequires(Function.prototype.toString.call(callback)) else []
-
-  # Strip out 'require', 'exports', 'module' in deps array for require.ensure
-  strippedDeps = []
-  for dep in deps
-    if dep isnt "exports" and dep isnt "require" and dep isnt "module" then strippedDeps.push(dep)
-
-  db.module.setStaticRequires(moduleId, strippedDeps)
-  # require the ensure deps first
-  require.ensure inFunctionDeps, (require, module, exports) ->
-    # then do the normal require for stripped dependencies
-    require.ensure strippedDeps, (require, module, exports) ->
-      # if callback is an object, save it to exports
-      # if callback is a function, apply it with args, save the return object to exports
-      if typeof(callback) is 'function'
-        # already defined: require, module, exports
-        # create an array with all dependency modules object in the order
-        # of the callback function
-        argOrder = getFunctionArgs(callback)
-        args = []
-        for arg in argOrder
-          switch arg
-            when "require" then args.push(require)
-            when "exports" then args.push(exports)
-            when "module" then args.push(module)
-            else args.push(require(arg))
-        returnValue = callback.apply(context, args);
-        count = 0
-        count++ for own item in module['exports']
-        exports = returnValue if count is 0 and typeof(returnValue) isnt "undefined"
-      else if typeof(callback) is 'object'
-        exports = callback
-
-      # save moduleId, exports into module list
-      # we only save modules with an ID
-      if moduleId
-        db.module.setExports(moduleId, exports)
-        db.module.setLoading(moduleId, false)
-        amdCallbackQueue = db.queue.amd.get(moduleId)
-        for amdCallback in amdCallbackQueue
-          amdCallback()
-        db.queue.amd.clear(moduleId)
-
 
 # To allow a clear indicator that a global define function conforms to the AMD API
 define['amd'] =
@@ -1189,6 +1254,9 @@ define['amd'] =
 context['require'] = require
 context['define'] = define
 context['Inject'] = {
+  'defineAs': (moduleId) -> db.queue.define.add(moduleId),
+  'undefineAs': () -> db.queue.define.remove(),
+  'createModule': createModule,
   'require': require,
   'define': define,
   'reset': reset,
