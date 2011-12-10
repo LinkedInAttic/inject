@@ -705,6 +705,20 @@ loadModules = (modList, callback) ->
     callback.apply(context, exports)
     return
 
+###
+This goes here
+  outstandingAMDModules = 0
+  checkForAmd = () ->
+    for moduleId in moduleList
+      if db.module.getAmd(moduleId) and db.module.getLoading(moduleId)
+        outstandingAMDModules++;
+        db.queue.amd.add moduleId, () ->
+          if --outstandingAMDModules is 0
+            ensureExecutionCallback()
+    if outstandingAMDModules is 0
+      ensureExecutionCallback()
+###
+
   for moduleId in modList
     node = new treeNode(moduleId)
     dispatchTreeDownload(id, tree, node, execute)
@@ -1002,17 +1016,6 @@ require.ensure = (moduleList, callback) ->
     createIframe()
     pauseRequired = true
 
-  outstandingAMDModules = 0
-  checkForAmd = () ->
-    for moduleId in moduleList
-      if db.module.getAmd(moduleId) and db.module.getLoading(moduleId)
-        outstandingAMDModules++;
-        db.queue.amd.add moduleId, () ->
-          if --outstandingAMDModules is 0
-            ensureExecutionCallback()
-    if outstandingAMDModules is 0
-      ensureExecutionCallback()
-
   ensureExecutionCallback = () ->
     module = createModule();
     exports = module.exports;
@@ -1021,7 +1024,7 @@ require.ensure = (moduleList, callback) ->
   # our default behavior. Load everything
   # then, once everything says its loaded, call the callback
   run = () ->
-    loadModules(moduleList, checkForAmd)
+    loadModules(moduleList, ensureExecutionCallback)
   if pauseRequired then db.queue.load.add(run)
   else run()
 
