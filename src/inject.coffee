@@ -1025,135 +1025,6 @@ require.ensure = (moduleList, callback) ->
   if pauseRequired then db.queue.load.add(run)
   else run()
 
-define = (moduleId, deps = ["require", "exports", "module"], callback) ->
-  # Allow for anonymous functions, adjust args appropriately
-  if typeof(moduleId) isnt "string"
-    callback = deps
-    deps = moduleId
-    moduleId = null || db.queue.define.peek()
-
-  # This module has no dependencies
-  if Object.prototype.toString.call(deps) isnt "[object Array]"
-    callback = deps
-    deps = []
-
-  db.module.setAmd(moduleId, true)
-  db.module.setLoading(moduleId, true)
-  
-  # if we have a callback, scan it for dependencies
-  inFunctionDeps = if typeof(callback) is "function" then extractRequires(Function.prototype.toString.call(callback)) else []
-  
-  # get dependencies from the array provided, remove "exports", "require", and "module" as they are not
-  # true dependencies
-  strippedDeps = []
-  uniqueDeps = {}
-  for dep in deps
-    if dep isnt "exports" and dep isnt "require" and dep isnt "module" and !uniqueDeps[dep]
-      strippedDeps.push(dep)
-      uniqueDeps[dep] = true
-  db.module.setStaticRequires(moduleId, strippedDeps)
-  
-  # combine the static dependencies with runtime dependencies, as one giant request
-  allDeps = strippedDeps
-  for dep in inFunctionDeps
-    if dep isnt "exports" and dep isnt "require" and dep isnt "module" and !uniqueDeps[dep]
-      allDeps.push(dep)
-      uniqueDeps[dep] = true
-  
-  # request all dependencies via require.ensure with a callback. We do not care about order here
-  require.ensure allDeps, (ensureRequire, ensureModule, ensureExports) ->
-    # run the callback if it is a function
-    if typeof(callback) is "function"
-      args = []
-      for dep in deps
-        switch dep
-          when "require" then args.push(ensureRequire)
-          when "exports" then args.push(ensureModule)
-          when "module" then args.push(ensureExports)
-          else args.push(require(dep))
-      returnValue = callback.apply(context, args);
-      exportsSet = false
-      for own item in ensureModule.exports
-        exportsSet = true
-      if exportsSet is false
-        # exports were not set, returnValue is likely the export
-        ensureModule.setExports(returnValue)
-    else
-      # callback is an object
-      ensureModule.setExports(callback)
-    
-    # ensureModule should now contain everything we need in order to save this module
-    db.module.setExports(ensureModule.id, ensureModule.exports)
-    db.module.setLoading(ensureModule.id, false)
-    amdCallbackQueue = db.queue.amd.get(moduleId)
-    for amdCallback in amdCallbackQueue
-      amdCallback()
-    db.queue.amd.clear(moduleId)
-
-# define = (moduleId, deps, callback) ->
-#   ###
-#   ## define(moduleId, deps, callback) ##
-#   Define a module with moduleId, run require.ensure to make sure all dependency modules have been loaded, and then
-#   apply the callback function with an array of dependency module objects, add the callback return and moduleId into
-#   moduleRegistry list.
-#   ###
-#   # Allow for anonymous functions, adjust args appropriately
-#   if typeof(moduleId) isnt "string"
-#     callback = deps
-#     deps = moduleId
-#     moduleId = anonDefineStack[0] || null
-# 
-#   # This module has no dependencies
-#   if Object.prototype.toString.call(deps) isnt "[object Array]"
-#     callback = deps
-#     deps = []
-#   if moduleId
-#     db.module.setAmd(moduleId, true)
-#     db.module.setLoading(moduleId, true)
-# 
-#   inFunctionDeps = if typeof(callback) is "function" then extractRequires(Function.prototype.toString.call(callback)) else []
-# 
-#   # Strip out 'require', 'exports', 'module' in deps array for require.ensure
-#   strippedDeps = []
-#   for dep in deps
-#     if dep isnt "exports" and dep isnt "require" and dep isnt "module" then strippedDeps.push(dep)
-# 
-#   db.module.setStaticRequires(moduleId, strippedDeps)
-#   # require the ensure deps first
-#   require.ensure inFunctionDeps, (require, module, exports) ->
-#     # then do the normal require for stripped dependencies
-#     require.ensure strippedDeps, (require, module, exports) ->
-#       # if callback is an object, save it to exports
-#       # if callback is a function, apply it with args, save the return object to exports
-#       if typeof(callback) is 'function'
-#         # already defined: require, module, exports
-#         # create an array with all dependency modules object in the order
-#         # of the callback function
-#         argOrder = getFunctionArgs(callback)
-#         args = []
-#         for arg in argOrder
-#           switch arg
-#             when "require" then args.push(require)
-#             when "exports" then args.push(exports)
-#             when "module" then args.push(module)
-#             else args.push(require(arg))
-#         returnValue = callback.apply(context, args);
-#         count = 0
-#         count++ for own item in module['exports']
-#         exports = returnValue if count is 0 and typeof(returnValue) isnt "undefined"
-#       else if typeof(callback) is 'object'
-#         exports = callback
-# 
-#       # save moduleId, exports into module list
-#       # we only save modules with an ID
-#       if moduleId
-#         db.module.setExports(moduleId, exports)
-#         db.module.setLoading(moduleId, false)
-#         amdCallbackQueue = db.queue.amd.get(moduleId)
-#         for amdCallback in amdCallbackQueue
-#           amdCallback()
-#         db.queue.amd.clear(moduleId)
-
 require.setModuleRoot = (root) ->
   ###
   ## require.setModuleRoot(root) ##
@@ -1243,6 +1114,73 @@ require.addRule = (match, weight = null, ruleSet = null) ->
     path: ruleSet.path or null
   })
 
+define = (moduleId, deps = ["require", "exports", "module"], callback) ->
+  # Allow for anonymous functions, adjust args appropriately
+  if typeof(moduleId) isnt "string"
+    callback = deps
+    deps = moduleId
+    moduleId = null || db.queue.define.peek()
+
+  module = createModule(moduleId)
+
+  # This module has no dependencies
+  if Object.prototype.toString.call(deps) isnt "[object Array]"
+    callback = deps
+    deps = []
+
+  db.module.setAmd(moduleId, true)
+  db.module.setLoading(moduleId, true)
+  
+  # if we have a callback, scan it for dependencies
+  inFunctionDeps = if typeof(callback) is "function" then extractRequires(Function.prototype.toString.call(callback)) else []
+  
+  # get dependencies from the array provided, remove "exports", "require", and "module" as they are not
+  # true dependencies
+  strippedDeps = []
+  uniqueDeps = {}
+  for dep in deps
+    if dep isnt "exports" and dep isnt "require" and dep isnt "module" and !uniqueDeps[dep]
+      strippedDeps.push(dep)
+      uniqueDeps[dep] = true
+  db.module.setStaticRequires(moduleId, strippedDeps)
+  
+  # combine the static dependencies with runtime dependencies, as one giant request
+  allDeps = strippedDeps
+  for dep in inFunctionDeps
+    if dep isnt "exports" and dep isnt "require" and dep isnt "module" and !uniqueDeps[dep]
+      allDeps.push(dep)
+      uniqueDeps[dep] = true
+  
+  # request all dependencies via require.ensure with a callback. We do not care about order here
+  loadModules allDeps, () ->
+    # run the callback if it is a function
+    if typeof(callback) is "function"
+      args = []
+      for dep in deps
+        switch dep
+          when "require" then args.push(Inject.require)
+          when "exports" then args.push(module.exports)
+          when "module" then args.push(module)
+          else args.push(require(dep))
+      returnValue = callback.apply(context, args);
+      exportsSet = false
+      for own item, value of module.exports
+        exportsSet = true
+        break
+      if exportsSet is false
+        # exports were not set, returnValue is likely the export
+        module.setExports(returnValue)
+    else
+      # callback is an object
+      module.setExports(callback)
+    
+    # ensureModule should now contain everything we need in order to save this module
+    db.module.setExports(moduleId, module.exports)
+    db.module.setLoading(moduleId, false)
+    amdCallbackQueue = db.queue.amd.get(moduleId)
+    for amdCallback in amdCallbackQueue
+      amdCallback()
+    db.queue.amd.clear(moduleId)
 
 # To allow a clear indicator that a global define function conforms to the AMD API
 define['amd'] =
