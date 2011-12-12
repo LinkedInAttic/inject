@@ -46,28 +46,29 @@ function server(request, response) {
     serve = serveFromArtifacts;
   }
   
-  // delayed serving calls
-  if (request.url === '/requires/modules-1.1.1/ensure-overlap/multiply.js') {
-    // delayed server call for the ensure-overlap unit test in modules 1.1.1 spec
-    return setTimeout(function() {
-      serve(request, response, function(err, result) {});
-    }, 300);
+  if (request.url === '/favicon.ico') {
+    // return empty response for favico... keeps the logs clear
+    return response.end();
   }
+  
+  // delayed serving calls
   if (request.url === '/deps/jqueryui/jquery.ui.widget.min.js') {
     // delayed server call for the jquery ui example
     return setTimeout(function() {
       serve(request, response, function(err, result) {});
     }, 5000);
   }
-  if(request.url === '/requires/amd/delay.js') {
-    // delayed server call 2 sec for amd ensure overlap unit test in amd
+  if (request.url === '/modules-1.1.1/includes/bugs/ensure-overlap/multiply.js') {
+    // delayed server call for the ensure-overlap unit test in modules 1.1.1 spec
     return setTimeout(function() {
       serve(request, response, function(err, result) {});
     }, 300);
   }
-  if (request.url === '/favicon.ico') {
-    // return empty response for favico... keeps the logs clear
-    return response.end();
+  if(request.url === '/amd/includes/original/delay.js') {
+    // delayed server call 2 sec for amd ensure overlap unit test in amd
+    return setTimeout(function() {
+      serve(request, response, function(err, result) {});
+    }, 300);
   }
   
   // standard serving call
