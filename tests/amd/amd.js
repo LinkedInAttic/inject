@@ -67,3 +67,25 @@ asyncTest("#56 require.ensure with delay", 5, function() {
   });
 });
 
+asyncTest("Function string", 8, function() {
+  require.setModuleRoot("http://localhost:4000/tests/amd/includes/spec/funcstring");
+  require.ensure(["one", "two", "three"], function(require) {
+    var one = require('one'),
+    two = require('two'),
+    three = require('three'),
+    args = one.doSomething(),
+    oneMod = one.module;
+    
+    equal("large", one.size);
+    equal("small", two.size);
+    equal("small", args.size);
+    equal("redtwo", args.color);
+    equal("one", oneMod.id);
+    equal('three', three.name);
+    equal('four', three.fourName);
+    equal('five', three.fiveName);
+    
+    start();
+  });
+});
+

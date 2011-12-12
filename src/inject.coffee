@@ -1111,7 +1111,7 @@ require.addRule = (match, weight = null, ruleSet = null) ->
     path: ruleSet.path or null
   })
 
-define = (moduleId, deps = ["require", "exports", "module"], callback) ->
+define = (moduleId, deps, callback) ->
   # Allow for anonymous functions, adjust args appropriately
   if typeof(moduleId) isnt "string"
     callback = deps
@@ -1123,7 +1123,7 @@ define = (moduleId, deps = ["require", "exports", "module"], callback) ->
   # This module has no dependencies
   if Object.prototype.toString.call(deps) isnt "[object Array]"
     callback = deps
-    deps = []
+    deps = ["require", "exports", "module"]
 
   db.module.setAmd(moduleId, true)
   db.module.setLoading(moduleId, true)
@@ -1148,8 +1148,8 @@ define = (moduleId, deps = ["require", "exports", "module"], callback) ->
       allDeps.push(dep)
       uniqueDeps[dep] = true
   
-  # request all dependencies via require.ensure with a callback. We do not care about order here
-  loadModules allDeps, () ->
+  # request all dependencies via loadModules with a callback. We do not care about order here
+  afterLoadModules = () ->
     # run the callback if it is a function
     if typeof(callback) is "function"
       args = []
@@ -1178,6 +1178,15 @@ define = (moduleId, deps = ["require", "exports", "module"], callback) ->
     for amdCallback in amdCallbackQueue
       amdCallback()
     db.queue.amd.clear(moduleId)
+    
+  outstandingAMDModules = 0
+  for depId in allDeps
+    if db.module.getAmd(depId) and db.module.getLoading(depId)
+      outstandingAMDModules++
+      db.queue.amd.add depId, () -> 
+        if --outstandingAMDModules is 0
+          afterLoadModules()
+  loadModules allDeps, afterLoadModules
 
 # To allow a clear indicator that a global define function conforms to the AMD API
 define['amd'] =
