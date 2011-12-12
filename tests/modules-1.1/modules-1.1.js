@@ -4,7 +4,6 @@ module("CommonJS: Modules 1.1", {
       localStorage.clear();
     }
     Inject.reset();
-    require.setModuleRoot("http://localhost:4000/tests/requires/modules-1.1");
   },
   teardown: function() {
     if (localStorage) {
@@ -13,15 +12,18 @@ module("CommonJS: Modules 1.1", {
   }
 });
 
-asyncTest("compliance", 13, function() {
+asyncTest("Compliance", 13, function() {
+  require.setModuleRoot("http://localhost:4000/tests/modules-1.1/includes/spec");
   require.run("compliance");
 });
 
-asyncTest("run program.js", 5, function() {
+asyncTest("Sample Code", 5, function() {
+  require.setModuleRoot("http://localhost:4000/tests/modules-1.1/includes/spec");
   require.run("program");
 });
 
-asyncTest("setExports", 2, function() {
+asyncTest("setExports proposal", 2, function() {
+  require.setModuleRoot("http://localhost:4000/tests/modules-1.1/includes/proposal");
   require.ensure(["setexports"], function(require) {
     var add = require("setexports");
     equal(add(2), 3, "add function available");

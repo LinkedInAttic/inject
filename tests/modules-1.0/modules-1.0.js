@@ -4,7 +4,6 @@ module("CommonJS: Modules 1.0", {
       localStorage.clear();
     }
     Inject.reset();
-    require.setModuleRoot("http://localhost:4000/tests/requires/modules-1.0");
   },
   teardown: function() {
     if (localStorage) {
@@ -13,36 +12,22 @@ module("CommonJS: Modules 1.0", {
   }
 });
 
-asyncTest("run program.js", 4, function() {
+asyncTest("Sample Code", 4, function() {
+  require.setModuleRoot("http://localhost:4000/tests/modules-1.0/includes/spec");
   require.run("program");
 });
 
-asyncTest("compliance", 8, function() {
+asyncTest("Compliance", 8, function() {
+  require.setModuleRoot("http://localhost:4000/tests/modules-1.0/includes/spec");
   require.run("compliance");
-});
-
-// ----------------------------------------------------------------------
-
-module("CommonJS: Modules 1.0 bugs", {
-  setup: function() {
-    if (localStorage) {
-      localStorage.clear();
-    }
-    Inject.reset();
-    require.setModuleRoot("http://localhost:4000/tests/requires/modules-1.0");
-  },
-  teardown: function() {
-    if (localStorage) {
-      localStorage.clear();
-    }
-  }
 });
 
 // require math twice, the second time after a reset (simulate page reload)
 asyncTest("#57 require from cache simulates an OK 200", 3, function() {
+  require.setModuleRoot("http://localhost:4000/tests/modules-1.0/includes/spec");
   require.ensure(["math"], function() {
     Inject.reset();
-    require.setModuleRoot("http://localhost:4000/tests/requires/modules-1.0");
+    require.setModuleRoot("http://localhost:4000/tests/modules-1.0/includes/spec");
     require.ensure(["math"], function() {
       ok(true, "module loaded from localStorage cache correctly");
       start();
@@ -52,5 +37,6 @@ asyncTest("#57 require from cache simulates an OK 200", 3, function() {
 
 // requiring a module that has commented lines- those lines should not run
 asyncTest("#59 require() statements in commented lines should be ignored", 1, function() {
+  require.setModuleRoot("http://localhost:4000/tests/modules-1.0/includes/bugs");
   require.run("bug_59");
 });

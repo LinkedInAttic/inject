@@ -4,7 +4,6 @@ module("CommonJS: Modules 1.1.1", {
       localStorage.clear();
     }
     Inject.reset();
-    require.setModuleRoot("http://localhost:4000/tests/requires/modules-1.1.1");
   },
   teardown: function() {
     if (localStorage) {
@@ -13,18 +12,19 @@ module("CommonJS: Modules 1.1.1", {
   }
 });
 
-asyncTest("compliance", 13, function() {
+asyncTest("Compliance", 13, function() {
+  require.setModuleRoot("http://localhost:4000/tests/modules-1.1.1/includes/spec");
   require.run("compliance");
 });
 
-asyncTest("run program.js", 5, function() {
+asyncTest("Sample Code", 5, function() {
+  require.setModuleRoot("http://localhost:4000/tests/modules-1.1.1/includes/spec");
   require.run("program");
 });
 
-asyncTest("module identifiers", 6, function() {
-  
-  require.run("identifiers/terms");
-  
+asyncTest("Compliance - Module Identifiers", 5, function() {
+  require.setModuleRoot("http://localhost:4000/tests/modules-1.1.1/includes/spec/identifiers");
+  require.run("terms");
 } );
 
 asyncTest("#56 require.ensure overlapping dependencies", 3, function() {
@@ -32,6 +32,7 @@ asyncTest("#56 require.ensure overlapping dependencies", 3, function() {
   foo depends on bar
   bar has a delay of 3 seconds built in
   */
+  require.setModuleRoot("http://localhost:4000/tests/modules-1.1.1/includes/bugs");
   // this test has 2 asynchronous threads
   var calls = 2;
   require.ensure(["ensure-overlap/addition", "ensure-overlap/multiply"], function(require) {

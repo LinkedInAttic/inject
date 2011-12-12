@@ -4,7 +4,6 @@ module("Asynchronous Module Definition", {
       localStorage.clear();
     }
     Inject.reset();
-    require.setModuleRoot("http://localhost:4000/tests/requires/amd");
   },
   teardown: function() {
     if (localStorage) {
@@ -14,6 +13,7 @@ module("Asynchronous Module Definition", {
 });
 
 asyncTest("basic - name, object", 1, function() {
+  require.setModuleRoot("http://localhost:4000/tests/amd/includes/original");
   require.ensure(["a"], function(require) {
     var a = require("a");
     equal(a.name, "a", "get a name");
@@ -22,6 +22,7 @@ asyncTest("basic - name, object", 1, function() {
 });
 
 asyncTest("basic - name, dependencies (empty), function", 1, function() {
+  require.setModuleRoot("http://localhost:4000/tests/amd/includes/original");
   require.ensure(["b"], function(require) {
     var b = require("b");
     equal(b.name, "b", "get b name");
@@ -30,6 +31,7 @@ asyncTest("basic - name, dependencies (empty), function", 1, function() {
 });
 
 asyncTest("basic - name, dependencies, function", 1, function() {
+  require.setModuleRoot("http://localhost:4000/tests/amd/includes/original");
   require.ensure(["c"], function(require) {
     var c = require("c");
     equal(c.name, "c", "get c name");
@@ -38,6 +40,7 @@ asyncTest("basic - name, dependencies, function", 1, function() {
 });
 
 asyncTest("basic - name, dependencies (with exports), function", 2, function() {
+  require.setModuleRoot("http://localhost:4000/tests/amd/includes/original");
   require.ensure(["d"], function(require) {
     var d = require("d");
     equal(d.name, "d", "get d name");
@@ -47,6 +50,7 @@ asyncTest("basic - name, dependencies (with exports), function", 2, function() {
 });
 
 asyncTest("basic - dependencies (with exports), function", 3, function() {
+  require.setModuleRoot("http://localhost:4000/tests/amd/includes/original");
   require.ensure(["e"], function() {
     ok(true, "anon define ensure callback executed");
     start();
@@ -54,6 +58,7 @@ asyncTest("basic - dependencies (with exports), function", 3, function() {
 });
 
 asyncTest("#56 require.ensure with delay", 5, function() {
+  require.setModuleRoot("http://localhost:4000/tests/amd/includes/original");
   require.ensure(["increment.delay"], function(require) {
     var delayInc = require("increment.delay");
     equal(delayInc.inc(5), 6, "increments");
