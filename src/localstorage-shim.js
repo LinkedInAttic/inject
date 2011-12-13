@@ -1,28 +1,19 @@
-/**@preserve Content-Type: multipart/related; boundary="_IE_LOCALSTORAGE_SHIM"
-
---_IE_LOCALSTORAGE_SHIM
-Content-Location:storeone
-Content-Transfer-Encoding:base64
-
-R0lGODlhAQABAIABAP///wAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==
-
---_IE_LOCALSTORAGE_SHIM
-Content-Location:storetwo
-Content-Transfer-Encoding:base64
-
-R0lGODlhAQABAIABAP///wAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==
-
---_IE_LOCALSTORAGE_SHIM--
-*/
 (function() {
-  var DEBUG = true,
+  var DEBUG = false,
       DONT_ENUMERATE = ['getItem', 'setItem', 'removeItem', 'key', 'clear'],
       iframe = document.createElement('iframe'),
-      src = document.getElementById('ie-localstorage-shim');
+      src = document.getElementById('ie-localstorage-shim'),
+      localStorageShim = {},
+      CustomError;
+
+  //custom error. used to rethrow QUOTA_EXCEEDED_ERR errors
+  CustomError = function(name, msg) { this.name = name; this.message = msg;};
+  CustomError.prototype = new Error;
 
   //reference the tiniest gif ever via mhtml (http://probablyprogramming.com/2009/03/15/the-tiniest-gif-ever)
-  iframe.src = src ? 'mhtml:' + src.getAttribute('src', -1) + '!storeone' : '/favicon.ico';
+  iframe.src = src ? 'mhtml:' + src.getAttribute('src', -1) + '!storetwo' : '/favicon.ico';
   iframe.style.display = 'none';
+
   iframe.attachEvent('onload', createLocalStorageObject);
   src.parentNode.insertBefore(iframe,src);
 
@@ -36,22 +27,24 @@ R0lGODlhAQABAIABAP///wAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==
   function createLocalStorageObject() {
     var doc = iframe.contentWindow.document,
         id = 'localstorage-ieshim-inject',
-        storageElement = doc.createElement('storageelement'),
+        storageElement = doc.getElementById(id),
         _storedKeys = [];
 
-
-    storageElement.id = id;//setting an id increases the speed of access, significantly.
-    storageElement.addBehavior('#default#userData');
-    doc.documentElement.appendChild(storageElement);
-
-
-
-//    TODO: use previouslyStoredDocs to load previously stored keys in to _storedKeys
-//    storageElement.load(id);
-//    var previouslyStoredDocs = storageElement['XMLDocument'];
-//    previouslyStoredDocs.documentElement.attributes.length
-
-    var localStorageShim = {
+    function syncStoredKeys() {
+      var storageAttr;
+      _storedKeys = [];
+      try{
+        storageAttr = storageElement.XMLDocument.documentElement.attributes;
+        for (var x = 0, l = storageAttr.length; x<l; x++) {
+          _storedKeys.push(storageAttr[x].nodeName);
+        }
+      }catch(e) {
+        //unable to pre-populate _storedKeys. This may be the first time userData is used or it may not be ready yet.
+        if (DEBUG) throw e;
+      }
+      localStorageShim.length = _storedKeys.length;
+    }
+    localStorageShim = {
       'getItem': function(key) {
         var val = null;
         key = cleanStorageKey(key);
@@ -68,35 +61,29 @@ R0lGODlhAQABAIABAP///wAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==
         key = cleanStorageKey(key);
         try{
           storageElement.setAttribute(key, value.toString());//.toString() per https://developer.mozilla.org/en/DOM/Storage
+          syncStoredKeys();
           storageElement.save(id);
-          localStorage.length = _storedKeys.push(key);
         }catch(e) {
-          //throw {name: 'QUOTA_EXCEEDED_ERR', message:'localStorage quota exceeded.'};//TODO: rethrow w/ proper error message //-2147217407
-          if (DEBUG) throw e;
+          throw new CustomError('QUOTA_EXCEEDED_ERR', 'userData quota exceeded.');//-2147217407
         }
+        syncStoredKeys();//adds to internal cache and updates length
       },
       'removeItem': function(key) {
         key = cleanStorageKey(key);
-
         try {
           storageElement.removeAttribute(key);
+          syncStoredKeys();//updates internal store and localStorage.length
           storageElement.save(id);
-
-          //remove from internal cache... no indexOf in IE :(
-          for (var x = _storedKeys.length-1; x >= 0; x--) {
-            if (_storedKeys[x] === key) {
-              _storedKeys.splice(x,1);
-            }
-          }
-          localStorageShim.length = _storedKeys.length;
         }catch(e) {
           if (DEBUG) throw e;
         }
       },
       'key': function(index) {
+        syncStoredKeys();
         return uncleanStorageKey(_storedKeys[index]);
       },
       'clear': function() {
+        syncStoredKeys();//updates internal store and localStorage.length
         for (var x = _storedKeys.length-1, key; x >= 0; x--) {
           key = localStorageShim.key(x);
           key && localStorageShim.removeItem(key);
@@ -105,5 +92,6 @@ R0lGODlhAQABAIABAP///wAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==
       'length': _storedKeys.length
     };
     window['localStorage'] = window['localStorage'] || localStorageShim;
+    syncStoredKeys();
   }
 }());

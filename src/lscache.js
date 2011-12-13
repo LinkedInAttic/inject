@@ -107,10 +107,11 @@ var lscache = function() {
               storedKey = localStorage.key(i);
               if (storedKey.indexOf(TOUCHEDSUFFIX) > -1) {
                 var mainKey = storedKey.split(TOUCHEDSUFFIX)[0];
-                storedKeys.push({key: mainKey, touched: parseInt(localStorage[storedKey], 10)});
+                storedKeys.push({key: mainKey, touched: parseInt(localStorage.getItem(storedKey), 10)});
               }
             }
             storedKeys.sort(function(a, b) { return (a.touched-b.touched); });
+            sorted = true;
           }
           
           // LRU
