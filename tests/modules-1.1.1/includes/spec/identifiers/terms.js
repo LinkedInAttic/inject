@@ -10,7 +10,7 @@ var boo = require("./relative-one");
 equal(boo.divide(4), 2, "relative path '.' test pass")
 
 try {
-  var qux = require("identifiers/divide.js");
+  var qux = require("invalid$module");
   ok(false, "invalid identifier should not run");
 }
 catch(e) {

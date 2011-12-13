@@ -84,6 +84,7 @@ commonJSHeader = '''
     var __module = __INJECT_NS__.createModule("__MODULE_ID__", "__MODULE_URI__"),
         __require = __INJECT_NS__.require,
         __exe = null;
+    __INJECT_NS__.setModuleExports("__MODULE_ID__", __module.exports)
     __exe = function(require, module, exports) {
       __POINTCUT_BEFORE__
 '''
@@ -124,6 +125,7 @@ db = {
           "file": null
           "amd": false
           "loading": false
+          "executed": false
           "rulesApplied": false
           "requires": []
           "staticRequires": []
@@ -284,6 +286,21 @@ db = {
       registry = _db.moduleRegistry
       db.module.create(moduleId)
       registry[moduleId].failed = failed
+    "getCircular": (moduleId) ->
+      ###
+      ## getFailed(moduleId) ##
+      get the status of the circular flag. It's set when a module has a circular dependency
+      ###
+      registry = _db.moduleRegistry
+      if registry[moduleId]?.circular then return registry[moduleId].circular else return false
+    "setCircular": (moduleId, circular) ->
+      ###
+      ## setFailed(moduleId, failed) ##
+      get the status of the circular flag. It's set when a module has a circular dependency
+      ###
+      registry = _db.moduleRegistry
+      db.module.create(moduleId)
+      registry[moduleId].circular = circular
     "getAmd": (moduleId) ->
       ###
       ## getAmd(moduleId) ##
@@ -315,6 +332,21 @@ db = {
       registry = _db.moduleRegistry
       db.module.create(moduleId)
       registry[moduleId].loading = loading
+    "getExecuted": (moduleId) ->
+      ###
+      ## getExecuted(moduleId) ##
+      get the status of the executed flag. It's set when a module is evalled
+      ###
+      registry = _db.moduleRegistry
+      if registry[moduleId]?.executed then return registry[moduleId].executed else return false
+    "setExecuted": (moduleId, executed) ->
+      ###
+      ## setExecuted(moduleId, executed) ##
+      set the executed flag for moduleId, It's set when an item is evaled
+      ###
+      registry = _db.moduleRegistry
+      db.module.create(moduleId)
+      registry[moduleId].executed = executed
   "txn":
     ###
     ## db.txn{} ##
@@ -733,7 +765,7 @@ downloadTree = (tree, callback) ->
     db.module.setFile(moduleId, file)
 
     if file
-      analyzeFile(moduleId)
+      analyzeFile(moduleId, tree)
       requires = db.module.getRequires(moduleId)
     else
       requires = []
@@ -811,13 +843,30 @@ extractRequires = (file, staticReqs = []) ->
   
   return requires
 
-analyzeFile = (moduleId) ->
+analyzeFile = (moduleId, tree) ->
   ###
   ## analyzeFile(moduleId) ##
   _internal_ scan a module's file for dependencies and record them
   ###
   reqs = extractRequires(db.module.getFile(moduleId), db.module.getStaticRequires(moduleId))
-  db.module.setRequires(moduleId, reqs)
+  
+  # #65 remove circular depenencies before handling requires
+  unsafeRequires = {}
+  safeRequires = []
+  hasCircular = false
+  parent = tree
+  while parent = parent.getParent()
+    if parent.getValue() then unsafeRequires[parent.getValue()] = true
+  for req in reqs
+    if unsafeRequires[req] isnt true
+      safeRequires.push(req)
+    else
+      # flag BOTH as circular
+      hasCircular = true
+      db.module.setCircular(req, true)
+  
+  db.module.setRequires(moduleId, safeRequires)
+  db.module.setCircular(moduleId, hasCircular)
 
 applyRules = (moduleId) ->
   ###
@@ -858,7 +907,8 @@ executeFile = (moduleId) ->
   and store the exports
   ###
 
-  if db.module.getExports(moduleId) then return
+  if db.module.getExecuted(moduleId) then return
+  db.module.setExecuted(moduleId, true)
   
   anonDefineStack.unshift(moduleId);
   
@@ -951,11 +1001,18 @@ getXHR = () ->
   if !xmlhttp then throw new Error("Could not create an xmlHttpRequest Object")
   return xmlhttp
 
-createModule = (id, uri) ->
+initializeExports = (moduleId) ->
+  if db.module.getExports(moduleId) isnt false then return
+  newExports = {
+    __inject_circular__: true
+  }
+  db.module.setExports(moduleId, newExports)
+
+createModule = (id, uri, exports) ->
   module = {}
   module["id"] = id || null
   module["uri"] = uri || null
-  module["exports"] = {}
+  module["exports"] = exports || db.module.getExports(id) || {}
   module["setExports"] = (xobj) ->
     for own name in module["exports"]
       throw new Error("cannot setExports when exports have already been set")
@@ -981,11 +1038,18 @@ require = (moduleId, callback = ->) ->
   if Object.prototype.toString.call(moduleId) is "[object Array]"
     # amd require returns the modules in the order specified, not standard require.ensure
     return require.ensure(moduleId, callback)
-  
   if typeof(moduleId) isnt "string" then throw new Error("moduleId must be of type String")
-  mod = db.module.getExports(moduleId)
-  if mod is false then throw new Error("#{moduleId} not loaded")
-  return mod
+  
+  exports = db.module.getExports(moduleId)
+  isCircular = db.module.getCircular(moduleId)
+  
+  if exports is false and isCircular is false then throw new Error("#{moduleId} not loaded")
+  
+  if isCircular is true
+    initializeExports(moduleId)
+    exports = db.module.getExports(moduleId)
+  
+  return exports
   
 require.run = (moduleId) ->
   ###
@@ -1201,6 +1265,7 @@ context['Inject'] = {
   'defineAs': (moduleId) -> db.queue.define.add(moduleId),
   'undefineAs': () -> db.queue.define.remove(),
   'createModule': createModule,
+  'setModuleExports': (moduleId, exports) -> db.module.setExports(moduleId, exports),
   'require': require,
   'define': define,
   'reset': reset,

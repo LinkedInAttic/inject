@@ -40,3 +40,9 @@ asyncTest("#59 require() statements in commented lines should be ignored", 1, fu
   require.setModuleRoot("http://localhost:4000/tests/modules-1.0/includes/bugs");
   require.run("bug_59");
 });
+
+// circular dependencies
+asyncTest("#65 circular dependencies should be resolved", 4, function() {
+  require.setModuleRoot("http://localhost:4000/tests/modules-1.0/includes/bugs");
+  require.run("bug_65");
+});
