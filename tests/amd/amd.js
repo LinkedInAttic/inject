@@ -31,8 +31,8 @@ asyncTest("Function String", 8, function() {
     var one = require('one'),
     two = require('two'),
     three = require('three'),
-    args = one.doSomething(),
-    oneMod = one.module;
+    args = two.doSomething(),
+    oneMod = two.getOneModule();
     
     equal("large", one.size);
     equal("small", two.size);

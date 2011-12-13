@@ -1,0 +1,18 @@
+/*
+Content-Type: multipart/related; boundary="_IE_LOCALSTORAGE_SHIM"
+
+--_IE_LOCALSTORAGE_SHIM
+Content-Location:storeone
+Content-Transfer-Encoding:base64
+
+R0lGODlhAQABAIABAP///wAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==
+
+--_IE_LOCALSTORAGE_SHIM
+Content-Location:storetwo
+Content-Transfer-Encoding:base64
+
+PGh0bWw+PGhlYWQ+PHRpdGxlPjwvdGl0bGU+PC9oZWFkPjxib2R5PjxiIGlkPSJsb2NhbHN0b3JhZ2UtaWVzaGltLWluamVjdCIgY2xhc3M9InVzZXJEYXRhIiBzdHlsZT0iYmVoYXZpb3I6dXJsKCcjZGVmYXVsdCN1c2VyRGF0YScpIj48L2I+PHNjcmlwdD4oZnVuY3Rpb24gZ2V0VXNlckRhdGEoKXt2YXIgaWQ9ImxvY2Fsc3RvcmFnZS1pZXNoaW0taW5qZWN0IixiPWRvY3VtZW50LmdldEVsZW1lbnRCeUlkKGlkKTt0cnl7Yi5sb2FkKGlkKX1jYXRjaChlKXtzZXRUaW1lb3V0KGdldFVzZXJEYXRhLDApfX0oKSk8L3NjcmlwdD48L2JvZHk+PC9odG1sPg==
+
+--_IE_LOCALSTORAGE_SHIM--
+*/
+%output%

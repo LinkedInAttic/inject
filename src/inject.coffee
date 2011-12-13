@@ -1244,13 +1244,19 @@ define = (moduleId, deps, callback) ->
     db.queue.amd.clear(moduleId)
     
   outstandingAMDModules = 0
+  noCircularDeps = []
   for depId in allDeps
     if db.module.getAmd(depId) and db.module.getLoading(depId)
       outstandingAMDModules++
       db.queue.amd.add depId, () -> 
         if --outstandingAMDModules is 0
           afterLoadModules()
-  loadModules allDeps, afterLoadModules
+    if db.module.getCircular(depId) is false
+      noCircularDeps.push depId
+  if db.module.getCircular(moduleId)
+    loadModules noCircularDeps, afterLoadModules
+  else
+    loadModules allDeps, afterLoadModules
 
 # To allow a clear indicator that a global define function conforms to the AMD API
 define['amd'] =
