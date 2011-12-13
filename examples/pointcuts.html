@@ -1,6 +1,9 @@
 <!DOCTYPE html>
 <html>
 <head>
+  <!--[if lte IE 7]>
+    <script src="/ie-localstorage-json-shim.js" type="text/javascript" id="ie-localstorage-shim"></script>
+  <![endif]-->
   <script type="text/javascript" src="/inject.js"></script>
 </head>
 <body>
@@ -19,7 +22,7 @@ document.getElementById("clearit").onclick = function() {
   require.clearCache();
 };
 
-require.setModuleRoot("http://localhost:4000/examples/deps");
+require.setModuleRoot("/examples/deps");
 
 require.manifest({
   "jQuery": {

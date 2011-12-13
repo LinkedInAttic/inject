@@ -1,9 +1,12 @@
 <!DOCTYPE html>
 <html>
 <head>
+  <!--[if lte IE 7]>
+    <script src="/ie-localstorage-json-shim.js" type="text/javascript" id="ie-localstorage-shim"></script>
+  <![endif]-->
   <script type="text/javascript" src="/inject.js"></script>
   <script type="text/javascript">
-    require.setModuleRoot("http://localhost:4000/examples/deps");
+    require.setModuleRoot("/examples/deps");
     require.addRule(/^jquery$/, {
       path: "jquery-1.7.js",
       pointcuts: {
