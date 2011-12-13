@@ -17,15 +17,15 @@ asyncTest("Compliance", 13, function() {
   require.run("compliance");
 });
 
+asyncTest("Compliance - Module Identifiers", 5, function() {
+  require.setModuleRoot("http://localhost:4000/tests/modules-1.1.1/includes/spec/identifiers");
+  require.run("terms");
+});
+
 asyncTest("Sample Code", 5, function() {
   require.setModuleRoot("http://localhost:4000/tests/modules-1.1.1/includes/spec");
   require.run("program");
 });
-
-asyncTest("Compliance - Module Identifiers", 5, function() {
-  require.setModuleRoot("http://localhost:4000/tests/modules-1.1.1/includes/spec/identifiers");
-  require.run("terms");
-} );
 
 asyncTest("#56 require.ensure overlapping dependencies", 3, function() {
   /*

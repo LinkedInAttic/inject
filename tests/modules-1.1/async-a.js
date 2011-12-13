@@ -1,4 +1,4 @@
-module("Modules 1.1 Extension - Async/A", {
+module("CommonJS: Modules 1.1 Extension - Async/A", {
   setup: function() {
     if (localStorage) {
       localStorage.clear();
@@ -23,7 +23,7 @@ asyncTest("require.ensure", 3, function() {
 });
 
 // require.ensure was running dependencies at compile time
-asyncTest("#58 require.ensure runtime dependencies only", 1, function() {
+asyncTest("#58 require.ensure runtime dependencies only (false)", 1, function() {
   require.setModuleRoot("http://localhost:4000/tests/modules-1.1/includes/bugs");
   require.ensure(["bug_58"], function(require) {
     var runner = require("bug_58");
@@ -31,7 +31,7 @@ asyncTest("#58 require.ensure runtime dependencies only", 1, function() {
   });
 });
 
-asyncTest("#58 require.ensure runtime dependencies only", 3, function() {
+asyncTest("#58 require.ensure runtime dependencies only (true)", 3, function() {
   require.setModuleRoot("http://localhost:4000/tests/modules-1.1/includes/bugs");
   require.ensure(["bug_58"], function(require) {
     var runner = require("bug_58");

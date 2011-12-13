@@ -21,12 +21,3 @@ asyncTest("Sample Code", 5, function() {
   require.setModuleRoot("http://localhost:4000/tests/modules-1.1/includes/spec");
   require.run("program");
 });
-
-asyncTest("setExports proposal", 2, function() {
-  require.setModuleRoot("http://localhost:4000/tests/modules-1.1/includes/proposal");
-  require.ensure(["setexports"], function(require) {
-    var add = require("setexports");
-    equal(add(2), 3, "add function available");
-    start();
-  });
-});
