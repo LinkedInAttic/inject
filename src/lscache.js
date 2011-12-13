@@ -128,6 +128,7 @@ var lscache = function() {
               }
             }
             storedKeys.sort(function(a, b) { return (a.touched-b.touched); });
+            sorted = true;
           }
           
           // LRU
