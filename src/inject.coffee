@@ -71,7 +71,7 @@ commentRegex = null
 requireRegex = /(?:^|[^\w\$_.])require\s*\(\s*("[^"\\]*(?:\\.[^"\\]*)*"|'[^'\\]*(?:\\.[^'\\]*)*')\s*\)/g;
 // requireEnsureRegex = /(?:^|[^\w\$_.])require.ensure\s*\(\s*(\[("[^"\\]*(?:\\.[^"\\]*)*"|'[^'\\]*(?:\\.[^'\\]*)*'|\s*|,)*\])/g;
 // define static requirements
-defineStaticRequireRegex = /^.*define\([^\[]*\[([^\]]*)\],.+/;
+defineStaticRequireRegex = /^.*define\(\s*("\S+",|'\S+',|\s*)\s*\[([^\]]*)\],\s*(function\s*\(|{).+/;
 // commentRegex from RequireJS
 commentRegex = /(\/\*([\s\S]*?)\*\/|([^:]|^)\/\/(.*)$)/mg;
 `
@@ -826,7 +826,7 @@ extractRequires = (file) ->
   # get static requirements
   staticReqs = []
   if defineStaticRequireRegex.exec(file)
-    staticReqs = defineStaticRequireRegex.exec(file)[1].replace(/\s|"|'|require|exports|module/g,'').split(',');
+    staticReqs = defineStaticRequireRegex.exec(file)[2].replace(/\s|"|'|require|exports|module/g,'').split(',');
 
   for staticReq in staticReqs
     requires.push(staticReq) if uniques[staticReq] isnt true and staticReq isnt ''
