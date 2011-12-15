@@ -63,13 +63,15 @@ functionRegex = /^[\s\(]*function[^(]*\(([^)]*)\)/
 functionNewlineRegex = /\/\/.*?[\r\n]|\/\*(?:.|[\r\n])*?\*\//g
 functionSpaceRegex = /\s+/g
 requireRegex = null
+defineStaticRequireRegex = null
 requireEnsureRegex = null
 commentRegex = null
 `
 // requireRegexes from Yabble - James Brantly
 requireRegex = /(?:^|[^\w\$_.])require\s*\(\s*("[^"\\]*(?:\\.[^"\\]*)*"|'[^'\\]*(?:\\.[^'\\]*)*')\s*\)/g;
 // requireEnsureRegex = /(?:^|[^\w\$_.])require.ensure\s*\(\s*(\[("[^"\\]*(?:\\.[^"\\]*)*"|'[^'\\]*(?:\\.[^'\\]*)*'|\s*|,)*\])/g;
-
+// define static requirements
+defineStaticRequireRegex = /^.*define\([^\[]*\[([^\]]*)\],.+/;
 // commentRegex from RequireJS
 commentRegex = /(\/\*([\s\S]*?)\*\/|([^:]|^)\/\/(.*)$)/mg;
 `
@@ -128,7 +130,6 @@ db = {
           "executed": false
           "rulesApplied": false
           "requires": []
-          "staticRequires": []
           "exec": null
           "pointcuts":
             "before": []
@@ -187,21 +188,6 @@ db = {
       registry = _db.moduleRegistry
       db.module.create(moduleId)
       registry[moduleId].requires = requires
-    "getStaticRequires": (moduleId) ->
-      ###
-      ## getStaticRequires(moduleId) ##
-      get the requires for a given moduleId found at declaration time (static dependencies)
-      ###
-      registry = _db.moduleRegistry
-      if registry[moduleId]?.staticRequires then return registry[moduleId].staticRequires
-    "setStaticRequires": (moduleId, staticRequires) ->
-      ###
-      ## setStaticRequires(moduleId, staticRequires) ##
-      set the staticRequires for moduleId, found at declaration time
-      ###
-      registry = _db.moduleRegistry
-      db.module.create(moduleId)
-      registry[moduleId].staticRequires = staticRequires
     "getRulesApplied": (moduleId) ->
       ###
       ## getRulesApplied(moduleId) ##
@@ -820,7 +806,7 @@ processCallbacks = (status, moduleId, file) ->
   db.queue.file.clear(moduleId)
   cb(moduleId, file) for cb in cbs
 
-extractRequires = (file, staticReqs = []) ->
+extractRequires = (file) ->
   requires = []
   uniques = {}
   require = (item) ->
@@ -836,11 +822,16 @@ extractRequires = (file, staticReqs = []) ->
     catch err
       console?.log "Invalid require() syntax found in file: " + reqs.join(";")
       throw err
-  
+
+  # get static requirements
+  staticReqs = []
+  if defineStaticRequireRegex.exec(file)
+    staticReqs = defineStaticRequireRegex.exec(file)[1].replace(/\s|"|'|require|exports|module/g,'').split(',');
+
   for staticReq in staticReqs
-    requires.push(staticReq) if uniques[staticReq] isnt true
+    requires.push(staticReq) if uniques[staticReq] isnt true and staticReq isnt ''
     uniques[staticReq] = true
-  
+
   return requires
 
 analyzeFile = (moduleId, tree) ->
@@ -848,7 +839,7 @@ analyzeFile = (moduleId, tree) ->
   ## analyzeFile(moduleId) ##
   _internal_ scan a module's file for dependencies and record them
   ###
-  reqs = extractRequires(db.module.getFile(moduleId), db.module.getStaticRequires(moduleId))
+  reqs = extractRequires(db.module.getFile(moduleId))
   
   # #65 remove circular depenencies before handling requires
   unsafeRequires = {}
@@ -915,8 +906,6 @@ executeFile = (moduleId) ->
   # before going futher, execute all of its required modules
   # right now, we're leaving this as recursive
   for requiredModuleId in db.module.getRequires(moduleId)
-    executeFile(requiredModuleId)
-  for requiredModuleId in db.module.getStaticRequires(moduleId)
     executeFile(requiredModuleId)
 
   cuts = getFormattedPointcuts(moduleId)
@@ -1191,27 +1180,8 @@ define = (moduleId, deps, callback) ->
 
   db.module.setAmd(moduleId, true)
   db.module.setLoading(moduleId, true)
-  
-  # if we have a callback, scan it for dependencies
-  inFunctionDeps = if typeof(callback) is "function" then extractRequires(Function.prototype.toString.call(callback)) else []
-  
-  # get dependencies from the array provided, remove "exports", "require", and "module" as they are not
-  # true dependencies
-  strippedDeps = []
-  uniqueDeps = {}
-  for dep in deps
-    if dep isnt "exports" and dep isnt "require" and dep isnt "module" and !uniqueDeps[dep]
-      strippedDeps.push(dep)
-      uniqueDeps[dep] = true
-  db.module.setStaticRequires(moduleId, strippedDeps)
-  
-  # combine the static dependencies with runtime dependencies, as one giant request
-  allDeps = strippedDeps
-  for dep in inFunctionDeps
-    if dep isnt "exports" and dep isnt "require" and dep isnt "module" and !uniqueDeps[dep]
-      allDeps.push(dep)
-      uniqueDeps[dep] = true
-  
+  allDeps = db.module.getRequires(moduleId);
+
   # request all dependencies via loadModules with a callback. We do not care about order here
   afterLoadModules = () ->
     # run the callback if it is a function
@@ -1244,19 +1214,13 @@ define = (moduleId, deps, callback) ->
     db.queue.amd.clear(moduleId)
     
   outstandingAMDModules = 0
-  noCircularDeps = []
   for depId in allDeps
     if db.module.getAmd(depId) and db.module.getLoading(depId)
       outstandingAMDModules++
       db.queue.amd.add depId, () -> 
         if --outstandingAMDModules is 0
           afterLoadModules()
-    if db.module.getCircular(depId) is false
-      noCircularDeps.push depId
-  if db.module.getCircular(moduleId)
-    loadModules noCircularDeps, afterLoadModules
-  else
-    loadModules allDeps, afterLoadModules
+  loadModules allDeps, afterLoadModules
 
 # To allow a clear indicator that a global define function conforms to the AMD API
 define['amd'] =

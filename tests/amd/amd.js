@@ -12,7 +12,7 @@ module("AMD Specification", {
   }
 });
 
-asyncTest("Basic", 3, function() {
+asyncTest("Basic - simple tests", 3, function() {
   require.setModuleRoot("http://localhost:4000/tests/amd/includes/spec/basic");
   require.ensure(["a","b"], function(require) {
     var a = require("a"),
@@ -21,6 +21,26 @@ asyncTest("Basic", 3, function() {
     equal('a', a.name);
     equal('b', b.name);
     equal('c', b.cName);
+    start();
+  });
+});
+
+asyncTest("Basic - circular tests", 6, function() {
+  require.setModuleRoot("http://localhost:4000/tests/amd/includes/spec/basic");
+  require.ensure(["two", "funcTwo", "funcThree"], function(require) {
+    var two = require("two"),
+    funcTwo = require("funcTwo"),
+    funcThree = require("funcThree"),
+    args = two.doSomething(),
+    twoInst = new funcTwo("TWO"),
+    oneMod = two.getOneModule();
+
+    equal("small", args.size);
+    equal("redtwo", args.color);
+    equal("one", oneMod.id);
+    equal("TWO", twoInst.name);
+    equal("ONE-NESTED", twoInst.oneName());
+    equal("THREE-THREE_SUFFIX", funcThree("THREE"));
     start();
   });
 });
