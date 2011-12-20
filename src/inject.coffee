@@ -39,6 +39,7 @@ For more details, check out the README or github: https://github.com/Jakobo/inje
 ###
 Constants and Registries used
 ###
+isIE = eval("/*@cc_on!@*/false")    # a test to determine if this is the IE engine (needed for source in eval commands)
 userConfig = {}                     # user configuration options (see reset)
 undef = undef                       # undefined
 schemaVersion = 1                   # version of inject()'s localstorage schema
@@ -917,8 +918,8 @@ executeFile = (moduleId) ->
                          .replace(/__POINTCUT_BEFORE__/g, cuts.before)
   footer = commonJSFooter.replace(/__INJECT_NS__/g, namespace)
                          .replace(/__POINTCUT_AFTER__/g, cuts.after)
-
-  runCmd = "#{header}\n#{text}\n#{footer}\n//@ sourceURL=#{path}"
+  sourceString = if isIE then "" else "//@ sourceURL=#{path}"
+  runCmd = ["", header, text, footer, sourceString, ""].join(" ;\n")
 
   # todo: circular dependency resolution
   try
