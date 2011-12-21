@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <!--[if lte IE 7]>
+    <script src="/ie-localstorage-json-shim.js" type="text/javascript" id="ie-localstorage-shim"></script>
+  <![endif]-->
+  <script type="text/javascript" src="/inject.js"></script>
+  <script type="text/javascript">
+    require.setModuleRoot("/examples/deps");
+    require.addRule(/math/, {
+      path: function(module) {
+        var path = module.split('/');
+        if(path.length > 1){
+          var mod = path[1].split('@');
+          if ( mod.length > 1) {
+            return [ path[0], "/",mod[1], "/", mod[0], ".js"].join("");
+          }
+        } 
+        return [module,".js"].join("");
+      }
+    });
+  </script>
+  
+</head>
+<body>
+<h1>Using addRule() for versioning</h1>
+<p>In this example, we're loading two versions of a multiplication library</p>
+
+<p><a href="index.html">Back to examples</a></p>
+
+<p>(version 0.0.1) 2 x 5</p>
+<p id="output-foo"></p>
+<p>(version 0.1.1) 2 x 10</p>
+<p id="output-bar"></p>
+
+<button id="clearit">Clear Cache</button>
+
+<script type="text/javascript">
+document.getElementById("clearit").onclick = function() {
+  require.clearCache();
+};
+</script>
+
+<script type="text/javascript">
+require.ensure(["math/multiplication@0.0.1"], function() {
+  var app = require("math/multiplication@0.0.1");
+  document.getElementById("output-foo").innerHTML = app.multiply(2);
+});
+require.ensure(["math/multiplication@0.1.1"], function() {
+  var app = require("math/multiplication@0.1.1");
+  document.getElementById("output-bar").innerHTML = app.multiply(2);
+});
+</script>
+</body>
+</html>
