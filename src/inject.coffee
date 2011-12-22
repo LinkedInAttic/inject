@@ -925,8 +925,8 @@ executeFile = (moduleId) ->
                          .replace(/__POINTCUT_AFTER__/g, cuts.after)
   sourceString = if isIE then "" else "//@ sourceURL=#{path}"
   
-  runHeader = [sourceString, header].join("\n")
-  runCmd = [runHeader, text, ";", footer].join("\n")
+  runHeader = header + "\n"
+  runCmd = [runHeader, text, ";", footer, sourceString].join("\n")
 
   # todo: circular dependency resolution
   try
