@@ -50,7 +50,7 @@ fileStorageToken = "FILEDB"         # a storagetoken identifier we use (lscache)
 fileStore = "Inject FileStorage"    # file store to use
 namespace = "Inject"                # the namespace for inject() that is publicly reachable
 userModules = {}                    # any mappings for module => handling defined by the user
-jsSuffix = /.*?\.js$/               # Regex for identifying things that end in *.js
+fileSuffix = /.*?\.(js|txt)$/       # Regex for identifying things that end in *.js or *.txt
 hostPrefixRegex = /^https?:\/\//    # prefixes for URLs that begin with http/https
 hostSuffixRegex = /^(.*?)(\/.*|$)/  # suffix for URLs used to capture everything up to / or the end of the string
 iframeName = "injectProxy"          # the name for the iframe proxy created (Porthole)
@@ -68,7 +68,7 @@ requireEnsureRegex = null
 commentRegex = null
 `
 // requireRegexes from Yabble - James Brantly
-requireRegex = /(?:^|[^\w\$_.])require\s*\(\s*("[^"\\]*(?:\\.[^"\\]*)*"|'[^'\\]*(?:\\.[^'\\]*)*')\s*\)/g;
+requireRegex = /(?:^|[^\w\$_.\(])require\s*\(\s*("[^"\\]*(?:\\.[^"\\]*)*"|'[^'\\]*(?:\\.[^'\\]*)*')\s*\)/g;
 // requireEnsureRegex = /(?:^|[^\w\$_.])require.ensure\s*\(\s*(\[("[^"\\]*(?:\\.[^"\\]*)*"|'[^'\\]*(?:\\.[^'\\]*)*'|\s*|,)*\])/g;
 // define static requirements
 defineStaticRequireRegex = /^[\r\n\s]*define\(\s*("\S+",|'\S+',|\s*)\s*\[([^\]]*)\],\s*(function\s*\(|{).+/;
@@ -859,7 +859,7 @@ analyzeFile = (moduleId, tree) ->
   db.module.setRequires(moduleId, safeRequires)
   db.module.setCircular(moduleId, hasCircular)
 
-applyRules = (moduleId) ->
+applyRules = (moduleId, save) ->
   ###
   ## applyRules(moduleId) ##
   _internal_ normalize the path based on the module collection or any functions
@@ -884,11 +884,17 @@ applyRules = (moduleId) ->
     if typeof(userConfig.moduleRoot) is "undefined" then throw new Error("Module Root must be defined")
     else if typeof(userConfig.moduleRoot) is "string" then workingPath = "#{userConfig.moduleRoot}#{workingPath}"
     else if typeof(userConfig.moduleRoot) is "function" then workingPath = userConfig.moduleRoot(workingPath)
-  if !jsSuffix.test(workingPath) then workingPath = "#{workingPath}.js"
+  if !fileSuffix.test(workingPath) then workingPath = "#{workingPath}.js"
 
-  db.module.setPath(moduleId, workingPath)
-  db.module.setPointcuts(moduleId, pointcuts)
-  db.module.setRulesApplied(moduleId, true)
+  if save is undefined
+    db.module.setPath(moduleId, workingPath)
+    db.module.setPointcuts(moduleId, pointcuts)
+    db.module.setRulesApplied(moduleId, true)
+  else if save is false
+    return {
+      path: workingPath,
+      pointcuts: pointcuts
+    };
 
 anonDefineStack = []
 executeFile = (moduleId) ->
@@ -1025,10 +1031,23 @@ require = (moduleId, callback = ->) ->
   AMD specification.
   ###
   if Object.prototype.toString.call(moduleId) is "[object Array]"
-    # amd require returns the modules in the order specified, not standard require.ensure
-    return require.ensure(moduleId, callback)
-  if typeof(moduleId) isnt "string" then throw new Error("moduleId must be of type String")
-  
+    # amd compliant require()
+    strippedModuleList = []
+    for mId in moduleId
+      if mId isnt "require" and mId isnt "exports" and mId isnt "module"
+        strippedModuleList.push(mId)
+    require.ensure(strippedModuleList, (require, module, exports) ->
+      args = []
+      for mId in moduleId
+        switch mId
+          when "require" then args.push(require)
+          when "exports" then args.push(exports)
+          when "module" then args.push(module)
+          else args.push(require(mId));
+      callback.apply(context, args);
+    )
+    return
+
   exports = db.module.getExports(moduleId)
   isCircular = db.module.getCircular(moduleId)
   
@@ -1163,6 +1182,9 @@ require.addRule = (match, weight = null, ruleSet = null) ->
     pointcuts: ruleSet.pointcuts or null
     path: ruleSet.path or null
   })
+
+require.toUrl = (moduleURL) ->
+  applyRules(moduleURL, false).path;
 
 define = (moduleId, deps, callback) ->
   # Allow for anonymous functions, adjust args appropriately
