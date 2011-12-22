@@ -879,7 +879,6 @@ applyRules = (moduleId) ->
     workingPath = if typeof(rule.path) is "string" then rule.path else rule.path(workingPath)
     if rule?.pointcuts?.before then pointcuts.before.push(rule.pointcuts.before)
     if rule?.pointcuts?.after then pointcuts.after.push(rule.pointcuts.after)
-
   # apply global rules for all paths
   if workingPath.indexOf("/") isnt 0
     if typeof(userConfig.moduleRoot) is "undefined" then throw new Error("Module Root must be defined")
@@ -919,13 +918,21 @@ executeFile = (moduleId) ->
   footer = commonJSFooter.replace(/__INJECT_NS__/g, namespace)
                          .replace(/__POINTCUT_AFTER__/g, cuts.after)
   sourceString = if isIE then "" else "//@ sourceURL=#{path}"
-  runCmd = ["", header, text, footer, sourceString, ""].join(" ;\n")
+  
+  runHeader = [sourceString, header].join("\n")
+  runCmd = [runHeader, text, ";", footer].join("\n")
 
   # todo: circular dependency resolution
   try
     module = context.eval(runCmd)
   catch err
-    throw err
+    filePath = db.module.getPath(moduleId)
+    message = "(inject module eval) #{err.message}\n    in #{path}"
+    newErr = new Error(message)
+    newErr.name = err.name
+    newErr.type = err.type
+    newErr.origin = err
+    throw newErr
   # save exports
   db.module.setExports(module.id, module.exports)
 
@@ -1087,6 +1094,9 @@ require.setModuleRoot = (root) ->
   with multiple CDNs such as in a complex production environment.
   ###
   if typeof(root) is "string" and root.lastIndexOf("/") isnt root.length then root = "#{root}/"
+  if typeof(root) is "string"
+    if root.indexOf("/") is 0 then root = "#{location.protocol}//#{location.host}#{root}"
+    else if root.indexOf(".") is 0 then root = "#{location.protocol}//#{location.host}/#{root}"
   userConfig.moduleRoot = root
 
 require.setExpires = (expires) ->

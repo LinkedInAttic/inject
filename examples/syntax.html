@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <!--[if lte IE 7]>
+    <script src="/ie-localstorage-json-shim.js" type="text/javascript" id="ie-localstorage-shim"></script>
+  <![endif]-->
+  <script type="text/javascript" src="/inject.js"></script>
+</head>
+<body>
+<h1>Syntax Errors</h1>
+<p>Even though it's eval(), you can still get all the proper debugging information.</p>
+
+<p><a href="index.html">Back to examples</a></p>
+
+<button id="clearit">Clear Cache</button>
+
+<script type="text/javascript">
+document.getElementById("clearit").onclick = function() {
+  require.clearCache();
+};
+
+require.setModuleRoot("/examples/deps");
+require.run("errors/syntaxerror");
+require.run("errors/referenceerror");
+</script>
+</body>
+</html>
