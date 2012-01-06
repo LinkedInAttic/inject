@@ -1,0 +1,37 @@
+{
+  "name":           "inject",
+  "version":        "0.0.1",
+  "description":    "Test Server for inject",
+  "author":         "Jakob Heuser",
+  "private":        true,
+  "maintainers": [
+    {
+      "name": "Jakob Heuser",
+      "email": "jheuser@linkedin.com, jakob@felocity.com",
+      "web": "http://www.felocity.com"
+    }
+  ],
+  "licenses": [
+    {
+      "type": "Apache License, Version 2.0",
+      "url": "http://www.apache.org/licenses/LICENSE-2.0"
+    }
+  ],
+  "repositories": [
+    {
+      "type": "git", 
+      "url": "https://Jakobo@github.com/Jakobo/inject.git"
+    }
+  ],
+  "implements": [
+    "CommonJS/Modules/1.0",
+    "CommonJS/Modules/1.1",
+    "CommonJS/Modules/1.1.1",
+    "CommonJS/Modules/Transport/A",
+    "https://github.com/amdjs/amdjs-api/wiki/AMD"
+  ],
+  "dependencies": {
+    "paperboy":     "0.0.2"
+  },
+  "engine":         "node >= 0.4.10"
+}

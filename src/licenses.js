@@ -1,15 +1,18 @@
 /**
  * @license
  * Inject
- * Copyright (c) 2011 Jakob Heuser <jakob@felocity.com>. All Rights Reserved.
+ * Copyright (c) 2011 Jakob Heuser
  * Apache Software License 2.0 (see below)
  *
  * lscache library (c) 2011 Pamela Fox
  * Apache Software License 2.0 (see below)
  *
  * Porthole
- * Copyright (c) 2011 Ternary Labs. All Rights Reserved.
+ * Copyright (c) 2011 Ternary Labs
  * MIT License (see below)
+ *
+ * JSON
+ * Public Domain 2011-10-19
  *
  * APACHE SOFTWARE LICENSE 2.0
  * ===

@@ -1,25 +1,32 @@
 ###
-# Inject: Dependency Awesomeness #
+Inject
+Copyright 2011 Jakob Heuser
 
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing,
+software distributed under the License is distributed on an "AS
+IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+express or implied.   See the License for the specific language
+governing permissions and limitations under the License.
+
+--------------------
+
+# Inject is Dependency Awesomeness #
 Some sample ways to use inject...
-    var foo = require("moduleName");
+  var foo = require("moduleName");
+  // -- or --
+  require.ensure(["moduleOne", "moduleTwo", "moduleThree"], function(require, exports, module) {
+    var foo = require("moduleOne");
+  })
+  // -- or --
+  require.run("mySampleApplication")
 
-    // -- or --
-
-    require.ensure(["moduleOne", "moduleTwo", "moduleThree"], function(require, exports, module) {
-      var foo = require("moduleOne");
-    })
-
-    // -- or --
-
-    require.run("mySampleApplication")
-
-Configuring Inject
-  require.setModuleRoot("http://example.com/path/to/js/root")
-  require.setCrossDomain("http://local.example.com/path/to/relay.html", "http://remote.example.com/path/to/relay.html")
-  require.addRule(moduleName, "http://local.example.com/path/to/module")
-
-For more details, check out the README or github: https://github.com/Jakobo/inject
+For more details, check out the github: https://github.com/Jakobo/inject
 ###
 
 #
@@ -33,7 +40,7 @@ For more details, check out the README or github: https://github.com/Jakobo/inje
 #
 # Over Comment
 #
-# Always run "cake build" and make sure it compiles. Testing is also a bonus
+# Always run "cake build" and make sure it compiles. Test before you pull request.
 #
 
 ###
@@ -60,22 +67,17 @@ responseSlicer = ///                # a regular expression for slicing a respons
   ([\w\W]+?)[\s]+                     # (2) Anything up to a space (moduleid)
   ([\w\W]+)$                          # (3) Any text up until the end of the string (file)
   ///m                                # Supports multiline expressions
+
+###
+Regexes to extract function identifiers, comments, require() statements, or requirements from a define() call
+###
 functionRegex = /^[\s\(]*function[^(]*\(([^)]*)\)/
 functionNewlineRegex = /\/\/.*?[\r\n]|\/\*(?:.|[\r\n])*?\*\//g
 functionSpaceRegex = /\s+/g
-requireRegex = null
-defineStaticRequireRegex = null
-requireEnsureRegex = null
-commentRegex = null
-`
-// requireRegexes from Yabble - James Brantly
-requireRegex = /(?:^|[^\w\$_.])require\s*\(\s*("[^"\\]*(?:\\.[^"\\]*)*"|'[^'\\]*(?:\\.[^'\\]*)*')\s*\)/g;
-// requireEnsureRegex = /(?:^|[^\w\$_.])require.ensure\s*\(\s*(\[("[^"\\]*(?:\\.[^"\\]*)*"|'[^'\\]*(?:\\.[^'\\]*)*'|\s*|,)*\])/g;
-// define static requirements
-defineStaticRequireRegex = /^[\r\n\s]*define\(\s*("\S+",|'\S+',|\s*)\s*\[([^\]]*)\],\s*(function\s*\(|{).+/;
-// commentRegex from RequireJS
-commentRegex = /(\/\*([\s\S]*?)\*\/|([^:]|^)\/\/(.*)$)/mg;
-`
+requireRegex = /(?:^|[^\w\$_.])require\s*\(\s*("[^"\\]*(?:\\.[^"\\]*)*"|'[^'\\]*(?:\\.[^'\\]*)*')\s*\)/g
+defineStaticRequireRegex = /^[\r\n\s]*define\(\s*("\S+",|'\S+',|\s*)\s*\[([^\]]*)\],\s*(function\s*\(|{).+/
+commentRegex = /(\/\*([\s\S]*?)\*\/|([^:]|^)\/\/(.*)$)/mg
+
 ###
 CommonJS wrappers for a header and footer
 these bookend the included code and insulate the scope so that it doesn't impact inject()

@@ -18,9 +18,8 @@ We have a nodejs test server for both the examples and development. Install node
 
 ```
 cake build
-cd testserver
-sudo npm install
-node server.js
+npm install
+node testserver.js
 ```
 
 You can visit http://localhost:4000/examples/ for viewing some sample code, or http://localhost:4000/tests for running our unit test suite. We use alternate ports to create the cross domain environment instead of a CDN.
