@@ -3,7 +3,7 @@ Inject: Dependency Management Got Awesome
 **Inject** (Apache Software License 2.0) is a revolutionary way to manage your dependencies in a *Library Agnostic* way. Some of its major features include:
 
 * CommonJS Compliance in the Browser (exports.*)
-  * View the full [CommonJS Support Matrix](https://github.com/Jakobo/inject/wiki/CommonJS-Support)
+  * View the full [CommonJS Support Matrix](https://github.com/linkedin/inject/wiki/CommonJS-Support)
 * Cross domain retrieval of files (via Porthole)
 * localStorage (load a module once)
 * Frustratingly Simple
@@ -26,7 +26,7 @@ You can visit http://localhost:4000/examples/ for viewing some sample code, or h
 
 Getting Started
 ===
-We've put together a [Getting Started With inject Guide](https://github.com/Jakobo/inject/wiki) which is a launching point to all to functionality inject has to offer. If you're already familiar with CommonJS-style modules, than you can probably start right there.
+We've put together a [Getting Started With inject Guide](https://github.com/linkedin/inject/wiki) which is a launching point to all to functionality inject has to offer. If you're already familiar with CommonJS-style modules, than you can probably start right there.
 
 Writing CommonJS Compliant Modules
 ===
