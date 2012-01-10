@@ -88,5 +88,5 @@ You can then carry on with your injecting. To support the cross domain, we use `
 Also Starring
 ===
 * Porthole: Cross Domain Communication
-* lscache: LocalStorage Cache Provider
+* lscache: LocalStorage Cache Provider 
 * Google Closure Compiler
