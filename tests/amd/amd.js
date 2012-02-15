@@ -29,28 +29,22 @@ module("AMD Specification", {
   }
 });
 
-asyncTest("Basic - simple tests", 3, function() {
-  require.setModuleRoot("http://localhost:4000/tests/amd/includes/spec/basic");
-  require.ensure(["a","b"], function(require) {
-    var a = require("a"),
-        b = require("b");
-
-    equal('a', a.name);
-    equal('b', b.name);
-    equal('c', b.cName);
+asyncTest("Anon - simple", 3, function() {
+  require.setModuleRoot("http://localhost:4000/tests/amd/includes/spec/anon");
+  require(["a","b"], function(a, b) {
+    equal("a", a.name);
+    equal("b", b.name);
+    equal("c", b.cName);
     start();
   });
 });
 
-asyncTest("Basic - circular tests", 6, function() {
-  require.setModuleRoot("http://localhost:4000/tests/amd/includes/spec/basic");
-  require.ensure(["two", "funcTwo", "funcThree"], function(require) {
-    var two = require("two"),
-    funcTwo = require("funcTwo"),
-    funcThree = require("funcThree"),
-    args = two.doSomething(),
-    twoInst = new funcTwo("TWO"),
-    oneMod = two.getOneModule();
+asyncTest("Anon - circular", 6, function() {
+  require.setModuleRoot("http://localhost:4000/tests/amd/includes/spec/anon");
+  require(["require", "two", "funcTwo", "funcThree"], function(require, two, funcTwo, funcThree) {
+    var args = two.doSomething(),
+        twoInst = new funcTwo("TWO"),
+        oneMod = two.getOneModule();
 
     equal("small", args.size);
     equal("redtwo", args.color);
@@ -62,15 +56,57 @@ asyncTest("Basic - circular tests", 6, function() {
   });
 });
 
-asyncTest("Function String", 8, function() {
+asyncTest("Anon - relativeModuleId", 2, function() {
+  require.setModuleRoot("http://localhost:4000/tests/amd/includes/spec/anon");
+  require.addRule("array", {path:"impl/array"});
+  require(["require", "array"], function(require, array) {
+    equal("impl/array", array.name);
+    equal("util", array.utilName);
+    start();
+  });
+});
+
+asyncTest("Basic - defineAmd", 1, function() {
+  require.setModuleRoot("http://localhost:4000/tests/amd/includes/spec/basic");
+  require.ensure(["one/defineAmd"], function() {
+    equal("object", typeof define.amd)
+    start();
+  });
+});
+
+asyncTest("Basic - simple", 3, function() {
+  require.setModuleRoot("http://localhost:4000/tests/amd/includes/spec/basic");
+  require(["a", "b"], function(a, b) {
+    equal("a", a.name);
+    equal("b", b.name);
+    equal("c", b.cName);
+    start();
+  });
+});
+
+asyncTest("Basic - circular", 6, function() {
+  require.setModuleRoot("http://localhost:4000/tests/amd/includes/spec/basic");
+  require(["require", "two", "funcTwo", "funcThree"], function(require, two, funcTwo, funcThree) {
+    var args = two.doSomething(),
+        twoInst = new funcTwo("TWO"),
+        oneMod = two.getOneModule();
+
+    equal("small", args.size);
+    equal("redtwo", args.color);
+    equal("one", oneMod.id);
+    equal("TWO", twoInst.name);
+    equal("ONE-NESTED", twoInst.oneName());
+    equal("THREE-THREE_SUFFIX", funcThree("THREE"));
+    start();
+  });
+});
+
+asyncTest("Function String - funcString", 8, function() {
   require.setModuleRoot("http://localhost:4000/tests/amd/includes/spec/funcstring");
-  require.ensure(["one", "two", "three"], function(require) {
-    var one = require('one'),
-    two = require('two'),
-    three = require('three'),
-    args = two.doSomething(),
-    oneMod = two.getOneModule();
-    
+  require(["one", "two", "three"], function(one, two, three) {
+    var args = two.doSomething(),
+        oneMod = two.getOneModule();
+
     equal("large", one.size);
     equal("small", two.size);
     equal("small", args.size);
@@ -83,14 +119,25 @@ asyncTest("Function String", 8, function() {
   });
 });
 
-asyncTest("Name Wrapped", 3, function() {
+asyncTest("Named Wrapped - basic", 3, function() {
   require.setModuleRoot("http://localhost:4000/tests/amd/includes/spec/namewrapped");
-  require.ensure(["car"], function(require) {
-    var car = require("car");
-    
-    equal('car', car.name);
-    equal('wheels', car.wheels.name);
-    equal('engine', car.engine.name);
+  require(["car"], function(car) {
+    equal("car", car.name);
+    equal("wheels", car.wheels.name);
+    equal("engine", car.engine.name);
     start();
+  });
+});
+
+asyncTest("Require - basic", 4, function() {
+  require.setModuleRoot("http://localhost:4000/tests/amd/includes/spec/require");
+  require.ensure(["require", "a"], function(require) {
+    require(["b", "c"], function(b, c) {
+      equal("a", require('a').name);
+      equal("b", b.name);
+      equal("c", c.name);
+      equal(true, /c\/templates\/first\.txt$/.test(c.url));
+      start();
+    });
   });
 });

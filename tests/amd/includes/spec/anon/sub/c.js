@@ -1,4 +1,4 @@
-define('sub/c', function () {
+define(function () {
     return {
         name: 'c'
     };

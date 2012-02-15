@@ -1,4 +1,4 @@
-define("two", ["require", "one"], function(require, one) {
+define(["require", "one"], function(require, one) {
     return {
         size: "small",
         color: "redtwo",
