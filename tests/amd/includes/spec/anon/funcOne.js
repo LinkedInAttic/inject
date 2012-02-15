@@ -1,4 +1,4 @@
-define("funcOne", ["require", "funcTwo"], function (require) {
+define(["require", "funcTwo"], function (require) {
     var one = function (name) {
         this.name = name;
     };
