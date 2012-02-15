@@ -1166,7 +1166,7 @@ require.manifest = (manifest) ->
   ###
   for own item, rules of manifest
     ruleSet =
-      path: rules.path or null
+      path: rules.path or rules or null
       pointcuts:
         before: rules.before or null
         after: rules.after or null
