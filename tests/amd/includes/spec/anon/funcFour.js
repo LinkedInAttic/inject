@@ -1,4 +1,4 @@
-define("funcFour", ["require", "funcThree"], function (require) {
+define(["require", "funcThree"], function (require) {
     var four = function (arg) {
         return "FOUR called with " + arg;
     };
