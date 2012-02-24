@@ -818,7 +818,7 @@ extractRequires = (file) ->
   # collect runtime requirements
   reqs = []
   file = file.replace(commentRegex, "")
-  reqs.push(match[0]) while (match = requireRegex.exec(file))
+  reqs.push(match[0].match(/require.*/)[0]) while (match = requireRegex.exec(file))
   if reqs?.length > 0
     try
       eval(reqs.join(";"))
