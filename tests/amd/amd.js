@@ -141,3 +141,12 @@ asyncTest("Require - basic", 4, function() {
     });
   });
 });
+
+asyncTest("Set Exports  - to a function", 1, function() {
+  require.setModuleRoot("http://localhost:4000/tests/amd/includes/spec/exports");
+  require.ensure(["func"], function(require) {
+    var f = require('func');
+    equal(f("Bob"), "hello Bob");
+    start();
+  });
+});
