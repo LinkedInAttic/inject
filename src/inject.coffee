@@ -1020,10 +1020,8 @@ createModule = (id, uri, exports) ->
   module["exports"] = exports || db.module.getExports(id) || {}
   module["setExports"] = (xobj) ->
     module["exports"] = xobj unless xobj == undefined
-    # for own name in module["exports"]
-    #   throw new Error("cannot setExports when exports have already been set")
-    # module["exports"] = xobj
     return module["exports"]
+    
   return module
 
 ###
