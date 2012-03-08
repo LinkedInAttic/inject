@@ -76,6 +76,7 @@ functionNewlineRegex = /\/\/.*?[\r\n]|\/\*(?:.|[\r\n])*?\*\//g
 functionSpaceRegex = /\s+/g
 requireRegex = /(?:^|[^\w\$_.\(])require\s*\(\s*("[^"\\]*(?:\\.[^"\\]*)*"|'[^'\\]*(?:\\.[^'\\]*)*')\s*\)/g
 defineStaticRequireRegex = /^[\r\n\s]*define\(\s*("\S+",|'\S+',|\s*)\s*\[([^\]]*)\],\s*(function\s*\(|{).+/
+requireGreedyCapture = /require.*/
 commentRegex = /(\/\*([\s\S]*?)\*\/|([^:]|^)\/\/(.*)$)/mg
 
 ###
@@ -818,7 +819,11 @@ extractRequires = (file) ->
   # collect runtime requirements
   reqs = []
   file = file.replace(commentRegex, "")
-  reqs.push(match[0].match(/require.*/)[0]) while (match = requireRegex.exec(file))
+
+  # there are twp matches going on here. The while() captures the lines with require() in them
+  # then, then a greedy capture ensures that we are starting with the "require" keyword and
+  # don't have any extea whitespace
+  reqs.push(match[0].match(requireGreedyCapture)[0]) while (match = requireRegex.exec(file))
   if reqs?.length > 0
     try
       eval(reqs.join(";"))

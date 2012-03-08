@@ -1,4 +1,4 @@
-var b=require('bug_require_a');
+var b=require('bug_88_a');
 
 exports.foo = "bar";
 ok(true, "bug require loaded");

@@ -74,14 +74,15 @@ function server(request, response) {
       serve(request, response, function(err, result) {});
     }, 5000);
   }
-  if (request.url === '/modules-1.1.1/includes/bugs/ensure-overlap/multiply.js') {
+  if (request.url === '/modules-1.1.1/includes/bugs/bug_56_a.js') {
     // delayed server call for the ensure-overlap unit test in modules 1.1.1 spec
     return setTimeout(function() {
       serve(request, response, function(err, result) {});
     }, 300);
   }
   if(request.url === '/amd/includes/original/delay.js') {
-    // delayed server call 2 sec for amd ensure overlap unit test in amd
+    // delayed server call 300 msec for amd ensure overlap unit test in amd
+    // originally was 2 seconds, reduced just for rerun sake
     return setTimeout(function() {
       serve(request, response, function(err, result) {});
     }, 300);

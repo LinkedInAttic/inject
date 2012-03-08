@@ -44,7 +44,7 @@ asyncTest("Sample Code", 5, function() {
   require.run("program");
 });
 
-asyncTest("#56 require.ensure overlapping dependencies", 3, function() {
+asyncTest("#56 require.ensure should handle overlapping dependencies as pending", 3, function() {
   /*
   foo depends on bar
   bar has a delay of 3 seconds built in
@@ -52,14 +52,14 @@ asyncTest("#56 require.ensure overlapping dependencies", 3, function() {
   require.setModuleRoot("http://localhost:4000/tests/modules-1.1.1/includes/bugs");
   // this test has 2 asynchronous threads
   var calls = 2;
-  require.ensure(["ensure-overlap/addition", "ensure-overlap/multiply"], function(require) {
-    var foo = require("ensure-overlap/addition");
+  require.ensure(["bug_56", "bug_56_a"], function(require) {
+    var foo = require("bug_56");
     equal(foo.increment(2), 3, "increments");
     equal(foo.multiply(2), 4, "multiplies");
     if (--calls === 0) { start(); }
   });
-  require.ensure(["ensure-overlap/addition"], function(require) {
-    var foo = require("ensure-overlap/addition");
+  require.ensure(["bug_56"], function(require) {
+    var foo = require("bug_56");
     equal(foo.increment(2), 3, "increments");
     if (--calls === 0) { start(); }
   });

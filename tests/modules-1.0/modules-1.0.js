@@ -65,7 +65,7 @@ asyncTest("#65 circular dependencies should be resolved", 4, function() {
 });
 
 // requiring a module that has commented lines- those lines should not run
-asyncTest("require() statements with no space before them should still run", 2, function() {
+asyncTest("#88 require() statements with no space before them should still run", 2, function() {
   require.setModuleRoot("http://localhost:4000/tests/modules-1.0/includes/bugs");
-  require.run("bug_require");
+  require.run("bug_88");
 });
