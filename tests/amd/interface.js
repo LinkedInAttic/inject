@@ -83,3 +83,12 @@ asyncTest("#56 require.ensure with delay", 5, function() {
     start();
   });
 });
+
+asyncTest("#91 module.exports should be able to have a function assigned to it in AMD mode", 1, function() {
+  require.setModuleRoot("http://localhost:4000/tests/amd/includes/bugs");
+  require.ensure(["bug_91"], function(require) {
+    var f = require('bug_91');
+    equal(f("Bob"), "hello Bob");
+    start();
+  });
+});

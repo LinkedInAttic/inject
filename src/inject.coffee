@@ -1235,9 +1235,17 @@ define = (moduleId, deps, callback) ->
           else args.push(require(dep))
       returnValue = callback.apply(context, args);
       exportsSet = false
-      for own item, value of module.exports
+
+      # if we set module.exports to a function, then module.exports is ok
+      # otherwise, walk through module.exports and see if anything has been
+      # set. This deals with #91, where module.exports = function() fails in
+      # the AMD case, and we want parity between the systems
+      if typeof module.exports is "function"
         exportsSet = true
-        break
+      else
+        for own item, value of module.exports
+          exportsSet = true
+          break
       if exportsSet is false
         # exports were not set, returnValue is likely the export
         module.setExports(returnValue)
