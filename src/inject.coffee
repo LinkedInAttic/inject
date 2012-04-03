@@ -78,6 +78,7 @@ requireRegex = /(?:^|[^\w\$_.\(])require\s*\(\s*("[^"\\]*(?:\\.[^"\\]*)*"|'[^'\\
 defineStaticRequireRegex = /^[\r\n\s]*define\(\s*("\S+",|'\S+',|\s*)\s*\[([^\]]*)\],\s*(function\s*\(|{).+/
 requireGreedyCapture = /require.*/
 commentRegex = /(\/\*([\s\S]*?)\*\/|([^:]|^)\/\/(.*)$)/mg
+relativePathRegex = /^(.\/|..\/).*/
 
 ###
 CommonJS wrappers for a header and footer
@@ -749,7 +750,7 @@ downloadTree = (tree, callback) ->
 
   # apply the ruleset for this module if we haven't yet
   if db.module.getRulesApplied() is false
-    if /^(.\/|..\/).*/.test(moduleId)
+    if relativePathRegex.test(moduleId)
       # handle relative path
       relativePath = userConfig.moduleRoot
       if tree.getParent() and tree.getParent().getValue()
@@ -901,9 +902,7 @@ applyRules = (moduleId, save, relativePath) ->
     else if typeof(userConfig.moduleRoot) is "function" then workingPath = userConfig.moduleRoot(workingPath)
 
   if typeof(relativePath) is "string"
-    workingPath = relativePath + moduleId
-    if relativePath.lastIndexOf("/") isnt -1
-      workingPath = relativePath.substring(0, relativePath.lastIndexOf("/") + 1) + moduleId
+    workingPath = basedir(relativePath) + moduleId
 
   if !fileSuffix.test(workingPath) then workingPath = "#{workingPath}.js"
 
@@ -1043,6 +1042,11 @@ createModule = (id, uri, exports) ->
     module["exports"] = xobj
     return module["exports"]
   return module
+
+basedir = (path) ->
+  if path.lastIndexOf("/") isnt -1
+    path = path.substring(0, path.lastIndexOf("/") + 1)
+  return path
 
 ###
 Main Payloads: require, require.ensure, etc

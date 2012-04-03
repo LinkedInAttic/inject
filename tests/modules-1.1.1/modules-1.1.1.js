@@ -34,7 +34,7 @@ asyncTest("Compliance", 13, function() {
   require.run("compliance");
 });
 
-asyncTest("Compliance - Module Identifiers", 7, function() {
+asyncTest("Compliance - Module Identifiers", 8, function() {
   require.setModuleRoot("http://localhost:4000/tests/modules-1.1.1/includes/spec/identifiers");
   require.run("terms");
 });
