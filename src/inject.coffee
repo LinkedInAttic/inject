@@ -748,7 +748,15 @@ downloadTree = (tree, callback) ->
   moduleId = tree.getValue()
 
   # apply the ruleset for this module if we haven't yet
-  applyRules(moduleId) if db.module.getRulesApplied() is false
+  if db.module.getRulesApplied() is false
+    if /^(.\/|..\/).*/.test(moduleId)
+      # handle relative path
+      relativePath = userConfig.moduleRoot
+      if tree.getParent() and tree.getParent().getValue()
+        relativePath = db.module.getPath(tree.getParent().getValue())
+      applyRules(moduleId, true, relativePath)
+    else
+      applyRules(moduleId, true)
 
   # the callback every module has when it has been loaded
   onDownloadComplete = (moduleId, file) ->
@@ -867,7 +875,7 @@ analyzeFile = (moduleId, tree) ->
   db.module.setRequires(moduleId, safeRequires)
   db.module.setCircular(moduleId, hasCircular)
 
-applyRules = (moduleId, save) ->
+applyRules = (moduleId, save, relativePath) ->
   ###
   ## applyRules(moduleId) ##
   _internal_ normalize the path based on the module collection or any functions
@@ -891,9 +899,15 @@ applyRules = (moduleId, save) ->
     if typeof(userConfig.moduleRoot) is "undefined" then throw new Error("Module Root must be defined")
     else if typeof(userConfig.moduleRoot) is "string" then workingPath = "#{userConfig.moduleRoot}#{workingPath}"
     else if typeof(userConfig.moduleRoot) is "function" then workingPath = userConfig.moduleRoot(workingPath)
+
+  if typeof(relativePath) is "string"
+    workingPath = relativePath + moduleId
+    if relativePath.lastIndexOf("/") isnt -1
+      workingPath = relativePath.substring(0, relativePath.lastIndexOf("/") + 1) + moduleId
+
   if !fileSuffix.test(workingPath) then workingPath = "#{workingPath}.js"
 
-  if save is undefined
+  if save is true
     db.module.setPath(moduleId, workingPath)
     db.module.setPointcuts(moduleId, pointcuts)
     db.module.setRulesApplied(moduleId, true)

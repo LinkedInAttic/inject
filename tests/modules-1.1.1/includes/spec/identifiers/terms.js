@@ -7,7 +7,11 @@ var bar = require('../relative-two');
 equal(bar.divide(10), 5, "relative path '..' test pass");
 
 var boo = require("./relative-one");
-equal(boo.divide(4), 2, "relative path '.' test pass")
+equal(boo.divide(4), 2, "relative path '.' test pass");
+
+var boo = require("relative-three/relative-three");
+equal(boo.divide(4), 2, "relative path '.' test pass");
+equal(boo.divide_plus_one(10), 6, "relative path '.' test pass");
 
 try {
   var qux = require("invalid$module");
