@@ -56,12 +56,14 @@ asyncTest("Anon - circular", 6, function() {
   });
 });
 
-asyncTest("Anon - relativeModuleId", 2, function() {
+asyncTest("Anon - relativeModuleId", 4, function() {
   require.setModuleRoot("http://localhost:4000/tests/amd/includes/spec/anon");
   require.addRule("array", {path:"impl/array"});
   require(["require", "array"], function(require, array) {
     equal("impl/array", array.name);
-    equal("util", array.utilName);
+    equal("util", array.utilNameUl);
+    equal("impl/util", array.utilNameCl);
+    equal("../util", array.utilNameUUl);
     start();
   });
 });
