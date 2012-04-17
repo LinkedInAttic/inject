@@ -579,16 +579,19 @@ clearFileRegistry = (version = schemaVersion) ->
   _internal_ Clears the internal file registry at `version`
   clearing all local storage keys that relate to the fileStorageToken and version
   ###
+  
+  if ! ('localStorage' in context) then return
+    
   token = "#{fileStorageToken}#{version}"
-  keys = []
   `
   for (var i = 0; i < localStorage.length; i++) {
     var key = localStorage.key(i);
-    if (key.indexOf(token) !== -1) keys.push(key)
+    if (key.indexOf(token) !== -1) {
+      localStorage.removeItem(key)
+    }
   }
   `
-  for key in keys
-    localStorage.removeItem(key)
+  
   if version is schemaVersion then db.module.clearAllFiles()
 
 createIframe = () ->
