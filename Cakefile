@@ -226,9 +226,9 @@ task "build", "Builds inject library", (options)->
       cb()
 
   unclean = (cb = ->) ->
-    fs.mkdir config.tmp, 0777, (err) ->
+    fs.mkdir config.tmp, 0o777, (err) ->
       console.error err if err and err.errno isnt 47 and err.errno isnt 17 # 47 is directory already exists. This is ok for the purposes of this function
-      fs.mkdir config.out, 0777, (err) ->
+      fs.mkdir config.out, 0o777, (err) ->
         console.error err if err and err.errno isnt 47 and err.errno isnt 17 # directory already exists.
         cb()
 
