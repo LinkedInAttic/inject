@@ -27,10 +27,8 @@ function itemOne() {
 
 var use = true;
 
-var barTwo = function() {
-  // here is the syntax error
-  if (use) {
-    // no closing semi colon
-};
+// syntax error, line 31
+for('name' in use){}
 
 exports.test = true
+

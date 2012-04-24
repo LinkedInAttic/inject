@@ -953,10 +953,15 @@ executeFile = (moduleId) ->
 
   # todo: circular dependency resolution
   try
+    startLine = new Error().lineNumber
     module = context.eval(runCmd)
   catch err
     filePath = db.module.getPath(moduleId)
     message = "(inject module eval) #{err.message}\n    in #{path}"
+
+    if startLine and err.lineNumber
+      message += " line " + (err.lineNumber - startLine - 10)
+
     newErr = new Error(message)
     newErr.name = err.name
     newErr.type = err.type
