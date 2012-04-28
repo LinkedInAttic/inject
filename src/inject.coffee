@@ -797,6 +797,9 @@ downloadTree = (tree, callback) ->
     else
       sendToXhr(moduleId, processCallbacks)
 
+  # see if this module has already been loaded and processed
+  if db.module.getExports(moduleId) then return callback()
+
   # queue our results when the file completes
   db.queue.file.add(moduleId, onDownloadComplete)
 
@@ -1276,6 +1279,7 @@ define = (moduleId, deps, callback) ->
     
     # ensureModule should now contain everything we need in order to save this module
     db.module.setExports(moduleId, module.exports)
+    db.module.setExecuted(moduleId, true)
     db.module.setLoading(moduleId, false)
     amdCallbackQueue = db.queue.amd.get(moduleId)
     for amdCallback in amdCallbackQueue
