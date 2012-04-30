@@ -92,3 +92,20 @@ asyncTest("#91 module.exports should be able to have a function assigned to it i
     start();
   });
 });
+
+asyncTest("#106 inline define() calls make module.exports available to later require() calls", 1, function() {
+  require.setModuleRoot("http://localhost:4000/tests/amd/includes/bugs");
+  
+  // manually define a module
+  define("bug_106_pre", function() {
+    return {
+      foo: "foo"
+    };
+  });
+
+  require.ensure(["bug_106"], function(require) {
+    var mod = require('bug_106');
+    equal(mod.foo, "foo");
+    start();
+  });
+});
