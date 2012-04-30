@@ -51,21 +51,3 @@ asyncTest("#57 require from cache simulates an OK 200", 3, function() {
     });
   });
 });
-
-// requiring a module that has commented lines- those lines should not run
-asyncTest("#59 require() statements in commented lines should be ignored", 1, function() {
-  require.setModuleRoot("http://localhost:4000/tests/modules-1.0/includes/bugs");
-  require.run("bug_59");
-});
-
-// circular dependencies
-asyncTest("#65 circular dependencies should be resolved", 4, function() {
-  require.setModuleRoot("http://localhost:4000/tests/modules-1.0/includes/bugs");
-  require.run("bug_65");
-});
-
-// requiring a module that has commented lines- those lines should not run
-asyncTest("#88 require() statements with no space before them should still run", 2, function() {
-  require.setModuleRoot("http://localhost:4000/tests/modules-1.0/includes/bugs");
-  require.run("bug_88");
-});
