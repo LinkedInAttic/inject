@@ -965,13 +965,14 @@ evalModule = (code, url) ->
   ## evalModule(moduleId, callback) ##
   _internal_ eval js module code, also try to get error line number from orignal file
   ###
-  context.onerror = (err, where, line) ->
-    if new Error().lineNumber
-      line = line - (new Error().lineNumber+3)
-    message = "(inject module eval) " + err + "\n    in " + url + " line " + (line-10)
-    throw new Error(message)
+  if typeof context.onerror isnt "function"
+    context.onerror = (err, where, line) ->
+      if new Error().lineNumber
+        line = line - (new Error().lineNumber+5)
+      message = "(inject module eval) " + err + "\n    in " + url + " line " + (line-10)
+      throw new Error(message)
   module = context.eval(code)
-  delete context.onerror
+
   return module;
 
 sendToXhr = (moduleId, callback) ->
