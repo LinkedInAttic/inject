@@ -73,22 +73,3 @@ asyncTest("define(dependencies (with exports), function)", 3, function() {
     start();
   });
 });
-
-asyncTest("#56 require.ensure with delay", 5, function() {
-  require.setModuleRoot("http://localhost:4000/tests/amd/includes/original");
-  require.ensure(["increment.delay"], function(require) {
-    var delayInc = require("increment.delay");
-    equal(delayInc.inc(5), 6, "increments");
-    equal(delayInc.delayedBy, 2000, "delayedBy");
-    start();
-  });
-});
-
-asyncTest("#91 module.exports should be able to have a function assigned to it in AMD mode", 1, function() {
-  require.setModuleRoot("http://localhost:4000/tests/amd/includes/bugs");
-  require.ensure(["bug_91"], function(require) {
-    var f = require('bug_91');
-    equal(f("Bob"), "hello Bob");
-    start();
-  });
-});
