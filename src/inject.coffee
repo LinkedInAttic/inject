@@ -953,25 +953,26 @@ executeFile = (moduleId) ->
   
   runHeader = header + "\n"
   runCmd = [runHeader, text, ";", footer, sourceString].join("\n")
-
+  
   # todo: circular dependency resolution
-  try
-    startLine = new Error().lineNumber
-    module = context.eval(runCmd)
-  catch err
-    filePath = db.module.getPath(moduleId)
-    message = "(inject module eval) #{err.message}\n    in #{path}"
-
-    if startLine and err.lineNumber
-      message += " line " + (err.lineNumber - startLine - 10)
-
-    newErr = new Error(message)
-    newErr.name = err.name
-    newErr.type = err.type
-    newErr.origin = err
-    throw newErr
+  module = evalModule(runCmd, path)
+  
   # save exports
   db.module.setExports(module.id, module.exports)
+
+evalModule = (code, url) ->
+  ###
+  ## evalModule(moduleId, callback) ##
+  _internal_ eval js module code, also try to get error line number from orignal file
+  ###
+  context.onerror = (err, where, line) ->
+    if new Error().lineNumber
+      line = line - (new Error().lineNumber+3)
+    message = "(inject module eval) " + err + "\n    in " + url + " line " + (line-10)
+    throw new Error(message)
+  module = context.eval(code)
+  delete context.onerror
+  return module;
 
 sendToXhr = (moduleId, callback) ->
   ###
