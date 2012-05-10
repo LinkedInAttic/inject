@@ -53,6 +53,7 @@ schemaVersion = 1                   # version of inject()'s localstorage schema
 context = this                      # context is our local scope. Should be "window"
 pauseRequired = false               # can we run immediately? when using iframe transport, the answer is no
 _db = {}                            # internal database of modules and transactions (see reset)
+funcCount = 0                       # incremental counter used for unique function names
 xDomainRpc = null                   # a cross domain RPC object (Porthole)
 fileStorageToken = "FILEDB"         # a storagetoken identifier we use (lscache)
 fileStore = "Inject FileStorage"    # file store to use
@@ -101,7 +102,7 @@ commonJSFooter = '''
     __INJECT_NS__.defineAs(__module.id);
     __exe.call(__module, __require, __module, __module.exports);
     __INJECT_NS__.undefineAs();
-    return __module;
+    __INJECT_NS__.executionCallbacks.__EXECUTED_FUNC_NAME__(null, __module);
   }
 })();
 '''
@@ -943,10 +944,12 @@ executeFile = (moduleId) ->
   cuts = getFormattedPointcuts(moduleId)
   path = db.module.getPath(moduleId)
   text = db.module.getFile(moduleId)
+  funcName = "executionFunction#{funcCount++}"
   header = commonJSHeader.replace(/__MODULE_ID__/g, moduleId)
                          .replace(/__MODULE_URI__/g, path)
                          .replace(/__INJECT_NS__/g, namespace)
                          .replace(/__POINTCUT_BEFORE__/g, cuts.before)
+                         .replace(/__EXECUTED_FUNC_NAME__/g, funcName)
   footer = commonJSFooter.replace(/__INJECT_NS__/g, namespace)
                          .replace(/__POINTCUT_AFTER__/g, cuts.after)
   sourceString = if isIE then "" else "//@ sourceURL=#{path}"
@@ -955,18 +958,19 @@ executeFile = (moduleId) ->
   runCmd = [runHeader, text, ";", footer, sourceString].join("\n")
 
   # todo: circular dependency resolution
-  try
-    module = context.eval(runCmd)
-  catch err
-    filePath = db.module.getPath(moduleId)
-    message = "(inject module eval) #{err.message}\n    in #{path}"
-    newErr = new Error(message)
-    newErr.name = err.name
-    newErr.type = err.type
-    newErr.origin = err
-    throw newErr
-  # save exports
-  db.module.setExports(module.id, module.exports)
+  
+  Inject.executionCallbacks[funcName] = (err, module) ->
+    if err then throw err
+    db.module.setExports(module.id, module.exports)
+
+  context['onerror'] = (errorMsg, file, lineNumber) -> 
+    # TODO: Chrome's lineNumber is 1 greater than it should be; Firefox is fine
+    err = new Error("Error in #{moduleId} on line #{lineNumber - header.split('\n').length}: #{errorMsg}")
+    Inject.executionCallbacks[funcName](err)
+    
+  script = document.createElement('script')
+  script.appendChild(document.createTextNode(runCmd))  
+  document.body.appendChild(script)
 
 sendToXhr = (moduleId, callback) ->
   ###
@@ -1309,6 +1313,7 @@ context['Inject'] = {
   'undefineAs': () -> db.queue.define.remove(),
   'createModule': createModule,
   'setModuleExports': (moduleId, exports) -> db.module.setExports(moduleId, exports),
+  'executionCallbacks': {},
   'require': require,
   'define': define,
   'reset': reset,
