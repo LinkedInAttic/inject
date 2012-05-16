@@ -955,23 +955,30 @@ executeFile = (moduleId) ->
   runCmd = [runHeader, text, ";", footer, sourceString].join("\n")
   
   # todo: circular dependency resolution
-  module = evalModule(runCmd, path)
+  module = evalModule(runCmd, path, header)
   
   # save exports
   db.module.setExports(module.id, module.exports)
 
-evalModule = (code, url) ->
+# evalError = null
+evalModule = (code, url, header) ->
   ###
   ## evalModule(moduleId, callback) ##
   _internal_ eval js module code, also try to get error line number from orignal file
+  If try/catch can intercept the eval(), we will use that. Otherwise, we rely on
+  the error to be bubbled up to context.onerror
   ###
-  if typeof context.onerror isnt "function"
-    context.onerror = (err, where, line) ->
-      if new Error().lineNumber
-        line = line - (new Error().lineNumber+5)
-      message = "(inject module eval) " + err + "\n    in " + url + " line " + (line-10)
-      throw new Error(message)
+  oldError = context.onerror
+  context.onerror = (err, where, line) ->
+    preambleLines = header.split(/\n/).length
+    realLine = line - preambleLines
+    message = "(inject module eval) " + err + "\n    in " + url + " line " + realLine
+    context.onerror = oldError
+    throw new Error(message)
+      
+  
   module = context.eval(code)
+  context.onerror = oldError
 
   return module;
 
