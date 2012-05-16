@@ -15,20 +15,18 @@ express or implied.   See the License for the specific language
 governing permissions and limitations under the License.
 */
 
-// this file is an error that calls an undefined function
+// this file contains a type error
 
-function foo() {
-  
+function typeError() {
+  this.date = null;
+  this.error = null;
 }
 
-var bar = function() {
-  baz();
-};
+var errorObj = new typeError();
 
-// this is some more code
-foo();
+errorObj.date = new Date();
 
-// undefined function, error line 32
-baz();
+// type error, line 30
+errorObj.error = 'error' in true;
 
-exports.biz = "boz";
+exports.test = true
