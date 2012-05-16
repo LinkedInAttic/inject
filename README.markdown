@@ -49,7 +49,7 @@ If you injected this file, you could then say `var duck = new moduleName.duck()`
 
 Modifying your Library to Work with Inject
 ===
-Sometimes, you have a library (jQuery, or Modernizr for example) which isn't CommonJS compliant. We've put together a [page of receipies](https://github.com/linkedin/inject/wiki/addRule-and-Your-Favorite-Library) for using the addRule() API with your favorite library.
+Sometimes, you have a library (jQuery, or Modernizr for example) which isn't CommonJS compliant. We've put together a [page of recipes](https://github.com/linkedin/inject/wiki/addRule-and-Your-Favorite-Library) for using the addRule() API with your favorite library.
 
 JavaScript Minifiers
 ===
