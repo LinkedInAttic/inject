@@ -47,6 +47,10 @@ exports.duck = waterfowl
 
 If you injected this file, you could then say `var duck = new moduleName.duck()` and instantiate your object.
 
+Modifying your Library to Work with Inject
+===
+Sometimes, you have a library (jQuery, or Modernizr for example) which isn't CommonJS compliant. We've put together a [page of receipies](https://github.com/linkedin/inject/wiki/addRule-and-Your-Favorite-Library) for using the addRule() API with your favorite library.
+
 JavaScript Minifiers
 ===
 If you're using a JS Minifier for your module files (and you probably should), there are some important compilation options you need. Many minifiers obfuscate and optimize variables inside of functions, which will affect the ability of inject to identify your dependencies before runtime. For the greatest in-browser optimization, we recommend using [UglifyJS](https://github.com/mishoo/UglifyJS) since it allows you to protect specific reserved names while still mazimixing the amount of compression you can do. If running node isn't an option, YUI and Google compressors can also be used with the following options:
