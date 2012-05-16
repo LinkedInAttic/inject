@@ -15,20 +15,15 @@ express or implied.   See the License for the specific language
 governing permissions and limitations under the License.
 */
 
-// this file is an error that calls an undefined function
+// this file contains a type error
 
-function foo() {
-  
+function outOfRange() {
+  var foo = 'foo';
 }
 
-var bar = function() {
-  baz();
-};
+outOfRange();
 
-// this is some more code
-foo();
+//range error, line 27
+outOfRange.error = new Array(Number.MAX_VALUE);
 
-// undefined function, error line 32
-baz();
-
-exports.biz = "boz";
+exports.test = true
