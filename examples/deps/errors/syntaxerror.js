@@ -27,10 +27,11 @@ function itemOne() {
 
 var use = true;
 
+// syntax error, line 33/34 or 37 for end of input
 var barTwo = function() {
-  // here is the syntax error
+  // here is the error
   if (use) {
-    // no closing semi colon
+    // no semi colon
 };
 
 exports.test = true

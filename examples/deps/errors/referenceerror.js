@@ -28,6 +28,7 @@ var bar = function() {
 // this is some more code
 foo();
 
+// undefined function, error line 32
 baz();
 
 exports.biz = "boz";
