@@ -32,7 +32,7 @@ asyncTest("Make sure query string params are handled properly in pointcut paths"
 });
 
 asyncTest("#105 debug statements surfaced correctly in console", 1, function() {
-  require.setModuleRoot("http://localhost:4000/tests/inject/includes/bugs");
+  require.setModuleRoot("/tests/inject/includes/bugs");
   require.run("bug_105");
   start();
   ok(true, "inspect for 2 exceptions in the console");
