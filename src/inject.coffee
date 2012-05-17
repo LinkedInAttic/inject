@@ -47,6 +47,9 @@ For more details, check out the github: https://github.com/Jakobo/inject
 Constants and Registries used
 ###
 isIE = eval("/*@cc_on!@*/false")    # a test to determine if this is the IE engine (needed for source in eval commands)
+docHead = null                      # document.head reference
+onErrorOffset = 0                   # offset for onerror calls
+funcCount = 0                       # functions initialized to date
 userConfig = {}                     # user configuration options (see reset)
 undef = undef                       # undefined
 schemaVersion = 1                   # version of inject()'s localstorage schema
@@ -86,12 +89,12 @@ these bookend the included code and insulate the scope so that it doesn't impact
 or anything else.
 ###
 commonJSHeader = '''
-(function() {
+__INJECT_NS__.execute.__FUNCTION_ID__ = function() {
   with (window) {
     var __module = __INJECT_NS__.createModule("__MODULE_ID__", "__MODULE_URI__"),
         __require = __INJECT_NS__.require,
         __exe = null;
-    __INJECT_NS__.setModuleExports("__MODULE_ID__", __module.exports)
+    __INJECT_NS__.setModuleExports("__MODULE_ID__", __module.exports);
     __exe = function(require, module, exports) {
       __POINTCUT_BEFORE__
 '''
@@ -99,12 +102,46 @@ commonJSFooter = '''
       __POINTCUT_AFTER__
     };
     __INJECT_NS__.defineAs(__module.id);
+    "__INJECT_EXE_MARKER__";
     __exe.call(__module, __require, __module, __module.exports);
     __INJECT_NS__.undefineAs();
     return __module;
   }
-})();
+};
 '''
+
+createEvalScript = (code) ->
+  if !docHead then docHead = document.getElementsByTagName("head")[0]
+  scr = document.createElement("script")
+  # attempt to set its content for injection
+  try
+    scr.text = code
+  catch innerTextException
+    try
+      scr.innerHTML = code
+    catch innerHTMLException
+      return false
+  return scr
+
+###
+Test the onError offset for debugging purposes
+Addresses the needs in #105 and #112
+###
+testScript = '''
+function Inject_Test_Known_Error() {
+  function nil() {}
+  nil("Known Syntax Error Line 3";
+}
+'''
+testScriptNode = createEvalScript(testScript)
+oldError = context.onerror
+context.onerror = (err, where, line) ->
+  onErrorOffset = 3 - line
+  window.setTimeout () -> docHead.removeChild(testScriptNode)
+  return true
+docHead.appendChild(testScriptNode)
+context.onerror = oldError
+
 
 db = {
   ###
@@ -943,8 +980,10 @@ executeFile = (moduleId) ->
   cuts = getFormattedPointcuts(moduleId)
   path = db.module.getPath(moduleId)
   text = db.module.getFile(moduleId)
+  functionId = "exec#{funcCount++}"
   header = commonJSHeader.replace(/__MODULE_ID__/g, moduleId)
                          .replace(/__MODULE_URI__/g, path)
+                         .replace(/__FUNCTION_ID__/g, functionId)
                          .replace(/__INJECT_NS__/g, namespace)
                          .replace(/__POINTCUT_BEFORE__/g, cuts.before)
   footer = commonJSFooter.replace(/__INJECT_NS__/g, namespace)
@@ -955,32 +994,54 @@ executeFile = (moduleId) ->
   runCmd = [runHeader, text, ";", footer, sourceString].join("\n")
   
   # todo: circular dependency resolution
-  module = evalModule(runCmd, path, header)
+  module = evalModule(moduleId, runCmd, path, functionId, header)
   
   # save exports
   db.module.setExports(module.id, module.exports)
 
-# evalError = null
-evalModule = (code, url, header) ->
+evalModule = (moduleId, code, url, functionId, preamble) ->
   ###
   ## evalModule(moduleId, callback) ##
   _internal_ eval js module code, also try to get error line number from orignal file
-  If try/catch can intercept the eval(), we will use that. Otherwise, we rely on
-  the error to be bubbled up to context.onerror
+  Webkit: we can use window.onerror() safely. Line - preamble gives us the correct line
+  Firefox: we need to subtract inject.js up until the onerror call
   ###
   oldError = context.onerror
+  errorObject = null
   context.onerror = (err, where, line) ->
-    preambleLines = header.split(/\n/).length
-    realLine = line - preambleLines
-    message = "(inject module eval) " + err + "\n    in " + url + " line " + realLine
+    preambleLines = preamble.split(/\n/).length + 1
+    actualErrorLine = line + onErrorOffset - preambleLines
+
+    message = "Error in #{moduleId} (#{url}) on line #{actualErrorLine}:\n  #{err}"
     context.onerror = oldError
-    throw new Error(message)
-      
+    errorObject = new Error(message)
+    return true
   
-  module = context.eval(code)
+  scr = createEvalScript(code)
+  if scr
+    docHead.appendChild(scr)
+    window.setTimeout () -> docHead.removeChild(scr)
+
+  if errorObject then throw errorObject
+
+  # at this point, the global function should be created
+  # if there was a parse error, we got juicy details
+  # now, we just need to try/catch and collect the module
+  try
+    module = Inject.execute[functionId]()
+  catch err
+    line = err.line || err.lineNumber
+    message = "Error in #{moduleId} (#{url}) on line #{line}:\n  #{err.message}"
+    context.onerror = oldError
+    errorObject = new Error(message)
+
+  # clean up our mess
+  delete Inject.execute[functionId]
   context.onerror = oldError
 
-  return module;
+  if errorObject then throw errorObject
+
+  return module
 
 sendToXhr = (moduleId, callback) ->
   ###
@@ -1326,6 +1387,7 @@ context['Inject'] = {
   'require': require,
   'define': define,
   'reset': reset,
+  'execute': {},
   'debug': () ->
     console?.dir(_db)
 }
