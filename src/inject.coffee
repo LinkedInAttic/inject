@@ -58,7 +58,7 @@ fileStorageToken = "FILEDB"         # a storagetoken identifier we use (lscache)
 fileStore = "Inject FileStorage"    # file store to use
 namespace = "Inject"                # the namespace for inject() that is publicly reachable
 userModules = {}                    # any mappings for module => handling defined by the user
-fileSuffix = /.*?\.(js|txt)$/       # Regex for identifying things that end in *.js or *.txt
+fileSuffix = /.*?\.(js|txt)(\?.*)?$/# Regex for identifying things that end in *.js or *.txt
 hostPrefixRegex = /^https?:\/\//    # prefixes for URLs that begin with http/https
 hostSuffixRegex = /^(.*?)(\/.*|$)/  # suffix for URLs used to capture everything up to / or the end of the string
 iframeName = "injectProxy"          # the name for the iframe proxy created (Porthole)
