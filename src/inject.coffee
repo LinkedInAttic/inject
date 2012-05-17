@@ -102,8 +102,12 @@ commonJSFooter = '''
       __POINTCUT_AFTER__
     };
     __INJECT_NS__.defineAs(__module.id);
-    "__INJECT_EXE_MARKER__";
-    __exe.call(__module, __require, __module, __module.exports);
+    try {
+      __exe.call(__module, __require, __module, __module.exports);
+    }
+    catch (__EXCEPTION__) {
+      __module.error = __EXCEPTION__;
+    }
     __INJECT_NS__.undefineAs();
     return __module;
   }
@@ -994,53 +998,85 @@ executeFile = (moduleId) ->
   runCmd = [runHeader, text, ";", footer, sourceString].join("\n")
   
   # todo: circular dependency resolution
-  module = evalModule(moduleId, runCmd, path, functionId, header)
+  module = evalModule({
+    moduleId: moduleId
+    cmd: runCmd
+    url: path
+    functionId: functionId
+    preamble: header,
+    originalCode: text
+  })
   
   # save exports
   db.module.setExports(module.id, module.exports)
 
-evalModule = (moduleId, code, url, functionId, preamble) ->
+evalModule = (options) ->
   ###
   ## evalModule(moduleId, callback) ##
   _internal_ eval js module code, also try to get error line number from orignal file
   Webkit: we can use window.onerror() safely. Line - preamble gives us the correct line
   Firefox: we need to subtract inject.js up until the onerror call
   ###
+  moduleId = options.moduleId
+  code = options.cmd
+  url = options.url 
+  functionId = options.functionId
+  preamble = options.preamble
+  originalCode = options.originalCode
+
   oldError = context.onerror
   errorObject = null
-  context.onerror = (err, where, line) ->
-    preambleLines = preamble.split(/\n/).length + 1
-    actualErrorLine = line + onErrorOffset - preambleLines
+  preambleLines = preamble.split(/\n/).length + 1
+  newError = (err, where, line) ->
+    actualErrorLine = onErrorOffset - preambleLines + line
+    linesOfCode = code.split("\n").length
+    originalLinesOfCode = originalCode.split("\n").length
 
-    message = "Error in #{moduleId} (#{url}) on line #{actualErrorLine}:\n  #{err}"
-    context.onerror = oldError
+    # unexpected end of input handling
+    if line is linesOfCode then actualErrorLine = originalLinesOfCode
+    
+    message = "Parse error in #{moduleId} (#{url}) on line #{actualErrorLine}:\n  #{err}"
     errorObject = new Error(message)
     return true
+  getLineNumberFromException = (e) ->
+    # firefox
+    if typeof e.lineNumber isnt "undefined" and e.lineNumber isnt null then return e.lineNumber
+    # webkit
+    if e.stack
+      lines = e.stack.split("\n")
+      phrases = lines[1].split(":")
+      return parseInt(phrases[phrases.length - 2], 10)
+    return 0
+
+  context.onerror = newError
   
   scr = createEvalScript(code)
   if scr
     docHead.appendChild(scr)
     window.setTimeout () -> docHead.removeChild(scr)
 
-  if errorObject then throw errorObject
-
-  # at this point, the global function should be created
-  # if there was a parse error, we got juicy details
-  # now, we just need to try/catch and collect the module
-  try
+  if !errorObject
+    # at this point, the global function should be created
+    # if there was a parse error, we got juicy details
+    # execute the function, which will use onerror() again if we hit a
+    # problem
     module = Inject.execute[functionId]()
-  catch err
-    line = err.line || err.lineNumber
-    message = "Error in #{moduleId} (#{url}) on line #{line}:\n  #{err.message}"
-    context.onerror = oldError
-    errorObject = new Error(message)
+    if module.error
+      actualErrorLine = onErrorOffset - preambleLines + getLineNumberFromException(module.error)
+      message = "Parse error in #{moduleId} (#{url}) on line #{actualErrorLine}:\n  #{module.error.message}"
+      errorObject = new Error(message)
 
-  # clean up our mess
-  delete Inject.execute[functionId]
+  # okay, clean up our mess
   context.onerror = oldError
+  if Inject?.execute[functionId] then delete Inject.execute[functionId]
 
-  if errorObject then throw errorObject
+  # throw a proper error if we failed somewhere
+  # get rid of all localstorage cache
+  if errorObject
+    require.clearCache();
+    throw errorObject
 
+  # yay, module!
   return module
 
 sendToXhr = (moduleId, callback) ->
@@ -1117,6 +1153,7 @@ createModule = (id, uri, exports) ->
   module["id"] = id || null
   module["uri"] = uri || null
   module["exports"] = exports || db.module.getExports(id) || {}
+  module["error"] = null
   module["setExports"] = (xobj) ->
     for own name in module["exports"]
       throw new Error("cannot setExports when exports have already been set")

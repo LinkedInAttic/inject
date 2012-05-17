@@ -20,18 +20,25 @@ if (console && typeof(console.log) === "function") {
 }
 // this file contains a syntax error
 // it's used to show how line numbers are preserved for errors
-function itemOne() {
-  var foo = "bar";
-  foo = 1 + 2;
-}
 
 var use = true;
 
-// syntax error, line 33/34 or 37 for end of input
+function padding() {
+	var str = "";
+	str += "this is a string to change the line numbers";
+	str += "it should put the line number to a unique location";
+	str += "1";
+	str += "2";
+	str += "3";
+	str += "4";
+}
+
+// syntax error, line 39/40 or 44 for end of input
 var barTwo = function() {
   // here is the error
-  if (use) {
-    // no semi colon
+  if (use {
+  	true;
+  }
 };
 
 exports.test = true
