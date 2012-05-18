@@ -15,26 +15,18 @@ express or implied.   See the License for the specific language
 governing permissions and limitations under the License.
 */
 
-module("CommonJS: Modules 1.1", {
-  setup: function() {
-    if (localStorage) {
-      localStorage.clear();
-    }
-    Inject.reset();
-  },
-  teardown: function() {
-    if (localStorage) {
-      localStorage.clear();
-    }
-  }
-});
+// this file contains a type error
 
-asyncTest("Compliance", 13, function() {
-  require.setModuleRoot("/tests/modules-1.1/includes/spec");
-  require.run("compliance");
-});
+function typeError() {
+  this.date = null;
+  this.error = null;
+}
 
-asyncTest("Sample Code", 5, function() {
-  require.setModuleRoot("/tests/modules-1.1/includes/spec");
-  require.run("program");
-});
+var errorObj = new typeError();
+
+errorObj.date = new Date();
+
+// type error, line 30
+errorObj.error = 'error' in true;
+
+exports.test = true

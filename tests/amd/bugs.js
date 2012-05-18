@@ -30,7 +30,7 @@ module("AMD Bugs", {
 });
 
 asyncTest("#56 require.ensure with delay", 5, function() {
-  require.setModuleRoot("http://localhost:4000/tests/amd/includes/original");
+  require.setModuleRoot("/tests/amd/includes/original");
   require.ensure(["increment.delay"], function(require) {
     var delayInc = require("increment.delay");
     equal(delayInc.inc(5), 6, "increments");
@@ -40,7 +40,7 @@ asyncTest("#56 require.ensure with delay", 5, function() {
 });
 
 asyncTest("#91 module.exports should be able to have a function assigned to it in AMD mode", 1, function() {
-  require.setModuleRoot("http://localhost:4000/tests/amd/includes/bugs");
+  require.setModuleRoot("/tests/amd/includes/bugs");
   require.ensure(["bug_91"], function(require) {
     var f = require('bug_91');
     equal(f("Bob"), "hello Bob");
@@ -49,7 +49,7 @@ asyncTest("#91 module.exports should be able to have a function assigned to it i
 });
 
 asyncTest("#106 inline define() calls make module.exports available to later require() calls", 1, function() {
-  require.setModuleRoot("http://localhost:4000/tests/amd/includes/bugs");
+  require.setModuleRoot("/tests/amd/includes/bugs");
   
   // manually define a module
   define("bug_106_pre", function() {

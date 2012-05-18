@@ -15,26 +15,30 @@ express or implied.   See the License for the specific language
 governing permissions and limitations under the License.
 */
 
-module("CommonJS: Modules 1.1", {
-  setup: function() {
-    if (localStorage) {
-      localStorage.clear();
-    }
-    Inject.reset();
-  },
-  teardown: function() {
-    if (localStorage) {
-      localStorage.clear();
-    }
+if (console && typeof(console.log) === "function") {
+  console.log("error file executing");
+}
+// this file contains a syntax error
+// it's used to show how line numbers are preserved for errors
+
+var use = true;
+
+function padding() {
+	var str = "";
+	str += "this is a string to change the line numbers";
+	str += "it should put the line number to a unique location";
+	str += "1";
+	str += "2";
+	str += "3";
+	str += "4";
+}
+
+// syntax error, line 39/40 or 44 for end of input
+var barTwo = function() {
+  // here is the error
+  if (use {
+  	true;
   }
-});
+};
 
-asyncTest("Compliance", 13, function() {
-  require.setModuleRoot("/tests/modules-1.1/includes/spec");
-  require.run("compliance");
-});
-
-asyncTest("Sample Code", 5, function() {
-  require.setModuleRoot("/tests/modules-1.1/includes/spec");
-  require.run("program");
-});
+exports.test = true
