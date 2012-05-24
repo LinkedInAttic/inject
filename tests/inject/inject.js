@@ -30,3 +30,15 @@ asyncTest("Make sure query string params are handled properly in pointcut paths"
     start();
   });
 });
+
+asyncTest("#105 exceptions surfaced correctly in console", 1, function() {
+  var oldError = window.onerror;
+  window.onerror = function(err, where, line) {
+    ok(/Parse error/.test(err), "raised syntax error exception");
+    window.onerror = oldError;
+    start();
+    return true;
+  };
+  require.setModuleRoot("/tests/inject/includes/bugs");
+  require.run("bug_105");
+});
