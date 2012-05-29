@@ -52,13 +52,11 @@ onErrorOffset = 0                   # offset for onerror calls
 funcCount = 0                       # functions initialized to date
 userConfig = {}                     # user configuration options (see reset)
 undef = undef                       # undefined
-schemaVersion = 1                   # version of inject()'s localstorage schema
 context = this                      # context is our local scope. Should be "window"
 pauseRequired = false               # can we run immediately? when using iframe transport, the answer is no
 _db = {}                            # internal database of modules and transactions (see reset)
 xDomainRpc = null                   # a cross domain RPC object (Porthole)
-fileStorageToken = "FILEDB"         # a storagetoken identifier we use (lscache)
-fileStore = "Inject FileStorage"    # file store to use
+fileStorageToken = "INJECT"         # a storagetoken identifier we use (lscache)
 namespace = "Inject"                # the namespace for inject() that is publicly reachable
 userModules = {}                    # any mappings for module => handling defined by the user
 fileSuffix = /.*?\.(js|txt)(\?.*)?$/# Regex for identifying things that end in *.js or *.txt
@@ -82,6 +80,12 @@ defineStaticRequireRegex = /^[\r\n\s]*define\(\s*("\S+",|'\S+',|\s*)\s*\[([^\]]*
 requireGreedyCapture = /require.*/
 commentRegex = /(\/\*([\s\S]*?)\*\/|([^:]|^)\/\/(.*)$)/mg
 relativePathRegex = /^(.\/|..\/).*/
+
+###
+lscache configuration
+sets up lscache to operate within the local scope
+###
+lscache.setBucket(fileStorageToken)
 
 ###
 CommonJS wrappers for a header and footer
@@ -273,12 +277,11 @@ db = {
       ###
       registry = _db.moduleRegistry
       path = db.module.getPath(moduleId)
-      token = "#{fileStorageToken}#{schemaVersion}#{path}"
       if registry[moduleId]?.file then return registry[moduleId].file
 
       if userConfig.fileExpires is 0 then return false
 
-      file = lscache.get(token)
+      file = lscache.get(path)
       if file and typeof(file) is "string" and file.length
         db.module.setFile(moduleId, file)
         return file
@@ -292,8 +295,7 @@ db = {
       db.module.create(moduleId)
       registry[moduleId].file = file
       path = db.module.getPath(moduleId)
-      token = "#{fileStorageToken}#{schemaVersion}#{path}"
-      lscache.set(token, file, userConfig.fileExpires)
+      lscache.set(path, file, userConfig.fileExpires)
     "clearAllFiles": () ->
       ###
       ## clearAllFiles() ##
@@ -614,26 +616,17 @@ reset = () ->
 reset()
 
 
-clearFileRegistry = (version = schemaVersion) ->
+clearFileRegistry = () ->
   ###
-  ## clearFileRegistry(version = schemaVersion) ##
-  _internal_ Clears the internal file registry at `version`
-  clearing all local storage keys that relate to the fileStorageToken and version
+  ## clearFileRegistry() ##
+  _internal_ Clears the internal file registry
+  clearing all local storage keys that relate to the fileStorageToken
   ###
   
   if ! ('localStorage' in context) then return
-    
-  token = "#{fileStorageToken}#{version}"
-  `
-  for (var i = 0; i < localStorage.length; i++) {
-    var key = localStorage.key(i);
-    if (key.indexOf(token) !== -1) {
-      localStorage.removeItem(key)
-    }
-  }
-  `
   
-  if version is schemaVersion then db.module.clearAllFiles()
+  db.module.clearAllFiles()
+  lscache.flush()
 
 createIframe = () ->
   ###
@@ -1282,12 +1275,12 @@ require.setCrossDomain = (local, remote) ->
   userConfig.xd.inject = local
   userConfig.xd.xhr = remote
 
-require.clearCache = (version) ->
+require.clearCache = () ->
   ###
-  ## require.clearCache(version) ##
+  ## require.clearCache() ##
   Remove the localStorage class at version. If no version is specified, the entire cache is cleared.
   ###
-  clearFileRegistry(version)
+  clearFileRegistry()
 
 require.manifest = (manifest) ->
   ###
