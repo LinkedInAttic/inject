@@ -57,6 +57,8 @@ pauseRequired = false               # can we run immediately? when using iframe 
 _db = {}                            # internal database of modules and transactions (see reset)
 xDomainRpc = null                   # a cross domain RPC object (Porthole)
 fileStorageToken = "INJECT"         # a storagetoken identifier we use (lscache)
+schemaVersion = 1                   # the version of data storage schema for lscache
+schemaVersionString = "!version"    # the schema version string for validation of lscache schema
 namespace = "Inject"                # the namespace for inject() that is publicly reachable
 userModules = {}                    # any mappings for module => handling defined by the user
 fileSuffix = /.*?\.(js|txt)(\?.*)?$/# Regex for identifying things that end in *.js or *.txt
@@ -86,6 +88,12 @@ lscache configuration
 sets up lscache to operate within the local scope
 ###
 lscache.setBucket(fileStorageToken)
+lscacheSchemaVersion = lscache.get(schemaVersionString)
+
+if lscacheSchemaVersion && lscacheSchemaVersion > 0 && lscacheSchemaVersion < schemaVersion
+  lscache.flush()
+  lscacheSchemaVersion = 0
+if !lscacheSchemaVersion then lscache.set(schemaVersionString, schemaVersion)
 
 ###
 CommonJS wrappers for a header and footer
