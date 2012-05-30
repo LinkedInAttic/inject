@@ -1409,8 +1409,7 @@ define = (moduleId, deps, callback) ->
   loadModules allDeps, afterLoadModules
 
 # To allow a clear indicator that a global define function conforms to the AMD API
-define['amd'] =
-  'jQuery': true # jQuery requires explicitly defining inside of define.amd
+define['amd'] = {}
 
 # set context.require to the main inject object
 # set context.define to the main inject object
