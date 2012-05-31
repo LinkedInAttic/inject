@@ -17,7 +17,7 @@ PGh0bWw+PGhlYWQ+PHRpdGxlPjwvdGl0bGU+PC9oZWFkPjxib2R5PjxiIGlkPSJsb2NhbHN0b3JhZ2Ut
 */
 /*
 Inject
-Copyright 2011 Jakob Heuser
+Copyright 2011 LinkedIn
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.

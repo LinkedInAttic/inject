@@ -1,7 +1,7 @@
 /**
  * @license
  * Inject
- * Copyright (c) 2011 Jakob Heuser
+ * Copyright (c) 2011 LinkedIn
  * Apache Software License 2.0 (see below)
  *
  * lscache library (c) 2011 Pamela Fox
