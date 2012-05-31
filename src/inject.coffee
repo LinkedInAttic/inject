@@ -1229,6 +1229,10 @@ require.ensure = (moduleList, callback) ->
   (function). Use this instead of require() when you need to load shallow dependencies
   first.
   ###
+  # Assert moduleList is an Array or throw an exception.
+  if moduleList not instanceof Array
+    throw new Error("moduleList is not an Array")
+
   # init the iframe if required
   if userConfig.xd.xhr? and !xDomainRpc and !pauseRequired
     createIframe()
