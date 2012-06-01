@@ -42,3 +42,25 @@ asyncTest("#105 exceptions surfaced correctly in console", 1, function() {
   require.setModuleRoot("/tests/inject/includes/bugs");
   require.run("bug_105");
 });
+
+asyncTest("#118 Requiring a file multiple ways misses cache", 2, function() {
+  var calls = 2;
+  require.setModuleRoot("/tests/inject/includes");
+
+  require.addRule('bug_118', {
+    path: "bugs/bug_118.js"
+  });
+  
+  require.ensure(['bug_118'], function(require) {
+    ok(require("bug_118").name, 'bug_118');
+    if(--calls == 0){start();}
+  });
+  
+
+  require.ensure(['bugs/bug_118'], function(require) {
+    raises(function() {
+      require('bugs/bug_118');
+    });
+    if(--calls == 0){start();}
+  });
+});
