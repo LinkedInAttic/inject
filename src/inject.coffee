@@ -81,7 +81,8 @@ requireRegex = /(?:^|[^\w\$_.\(])require\s*\(\s*("[^"\\]*(?:\\.[^"\\]*)*"|'[^'\\
 defineStaticRequireRegex = /^[\r\n\s]*define\(\s*("\S+",|'\S+',|\s*)\s*\[([^\]]*)\],\s*(function\s*\(|{).+/
 requireGreedyCapture = /require.*/
 commentRegex = /(\/\*([\s\S]*?)\*\/|([^:]|^)\/\/(.*)$)/mg
-relativePathRegex = /^(.\/|..\/).*/
+relativePathRegex = /^([A-Za-z]|.\/|..\/).*/
+absolutePathRegex = /^(http:\/|https:\/|\/)/
 
 ###
 lscache configuration
@@ -946,10 +947,9 @@ applyRules = (moduleId, save, relativePath) ->
   # apply global rules for all paths
   if workingPath.indexOf("/") isnt 0
     if typeof(userConfig.moduleRoot) is "undefined" then throw new Error("Module Root must be defined")
-    else if typeof(userConfig.moduleRoot) is "string" then workingPath = "#{userConfig.moduleRoot}#{workingPath}"
+    else if typeof(userConfig.moduleRoot) is "string" and absolutePathRegex.test(workingPath) isnt true then workingPath = "#{userConfig.moduleRoot}#{workingPath}"
     else if typeof(userConfig.moduleRoot) is "function" then workingPath = userConfig.moduleRoot(workingPath)
-
-  if typeof(relativePath) is "string"
+  if typeof(relativePath) is "string" and absolutePathRegex.test(workingPath) isnt true
     workingPath = basedir(relativePath) + moduleId
 
   if !fileSuffix.test(workingPath) then workingPath = "#{workingPath}.js"
