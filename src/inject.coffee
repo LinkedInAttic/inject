@@ -177,8 +177,6 @@ db = {
       create a registry entry for tracking a module
       ###
       registry = _db.moduleRegistry
-      for rule in db.queue.rules.get()
-        if rule.path.replace(/.js$/i, '') == moduleId then return
       if !registry[moduleId]
         registry[moduleId] =
           "failed": false
@@ -217,7 +215,7 @@ db = {
       ###
       registry = _db.moduleRegistry
       db.module.create(moduleId)
-      if registry[moduleId] then registry[moduleId].exports = exports
+      registry[moduleId].exports = exports
     "getPointcuts": (moduleId) ->
       ###
       ## getPointcuts(moduleId) ##
@@ -232,7 +230,7 @@ db = {
       ###
       registry = _db.moduleRegistry
       db.module.create(moduleId)
-      if registry[moduleId] then registry[moduleId].pointcuts = pointcuts
+      registry[moduleId].pointcuts = pointcuts
     "getRequires": (moduleId) ->
       ###
       ## getRequires(moduleId) ##
@@ -247,7 +245,7 @@ db = {
       ###
       registry = _db.moduleRegistry
       db.module.create(moduleId)
-      if registry[moduleId] then registry[moduleId].requires = requires
+      registry[moduleId].requires = requires
     "getRulesApplied": (moduleId) ->
       ###
       ## getRulesApplied(moduleId) ##
@@ -263,7 +261,7 @@ db = {
       ###
       registry = _db.moduleRegistry
       db.module.create(moduleId)
-      if registry[moduleId] then registry[moduleId].rulesApplied = rulesApplied
+      registry[moduleId].rulesApplied = rulesApplied
     "getPath": (moduleId) ->
       ###
       ## getPath(moduleId) ##
@@ -278,7 +276,7 @@ db = {
       ###
       registry = _db.moduleRegistry
       db.module.create(moduleId)
-      if registry[moduleId] then registry[moduleId].path = path
+      registry[moduleId].path = path
     "getFile": (moduleId) ->
       ###
       ## getFile(moduleId) ##
@@ -303,7 +301,7 @@ db = {
       ###
       registry = _db.moduleRegistry
       db.module.create(moduleId)
-      if registry[moduleId] then registry[moduleId].file = file
+      registry[moduleId].file = file
       path = db.module.getPath(moduleId)
       lscache.set(path, file, userConfig.fileExpires)
     "clearAllFiles": () ->
@@ -329,7 +327,7 @@ db = {
       ###
       registry = _db.moduleRegistry
       db.module.create(moduleId)
-      if registry[moduleId] then registry[moduleId].failed = failed
+      registry[moduleId].failed = failed
     "getCircular": (moduleId) ->
       ###
       ## getFailed(moduleId) ##
@@ -344,7 +342,7 @@ db = {
       ###
       registry = _db.moduleRegistry
       db.module.create(moduleId)
-      if registry[moduleId] then registry[moduleId].circular = circular
+      registry[moduleId].circular = circular
     "getAmd": (moduleId) ->
       ###
       ## getAmd(moduleId) ##
@@ -359,7 +357,7 @@ db = {
       ###
       registry = _db.moduleRegistry
       db.module.create(moduleId)
-      if registry[moduleId] then registry[moduleId].amd = isAmd
+      registry[moduleId].amd = isAmd
     "getLoading": (moduleId) ->
       ###
       ## getLoading(moduleId) ##
@@ -375,7 +373,7 @@ db = {
       ###
       registry = _db.moduleRegistry
       db.module.create(moduleId)
-      if registry[moduleId] then registry[moduleId].loading = loading
+      registry[moduleId].loading = loading
     "getExecuted": (moduleId) ->
       ###
       ## getExecuted(moduleId) ##
@@ -390,7 +388,7 @@ db = {
       ###
       registry = _db.moduleRegistry
       db.module.create(moduleId)
-      if registry[moduleId] then registry[moduleId].executed = executed
+      registry[moduleId].executed = executed
   "txn":
     ###
     ## db.txn{} ##
@@ -975,14 +973,10 @@ executeFile = (moduleId) ->
   ###
 
   if db.module.getExecuted(moduleId) then return
-
-  for rule in db.queue.rules.get()
-    if rule.path.replace(/.js$/i, '') == moduleId then return
-
   db.module.setExecuted(moduleId, true)
-
+  
   anonDefineStack.unshift(moduleId);
-
+  
   # before going futher, execute all of its required modules
   # right now, we're leaving this as recursive
   for requiredModuleId in db.module.getRequires(moduleId)
