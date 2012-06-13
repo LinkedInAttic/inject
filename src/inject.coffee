@@ -82,6 +82,7 @@ defineStaticRequireRegex = /^[\r\n\s]*define\(\s*("\S+",|'\S+',|\s*)\s*\[([^\]]*
 requireGreedyCapture = /require.*/
 commentRegex = /(\/\*([\s\S]*?)\*\/|([^:]|^)\/\/(.*)$)/mg
 relativePathRegex = /^(.\/|..\/).*/
+absolutePathRegex = /^[A-Za-z]+:\/\//
 
 ###
 lscache configuration
@@ -943,14 +944,19 @@ applyRules = (moduleId, save, relativePath) ->
     workingPath = if typeof(rule.path) is "string" then rule.path else rule.path(workingPath)
     if rule?.pointcuts?.before then pointcuts.before.push(rule.pointcuts.before)
     if rule?.pointcuts?.after then pointcuts.after.push(rule.pointcuts.after)
+  
   # apply global rules for all paths
-  if workingPath.indexOf("/") isnt 0
-    if typeof(userConfig.moduleRoot) is "undefined" then throw new Error("Module Root must be defined")
-    else if typeof(userConfig.moduleRoot) is "string" then workingPath = "#{userConfig.moduleRoot}#{workingPath}"
-    else if typeof(userConfig.moduleRoot) is "function" then workingPath = userConfig.moduleRoot(workingPath)
+  # if the stack has yielded an http:// URL, stop mucking with it
+  if !absolutePathRegex.test(workingPath)
+    # does not begin with a /. This makes it relative
+    if workingPath.indexOf("/") isnt 0
+      if typeof(userConfig.moduleRoot) is "undefined" then throw new Error("Module Root must be defined")
+      else if typeof(userConfig.moduleRoot) is "string" then workingPath = "#{userConfig.moduleRoot}#{workingPath}"
+      else if typeof(userConfig.moduleRoot) is "function" then workingPath = userConfig.moduleRoot(workingPath)
 
-  if typeof(relativePath) is "string"
-    workingPath = basedir(relativePath) + moduleId
+    # if we have a relative path, resolve based on that
+    if typeof(relativePath) is "string"
+      workingPath = basedir(relativePath) + moduleId
 
   if !fileSuffix.test(workingPath) then workingPath = "#{workingPath}.js"
 
