@@ -81,8 +81,8 @@ requireRegex = /(?:^|[^\w\$_.\(])require\s*\(\s*("[^"\\]*(?:\\.[^"\\]*)*"|'[^'\\
 defineStaticRequireRegex = /^[\r\n\s]*define\(\s*("\S+",|'\S+',|\s*)\s*\[([^\]]*)\],\s*(function\s*\(|{).+/
 requireGreedyCapture = /require.*/
 commentRegex = /(\/\*([\s\S]*?)\*\/|([^:]|^)\/\/(.*)$)/mg
-relativePathRegex = /^(.\/|..\/).*/
-absolutePathRegex = /^[A-Za-z]+:\/\//
+relativePathRegex = /^(\.{1,2}\/).+/
+absolutePathRegex = /^([A-Za-z]+:)?\/\//
 
 ###
 lscache configuration
