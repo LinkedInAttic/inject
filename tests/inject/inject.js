@@ -30,3 +30,9 @@ asyncTest("Make sure query string params are handled properly in pointcut paths"
     start();
   });
 });
+
+asyncTest("Enable Source Map (firebug version)", 1, function() {
+  Inject.enableDebug("sourceMap");
+  require.setModuleRoot("/tests/inject/includes/spec");
+  require.run("sourcemap");
+});
