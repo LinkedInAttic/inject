@@ -782,6 +782,7 @@ loadModules = (modList, callback) ->
     if outstandingAMDModules is 0 then amdComplete()
 
   for moduleId in modList
+    moduleId = standardizeModuleId(moduleId)
     node = new treeNode(moduleId)
     dispatchTreeDownload(id, tree, node, execute)
 
@@ -1167,6 +1168,12 @@ basedir = (path) ->
     path = path.substring(0, path.lastIndexOf("/") + 1)
   return path
 
+standardizeModuleId = (moduleId) ->
+  for rule in db.queue.rules.get()
+    if typeof(rule.path) is "string" and rule.path.replace(/.js$/i, '') == moduleId
+      moduleId = rule.key
+  return moduleId
+
 ###
 Main Payloads: require, require.ensure, etc
 ###
@@ -1200,6 +1207,7 @@ require = (moduleId, callback = ->) ->
     )
     return
 
+  moduleId = standardizeModuleId(moduleId)
   exports = db.module.getExports(moduleId)
   isCircular = db.module.getCircular(moduleId)
   
@@ -1216,6 +1224,7 @@ require.run = (moduleId) ->
   ## require.run(moduleId) ##
   Try to getFile for moduleId, if the file exists, execute the file, if not, load this file and run it
   ###
+  moduleId = standardizeModuleId(moduleId)
   if db.module.getFile(moduleId) is false
     require.ensure([moduleId], () ->)
   else
