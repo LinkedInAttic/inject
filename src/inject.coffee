@@ -1180,6 +1180,13 @@ standardizeModuleId = (moduleId) ->
       moduleId = rule.key
   return moduleId
 
+stripBuiltIns = (modules) ->
+  strippedModuleList = []
+  for mId in modules
+    if mId isnt "require" and mId isnt "exports" and mId isnt "module"
+      strippedModuleList.push(mId)
+  return strippedModuleList
+
 ###
 Main Payloads: require, require.ensure, etc
 ###
@@ -1197,10 +1204,7 @@ require = (moduleId, callback = ->) ->
   ###
   if Object.prototype.toString.call(moduleId) is "[object Array]"
     # amd compliant require()
-    strippedModuleList = []
-    for mId in moduleId
-      if mId isnt "require" and mId isnt "exports" and mId isnt "module"
-        strippedModuleList.push(mId)
+    strippedModuleList = stripBuiltIns(moduleId)
     require.ensure(strippedModuleList, (require, module, exports) ->
       args = []
       for mId in moduleId
@@ -1247,6 +1251,9 @@ require.ensure = (moduleList, callback) ->
   # Assert moduleList is an Array or throw an exception.
   if moduleList not instanceof Array
     throw new Error("moduleList is not an Array")
+
+  # strip builtins from ensure...
+  moduleList = stripBuiltIns(moduleList)
 
   # init the iframe if required
   if userConfig.xd.xhr? and !xDomainRpc and !pauseRequired
