@@ -622,6 +622,8 @@ reset = () ->
     "xd":
       "inject": null                  # the location of the relay.html file, same domain as inject
       "xhr": null                     # the location of the relay.html file, same domain as moduleRoot
+    "debug":
+      "sourceMap": false
 reset()
 
 
@@ -1000,12 +1002,10 @@ executeFile = (moduleId) ->
                          .replace(/__POINTCUT_BEFORE__/g, cuts.before)
   footer = commonJSFooter.replace(/__INJECT_NS__/g, namespace)
                          .replace(/__POINTCUT_AFTER__/g, cuts.after)
-  sourceString = if isIE then "" else "//@ sourceURL=#{path}"
   
   runHeader = header + "\n"
-  runCmd = [runHeader, text, ";", footer, sourceString].join("\n")
-  
-  # todo: circular dependency resolution
+  runCmd = [runHeader, text, ";", footer].join("\n")
+
   module = evalModule({
     moduleId: moduleId
     cmd: runCmd
@@ -1068,7 +1068,16 @@ evalModule = (options) ->
     # if there was a parse error, we got juicy details
     # execute the function, which will use onerror() again if we hit a
     # problem
-    module = Inject.execute[functionId]()
+
+    # select our execution engine (if advanced debugging is required)
+    if (userConfig.debug.sourceMap)
+      sourceString = if isIE then "" else "//@ sourceURL=#{url}"
+      toExec = (["(",Inject.execute[functionId].toString(),")()"]).join("")
+      toExec = ([toExec, sourceString]).join("\n")
+      module = eval(toExec)
+    else
+      module = Inject.execute[functionId]()
+    
     if module.error
       actualErrorLine = onErrorOffset - preambleLines + getLineNumberFromException(module.error)
       message = "Parse error in #{moduleId} (#{url}) on line #{actualErrorLine}:\n  #{module.error.message}"
@@ -1451,8 +1460,7 @@ context['Inject'] = {
   'define': define,
   'reset': reset,
   'execute': {},
-  'debug': () ->
-    console?.dir(_db)
+  'enableDebug': (key, value = true) -> userConfig.debug[key] = value
 }
 context['require']['ensure'] = require.ensure;
 context['require']['setModuleRoot'] = require.setModuleRoot;
