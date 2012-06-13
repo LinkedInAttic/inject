@@ -14,12 +14,8 @@ equal(boo.divide(4), 2, "relative path '.' test pass");
 equal(boo.divide_plus_one(10), 6, "relative path '.' test pass");
 equal(boo.divide_minus_one(10), 4, "relative path '.' test pass");
 
-try {
+raises(function() {
   var qux = require("invalid$module");
-  ok(false, "invalid identifier should not run");
-}
-catch(e) {
-  ok(true, "module naming error .js detected ")
-}
+}, "invalid identifier should not run");
 
 start();

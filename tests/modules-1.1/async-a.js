@@ -71,7 +71,7 @@ asyncTest("#58 require.ensure runtime dependencies only (true)", 3, function() {
 });
 
 asyncTest("#117 require.ensure() - if first argument (moduleList) is an Array, no exception should be thrown", 1, function() {
-  require.setModuleRoot('/tests/amd/includes/bugs');
+  require.setModuleRoot('/tests/modules-1.1/includes/bugs');
   require.ensure(['bug_117'], function(require){
     ok(true, "require.ensure() called with moduleList as an Array didn't throw an exception");
     start();
@@ -79,21 +79,21 @@ asyncTest("#117 require.ensure() - if first argument (moduleList) is an Array, n
 });
 
 test("#117 require.ensure() - if first argument (moduleList) is an Object, an exception should be thrown", 1, function() {
-  require.setModuleRoot('/tests/amd/includes/bugs');
+  require.setModuleRoot('/tests/modules-1.1/includes/bugs');
   raises(function() {
     require.ensure({}, function(require){});
   });
 });
 
 test("#117 require.ensure() - if first argument (moduleList) is a Number, an exception should be thrown", 1, function() {
-  require.setModuleRoot('/tests/amd/includes/bugs');
+  require.setModuleRoot('/tests/modules-1.1/includes/bugs');
   raises(function() {
     require.ensure(1, function(require){});
   });
 });
 
 test("#117 require.ensure() - if first argument (moduleList) is a String, an exception should be thrown", 1, function() {
-  require.setModuleRoot('/tests/amd/includes/bugs');
+  require.setModuleRoot('/tests/modules-1.1/includes/bugs');
   raises(function() {
     require.ensure("invalid moduleList", function(require){});
   });
