@@ -81,7 +81,8 @@ requireRegex = /(?:^|[^\w\$_.\(])require\s*\(\s*("[^"\\]*(?:\\.[^"\\]*)*"|'[^'\\
 defineStaticRequireRegex = /^[\r\n\s]*define\(\s*("\S+",|'\S+',|\s*)\s*\[([^\]]*)\],\s*(function\s*\(|{).+/
 requireGreedyCapture = /require.*/
 commentRegex = /(\/\*([\s\S]*?)\*\/|([^:]|^)\/\/(.*)$)/mg
-relativePathRegex = /^(.\/|..\/).*/
+relativePathRegex = /^(\.{1,2}\/).+/
+absolutePathRegex = /^([A-Za-z]+:)?\/\//
 
 ###
 lscache configuration
@@ -944,14 +945,19 @@ applyRules = (moduleId, save, relativePath) ->
     workingPath = if typeof(rule.path) is "string" then rule.path else rule.path(workingPath)
     if rule?.pointcuts?.before then pointcuts.before.push(rule.pointcuts.before)
     if rule?.pointcuts?.after then pointcuts.after.push(rule.pointcuts.after)
+  
   # apply global rules for all paths
-  if workingPath.indexOf("/") isnt 0
-    if typeof(userConfig.moduleRoot) is "undefined" then throw new Error("Module Root must be defined")
-    else if typeof(userConfig.moduleRoot) is "string" then workingPath = "#{userConfig.moduleRoot}#{workingPath}"
-    else if typeof(userConfig.moduleRoot) is "function" then workingPath = userConfig.moduleRoot(workingPath)
+  # if the stack has yielded an http:// URL, stop mucking with it
+  if !absolutePathRegex.test(workingPath)
+    # does not begin with a /. This makes it relative
+    if workingPath.indexOf("/") isnt 0
+      if typeof(userConfig.moduleRoot) is "undefined" then throw new Error("Module Root must be defined")
+      else if typeof(userConfig.moduleRoot) is "string" then workingPath = "#{userConfig.moduleRoot}#{workingPath}"
+      else if typeof(userConfig.moduleRoot) is "function" then workingPath = userConfig.moduleRoot(workingPath)
 
-  if typeof(relativePath) is "string"
-    workingPath = basedir(relativePath) + moduleId
+    # if we have a relative path, resolve based on that
+    if typeof(relativePath) is "string"
+      workingPath = basedir(relativePath) + moduleId
 
   if !fileSuffix.test(workingPath) then workingPath = "#{workingPath}.js"
 
@@ -1174,6 +1180,13 @@ standardizeModuleId = (moduleId) ->
       moduleId = rule.key
   return moduleId
 
+stripBuiltIns = (modules) ->
+  strippedModuleList = []
+  for mId in modules
+    if mId isnt "require" and mId isnt "exports" and mId isnt "module"
+      strippedModuleList.push(mId)
+  return strippedModuleList
+
 ###
 Main Payloads: require, require.ensure, etc
 ###
@@ -1191,10 +1204,7 @@ require = (moduleId, callback = ->) ->
   ###
   if Object.prototype.toString.call(moduleId) is "[object Array]"
     # amd compliant require()
-    strippedModuleList = []
-    for mId in moduleId
-      if mId isnt "require" and mId isnt "exports" and mId isnt "module"
-        strippedModuleList.push(mId)
+    strippedModuleList = stripBuiltIns(moduleId)
     require.ensure(strippedModuleList, (require, module, exports) ->
       args = []
       for mId in moduleId
@@ -1241,6 +1251,9 @@ require.ensure = (moduleList, callback) ->
   # Assert moduleList is an Array or throw an exception.
   if moduleList not instanceof Array
     throw new Error("moduleList is not an Array")
+
+  # strip builtins from ensure...
+  moduleList = stripBuiltIns(moduleList)
 
   # init the iframe if required
   if userConfig.xd.xhr? and !xDomainRpc and !pauseRequired
