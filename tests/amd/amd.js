@@ -68,12 +68,8 @@ asyncTest("Anon - relativeModuleId", 4, function() {
   });
 });
 
-asyncTest("Basic - defineAmd", 1, function() {
-  require.setModuleRoot("/tests/amd/includes/spec/basic");
-  require.ensure(["one/defineAmd"], function() {
-    equal("object", typeof define.amd)
-    start();
-  });
+test("Basic - defineAmd", 1, function() {
+  equal("object", typeof define.amd);
 });
 
 asyncTest("Basic - simple", 3, function() {
