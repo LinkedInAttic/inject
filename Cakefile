@@ -60,7 +60,7 @@ task "build", "Builds inject library", (options)->
       }
       'crossDomain':{
         enabled:supportXD
-        files:['relay.html', 'easyxdm.js']
+        files:['relay.html', 'relay.swf', 'easyxdm.js']
       }
       'inject':{
         files:['lscache.js','inject.coffee']
