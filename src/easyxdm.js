@@ -1,3 +1,5 @@
+var LOCAL_EASY_XDM = true;
+
 /**
  * easyXDM
  * http://easyxdm.net/

@@ -4,7 +4,7 @@ Inject: Dependency Management Got Awesome
 
 * CommonJS Compliance in the Browser (exports.*)
   * View the full [CommonJS Support Matrix](https://github.com/linkedin/inject/wiki/CommonJS-Support)
-* Cross domain retrieval of files (via Porthole)
+* Cross domain retrieval of files (via easyXDM)
 * localStorage (load a module once)
 * Frustratingly Simple
 
@@ -99,10 +99,10 @@ When you add the XD config, you'll use the same paths you used in #1 above
 require.setCrossDomain("http://static.example.com/path/to/relay.html", "http://example.com/local/dir/relay.html");
 ```
 
-You can then carry on with your injecting. To support the cross domain, we use `window.postMessage` in the browsers that support it, and fall back to fragment transports with window.resize monitoring. To make that happen, we use [Porthole](http://ternarylabs.github.com/porthole/) by the awesome Ternary Labs folks (MIT License).
+You can then carry on with your injecting. To support the cross domain, we use `window.postMessage` in the browsers that support it, and fall back to fragment transports with window.resize monitoring. To make that happen, we use [easyXDM](https://github.com/oyvindkinsey/easyXDM) by the awesome @oyvindkinsey (MIT License).
 
-Also Starring
+Libraries Used By This Project
 ===
-* Porthole: Cross Domain Communication
+* easyXDM: Cross Domain Communication
 * lscache: LocalStorage Cache Provider 
 * Google Closure Compiler

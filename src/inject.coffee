@@ -112,7 +112,7 @@ if hasLocalStorage
 ###
 easyxdm configuration
 ###
-easyXDM = if context.easyXDM then context.easyXDM.noConflict() else false
+easyXDM = if LOCAL_EASY_XDM and context.easyXDM then context.easyXDM.noConflict() else false
 
 ###
 CommonJS wrappers for a header and footer
