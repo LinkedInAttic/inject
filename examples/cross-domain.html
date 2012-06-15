@@ -39,10 +39,10 @@ document.getElementById("clearit").onclick = function() {
   Inject.clearCache();
 };
 
-Inject.setModuleRoot("http://localhost:4001/examples/deps");
+Inject.setModuleRoot("http://4e8u.localtunnel.com/examples/deps");
 Inject.setCrossDomain({
-  relayFile:    "http://localhost:4001/relay.html",
-  relayHelper:  "http://localhost:4001/relay_helper.html",
+  relayFile:    "http://4e8u.localtunnel.com/relay.html",
+  relaySwf:     "http://4e8u.localtunnel.com/relay.swf"
 });
 
 require.ensure(["foo", "bar"], function(require) {

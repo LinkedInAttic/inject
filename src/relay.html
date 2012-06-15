@@ -58,6 +58,12 @@ governing permissions and limitations under the License.
 </script>
 <script type="text/javascript">
 
+var swfLocation = location.href.match(/swf=(.*?)(&|$)/)[1];
+window.Inject = {
+  easyXDM: easyXDM
+};
+easyXDM.noConflict("Inject");
+
 // get an XHR object, old school
 // from easyXDM (see above license)
 function isHostMethod(object, property) {
@@ -88,7 +94,9 @@ var getXhr = (function(){
   }
 }());
 
-var socket = new easyXDM.Socket({
+var socketReady = false;
+var socket = new window.Inject.easyXDM.Socket({
+  swf: swfLocation,
   onMessage:function(message, origin) {
     if (ALLOWED_DOMAIN && trimHost(origin) !== trimHost(ALLOWED_DOMAIN)) {
       return;
@@ -100,6 +108,14 @@ var socket = new easyXDM.Socket({
         path = pieces[2]
     
     doXmlHttpRequest(txId, module, path);
+  },
+  onReady: function() {
+    socketReady = true;
+    if (queue.length > 0) {
+      for (var i = 0, len = queue.length; i < len; i++) {
+        queue[i]();
+      }
+    }
   }
 });
 
@@ -114,11 +130,19 @@ function doXmlHttpRequest(module, path) {
   xhr.open("GET", path);
   xhr.onreadystatechange = function() {
     if (xhr.readyState === 4) {
-      socket.postMessage([
-        xhr.status,
-        module,
-        xhr.responseText
-      ].join(" "));
+      var sendMessageNow = function() {
+        socket.postMessage([
+          xhr.status,
+          module,
+          xhr.responseText
+        ].join(" "));
+      };
+      if (socketReady) {
+        sendMessageNow();
+      }
+      else {
+        queue.push(sendMessageNow);
+      }
     }
   };
   xhr.send(null);

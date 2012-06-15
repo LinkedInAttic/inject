@@ -112,7 +112,10 @@ if hasLocalStorage
 ###
 easyxdm configuration
 ###
-easyXDM = if LOCAL_EASY_XDM and context.easyXDM then context.easyXDM.noConflict() else false
+if LOCAL_EASY_XDM and context.easyXDM
+  easyXDM = context.easyXDM.noConflict("Inject")
+else
+  easyXDM = false
 
 ###
 CommonJS wrappers for a header and footer
@@ -669,10 +672,13 @@ createIframe = () ->
   ## createIframe() ##
   _internal_ create an iframe to the xhr location
   ###
-
+  relayFile = userConfig.xd.relayFile
+  relayFile += if relayFile.indexOf("?") >= 0 then "&" else "?"
+  relayFile += "swf=#{userConfig.xd.relaySwf}"
   # Create a proxy window to send to and receive message from the guest iframe
   socket = new easyXDM.Socket({
-    remote: userConfig.xd.relayFile
+    remote: relayFile
+    swf: userConfig.xd.relaySwf
     onMessage: (message, origin) ->
       if typeof(userConfig.moduleRoot) is "string" and trimHost(origin) isnt trimHost(userConfig.moduleRoot) then return
       pieces = message.match(responseSlicer)
@@ -682,8 +688,8 @@ createIframe = () ->
       queue = db.queue.load.get()
       db.queue.load.clear()
       item() for item in queue
-    remoteHelper: userConfig.xd.relayHelper
-  });
+  })
+  
 
 getFormattedPointcuts = (moduleId) ->
   ###
@@ -753,7 +759,7 @@ loadModules = (modList, callback) ->
   ## loadModules(modList, callback) ##
   _internal_ load a collection of modules in modList, and once they have all loaded, execute the callback cb
   ###
-
+  
   # shortcut. If modList is undefined, then call the callback
   if modList.length is 0
     context.setTimeout(
@@ -771,6 +777,7 @@ loadModules = (modList, callback) ->
   # exports and run the callback
   outstandingAMDModules = 0
   execute = () ->
+    
     amdComplete = () ->
       exports = []
       for moduleId in modList
@@ -800,6 +807,7 @@ downloadTree = (tree, callback) ->
   download the current item and its dependencies, storing the results in a tree
   when all items have finished loading, invoke callback()
   ###
+  
   moduleId = tree.getValue()
 
   # apply the ruleset for this module if we haven't yet
@@ -815,6 +823,7 @@ downloadTree = (tree, callback) ->
 
   # the callback every module has when it has been loaded
   onDownloadComplete = (moduleId, file) ->
+    
     db.module.setFile(moduleId, file)
 
     if file
@@ -824,6 +833,7 @@ downloadTree = (tree, callback) ->
       requires = []
 
     processCallback = (id, cb) ->
+      
       if db.module.getAmd(id) and db.module.getLoading(id)
         db.queue.amd.add(id,() -> context.setTimeout(cb));
       else
@@ -842,8 +852,10 @@ downloadTree = (tree, callback) ->
 
   # download a file over xhr or cross domain
   download = () ->
+    
     db.module.setLoading(moduleId, true)
     if userConfig.xd.relayFile
+      
       sendToIframe(moduleId, processCallbacks)
     else
       sendToXhr(moduleId, processCallbacks)
@@ -859,6 +871,7 @@ downloadTree = (tree, callback) ->
 
   # short cut. if downloaded, callback
   file = db.module.getFile(moduleId)
+  
   if file and file.length > 0 then processCallbacks(200, moduleId, file) else download()
 
 processCallbacks = (status, moduleId, file) ->
@@ -985,7 +998,7 @@ executeFile = (moduleId) ->
   _internal_ attempts to execute a file with a CommonJS scope
   and store the exports
   ###
-
+  
   if db.module.getExecuted(moduleId) then return
   db.module.setExecuted(moduleId, true)
   
@@ -1010,7 +1023,9 @@ executeFile = (moduleId) ->
   
   runHeader = header + "\n"
   runCmd = [runHeader, text, ";", footer].join("\n")
-
+  
+  
+  
   module = evalModule({
     moduleId: moduleId
     cmd: runCmd
@@ -1067,7 +1082,7 @@ evalModule = (options) ->
   if scr
     docHead.appendChild(scr)
     window.setTimeout () -> docHead.removeChild(scr)
-
+  
   if !errorObject
     # at this point, the global function should be created
     # if there was a parse error, we got juicy details
@@ -1075,15 +1090,18 @@ evalModule = (options) ->
     # problem
 
     # select our execution engine (if advanced debugging is required)
-    if (userConfig.debug.sourceMap)
+    if (isIE || userConfig.debug.sourceMap)
+      
       sourceString = if isIE then "" else "//@ sourceURL=#{url}"
       toExec = (["(",Inject.INTERNAL.execute[functionId].toString(),")()"]).join("")
       toExec = ([toExec, sourceString]).join("\n")
       module = eval(toExec)
+      
     else
       module = Inject.INTERNAL.execute[functionId]()
     
     if module.error
+      
       actualErrorLine = onErrorOffset - preambleLines + getLineNumberFromException(module.error)
       message = "Parse error in #{moduleId} (#{url}) on line #{actualErrorLine}:\n  #{module.error.message}"
       errorObject = new Error(message)
@@ -1091,13 +1109,13 @@ evalModule = (options) ->
   # okay, clean up our mess
   context.onerror = oldError
   if Inject?.INTERNAL?.execute[functionId] then delete Inject.INTERNAL.execute[functionId]
-
+  
   # throw a proper error if we failed somewhere
   # get rid of all localstorage cache
   if errorObject
     clearCache();
     throw errorObject
-
+  
   # yay, module!
   return module
 
@@ -1240,6 +1258,7 @@ setCrossDomain = (options) ->
   userConfig.xd.relayFile = options.relayFile
   userConfig.xd.relayHelper = options.relayHelper
   userConfig.xd.hash = options.hash || false
+  userConfig.xd.relaySwf = options.relaySwf || null
 
 clearCache = () ->
   ###
@@ -1472,7 +1491,7 @@ context['Inject'] = {
     'require': require,
     'define': define,
     'execute': {},
-    'easyXDM': easyXDM
+  'easyXDM': easyXDM
   'reset': reset,
   'enableDebug': (key, value = true) -> userConfig.debug[key] = value
   'toUrl': (moduleId) -> return require.toUrl(moduleId)
