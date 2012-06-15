@@ -27,7 +27,7 @@ option '', '--project-version [VERSION]', 'Used in default config to add version
 option '', '--temporary-directory [DIR]', 'Where to save temporary files. Gets deleted after build. Defaults to: "./tmp/".'
 option '', '--output-directory [DIR]', 'Where to save compressed/compiled files. Defaults to: "./artifacts/".'
 option '', '--with-ie',      'Add IE 6/7 support. Adds a localStorage and JSON shim (by default, named: ie-localstorage-json-shim.js). Both are required for lscache. Defaults to true.'
-option '', '--without-xd',   'Remove Porthole. Porthole is only used when requiring files cross-domain. Defaults to false.'
+option '', '--without-xd',   'Remove easyXDM. easyXDM is only used when requiring files cross-domain. Defaults to false.'
 option '', '--without-json', 'Force JSON support to be dropped. Defaults to false.'
 option '', '--compilation-level [LEVEL]', 'Level to compile output js to. If WHITESPACE_ONLY is selected then pretty formatting is used. Defaults to SIMPLE_OPTIMIZATIONS.'
 
@@ -60,7 +60,7 @@ task "build", "Builds inject library", (options)->
       }
       'crossDomain':{
         enabled:supportXD
-        files:['relay.html','porthole.js']
+        files:['relay.html', 'relay_helper.html', 'easyxdm.js']
       }
       'inject':{
         files:['lscache.js','inject.coffee']

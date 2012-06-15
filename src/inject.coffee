@@ -55,7 +55,7 @@ undef = undef                       # undefined
 context = this                      # context is our local scope. Should be "window"
 pauseRequired = false               # can we run immediately? when using iframe transport, the answer is no
 _db = {}                            # internal database of modules and transactions (see reset)
-xDomainRpc = null                   # a cross domain RPC object (Porthole)
+socket = null                       # a cross domain RPC object (easyXdm)
 fileStorageToken = "INJECT"         # a storagetoken identifier we use (lscache)
 schemaVersion = 1                   # the version of data storage schema for lscache
 schemaVersionString = "!version"    # the schema version string for validation of lscache schema
@@ -64,7 +64,6 @@ userModules = {}                    # any mappings for module => handling define
 fileSuffix = /.*?\.(js|txt)(\?.*)?$/# Regex for identifying things that end in *.js or *.txt
 hostPrefixRegex = /^https?:\/\//    # prefixes for URLs that begin with http/https
 hostSuffixRegex = /^(.*?)(\/.*|$)/  # suffix for URLs used to capture everything up to / or the end of the string
-iframeName = "injectProxy"          # the name for the iframe proxy created (Porthole)
 responseSlicer = ///                # a regular expression for slicing a response from iframe communication into its parts
   ^(.+?)[\s]+                         # (1) Anything up to a space (status code)
   ([\w\W]+?)[\s]+                     # (2) Anything up to a space (moduleid)
@@ -95,6 +94,11 @@ if lscacheSchemaVersion && lscacheSchemaVersion > 0 && lscacheSchemaVersion < sc
   lscache.flush()
   lscacheSchemaVersion = 0
 if !lscacheSchemaVersion then lscache.set(schemaVersionString, schemaVersion)
+
+###
+easyxdm configuration
+###
+easyXDM = context.easyXDM.noConflict()
 
 ###
 CommonJS wrappers for a header and footer
@@ -644,41 +648,26 @@ createIframe = () ->
   ## createIframe() ##
   _internal_ create an iframe to the xhr location
   ###
-  src = userConfig?.xd?.xhr
-  localSrc = userConfig?.xd?.inject
-  if !src then throw new Error("Configuration requires xd.remote to be defined")
-  if !localSrc then throw new Error("Configuration requires xd.local to be defined")
 
   # trims the host down to its essential values
   trimHost = (host) ->
     host = host.replace(hostPrefixRegex, "").replace(hostSuffixRegex, "$1")
     return host
 
-  iframe = document.createElement("iframe")
-  iframe.name = iframeName
-  iframe.src = src+"#xhr"
-  iframe.style.width = iframe.style.height = "1px"
-  iframe.style.right = iframe.style.bottom = "0px"
-  iframe.style.position = "absolute"
-  iframe.id = iframeName
-  document.body.insertBefore(iframe, document.body.firstChild)
-
   # Create a proxy window to send to and receive message from the guest iframe
-  xDomainRpc = new Porthole.WindowProxy(userConfig.xd.xhr+"#xhr", iframeName);
-  xDomainRpc.addEventListener (event) ->
-    if trimHost(event.origin) isnt trimHost(userConfig.xd.xhr) then return
-
-    # Ready init
-    if event.data is "READY"
-      xDomainRpc.postMessage("READYREADY")
+  socket = new easyXDM.Socket({
+    remote: userConfig.xd.relayFile
+    onMessage: (message, origin) ->
+      if typeof(userConfig.moduleRoot) is "string" and trimHost(origin) isnt trimHost(userConfig.moduleRoot) then return
+      pieces = event.data.message.match(responseSlicer)
+      processCallbacks(pieces[1], pieces[2], pieces[3])
+    onReady: () ->
       pauseRequired = false
       queue = db.queue.load.get()
       db.queue.load.clear()
       item() for item in queue
-      return
-    else
-      pieces = event.data.match(responseSlicer)
-      processCallbacks(pieces[1], pieces[2], pieces[3])
+    remoteHelper: userConfig.xd.nameFile
+  });
 
 getFormattedPointcuts = (moduleId) ->
   ###
@@ -1111,10 +1100,10 @@ sendToXhr = (moduleId, callback) ->
 sendToIframe = (moduleId, callback) ->
   ###
   ## sendToIframe(txId, module, path, cb) ##
-  _internal_ request a module at path using Porthole + iframe. On retrieval, the cb will be fired
+  _internal_ request a module at path using easyXDM + iframe. On retrieval, the cb will be fired
   ###
   path = db.module.getPath(moduleId)
-  xDomainRpc.postMessage("#{moduleId} #{path}")
+  socket.postMessage("#{moduleId} #{path}")
 
 getFunctionArgs = (fn) ->
   names = fn.toString().match(functionRegex)[1]
@@ -1265,7 +1254,7 @@ require.ensure = (moduleList, callback) ->
   moduleList = stripBuiltIns(moduleList)
 
   # init the iframe if required
-  if userConfig.xd.xhr? and !xDomainRpc and !pauseRequired
+  if userConfig.xd.xhr? and !socket and !pauseRequired
     createIframe()
     pauseRequired = true
 
@@ -1305,18 +1294,21 @@ require.setExpires = (expires) ->
   ###
   userConfig.fileExpires = expires
 
-require.setCrossDomain = (local, remote) ->
+require.setCrossDomain = (options) ->
   ###
   ## require.setCrossDomain(local, remote) ##
   Set a pair of URLs to relay files. You must have two relay files in your cross domain setup:
 
+  * one relay file (relay.html) on the domain where you are hosting your modules
+  * one relay file (name.html) on the domain where you are hosting your modules
   * one relay file (local) on the same domain as the page hosting Inject
   * one relay file (remote) on the domain where you are hosting your root from setModuleRoot()
 
   The same require.setCrossDomain statement should be added to BOTH your relay.html files.
   ###
-  userConfig.xd.inject = local
-  userConfig.xd.xhr = remote
+  userConfig.xd.relayFile = options.relay
+  userConfig.xd.nameFile = options.nameFile
+  userConfig.xd.hash = options.hash || false
 
 require.clearCache = () ->
   ###
@@ -1461,6 +1453,7 @@ context['Inject'] = {
   'reset': reset,
   'execute': {},
   'enableDebug': (key, value = true) -> userConfig.debug[key] = value
+  'easyXDM': easyXDM
 }
 context['require']['ensure'] = require.ensure;
 context['require']['setModuleRoot'] = require.setModuleRoot;
