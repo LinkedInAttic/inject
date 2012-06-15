@@ -36,15 +36,19 @@ module("Multiple domain tests (based on Modules 1.0)", {
 });
 
 if (/localhost/.test(location.host)) {
+  var urlBase = ([location.protocol,"//",location.host]).join(""),
+      altBase = urlBase.replace(/:4000/, ":4001");
   asyncTest("same domain (baseline)", EXPECTATIONS, function() {
-    require.setModuleRoot("http://localhost:4000/tests/modules-1.0/includes/spec");
+    Inject.setModuleRoot(urlBase+"/tests/modules-1.0/includes/spec");
     require.run("program");
   });
 
   asyncTest("alternate domain", EXPECTATIONS, function() {
-    require.setModuleRoot("http://localhost:4001/tests/modules-1.0/includes/spec");
-    require.setCrossDomain("http://localhost:4000/relay.html",
-                           "http://localhost:4001/relay.html");
+    Inject.setModuleRoot(altBase+"/tests/modules-1.0/includes/spec");
+    Inject.setCrossDomain({
+      relayFile: altBase+"/relay.html",
+      relayHelper: altBase+"/relay_helper.html"
+    });
     require.run("program");
   });
 }

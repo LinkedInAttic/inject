@@ -58,44 +58,12 @@ governing permissions and limitations under the License.
 </script>
 <script type="text/javascript">
 
-var socket = new easyXDM.Socket({
-  onMessage:function(message, origin) {
-    if (ALLOWED_DOMAIN && trimHost(origin) !== trimHost(ALLOWED_DOMAIN)) {
-      return;
-    }
-
-    var pieces = message.split(" "),
-        txId = pieces[0],
-        module = pieces[1],
-        path = pieces[2]
-    
-    doXmlHttpRequest(txId, module, path);
-  }
-});
-
-// trims a host down to hostname + port
-function trimHost(host) {
-  return host.replace(hostPrefixRegex, "").replace(hostSuffixRegex, "$1");
-}
-
-// makes an xhr, posts response
-function doXmlHttpRequest(module, path) {
-  var xhr = getXHR();
-  xhr.open("GET", path);
-  xhr.onreadystatechange = function() {
-    if (xhr.readyState === 4) {
-      socket.postMessage([
-        xhr.status,
-        module,
-        xhr.responseText
-      ].join(" "));
-    }
-  };
-  xhr.send(null);
-}
-
 // get an XHR object, old school
 // from easyXDM (see above license)
+function isHostMethod(object, property) {
+  var t = typeof object[property];
+  return t == 'function' || (!!(t == 'object' && object[property])) || t == 'unknown';
+}
 var getXhr = (function(){
   if (isHostMethod(window, "XMLHttpRequest")) {
     return function(){
@@ -119,6 +87,42 @@ var getXhr = (function(){
     };
   }
 }());
+
+var socket = new easyXDM.Socket({
+  onMessage:function(message, origin) {
+    if (ALLOWED_DOMAIN && trimHost(origin) !== trimHost(ALLOWED_DOMAIN)) {
+      return;
+    }
+
+    var pieces = message.split(" "),
+        txId = pieces[0],
+        module = pieces[1],
+        path = pieces[2]
+    
+    doXmlHttpRequest(txId, module, path);
+  }
+});
+
+// trims a host down to hostname + port
+function trimHost(host) {
+  return host.replace(hostPrefixRegex, "").replace(hostSuffixRegex, "$1");
+}
+
+// makes an xhr, posts response
+function doXmlHttpRequest(module, path) {
+  var xhr = getXhr();
+  xhr.open("GET", path);
+  xhr.onreadystatechange = function() {
+    if (xhr.readyState === 4) {
+      socket.postMessage([
+        xhr.status,
+        module,
+        xhr.responseText
+      ].join(" "));
+    }
+  };
+  xhr.send(null);
+}
 
 </script>
 </body>

@@ -47,6 +47,7 @@ For more details, check out the github: https://github.com/Jakobo/inject
 Constants and Registries used
 ###
 isIE = eval("/*@cc_on!@*/false")    # a test to determine if this is the IE engine (needed for source in eval commands)
+hasLocalStorage = true              # is localStorage available
 docHead = null                      # document.head reference
 onErrorOffset = 0                   # offset for onerror calls
 funcCount = 0                       # functions initialized to date
@@ -84,21 +85,34 @@ relativePathRegex = /^(\.{1,2}\/).+/
 absolutePathRegex = /^([A-Za-z]+:)?\/\//
 
 ###
+localStorage compatibility test
+###
+hasLocalStorage = (() ->
+  try
+    localStorage.setItem("injectLStest", "ok")
+    localStorage.removeItem("injectLStest")
+    return true
+  catch err
+    return false
+)()
+
+###
 lscache configuration
 sets up lscache to operate within the local scope
 ###
-lscache.setBucket(fileStorageToken)
-lscacheSchemaVersion = lscache.get(schemaVersionString)
+if hasLocalStorage
+  lscache.setBucket(fileStorageToken)
+  lscacheSchemaVersion = lscache.get(schemaVersionString)
 
-if lscacheSchemaVersion && lscacheSchemaVersion > 0 && lscacheSchemaVersion < schemaVersion
-  lscache.flush()
-  lscacheSchemaVersion = 0
-if !lscacheSchemaVersion then lscache.set(schemaVersionString, schemaVersion)
+  if lscacheSchemaVersion && lscacheSchemaVersion > 0 && lscacheSchemaVersion < schemaVersion
+    lscache.flush()
+    lscacheSchemaVersion = 0
+  if !lscacheSchemaVersion then lscache.set(schemaVersionString, schemaVersion)
 
 ###
 easyxdm configuration
 ###
-easyXDM = context.easyXDM.noConflict()
+easyXDM = if context.easyXDM then context.easyXDM.noConflict() else false
 
 ###
 CommonJS wrappers for a header and footer
@@ -106,26 +120,26 @@ these bookend the included code and insulate the scope so that it doesn't impact
 or anything else.
 ###
 commonJSHeader = '''
-__INJECT_NS__.execute.__FUNCTION_ID__ = function() {
+__INJECT_NS__.INTERNAL.execute.__FUNCTION_ID__ = function() {
   with (window) {
-    var __module = __INJECT_NS__.createModule("__MODULE_ID__", "__MODULE_URI__"),
-        __require = __INJECT_NS__.require,
+    var __module = __INJECT_NS__.INTERNAL.createModule("__MODULE_ID__", "__MODULE_URI__"),
+        __require = __INJECT_NS__.INTERNAL.require,
         __exe = null;
-    __INJECT_NS__.setModuleExports("__MODULE_ID__", __module.exports);
+    __INJECT_NS__.INTERNAL.setModuleExports("__MODULE_ID__", __module.exports);
     __exe = function(require, module, exports) {
       __POINTCUT_BEFORE__
 '''
 commonJSFooter = '''
       __POINTCUT_AFTER__
     };
-    __INJECT_NS__.defineAs(__module.id);
+    __INJECT_NS__.INTERNAL.defineAs(__module.id);
     try {
       __exe.call(__module, __require, __module, __module.exports);
     }
     catch (__EXCEPTION__) {
       __module.error = __EXCEPTION__;
     }
-    __INJECT_NS__.undefineAs();
+    __INJECT_NS__.INTERNAL.undefineAs();
     return __module;
   }
 };
@@ -294,7 +308,8 @@ db = {
 
       if userConfig.fileExpires is 0 then return false
 
-      file = lscache.get(path)
+      if hasLocalStorage then file = lscache.get(path)
+
       if file and typeof(file) is "string" and file.length
         db.module.setFile(moduleId, file)
         return file
@@ -308,7 +323,8 @@ db = {
       db.module.create(moduleId)
       registry[moduleId].file = file
       path = db.module.getPath(moduleId)
-      lscache.set(path, file, userConfig.fileExpires)
+      
+      if hasLocalStorage then lscache.set(path, file, userConfig.fileExpires)
     "clearAllFiles": () ->
       ###
       ## clearAllFiles() ##
@@ -637,11 +653,16 @@ clearFileRegistry = () ->
   _internal_ Clears the internal file registry
   clearing all local storage keys that relate to the fileStorageToken
   ###
-  
-  if ! ('localStorage' in context) then return
-  
   db.module.clearAllFiles()
-  lscache.flush()
+  if hasLocalStorage then lscache.flush()
+
+trimHost = (host) ->
+  ###
+  ## trimHost(host) ##
+  _internal_ trims the host down to its essential values
+  ###
+  host = host.replace(hostPrefixRegex, "").replace(hostSuffixRegex, "$1")
+  return host
 
 createIframe = () ->
   ###
@@ -649,24 +670,19 @@ createIframe = () ->
   _internal_ create an iframe to the xhr location
   ###
 
-  # trims the host down to its essential values
-  trimHost = (host) ->
-    host = host.replace(hostPrefixRegex, "").replace(hostSuffixRegex, "$1")
-    return host
-
   # Create a proxy window to send to and receive message from the guest iframe
   socket = new easyXDM.Socket({
     remote: userConfig.xd.relayFile
     onMessage: (message, origin) ->
       if typeof(userConfig.moduleRoot) is "string" and trimHost(origin) isnt trimHost(userConfig.moduleRoot) then return
-      pieces = event.data.message.match(responseSlicer)
+      pieces = message.match(responseSlicer)
       processCallbacks(pieces[1], pieces[2], pieces[3])
     onReady: () ->
       pauseRequired = false
       queue = db.queue.load.get()
       db.queue.load.clear()
       item() for item in queue
-    remoteHelper: userConfig.xd.nameFile
+    remoteHelper: userConfig.xd.relayHelper
   });
 
 getFormattedPointcuts = (moduleId) ->
@@ -827,7 +843,7 @@ downloadTree = (tree, callback) ->
   # download a file over xhr or cross domain
   download = () ->
     db.module.setLoading(moduleId, true)
-    if userConfig.xd.inject and userConfig.xd.xhr
+    if userConfig.xd.relayFile
       sendToIframe(moduleId, processCallbacks)
     else
       sendToXhr(moduleId, processCallbacks)
@@ -1061,11 +1077,11 @@ evalModule = (options) ->
     # select our execution engine (if advanced debugging is required)
     if (userConfig.debug.sourceMap)
       sourceString = if isIE then "" else "//@ sourceURL=#{url}"
-      toExec = (["(",Inject.execute[functionId].toString(),")()"]).join("")
+      toExec = (["(",Inject.INTERNAL.execute[functionId].toString(),")()"]).join("")
       toExec = ([toExec, sourceString]).join("\n")
       module = eval(toExec)
     else
-      module = Inject.execute[functionId]()
+      module = Inject.INTERNAL.execute[functionId]()
     
     if module.error
       actualErrorLine = onErrorOffset - preambleLines + getLineNumberFromException(module.error)
@@ -1074,12 +1090,12 @@ evalModule = (options) ->
 
   # okay, clean up our mess
   context.onerror = oldError
-  if Inject?.execute[functionId] then delete Inject.execute[functionId]
+  if Inject?.INTERNAL?.execute[functionId] then delete Inject.INTERNAL.execute[functionId]
 
   # throw a proper error if we failed somewhere
   # get rid of all localstorage cache
   if errorObject
-    require.clearCache();
+    clearCache();
     throw errorObject
 
   # yay, module!
@@ -1185,6 +1201,101 @@ stripBuiltIns = (modules) ->
       strippedModuleList.push(mId)
   return strippedModuleList
 
+setModuleRoot = (root) ->
+  ###
+  ## setModuleRoot(root) ##
+  set the base path for including your modules. This is used as the default if no
+  items in the manifest can be located.
+
+  Optionally, you can set root to a function. The return value of that function will
+  be used instead. This can allow for very complex module configurations and branching
+  with multiple CDNs such as in a complex production environment.
+  ###
+  if typeof(root) is "string" and root.lastIndexOf("/") isnt root.length then root = "#{root}/"
+  if typeof(root) is "string"
+    if root.indexOf("/") is 0 then root = "#{location.protocol}//#{location.host}#{root}"
+    else if root.indexOf(".") is 0 then root = "#{location.protocol}//#{location.host}/#{root}"
+  userConfig.moduleRoot = root
+
+setExpires = (expires) ->
+  ###
+  ## setExpires(expires) ##
+  Set the time in seconds that files will persist in localStorage. Setting to 0 will disable
+  localstorage caching.
+  ###
+  userConfig.fileExpires = expires
+
+setCrossDomain = (options) ->
+  ###
+  ## setCrossDomain(local, remote) ##
+  Set a pair of URLs to relay files. You must have two relay files in your cross domain setup:
+
+  * one relay file (relay.html) on the domain where you are hosting your modules
+  * one relay file (name.html) on the domain where you are hosting your modules
+  * one relay file (local) on the same domain as the page hosting Inject
+  * one relay file (remote) on the domain where you are hosting your root from setModuleRoot()
+
+  The same require.setCrossDomain statement should be added to BOTH your relay.html files.
+  ###
+  userConfig.xd.relayFile = options.relayFile
+  userConfig.xd.relayHelper = options.relayHelper
+  userConfig.xd.hash = options.hash || false
+
+clearCache = () ->
+  ###
+  ## clearCache() ##
+  Remove the localStorage class at version. If no version is specified, the entire cache is cleared.
+  ###
+  clearFileRegistry()
+
+manifest = (manifest) ->
+  ###
+  ## manifest(manifest) ##
+  Provide a custom manifest for Inject. This maps module names to file paths, adds pointcuts, and more.
+  The key is always the module name, and then inside of that key can be either
+
+  * a String (the path that will be used for resolving that module)
+  * an Object containing
+  ** path (String or Function) a path to use for the module, behaves like setModuleRoot()
+  ** pointcuts (Object) a set of Aspect Oriented functions to run before and after the function.
+
+  The pointcuts are a unique solution that allows you to require() things like jQuery. A pointcut could,
+  for example add an after() method which sets exports.$ to jQuery.noConflict(). This would restore the
+  window to its unpoluted state and make jQuery actionable as a commonJS module without having to alter
+  the original library.
+  ###
+  for own item, rules of manifest
+    ruleSet =
+      path: rules.path or rules or null
+      pointcuts:
+        before: rules.before or null
+        after: rules.after or null
+    addRule(item, ruleSet)
+
+addRule = (match, weight = null, ruleSet = null) ->
+  ###
+  ## require.addRule(match, [weight], ruleset) ##
+  Add a rule that matches the given match, and apply ruleset to it
+  * match: a regex or string to match against
+  * weight: [optional] a numeric weight. Higher numbered weights run later
+  * ruleset: a string containing a 1:1 replacement for match, or an object literal that
+    contains path or pointcuts information
+  ###
+  if ruleSet is null
+    # weight (optional) omitted
+    ruleSet = weight
+    weight = db.queue.rules.size()
+  if typeof(ruleSet) is "string"
+    usePath = ruleSet
+    ruleSet =
+      path: usePath
+  db.queue.rules.add({
+    key: match
+    weight: weight
+    pointcuts: ruleSet.pointcuts or null
+    path: ruleSet.path or null
+  })
+
 ###
 Main Payloads: require, require.ensure, etc
 ###
@@ -1254,14 +1365,14 @@ require.ensure = (moduleList, callback) ->
   moduleList = stripBuiltIns(moduleList)
 
   # init the iframe if required
-  if userConfig.xd.xhr? and !socket and !pauseRequired
+  if userConfig.xd.relayFile? and !socket and !pauseRequired
     createIframe()
     pauseRequired = true
 
   ensureExecutionCallback = () ->
     module = createModule();
     exports = module.exports;
-    callback.call(context, Inject.require, module, exports)
+    callback.call(context, Inject.INTERNAL.require, module, exports)
 
   # our default behavior. Load everything
   # then, once everything says its loaded, call the callback
@@ -1270,103 +1381,12 @@ require.ensure = (moduleList, callback) ->
   if pauseRequired then db.queue.load.add(run)
   else run()
 
-require.setModuleRoot = (root) ->
+require.toUrl = (moduleId) ->
   ###
-  ## require.setModuleRoot(root) ##
-  set the base path for including your modules. This is used as the default if no
-  items in the manifest can be located.
-
-  Optionally, you can set root to a function. The return value of that function will
-  be used instead. This can allow for very complex module configurations and branching
-  with multiple CDNs such as in a complex production environment.
+  ## require.toUrl(moduleId) ##
+  Convert a module ID to URL for AMD compliance
   ###
-  if typeof(root) is "string" and root.lastIndexOf("/") isnt root.length then root = "#{root}/"
-  if typeof(root) is "string"
-    if root.indexOf("/") is 0 then root = "#{location.protocol}//#{location.host}#{root}"
-    else if root.indexOf(".") is 0 then root = "#{location.protocol}//#{location.host}/#{root}"
-  userConfig.moduleRoot = root
-
-require.setExpires = (expires) ->
-  ###
-  ## require.setExpires(expires) ##
-  Set the time in seconds that files will persist in localStorage. Setting to 0 will disable
-  localstorage caching.
-  ###
-  userConfig.fileExpires = expires
-
-require.setCrossDomain = (options) ->
-  ###
-  ## require.setCrossDomain(local, remote) ##
-  Set a pair of URLs to relay files. You must have two relay files in your cross domain setup:
-
-  * one relay file (relay.html) on the domain where you are hosting your modules
-  * one relay file (name.html) on the domain where you are hosting your modules
-  * one relay file (local) on the same domain as the page hosting Inject
-  * one relay file (remote) on the domain where you are hosting your root from setModuleRoot()
-
-  The same require.setCrossDomain statement should be added to BOTH your relay.html files.
-  ###
-  userConfig.xd.relayFile = options.relay
-  userConfig.xd.nameFile = options.nameFile
-  userConfig.xd.hash = options.hash || false
-
-require.clearCache = () ->
-  ###
-  ## require.clearCache() ##
-  Remove the localStorage class at version. If no version is specified, the entire cache is cleared.
-  ###
-  clearFileRegistry()
-
-require.manifest = (manifest) ->
-  ###
-  ## require.manifest(manifest) ##
-  Provide a custom manifest for Inject. This maps module names to file paths, adds pointcuts, and more.
-  The key is always the module name, and then inside of that key can be either
-
-  * a String (the path that will be used for resolving that module)
-  * an Object containing
-  ** path (String or Function) a path to use for the module, behaves like setModuleRoot()
-  ** pointcuts (Object) a set of Aspect Oriented functions to run before and after the function.
-
-  The pointcuts are a unique solution that allows you to require() things like jQuery. A pointcut could,
-  for example add an after() method which sets exports.$ to jQuery.noConflict(). This would restore the
-  window to its unpoluted state and make jQuery actionable as a commonJS module without having to alter
-  the original library.
-  ###
-  for own item, rules of manifest
-    ruleSet =
-      path: rules.path or rules or null
-      pointcuts:
-        before: rules.before or null
-        after: rules.after or null
-    require.addRule(item, ruleSet)
-
-require.addRule = (match, weight = null, ruleSet = null) ->
-  ###
-  ## require.addRule(match, [weight], ruleset) ##
-  Add a rule that matches the given match, and apply ruleset to it
-  * match: a regex or string to match against
-  * weight: [optional] a numeric weight. Higher numbered weights run later
-  * ruleset: a string containing a 1:1 replacement for match, or an object literal that
-    contains path or pointcuts information
-  ###
-  if ruleSet is null
-    # weight (optional) omitted
-    ruleSet = weight
-    weight = db.queue.rules.size()
-  if typeof(ruleSet) is "string"
-    usePath = ruleSet
-    ruleSet =
-      path: usePath
-  db.queue.rules.add({
-    key: match
-    weight: weight
-    pointcuts: ruleSet.pointcuts or null
-    path: ruleSet.path or null
-  })
-
-require.toUrl = (moduleURL) ->
-  applyRules(moduleURL, false).path;
+  applyRules(moduleId, false).path;
 
 define = (moduleId, deps, callback) ->
   # Allow for anonymous functions, adjust args appropriately
@@ -1393,7 +1413,7 @@ define = (moduleId, deps, callback) ->
       args = []
       for dep in deps
         switch dep
-          when "require" then args.push(Inject.require)
+          when "require" then args.push(Inject.INTERNAL.require)
           when "exports" then args.push(module.exports)
           when "module" then args.push(module)
           else args.push(require(dep))
@@ -1438,27 +1458,29 @@ define = (moduleId, deps, callback) ->
 # To allow a clear indicator that a global define function conforms to the AMD API
 define['amd'] = {}
 
-# set context.require to the main inject object
-# set context.define to the main inject object
-# set an alternate interface in Inject in case things get clobbered
+# set context.require to the CommonJS / AMD Interface
+# set context.define to AMD Interface
+# set context.Inject to be the source of all configuration
 context['require'] = require
 context['define'] = define
 context['Inject'] = {
-  'defineAs': (moduleId) -> db.queue.define.add(moduleId),
-  'undefineAs': () -> db.queue.define.remove(),
-  'createModule': createModule,
-  'setModuleExports': (moduleId, exports) -> db.module.setExports(moduleId, exports),
-  'require': require,
-  'define': define,
+  'INTERNAL':
+    'defineAs': (moduleId) -> db.queue.define.add(moduleId),
+    'undefineAs': () -> db.queue.define.remove(),
+    'createModule': createModule,
+    'setModuleExports': (moduleId, exports) -> db.module.setExports(moduleId, exports),
+    'require': require,
+    'define': define,
+    'execute': {},
+    'easyXDM': easyXDM
   'reset': reset,
-  'execute': {},
   'enableDebug': (key, value = true) -> userConfig.debug[key] = value
-  'easyXDM': easyXDM
+  'toUrl': (moduleId) -> return require.toUrl(moduleId)
+  'setModuleRoot': setModuleRoot
+  'setExpires': setExpires
+  'setCrossDomain': setCrossDomain
+  'clearCache': clearCache
+  'manifest': manifest
+  'addRule': addRule
 }
-context['require']['ensure'] = require.ensure;
-context['require']['setModuleRoot'] = require.setModuleRoot;
-context['require']['setExpires'] = require.setExpires;
-context['require']['setCrossDomain'] = require.setCrossDomain;
-context['require']['clearCache'] = require.clearCache;
-context['require']['manifest'] = require.manifest;
-context['require']['run'] = require.run;
+
