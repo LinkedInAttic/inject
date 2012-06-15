@@ -67,36 +67,39 @@ Path Resolution
 ---
 By default, inject tries to do the best it can, but in complex environments, that's not enough. The following behaviors can change / simplify the injection of modules.
 
-* **call require.setModuleRoot with a function** if config.path resolves to a function, the function will be called instead of standard path evaluation
-* **use require.addRule(match, rules)** the addRule() syntax allows you to match regex statements against a module path, and resolve items dynamically
+* **call Inject.setModuleRoot with a function** if config.path resolves to a function, the function will be called instead of standard path evaluation
+* **use Inject.addRule(match, rules)** the addRule() syntax allows you to match regex statements against a module path, and resolve items dynamically
 
 Expiring Content
 ---
 By default, inject() will cache things for one day (1440 minutes). You can change the default behavior through the config object:
 
 ```
-require.setExpires(10080);
+Inject.setExpires(10080);
 // files now last for one week
 ```
 
 Setting an expiry value of "0" means that client side caching will not be used. There will need to be a balance between caching items in the browser, and letting localStorage also do caching for you. At any time, you can always clear the cache with the below code, for example if a user has not been to your site since your last major code push.
 
 ```
-require.clearCache()
+Inject.clearCache()
 ```
 
 Cross Domain
 ---
 In CDN-like environments, the data you need to include may be on a separate domain. If that's the case, you'll need to do 3 extra steps to get inject up and running.
 
-1. **edit relay.html** from the artifacts directory. You'll need to call require.setCrossDomain(local, remote) with the path to your two proxy files. The "local" is on the same domain as your application code. The "remote" is on the same domain as the JS you intend to load, and should be the same domain you supplied to require.setModuleRoot()
-2. **edit your code** use the same require.setCrossDomain(local, remote) to set up the configuration for cross domain
-3. **upload both relay.html files** to your servers
+1. **edit relay.html** from the artifacts directory if you want additional security.
+2. **edit your code** Inject.setCrossDomain needs an object literal with two items: `relayFile` and `relaySwf`. Set these to the location of your remote `relay.swf` and `relay.html` files appropriately.
+3. **upload both relay.html and relay.swf files** to your servers
 
-When you add the XD config, you'll use the same paths you used in #1 above
+Your config looks something like...
 
-```
-require.setCrossDomain("http://static.example.com/path/to/relay.html", "http://example.com/local/dir/relay.html");
+```js
+Inject.setCrossDomain({
+  relayFile: "http://cdn.example.com/relay.html",
+  relaySwf: "http://cdn.example.com/relay.swf"
+});
 ```
 
 You can then carry on with your injecting. To support the cross domain, we use `window.postMessage` in the browsers that support it, and fall back to fragment transports with window.resize monitoring. To make that happen, we use [easyXDM](https://github.com/oyvindkinsey/easyXDM) by the awesome @oyvindkinsey (MIT License).
