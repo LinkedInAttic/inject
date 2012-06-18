@@ -26,7 +26,7 @@ Some sample ways to use inject...
   // -- or --
   require.run("mySampleApplication")
 
-For more details, check out the github: https://github.com/Jakobo/inject
+For more details, check out the github: https://github.com/linkedin/inject
 ###
 
 #
@@ -46,6 +46,7 @@ For more details, check out the github: https://github.com/Jakobo/inject
 ###
 Constants and Registries used
 ###
+INJECT_VERSION = "0.4.0-pre"        # the version of inject this is
 isIE = eval("/*@cc_on!@*/false")    # a test to determine if this is the IE engine (needed for source in eval commands)
 hasLocalStorage = true              # is localStorage available
 docHead = null                      # document.head reference
@@ -1501,5 +1502,6 @@ context['Inject'] = {
   'clearCache': clearCache
   'manifest': manifest
   'addRule': addRule
+  'version': INJECT_VERSION
 }
 
