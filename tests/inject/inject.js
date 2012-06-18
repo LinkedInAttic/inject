@@ -13,9 +13,9 @@ module("Inject Tests", {
 });
 
 asyncTest("Make sure query string params are handled properly in pointcut paths", 1, function() {
-  require.setModuleRoot("/examples/deps");
+  Inject.setModuleRoot("/examples/deps");
 
-  require.manifest({
+  Inject.manifest({
     "jQuery": {
       path: "./jquery-1.6.4.min.js?foo=1&bar=2",
       after: function(module) {
@@ -33,6 +33,6 @@ asyncTest("Make sure query string params are handled properly in pointcut paths"
 
 asyncTest("Enable Source Map (firebug version)", 1, function() {
   Inject.enableDebug("sourceMap");
-  require.setModuleRoot("/tests/inject/includes/spec");
+  Inject.setModuleRoot("/tests/inject/includes/spec");
   require.run("sourcemap");
 });

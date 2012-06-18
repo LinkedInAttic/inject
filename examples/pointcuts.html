@@ -38,9 +38,9 @@ document.getElementById("clearit").onclick = function() {
   require.clearCache();
 };
 
-require.setModuleRoot("/examples/deps");
+Inject.setModuleRoot("/examples/deps");
 
-require.manifest({
+Inject.manifest({
   "jQuery": {
     path: "./jquery-1.6.4.min.js",
     after: function() {

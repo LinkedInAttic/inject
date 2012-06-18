@@ -36,12 +36,14 @@
 
 <script type="text/javascript">
 document.getElementById("clearit").onclick = function() {
-  require.clearCache();
+  Inject.clearCache();
 };
 
-require.setModuleRoot("http://localhost:4001/examples/deps");
-require.setCrossDomain("http://localhost:4000/relay.html",
-                       "http://localhost:4001/relay.html");
+Inject.setModuleRoot("http://localhost:4001/examples/deps");
+Inject.setCrossDomain({
+  relayFile:    "http://localhost:4001/relay.html",
+  relaySwf:     "http://localhost:4001/relay.swf"
+});
 
 require.ensure(["foo", "bar"], function(require) {
   var foo = require("foo"),
