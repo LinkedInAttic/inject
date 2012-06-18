@@ -7,8 +7,8 @@
  * lscache library (c) 2011 Pamela Fox
  * Apache Software License 2.0 (see below)
  *
- * Porthole
- * Copyright (c) 2011 Ternary Labs
+ * easyXDM
+ * Copyright (c) 2009-2011 Øyvind Sean Kinsey
  * MIT License (see below)
  *
  * JSON
