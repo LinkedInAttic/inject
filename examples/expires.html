@@ -37,7 +37,7 @@ document.getElementById("clearit").onclick = function() {
   require.clearCache();
 };
 
-require.setModuleRoot("/examples/deps");
+Inject.setModuleRoot("/examples/deps");
 
 require.ensure(["foo", "bar"], function(require) {
   var foo = require("foo"),

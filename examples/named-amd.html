@@ -22,12 +22,14 @@
   <![endif]-->
   <script type="text/javascript" src="/inject.js"></script>
   <script type="text/javascript">
-    require.setModuleRoot("/examples/deps");
+    Inject.setModuleRoot("/examples/deps");
   </script>
 </head>
 <body>
 <h1>Named AMD</h1>
 <p>Create a named module with AMD and then require it later on. Very useful for defining modules in the HTML from server-side rendered data. Also a handy way to work around require statements in modules that you want to "override".</p>
+
+<p>Check the console for a log statement containing the defined "named-module"</p>
 
 <p><a href="index.html">Back to examples</a></p>
 

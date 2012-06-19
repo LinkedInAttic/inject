@@ -22,8 +22,8 @@
   <![endif]-->
   <script type="text/javascript" src="/inject.js"></script>
   <script type="text/javascript">
-    require.setModuleRoot("/examples/deps");
-    require.addRule(/math/, {
+    Inject.setModuleRoot("/examples/deps");
+    Inject.addRule(/math/, {
       path: function(module) {
         var path = module.split('/');
         if(path.length > 1){

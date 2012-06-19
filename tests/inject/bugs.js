@@ -20,14 +20,14 @@ asyncTest("#105 exceptions surfaced correctly in console", 1, function() {
     start();
     return true;
   };
-  require.setModuleRoot("/tests/inject/includes/bugs");
+  Inject.setModuleRoot("/tests/inject/includes/bugs");
   require.run("bug_105");
 });
 
 asyncTest("#118 Requiring a file multiple ways misses cache", 2, function() {
-  require.setModuleRoot("/tests/inject/includes");
+  Inject.setModuleRoot("/tests/inject/includes");
 
-  require.addRule('bug_118', {
+  Inject.addRule('bug_118', {
     path: "bugs/bug_118.js"
   });
   
@@ -43,8 +43,8 @@ asyncTest("#118 Requiring a file multiple ways misses cache", 2, function() {
 
 // When a relative path is resolved, additional tests keep running
 asyncTest("#116 applyRules: a resolved relative path continues through stack", 1, function() {
-  require.setModuleRoot("/tests/modules-1.0/includes/bugs");
-  require.addRule(/^a_bug_123\//, {
+  Inject.setModuleRoot("/tests/modules-1.0/includes/bugs");
+  Inject.addRule(/^a_bug_123\//, {
     path: function(path) {
       path = path.replace("a_bug_123", "bug_123");
       return ([

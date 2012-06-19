@@ -22,8 +22,8 @@
   <![endif]-->
   <script type="text/javascript" src="/inject.js"></script>
   <script type="text/javascript">
-    require.setModuleRoot("/examples/deps");
-    require.addRule(/^jquery$/, {
+    Inject.setModuleRoot("/examples/deps");
+    Inject.addRule(/^jquery$/, {
       path: "jquery-1.7.js",
       pointcuts: {
         after: function() {
@@ -32,7 +32,7 @@
         }
       }
     });
-    require.addRule(/jquery\.ui/, {
+    Inject.addRule(/jquery\.ui/, {
       path: function(module) {
         return "jqueryui/"+module+".min.js"
       },
@@ -68,12 +68,12 @@
 
 <script type="text/javascript">
 document.getElementById("clearit").onclick = function() {
-  require.clearCache();
+  Inject.clearCache();
 };
 </script>
 
 <script type="text/javascript">
-require.clearCache();
+Inject.clearCache();
 require.ensure(["sampleapp"], function() {
   var app = require("sampleapp");
   app.run();

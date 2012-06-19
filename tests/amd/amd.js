@@ -30,7 +30,7 @@ module("AMD Specification", {
 });
 
 asyncTest("Anon - simple", 3, function() {
-  require.setModuleRoot("/tests/amd/includes/spec/anon");
+  Inject.setModuleRoot("/tests/amd/includes/spec/anon");
   require(["a","b"], function(a, b) {
     equal("a", a.name);
     equal("b", b.name);
@@ -40,7 +40,7 @@ asyncTest("Anon - simple", 3, function() {
 });
 
 asyncTest("Anon - circular", 6, function() {
-  require.setModuleRoot("/tests/amd/includes/spec/anon");
+  Inject.setModuleRoot("/tests/amd/includes/spec/anon");
   require(["require", "two", "funcTwo", "funcThree"], function(require, two, funcTwo, funcThree) {
     var args = two.doSomething(),
         twoInst = new funcTwo("TWO"),
@@ -57,8 +57,8 @@ asyncTest("Anon - circular", 6, function() {
 });
 
 asyncTest("Anon - relativeModuleId", 4, function() {
-  require.setModuleRoot("/tests/amd/includes/spec/anon");
-  require.addRule("array", {path:"impl/array"});
+  Inject.setModuleRoot("/tests/amd/includes/spec/anon");
+  Inject.addRule("array", {path:"impl/array"});
   require(["require", "array"], function(require, array) {
     equal("impl/array", array.name);
     equal("util", array.utilNameUl);
@@ -73,7 +73,7 @@ test("Basic - defineAmd", 1, function() {
 });
 
 asyncTest("Basic - simple", 3, function() {
-  require.setModuleRoot("/tests/amd/includes/spec/basic");
+  Inject.setModuleRoot("/tests/amd/includes/spec/basic");
   require(["a", "b"], function(a, b) {
     equal("a", a.name);
     equal("b", b.name);
@@ -83,7 +83,7 @@ asyncTest("Basic - simple", 3, function() {
 });
 
 asyncTest("Basic - circular", 6, function() {
-  require.setModuleRoot("/tests/amd/includes/spec/basic");
+  Inject.setModuleRoot("/tests/amd/includes/spec/basic");
   require(["require", "two", "funcTwo", "funcThree"], function(require, two, funcTwo, funcThree) {
     var args = two.doSomething(),
         twoInst = new funcTwo("TWO"),
@@ -100,7 +100,7 @@ asyncTest("Basic - circular", 6, function() {
 });
 
 asyncTest("Function String - funcString", 8, function() {
-  require.setModuleRoot("/tests/amd/includes/spec/funcstring");
+  Inject.setModuleRoot("/tests/amd/includes/spec/funcstring");
   require(["one", "two", "three"], function(one, two, three) {
     var args = two.doSomething(),
         oneMod = two.getOneModule();
@@ -118,7 +118,7 @@ asyncTest("Function String - funcString", 8, function() {
 });
 
 asyncTest("Named Wrapped - basic", 3, function() {
-  require.setModuleRoot("/tests/amd/includes/spec/namewrapped");
+  Inject.setModuleRoot("/tests/amd/includes/spec/namewrapped");
   require(["car"], function(car) {
     equal("car", car.name);
     equal("wheels", car.wheels.name);
@@ -128,7 +128,7 @@ asyncTest("Named Wrapped - basic", 3, function() {
 });
 
 asyncTest("Require - basic", 4, function() {
-  require.setModuleRoot("/tests/amd/includes/spec/require");
+  Inject.setModuleRoot("/tests/amd/includes/spec/require");
   require.ensure(["require", "a"], function(require) {
     require(["b", "c"], function(b, c) {
       equal("a", require('a').name);

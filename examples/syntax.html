@@ -39,7 +39,7 @@ if (console && console.log && typeof(console.log) === "function") {
   console.log("expected line numbers:\nsyntax: 31/37\nsyntaxb: 39/40\nreference: 32\nrange: 27\ntype: 30");
 }
 
-require.setModuleRoot("/examples/deps");
+Inject.setModuleRoot("/examples/deps");
 require.run("errors/syntaxerror");
 require.run("errors/syntaxerrorb");
 require.run("errors/referenceerror");
