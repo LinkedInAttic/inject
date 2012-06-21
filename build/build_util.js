@@ -32,6 +32,7 @@ exports.grab = function(src, cb) {
 
 // uglify stuff and make it all min-awesome
 exports.uglify = function(file, cb) {
+  file = file.toString();
   var parser = Uglify.parser;
   var uglifier = Uglify.uglify;
   var ast = parser.parse(file);
@@ -101,18 +102,19 @@ exports.mkdirpSync = function (dir) {
   try {
     // XXX hardcoding recommended file mode of 511 (0777 in octal)
     // (note that octal numbers are disallowed in ES5 strict mode)
-    fs.mkdirSync(dir, 511)
+    fs.mkdirSync(dir, 511);
   }
   catch (err) {
     // and if we fail, base action based on why we failed:
     switch (err.code) {
       // base case: if the path already exists, we're good to go.
       case "EEXIST":
-          return
+      case "EISDIR":
+        return;
 
       case "ENOENT":
-        mkdirpSync(path.dirname, dir)
-        mkdirpSync(dir)
+        mkdirpSync(path.dirname(dir));
+        mkdirpSync(dir);
         return;
 
       default:
