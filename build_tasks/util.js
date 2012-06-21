@@ -133,8 +133,8 @@ exports.mkdirpSync = function (dir) {
         return;
 
       case "ENOENT":
-        mkdirpSync(path.dirname(dir));
-        mkdirpSync(dir);
+        exports.mkdirpSync(path.dirname(dir));
+        exports.mkdirpSync(dir);
         return;
 
       default:
