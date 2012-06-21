@@ -1,16 +1,35 @@
-var path = require("path");
-var fs = require("fs");
-var util = require("util");
-var Uglify = require("uglify-js");
-var exec = require("child_process").exec;
-var Seq = require("seq");
+/*
+Inject
+Copyright 2011 LinkedIn
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing,
+software distributed under the License is distributed on an "AS
+IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+express or implied.   See the License for the specific language
+governing permissions and limitations under the License.
+*/
+
+var path = require("path"),
+    fs = require("fs"),
+    util = require("util"),
+    Uglify = require("uglify-js"),
+    exec = require("child_process").exec,
+    Seq = require("seq");
 
 // copy a file from src to dest
 exports.copy = function(src, dest, cb) {
   src = path.normalize(src);
   dest = path.normalize(dest);
-  var newFile = fs.createWriteStream(dest);
-  var oldFile = fs.createReadStream(src);
+
+  var newFile = fs.createWriteStream(dest),
+      oldFile = fs.createReadStream(src);
+
   newFile.once("open", function(fd) {
     util.pump(oldFile, newFile);
     cb();
@@ -33,10 +52,11 @@ exports.grab = function(src, cb) {
 // uglify stuff and make it all min-awesome
 exports.uglify = function(file, cb) {
   file = file.toString();
-  var parser = Uglify.parser;
-  var uglifier = Uglify.uglify;
-  var ast = parser.parse(file);
-  var output = "";
+
+  var parser = Uglify.parser,
+      uglifier = Uglify.uglify,
+      ast = parser.parse(file),
+      output = "";
 
   ast = uglifier.ast_mangle(ast, {
     except: ["require", "define", "easyxdm", "localstorage"]
@@ -51,13 +71,13 @@ exports.uglify = function(file, cb) {
 
 // compile coffeescript
 exports.compileCoffeeScript = function(src, cb) {
-  var coffeeBinary = path.resolve(".", "node_modules/coffee-script/bin/coffee");
-  var cmd = ([
-    coffeeBinary,
-    "--bare",
-    "--print",
-    "--compile "+src,
-  ]).join(" ");
+  var coffeeBinary = path.resolve(".", "node_modules/.bin/coffee"),
+      cmd = ([
+        coffeeBinary,
+        "--bare",
+        "--print",
+        "--compile "+src,
+      ]).join(" ");
 
   Seq()
   .seq(function() {

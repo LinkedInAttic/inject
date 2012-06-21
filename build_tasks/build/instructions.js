@@ -1,15 +1,16 @@
-var Seq = require("seq");
-var bu = require("./build_util");
+var Seq = require("seq"),
+    bu = require("../util"),
+    packages;
 
-var packages = {
+packages = {
   "ie7compat": function(options, cb) {
     if (options.nolegacy) {
       return cb(null, "SKIPPED");
     }
 
-    var src = options.src;
-    var dest = options.dest;
-    var tmp = options.tmp;
+    var src = options.src,
+        dest = options.dest,
+        tmp = options.tmp;
 
     Seq()
     .par(function() {
@@ -45,8 +46,8 @@ var packages = {
     });
   },
   "main": function(options, cb) {
-    var src = options.src;
-    var dest = options.dest;
+    var src = options.src,
+        dest = options.dest;
 
     Seq()
     .par(function() {
@@ -114,9 +115,9 @@ var packages = {
     });
   },
   "crossDomain": function(options, cb) {
-    var src = options.src;
-    var dest = options.dest;
-    var tmp = options.tmp;
+    var src = options.src,
+        dest = options.dest,
+        tmp = options.tmp;
 
     if (options.noxd) {
       return cb(null, "SKIPPED");

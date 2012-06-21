@@ -16,11 +16,17 @@ governing permissions and limitations under the License.
 */
 var path = require("path"),
     http = require("http"),
-    sys = require("sys"),
+    util = require("util"),
     paperboy = require("paperboy"),
     serveFromArtifacts = null,
     serveFromExamples = null,
     serveFromTests = null;
+
+// optimist
+var optimist = require("optimist")
+    .usage("Run the inject example and test server.\nUsage: $0 server")
+    .boolean("help")
+    .describe("help", "show this message");
 
 // create a static server handler
 function createServer(path) {
@@ -92,9 +98,16 @@ function server(request, response) {
   return serve(request, response);
 }
 
-http.createServer(server).listen(4000);
-http.createServer(server).listen(4001);
-sys.log("inject() server running on ports 4000 and 4001");
-sys.log("-----")
-sys.log("access examples: http://localhost:4000/examples/index.html");
-sys.log("access tests:    http://localhost:4000/tests/index.html");
+exports.task = function() {
+  if (optimist.argv.help) {
+    optimist.showHelp();
+    return;
+  }
+  
+  http.createServer(server).listen(4000);
+  http.createServer(server).listen(4001);
+  util.log("inject() server running on ports 4000 and 4001");
+  util.log("-----")
+  util.log("access examples: http://localhost:4000/examples/index.html");
+  util.log("access tests:    http://localhost:4000/tests/index.html");
+};
