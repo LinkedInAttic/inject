@@ -46,9 +46,9 @@ function createServer(path) {
 }
 
 // three serving locations for this project
-serveFromArtifacts = createServer(path.normalize("" + __dirname + "/artifacts/dev"));
-serveFromExamples = createServer(path.normalize("" + __dirname + "/examples"));
-serveFromTests = createServer(path.normalize("" + __dirname + "/tests"));
+serveFromArtifacts = createServer(path.normalize("" + __dirname + "/../artifacts/dev"));
+serveFromExamples = createServer(path.normalize("" + __dirname + "/../examples"));
+serveFromTests = createServer(path.normalize("" + __dirname + "/../tests"));
 
 // live server function, used on multiple ports
 function server(request, response) {
