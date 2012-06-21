@@ -14,20 +14,19 @@ Some of the awesome roadmap things coming soon(ish)
 
 Let's Start With Examples!
 ===
-We have a nodejs test server for both the examples and development. Install node, npm, & coffeescript, then:
+We have a nodejs test server for both the examples and development. Install node and npm, then:
 
 ```
-cake build
+cd inject
 npm install
-node testserver.js
+node makefile.js build
+node makefile.js server
 ```
 
 You can visit http://localhost:4000/examples/ for viewing some sample code, or http://localhost:4000/tests for running our unit test suite. We use alternate ports to create the cross domain environment instead of a CDN.
 
 Getting Started
 ===
-In case you're looking: [Building Inject From Source](https://github.com/linkedin/inject/wiki/Building-Inject-From-Source)
-
 We've put together a [Getting Started With inject Guide](https://github.com/linkedin/inject/wiki) which is a launching point to all to functionality inject has to offer. If you're already familiar with CommonJS-style modules, than you can probably start right there.
 
 Writing CommonJS Compliant Modules
