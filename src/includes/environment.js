@@ -1,18 +1,17 @@
+(function() {
 /*
 lscache configuration
 requires: localstorage, lscache
 Test the schema version inside of lscache, and if it has changed, flush the cache
 */
-if (hasLocalStorage && lscache) {
-  lscache.setBucket(fileStorageToken);
-  lscacheSchemaVersion = lscache.get(schemaVersionString);
+var schemaVersion;
+if (HAS_LOCAL_STORAGE && lscache) {
+  lscache.setBucket(FILE_STORAGE_TOKEN);
+  schemaVersion = lscache.get(LSCACHE_SCHEMA_VERSION_STRING);
 
-  if (lscacheSchemaVersion && lscacheSchemaVersion > 0 && lscacheSchemaVersion < schemaVersion) {
+  if (schemaVersion && schemaVersion > 0 && schemaVersion < LSCACHE_SCHEMA_VERSION) {
     lscache.flush();
-    lscacheSchemaVersion = 0;
-    if (!lscacheSchemaVersion) {
-      lscache.set(schemaVersionString, schemaVersion);
-    }
+    lscache.set(LSCACHE_SCHEMA_VERSION_STRING, LSCACHE_SCHEMA_VERSION);
   }
 }
 
@@ -27,3 +26,5 @@ if (LOCAL_EASY_XDM && context.easyXDM) {
 else {
   easyXDM = false;
 }
+
+})();
