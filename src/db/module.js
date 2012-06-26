@@ -45,14 +45,14 @@ var ModuleDB = GenericDB.extend(function(GenericDB) {
           "after": []
         }
       });
-      superclass.create(id, record);
+      return superclass.create(id, record);
     }
   };
 });
 
 var ModuleDBRecord = GenericDBRecord.extend(function(GenericDBRecord) {
   var superclass = GenericDBRecord.createSuper(this);
-  var lscache = lscache;
+  var cache = lscache;
 
   return {
     init: function() {
@@ -84,7 +84,7 @@ var ModuleDBRecord = GenericDBRecord.extend(function(GenericDBRecord) {
 
       // check localstorage
       if (HAS_LOCAL_STORAGE && this.get("path")) {
-        file = lscache.get(this.get("path"));
+        file = cache.get(this.get("path"));
         if (file && typeof(file) === "string" && file.length > 0) {
           this.set("file", file);
           return file;
@@ -93,15 +93,15 @@ var ModuleDBRecord = GenericDBRecord.extend(function(GenericDBRecord) {
 
       return false;
     },
-    set_file: function(name, value, row) {
+    set_file: function(value, row) {
       var path = this.get("path");
-      row[name] = value;
+      row.file = value;
 
       // pass through localstorage
-      if (HAS_LOCAL_STORAGE) {
-        lscache.set(path, value, USER_CONFIG.fileExpires);
+      if (HAS_LOCAL_STORAGE && path) {
+        cache.set(path, value, USER_CONFIG.fileExpires);
       }
-      return value;
+      return row.file;
     }
   };
 });

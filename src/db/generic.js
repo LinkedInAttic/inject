@@ -57,7 +57,7 @@ var GenericDBRecord = Class.extend(function() {
     set: function(name, value) {
       var fn = "set_"+name;
       if (this[fn] && typeof(this[fn] === "function")) {
-        return this[fn](name, value, row);
+        return this[fn](value, row);
       }
       row[name] = value;
       return value;

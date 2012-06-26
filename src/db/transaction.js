@@ -24,14 +24,12 @@ var TransactionDB = GenericDB.extend(function(GenericDB) {
     init: function(name) {
       return superclass.init(name);
     },
-    create: function() {
+    create: function(id) {
       var record = new TransactionDBRecord();
-      var id = uniqueCounter++;
       record.define({
-        "id": id,
         "count": 0
       });
-      superclass.create(id, record);
+      return superclass.create(id, record);
     }
   };
 });
@@ -48,6 +46,9 @@ var TransactionDBRecord = GenericDBRecord.extend(function(GenericDBRecord) {
     },
     subtract: function() {
       return this.set("count", this.get("count")-1);
+    },
+    isZero: function() {
+      return (this.get("count") === 0)
     }
   };
 });

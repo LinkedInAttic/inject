@@ -23,12 +23,12 @@ var QueueDB = GenericDB.extend(function(GenericDB) {
     init: function(name) {
       return superclass.init(this, name);
     },
-    create: function(id, record) {
+    create: function(id) {
       var record = new QueueDBRecord();
       record.define({
         "queue": []
       });
-      superclass.create(id, record);
+      return superclass.create(id, record);
     }
   };
 });
@@ -41,7 +41,7 @@ var QueueDBRecord = GenericDBRecord.extend(function(GenericDBRecord) {
       return superclass.init();
     },
     add: function(item) {
-      this.get("queue").unshift(item);
+      this.get("queue").push(item);
     },
     remove: function() {
       return this.get("queue").shift();
