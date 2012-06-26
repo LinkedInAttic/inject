@@ -49,6 +49,7 @@ function createServer(path) {
 serveFromArtifacts = createServer(path.normalize("" + __dirname + "/../artifacts/dev"));
 serveFromExamples = createServer(path.normalize("" + __dirname + "/../examples"));
 serveFromTests = createServer(path.normalize("" + __dirname + "/../tests"));
+serveFromSrc = createServer(path.normalize("" + __dirname + "/../src"));
 
 // live server function, used on multiple ports
 function server(request, response) {
@@ -63,6 +64,10 @@ function server(request, response) {
   else if (request.url.indexOf("/tests") === 0) {
     serve = serveFromTests;
     request.url = request.url.replace(/^\/tests/, "");
+  }
+  else if (request.url.indexOf("/src") === 0) {
+    serve = serveFromSrc;
+    request.url = request.url.replace(/^\/src/, "");
   }
   else {
     serve = serveFromArtifacts;
