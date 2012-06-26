@@ -23,7 +23,7 @@ var QueueDB = GenericDB.extend(function(GenericDB) {
     init: function(name) {
       return superclass.init(this, name);
     },
-    create: function() {
+    create: function(id, record) {
       var record = new QueueDBRecord();
       record.define({
         "queue": []

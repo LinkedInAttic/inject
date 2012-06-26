@@ -45,7 +45,7 @@ var ModuleDB = GenericDB.extend(function(GenericDB) {
           "after": []
         }
       });
-      superclass.create(this, id, record);
+      superclass.create(id, record);
     }
   };
 });
