@@ -18,7 +18,7 @@ governing permissions and limitations under the License.
 // TreeNode JS
 var TreeNode = Class.extend(function() {
   return {
-    init: function() {
+    init: function(value) {
       this.value = value;
       this.children = [];
       this.parent = null;
