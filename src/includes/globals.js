@@ -25,7 +25,10 @@ var onErrorOffset = 0;
 var funcCount = 0;
 
 // user configuration options (see reset)
-var userConfig = {};
+var userConfig = {
+  moduleRoot: null,
+  useSuffix: true
+};
 
 // context is our local scope. Should be "window"
 var context = this;

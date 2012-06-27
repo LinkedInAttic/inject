@@ -41,8 +41,11 @@ test("Queue operations", function() {
   var db = context.DataBase.create("QueueDB", "queue");
   var queue = db.create("queueName");
 
+  equal(queue.isDirty(), false, "queue is not dirty");
+
   queue.add("a");
   queue.add("b");
+  equal(queue.isDirty(), true, "queue is dirty / modified");
   equal(queue.get("queue")[0], "a", "queue elements valid");
   equal(queue.get("queue")[1], "b", "new elements at end");
 
@@ -54,6 +57,7 @@ test("Queue operations", function() {
   queue.add("d");
   queue.add("a");
   queue.sort();
+  equal(queue.isDirty(), false, "sorting removes dirty flag");
   equal(queue.get("queue")[0], "a", "queue sorted successfully");
   equal(queue.size(), 4, "queue is proper size");
   equal(queue.peek(), "a", "first element peeks to index 0");

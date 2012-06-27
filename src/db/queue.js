@@ -35,6 +35,7 @@ var QueueDB = GenericDB.extend(function(GenericDB) {
 
 var QueueDBRecord = GenericDBRecord.extend(function(GenericDBRecord) {
   var superclass = GenericDBRecord.createSuper(this);
+  var isDirty = false;
 
   return {
     init: function() {
@@ -42,21 +43,35 @@ var QueueDBRecord = GenericDBRecord.extend(function(GenericDBRecord) {
     },
     add: function(item) {
       this.get("queue").push(item);
+      isDirty = true;
     },
     remove: function() {
       return this.get("queue").shift();
     },
     sort: function(fn) {
       this.get("queue").sort(fn);
+      isDirty = false;
     },
     size: function() {
       return this.get("queue").length;
     },
     empty: function() {
       this.set("queue", []);
+      isDirty = false;
     },
     peek: function() {
       return this.get("queue")[0];
+    },
+    isDirty: function() {
+      return isDirty;
+    },
+    each: function(fn) {
+      var queue = this.get("queue");
+      var result = [];
+      for (var i = 0, len = queue.length; i < len; i++) {
+        result.push(fn(queue[i]));
+      }
+      return result;
     }
   };
 });

@@ -36,6 +36,8 @@ var NAMESPACE = "Inject";
 // Regex for identifying things that end in *.js or *.txt
 var FILE_SUFFIX_REGEX = /.*?\.(js|txt)(\?.*)?$/;
 
+var BASIC_FILE_SUFFIX = ".js";
+
 // prefixes for URLs that begin with http/https
 var HOST_PREFIX_REGEX = /^https?:\/\//;
 
