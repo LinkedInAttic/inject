@@ -13,7 +13,7 @@ module("Manifest Tests", {
 });
 
 asyncTest("Require Module With Different Name", 1, function() {
-  require.manifest({
+  Inject.manifest({
     "myMath" : "math"
   });
   

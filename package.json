@@ -20,7 +20,7 @@
   "repositories": [
     {
       "type": "git", 
-      "url": "https://Jakobo@github.com/Jakobo/inject.git"
+      "url": "git@github.com:linkedin/inject.git"
     }
   ],
   "implements": [

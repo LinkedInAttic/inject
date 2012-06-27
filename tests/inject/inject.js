@@ -13,9 +13,9 @@ module("Inject Tests", {
 });
 
 asyncTest("Make sure query string params are handled properly in pointcut paths", 1, function() {
-  require.setModuleRoot("/examples/deps");
+  Inject.setModuleRoot("/examples/deps");
 
-  require.manifest({
+  Inject.manifest({
     "jQuery": {
       path: "./jquery-1.6.4.min.js?foo=1&bar=2",
       after: function(module) {
@@ -31,14 +31,8 @@ asyncTest("Make sure query string params are handled properly in pointcut paths"
   });
 });
 
-asyncTest("#105 exceptions surfaced correctly in console", 1, function() {
-  var oldError = window.onerror;
-  window.onerror = function(err, where, line) {
-    ok(/Parse error/.test(err), "raised syntax error exception");
-    window.onerror = oldError;
-    start();
-    return true;
-  };
-  require.setModuleRoot("/tests/inject/includes/bugs");
-  require.run("bug_105");
+asyncTest("Enable Source Map (firebug version)", 1, function() {
+  Inject.enableDebug("sourceMap");
+  Inject.setModuleRoot("/tests/inject/includes/spec");
+  require.run("sourcemap");
 });

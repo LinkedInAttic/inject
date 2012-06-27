@@ -27,7 +27,7 @@ option '', '--project-version [VERSION]', 'Used in default config to add version
 option '', '--temporary-directory [DIR]', 'Where to save temporary files. Gets deleted after build. Defaults to: "./tmp/".'
 option '', '--output-directory [DIR]', 'Where to save compressed/compiled files. Defaults to: "./artifacts/".'
 option '', '--with-ie',      'Add IE 6/7 support. Adds a localStorage and JSON shim (by default, named: ie-localstorage-json-shim.js). Both are required for lscache. Defaults to true.'
-option '', '--without-xd',   'Remove Porthole. Porthole is only used when requiring files cross-domain. Defaults to false.'
+option '', '--without-xd',   'Remove easyXDM. easyXDM is only used when requiring files cross-domain. Defaults to false.'
 option '', '--without-json', 'Force JSON support to be dropped. Defaults to false.'
 option '', '--compilation-level [LEVEL]', 'Level to compile output js to. If WHITESPACE_ONLY is selected then pretty formatting is used. Defaults to SIMPLE_OPTIMIZATIONS.'
 
@@ -60,7 +60,7 @@ task "build", "Builds inject library", (options)->
       }
       'crossDomain':{
         enabled:supportXD
-        files:['relay.html','porthole.js']
+        files:['relay.html', 'relay.swf', 'easyxdm.js']
       }
       'inject':{
         files:['lscache.js','inject.coffee']
@@ -96,13 +96,16 @@ task "build", "Builds inject library", (options)->
       throw err if err
       cb toDir + name + '.js'
 
-  copy = (from = '', toDir = '', cb = ->) ->
-    console.log "Copy #{from} => #{toDir}"
-    if from and toDir
-      exec "cp #{from} #{toDir}", (err) ->
-        throw err if err
+  copy = (from = '', dest = '', cb = ->) ->
+    console.log "Copy #{from} => #{dest}"
+    if from and dest
+      newFile = fs.createWriteStream(dest);
+      oldFile = fs.createReadStream(from);
+      newFile.once 'open', (fd) ->
+        require('util').pump(oldFile, newFile);
         cb null
-    else cb from
+    else
+      cb from
 
   processConfig = (newStyle = false, cb = ->) ->
     loopCount = 0
@@ -147,7 +150,9 @@ task "build", "Builds inject library", (options)->
 
           # if it's anything but js, just copy it and remove the reference to this file
           else if !/\.js$/.test(file)
-            copy file, config.out, updateFileReference.bind null, mod, i
+            from = file
+            dest = path.normalize config.out + mod.files[i]
+            copy from, dest, updateFileReference.bind null, mod, i
 
           # else, update the reference anyways
           else

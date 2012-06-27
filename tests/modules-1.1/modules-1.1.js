@@ -30,11 +30,11 @@ module("CommonJS: Modules 1.1", {
 });
 
 asyncTest("Compliance", 13, function() {
-  require.setModuleRoot("/tests/modules-1.1/includes/spec");
+  Inject.setModuleRoot("/tests/modules-1.1/includes/spec");
   require.run("compliance");
 });
 
 asyncTest("Sample Code", 5, function() {
-  require.setModuleRoot("/tests/modules-1.1/includes/spec");
+  Inject.setModuleRoot("/tests/modules-1.1/includes/spec");
   require.run("program");
 });

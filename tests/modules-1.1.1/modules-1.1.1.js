@@ -30,17 +30,17 @@ module("CommonJS: Modules 1.1.1", {
 });
 
 asyncTest("Compliance", 13, function() {
-  require.setModuleRoot("/tests/modules-1.1.1/includes/spec");
+  Inject.setModuleRoot("/tests/modules-1.1.1/includes/spec");
   require.run("compliance");
 });
 
 asyncTest("Compliance - Module Identifiers", 8, function() {
-  require.setModuleRoot("/tests/modules-1.1.1/includes/spec/identifiers");
+  Inject.setModuleRoot("/tests/modules-1.1.1/includes/spec/identifiers");
   require.run("terms");
 });
 
 asyncTest("Sample Code", 5, function() {
-  require.setModuleRoot("/tests/modules-1.1.1/includes/spec");
+  Inject.setModuleRoot("/tests/modules-1.1.1/includes/spec");
   require.run("program");
 });
 
@@ -49,7 +49,7 @@ asyncTest("#56 require.ensure should handle overlapping dependencies as pending"
   foo depends on bar
   bar has a delay of 3 seconds built in
   */
-  require.setModuleRoot("/tests/modules-1.1.1/includes/bugs");
+  Inject.setModuleRoot("/tests/modules-1.1.1/includes/bugs");
   // this test has 2 asynchronous threads
   var calls = 2;
   require.ensure(["bug_56", "bug_56_a"], function(require) {
