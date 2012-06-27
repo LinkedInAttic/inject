@@ -60,7 +60,7 @@ var RulesEngine;
         var pointcut;
         console.log(pointcuts);
 
-        if (!asString) {
+        if (typeof(asString) === "undefined") {
           return {
             before: pointcuts.before,
             after: pointcuts.after

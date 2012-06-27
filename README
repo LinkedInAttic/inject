@@ -99,13 +99,7 @@ DONE
 ### Collapse all the addRule applyRules logic                                ###
 ################################################################################
 
-RulesEngine (static)
-  __internal__
-  __external__
-    getPointcuts(moduleId, asString = true)
-    addRule(regexMatch, weight = 0, {rulesetObject} or pathReplace)
-    manifest({object})
-    applyRules(moduleId)
+DONE
 
 ################################################################################
 ### DOWNLOAD MANAGER                                                         ###
@@ -272,3 +266,11 @@ Analyzer (static)
 TreeNode
   note: this is pretty much as-is. DownloadManager owns the instantiation of
   the tree, so this is a local point for inclusion
+
+RulesEngine (static)
+  __internal__
+  __external__
+    getPointcuts(moduleId, asString = true)
+    addRule(regexMatch, weight = 0, {rulesetObject} or pathReplace)
+    manifest({object})
+    resolve(moduleId)

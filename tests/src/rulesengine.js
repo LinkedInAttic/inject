@@ -108,6 +108,6 @@ test("pointcuts", function() {
     }
   });
 
-  ok(/this_is_before/.test(RulesEngine.getPointcuts("test", true).before), "before pointcut loaded");
-  ok(/this_is_after/.test(RulesEngine.getPointcuts("test", true).after), "after pointcut loaded");
+  ok(/this_is_before/.test(RulesEngine.getPointcuts("test").before), "before pointcut loaded");
+  ok(/this_is_after/.test(RulesEngine.getPointcuts("test").after), "after pointcut loaded");
 });
