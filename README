@@ -44,7 +44,7 @@ __wiring__ = any notes about dependencies
 ### is to expose the public API                                              ###
 ################################################################################
 
-Inject (singleton)
+Inject (static)
   __internal__
   __external__
     require(id or [ids], callback or null)
@@ -75,7 +75,7 @@ Inject (singleton)
       note: instantiate into window.Inject as singleton
 
 ################################################################################
-### DATABASE LAYER                                                           ###
+### DATABASE LAYER - jakob                                                   ###
 ### Provide access to our Module DB (db{} in inject.coffee), all the queues, ###
 ### etc within a much more familliar interface. Reduce the maintenance cost  ###
 ### of method changes                                                        ###
@@ -85,7 +85,108 @@ Inject (singleton)
 ### moduleDB.byId(moduleId).set("key", "value");                             ###
 ################################################################################
 
-DataBase (singleton + factory)
+DONE
+
+################################################################################
+### ANALYZER STATIC LAYER - jakob                                            ###
+### Group our analysis functions together                                    ###
+################################################################################
+
+DONE
+
+################################################################################
+### RULES ENGINE LAYER                                                       ###
+### Collapse all the addRule applyRules logic                                ###
+################################################################################
+
+RulesEngine (static)
+  __internal__
+  __external__
+    getPointcuts(moduleId, asString = true)
+    addRule(regexMatch, weight = 0, {rulesetObject} or pathReplace)
+    manifest({object})
+    applyRules(moduleId)
+
+################################################################################
+### DOWNLOAD MANAGER                                                         ###
+### Takes care of downloading a top level file, followed by all its          ###
+### dependencies, ultimately calling the callback once the entire tree has   ###
+### been retrieved                                                           ###
+################################################################################
+
+DownloadManager
+  __internal__
+    downloadTree(treeNode, callback)
+      note: uses communicator.get() to get the file, then it will call
+            analyzer.extractRequires() to get the requires. It probably needs
+            an internal cache of everything it's seen this Tree run to prevent
+            circular loops
+            Results are stored in the module DB
+  __external__
+    download(moduleId, callback)
+      note: this needs to transform a moduleId to a URL for Communicator,
+      the callback needs the tree of all files it downloaded
+
+################################################################################
+### TREE NODE - jakob                                                        ###
+### This is the tree object we use for mapping dependencies, once an         ###
+### internal class, now a first class citizen                                ###
+################################################################################
+
+DONE
+
+################################################################################
+### COMMUNICATOR                                                             ###
+### This smashes together our two different XHR items behind a standardized  ###
+### interface. Nobody knows the framework is "paused" except this guy        ###
+################################################################################
+
+Communicator (static)
+  __internal__
+    all the createIframe stuff
+  __external__
+    get(url, callback)
+
+################################################################################
+### EXECUTOR                                                                 ###
+### Able to run JavaScript as an eval()-ish, or run a module by its ID which ###
+### requires pulling the file out of the databases                           ###
+################################################################################
+
+Executor (static)
+  __internal__
+    all the eval script / module / error work we've done
+  __external__
+    runJavaScript(code)
+    runModule(moduleId)
+
+
+################################################################################
+################################################################################
+################################################################################
+################################################################################
+################################################################################
+################################################################################
+################################################################################
+################################################################################
+################################################################################
+################################################################################
+
+COMPLETED MODULES
+Tests and all!
+
+################################################################################
+################################################################################
+################################################################################
+################################################################################
+################################################################################
+################################################################################
+################################################################################
+################################################################################
+################################################################################
+################################################################################
+
+DataBase (static + factory)
   __internal__
   __external__
     create(name, type)
@@ -162,70 +263,12 @@ QueueDBRecord
     sort(sortFunction)
     size()
 
-################################################################################
-### ANALYZER STATIC LAYER                                                    ###
-### Group our analysis functions together                                    ###
-################################################################################
-
 Analyzer (static)
   __internal__
   __external__
     extractRequires(file)
     getFunctionArgs(function or string)
-
-################################################################################
-### RULES ENGINE LAYER                                                       ###
-### Collapse all the addRule applyRules logic                                ###
-################################################################################
-
-RulesEngine (static)
-  __internal__
-  __external__
-    getPointcuts(moduleId, asString = true)
-    addRule(regexMatch, weight = 0, {rulesetObject} or pathReplace)
-    manifest({object})
-    applyRules(moduleId)
-
-################################################################################
-### DOWNLOAD MANAGER                                                         ###
-### Takes care of downloading a top level file, followed by all its          ###
-### dependencies, ultimately calling the callback once the entire tree has   ###
-### been retrieved                                                           ###
-################################################################################
-
-DownloadManager (static)
-  __internal__
-    downloadTree(treeNode, callback)
-  __external__
-    download(moduleId, callback)
-      note: this needs to transform a moduleId to a URL for Communicator,
-      the callback needs the tree of all files it downloaded
-
+    
 TreeNode
   note: this is pretty much as-is. DownloadManager owns the instantiation of
   the tree, so this is a local point for inclusion
-
-################################################################################
-### COMMUNICATOR                                                             ###
-### This smashes together our two different XHR items behind a standardized  ###
-### interface. Nobody knows the framework is "paused" except this guy        ###
-################################################################################
-
-Communicator (static)
-  __internal__
-    all the createIframe stuff
-  __external__
-    get(url, callback)
-
-################################################################################
-### EXECUTOR                                                                 ###
-### Able to run JavaScript as an eval()-ish, or run a module by its ID which ###
-### requires pulling the file out of the databases                           ###
-################################################################################
-
-Executor (static)
-  __internal__
-    all the eval script / module / error work we've done
-  __external__
-    runJavaScript(code)
-    runModule(moduleId)

@@ -15,13 +15,9 @@ express or implied.   See the License for the specific language
 governing permissions and limitations under the License.
 */
 
-var DownloadManager;
-(function() {
-  var AsStatic = Class.extend(function() {
-    return {
-      init: function() {},
-      download: function(moduleId, callback) {}
-    };
-  });
-  DownloadManager = new AsStatic();
-})();
+var DownloadManager= Class.extend(function() {
+  return {
+    init: function() {},
+    download: function(moduleId, callback) {}
+  };
+});

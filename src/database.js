@@ -50,4 +50,7 @@ var DataBase;
     };
   });
   DataBase = new AsStatic();
+  DataBase.getInstance = function() {
+    return DataBase;
+  };
 })();
