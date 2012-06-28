@@ -58,7 +58,6 @@ var RulesEngine;
           after: []
         };
         var pointcut;
-        console.log(pointcuts);
 
         if (typeof(asString) === "undefined") {
           return {
@@ -75,8 +74,6 @@ var RulesEngine;
           pointcut = pointcuts.after[i];
           result.after.push(functionToPointcut(pointcut));
         }
-
-        console.log(result);
 
         result.before = result.before.join("\n");
         result.after = result.after.join("\n");

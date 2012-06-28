@@ -15,19 +15,17 @@ express or implied.   See the License for the specific language
 governing permissions and limitations under the License.
 */
 
-// document.head reference
-var docHead = null;
-
-// offset for onerror calls
-var onErrorOffset = 0;
-
-// functions initialized to date
-var funcCount = 0;
-
 // user configuration options (see reset)
 var userConfig = {
   moduleRoot: null,
-  useSuffix: true
+  useSuffix: true,
+  xd: {
+  	relayFile: null,
+  	relaySwf: null
+  },
+  debug: {
+  	sourceMap: false
+  }
 };
 
 // context is our local scope. Should be "window"
@@ -38,3 +36,33 @@ var userModules = {};
 
 // a placeholder for the easyXDM lib if loaded
 var easyXdm = false;
+
+// an XHR reference, loaded once
+var isHostMethod = function(object, property) {
+  var t = typeof object[property];
+  return t == 'function' || (!!(t == 'object' && object[property])) || t == 'unknown';
+};
+
+var getXhr = (function(){
+  if (isHostMethod(window, "XMLHttpRequest")) {
+    return function(){
+        return new XMLHttpRequest();
+    };
+  }
+  else {
+    var item = (function(){
+      var list = ["Microsoft", "Msxml2", "Msxml3"], i = list.length;
+      while (i--) {
+        try {
+          item = list[i] + ".XMLHTTP";
+          var obj = new ActiveXObject(item);
+          return item;
+        } 
+        catch (e) {}
+      }
+    }());
+    return function(){
+      return new ActiveXObject(item);
+    };
+  }
+}());

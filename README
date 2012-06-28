@@ -135,11 +135,7 @@ DONE
 ### interface. Nobody knows the framework is "paused" except this guy        ###
 ################################################################################
 
-Communicator (static)
-  __internal__
-    all the createIframe stuff
-  __external__
-    get(url, callback)
+DONE (simple tests)
 
 ################################################################################
 ### EXECUTOR                                                                 ###
@@ -147,13 +143,7 @@ Communicator (static)
 ### requires pulling the file out of the databases                           ###
 ################################################################################
 
-Executor (static)
-  __internal__
-    all the eval script / module / error work we've done
-  __external__
-    runJavaScript(code)
-    runModule(moduleId)
-
+DONE
 
 ################################################################################
 ################################################################################
@@ -274,3 +264,15 @@ RulesEngine (static)
     addRule(regexMatch, weight = 0, {rulesetObject} or pathReplace)
     manifest({object})
     resolve(moduleId)
+
+Executor (static)
+  __internal__
+    all the eval script / module / error work we've done
+  __external__
+    runModule(moduleId)
+
+Communicator (static)
+  __internal__
+    all the createIframe stuff
+  __external__
+    get(url, callback)

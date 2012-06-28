@@ -18,7 +18,7 @@ governing permissions and limitations under the License.
 var sandbox;
 module("RulesEngine", {
   setup: function() {
-    sandbox = new Sandbox(false);
+    sandbox = new Sandbox(true);
     loadDependencies(sandbox, [
       "/src/includes/constants.js",
       "/src/includes/globals.js",
