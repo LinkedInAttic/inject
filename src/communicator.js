@@ -20,7 +20,6 @@ var Communicator;
   var AsStatic = Class.extend(function() {
     var pauseRequired = false;
     var DB = DataBase.create("communicator", "queue");
-    var cbQueue = DB.create("callbacks");
     var socketQueue = DB.create("pendingSocketRequests");
     var socket;
 
@@ -32,6 +31,7 @@ var Communicator;
     // when a file completes, resolve all callbacks in its queue
     function resolveCompletedFile(url, statusCode, contents) {
       // locate all callbacks associated with the URL
+      var cbQueue = DB.byId(url);
       cbQueue.each(function(cb) {
         if (statusCode !== 200) {
           cb(false);
@@ -39,7 +39,8 @@ var Communicator;
         else {
           cb(contents);
         }
-      })
+      });
+      cbQueue.empty();
     }
 
     // set up our easyXDM socket
@@ -89,6 +90,12 @@ var Communicator;
     return {
       init: function() {},
       get: function(url, callback) {
+        // TODO: per URL
+        var cbQueue = DB.byId(url)
+        if (!cbQueue) {
+          cbQueue = DB.create(url);
+        }
+
         cbQueue.add(callback);
 
         if (userConfig.xd.relayFile && !socket && !pauseRequired) {

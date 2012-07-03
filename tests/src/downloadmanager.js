@@ -23,13 +23,11 @@ module("DownloadManager", {
       "/src/includes/constants.js",
       "/src/includes/globals.js",
       "/src/lib/class.js",
-      "/src/database.js",
-      "/src/db/generic.js",
-      "/src/db/queue.js",
-      "/src/db/module.js",
+      "/src/treenode.js",
       "/src/downloadmanager.js"
     ], function() {
-      // sandbox.context.
+      sandbox.global.TreeDownloader = function() {};
+      sandbox.global.TreeDownloader.prototype.get = function() {};
     });
   },
   teardown: function() {
@@ -39,6 +37,17 @@ module("DownloadManager", {
 
 test("Scaffolding", function() {
   var context = sandbox.global;
-  ok(typeof(context.DownloadManager) === "function", "object exists");
+  ok(typeof(context.DownloadManager) === "object", "object exists");
 });
 
+asyncTest("Calls TreeDownloader", 1, function() {
+  var localCB = function() {
+    ok(true, "local callback invoked via TreeDownloader");
+    start();
+  };
+  
+  sinon.stub(sandbox.global.TreeDownloader.prototype, "get")
+    .callsArgWith(0, localCB);
+
+  sandbox.global.DownloadManager.download(["a", "b"], localCB);
+});

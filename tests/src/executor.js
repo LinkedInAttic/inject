@@ -26,7 +26,9 @@ module("Executor", {
       "/src/includes/commonjs.js",
       "/src/lib/class.js",
       "/src/executor.js"
-    ]);
+    ], function() {
+      sinon.spy(sandbox.global, "eval");
+    });
   },
   teardown: function() {
     sandbox = null;
@@ -40,6 +42,7 @@ test("Scaffolding", function() {
 
 test("JS Execution", function() {
   var context = sandbox.global;
+  context.userConfig.debug.sourceMap = true;
   var Executor = context.Executor;
 
   // inject facade
@@ -60,8 +63,10 @@ test("JS Execution", function() {
   };
 
   var testScript = "exports.foo = \"bar\";";
-
   var module = Executor.runModule("testId", testScript, "http://example.com/testid.js", {});
+  var moduleB = Executor.runModule("testId", testScript, "http://example.com/testid.js", {});
 
   equal(module.exports.foo, "bar", "module sandboxed and set exports");
+  equal(module, moduleB, "same execution yields same module result");
+  ok(context.eval.calledOnce, "eval only called once despite loading multiple modules - memoize");
 });

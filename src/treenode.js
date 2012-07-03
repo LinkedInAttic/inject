@@ -18,15 +18,50 @@ governing permissions and limitations under the License.
 // TreeNode JS
 var TreeNode = Class.extend(function() {
   return {
-    init: function(value) {
-      this.value = value;
+    init: function(id) {
+      this.id = null;
+      this.path = null;
+      this.pointcuts = null;
+      this.file = null;
+
       this.children = [];
       this.parent = null;
       this.left = null;
       this.right = null;
+
+      if (id) {
+        this.setId(id);
+      }
     },
-    getValue: function() {
-      return this.value;
+    setId: function(value) {
+      return this.id = value;
+    },
+    getId: function() {
+      return this.id;
+    },
+    getPath: function() {
+      if (this.path) {
+        return this.path;
+      }
+      var parentPath = (this.getParent()) ? this.getParent().getPath() : userConfig.moduleRoot;
+      var results = RulesEngine.resolve(value, parentPath);
+      this.path = results.path;
+      return this.path;
+    },
+    getPointcuts: function() {
+      if (this.pointcuts) {
+        return this.pointcuts;
+      }
+      var parentPath = (this.getParent()) ? this.getParent().getPath() : userConfig.moduleRoot;
+      var results = RulesEngine.resolve(value, parentPath);
+      this.pointcuts = results.pointcuts;
+      return this.pointcuts;
+    },
+    setFile: function(value) {
+      return this.file = value;
+    },
+    getFile: function() {
+      return this.file;
     },
     addChild: function(node) {
       var rightChild;
@@ -59,12 +94,13 @@ var TreeNode = Class.extend(function() {
     getParent: function() {
       return this.parent;
     },
-    postOrder: function() {
+    postOrder: function(callback) {
       // post order traversal to an array
       // left, right, parent
       var currentNode = this,
           direction = null,
-          output = [];
+          output = [],
+          i = 0;
 
       while (currentNode) {
         
@@ -86,6 +122,12 @@ var TreeNode = Class.extend(function() {
           direction = "up";
           currentNode = currentNode.getParent();
           continue;
+        }
+
+        if (callback) {
+          for (i = 0, len = output.length; i < len; i++) {
+            callback(output[i]);
+          }
         }
 
         return output;

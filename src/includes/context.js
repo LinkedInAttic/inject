@@ -17,7 +17,28 @@ governing permissions and limitations under the License.
 
 // assign things to the global context
 // export the interface publicly
-context.Inject = Inject;
+context.Inject = {
+  INTERNAL: {
+    defineAs: function() {},
+    undefineAs: function() {},
+    createModule: function() {},
+    setModuleExports: function() {},
+    require: Inject.require,
+    define: Inject.define,
+    execute: {}
+  },
+  easyXDM: easyXDM,
+  reset: function() {},
+  enableDebug: function() {},
+  toUrl: function() {},
+  setModuleRoot: function() {},
+  setExpires: function() {},
+  setCrossDomain: function() {},
+  clearCache: function() {},
+  manifest: function() {},
+  addRule: function() {},
+  version: INJECT_VERSION
+};
 
 // commonJS
 context.require = Inject.require;

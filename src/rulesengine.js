@@ -17,30 +17,14 @@ governing permissions and limitations under the License.
 
 var RulesEngine;
 (function() {
-  // a collection of resolved module IDs
-  var resolutionCache = {};
-  var pointcutsCache = {};
-
-  // a rules queue as a database object
-  var rules = DataBase.create("rulesQueues", "queue").create("rules");
-
-  function resetResolutionCache() {
-    resolutionCache = {};
-    pointcutsCache = {};
-  }
-
-  function getFromCache(moduleId) {
-    return resolutionCache[moduleId];
-  }
-
-  function storeToCache(moduleId, resolved) {
-    return resolutionCache[moduleId] = resolved;
-  }
+  var rules = [];
+  var rulesIsDirty = false;
 
   function sortRulesTable() {
     rules.sort(function(a, b) {
       return a.weight - b.weight;
     });
+    rulesIsDirty = false;
   }
 
   function functionToPointcut(fn) {
@@ -49,10 +33,24 @@ var RulesEngine;
 
   var AsStatic = Class.extend(function() {
     return {
-      init: function() {},
-      getPointcuts: function(moduleId, asString) {
-        this.resolve(moduleId);
-        var pointcuts = getFromCache(moduleId).pointcuts;
+      init: function() {
+        this.cache = {};
+      },
+      resolve: function(identifier, relativeTo) {
+        // apply rules that match
+        var result = this.applyRules(identifier);
+        var url = this.toUrl(result.path, relativeTo);
+
+        return {
+          path: url,
+          pointcuts: result.pointcuts
+        };
+      },
+      getPointcuts: function(url)
+
+
+      getPointcuts: function(path, asString) {
+        var pointcuts = this.cache[path].pointcuts;
         var result = {
           before: [],
           after: []
@@ -108,7 +106,7 @@ var RulesEngine;
           };
         }
 
-        rules.add({
+        rules.push({
           matches: ruleSet.matches || regexMatch,
           weight: ruleSet.weight || weight,
           path: ruleSet.path,
@@ -126,21 +124,21 @@ var RulesEngine;
           this.addRule(key, rule);
         }
       },
-      resolve: function(moduleId) {
-        if (rules.isDirty()) {
+      applyRules: function(identifier) {
+        if (rulesIsDirty) {
           sortRulesTable();
           resetResolutionCache();
         }
 
-        if (getFromCache(moduleId)) {
-          return getFromCache(moduleId).resolved;
+        if (getFromCache(identifier)) {
+          return getFromCache(identifier).resolved;
         }
 
-        var result = moduleId;
+        var result = identifier;
         var payload;
         var beforePointCuts = [];
         var afterPointCuts = [];
-        rules.each(function(rule) {
+        each(rules, function(rule) {
           var match = false;
           // rule matching
           if (typeof(rule.matches) === "string" && rule.matches === result) {
@@ -168,17 +166,14 @@ var RulesEngine;
         });
 
         payload = {
-          result: result,
+          path: path,
           pointcuts: {
             before: beforePointCuts,
             after: afterPointCuts
           }
         };
 
-        // store to cache our result
-        storeToCache(moduleId, payload);
-
-        return result;
+        return payload;
 
       },
       toUrl: function(moduleId, relativeTo) {
@@ -198,6 +193,15 @@ var RulesEngine;
 
         if (!relativeTo) {
           relativeTo = userConfig.moduleRoot;
+        }
+
+        // shortcut. If it starts with /, affix to module root
+        if (moduleId.indexOf("/") === 0) {
+          resolvedUrl = userConfig.moduleRoot + moduleId.substr(1);
+          if (userConfig.useSuffix && !FILE_SUFFIX_REGEX.test(resolvedUrl)) {
+            resolvedUrl = resolvedUrl + BASIC_FILE_SUFFIX;
+          }
+          return resolvedUrl;
         }
 
         blownApartURL = [].concat(relativeTo.split("/"), resolvedId.split("/"));

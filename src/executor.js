@@ -17,11 +17,11 @@ governing permissions and limitations under the License.
 
 var Executor;
 (function() {
-  // try to capture document.head
   var docHead = false;
-
-  // offset for onerror calls
   var onErrorOffset = 0;
+  var testScript = 'function Inject_Test_Known_Error() {\n  function nil() {}\n  nil("Known Syntax Error Line 3";\n}';
+  var testScriptNode = createEvalScript(testScript);
+  var oldError = context.onerror;
 
   try {
     docHead = document.getElementsByTagName("head")[0];
@@ -55,15 +55,11 @@ var Executor;
   }
 
   // build a test script and ensure it works
-  var testScript = 'function Inject_Test_Known_Error() {\n  function nil() {}\n  nil("Known Syntax Error Line 3";\n}';
-  var testScriptNode = createEvalScript(testScript);
-  var oldError = context.onerror;
   context.onerror = function(err, where, line) {
     onErrorOffset = 3 - line;
     cleanupEvalScriptNode(testScriptNode);
     return true;
   };
-
   if (docHead) {
     docHead.appendChild(testScriptNode);
   }
@@ -129,7 +125,7 @@ var Executor;
     if (!errorObject) {
       // no parse errors
       if (!docHead || userConfig.debug.sourceMap) {
-        var sourceString = IS_IE ? "" : "//@ sourceURL=" + url;
+        var sourceString = IS_IE ? "" : "//@ sourceURL=" + options.url;
         var toExec = ["(", Inject.INTERNAL.execute[options.functionId].toString(), ")()"].join("");
         toExec = [toExec, sourceString].join("\n");
         result = eval(toExec);
@@ -159,7 +155,14 @@ var Executor;
   var AsStatic = Class.extend(function() {
     var functionCount = 0;
     return {
-      init: function() {},
+      init: function() {
+        this.cache = {};
+      },
+      executeTree: function(root, files) {
+        tree.postOrder(proxy(function(node) {
+
+        }, this);
+      },
       runModule: function(moduleId, code, path, pointcuts) {
         var functionId = "exec" + (functionCount++);
         var header = commonJSHeader.replace(/__MODULE_ID__/g, moduleId)

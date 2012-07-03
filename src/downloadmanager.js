@@ -17,21 +17,11 @@ governing permissions and limitations under the License.
 
 var DownloadManager;
 (function() {
-
-  // we internalize the DM class so they can all share a static cache
   var DM = Class.extend(function() {
-    function downloadTree(node, callback) {
-      // get the path of the current node (or root)
-
-      // if node has no children, callback - bottom of tree
-
-
-    }
-
     return {
       init: function() {},
       download: function(moduleIds, callback) {
-        if (String.toString.call( moduleIds ) !== "[object Array]") {
+        if (!typeof(moduleIds) === "string") {
           moduleIds = [moduleIds];
         }
 
@@ -39,16 +29,19 @@ var DownloadManager;
         var node;
 
         for (var i = 0, len = moduleIds.length; i < len; i++) {
-          node = new TreeNode(moduleIds[i]);
+          node = new TreeNode({
+            name: moduleIds[i]
+          });
           root.addChild(node);
         }
 
         // download the tree, then pass the root back
-        downloadTree(root, function() {
+        var downloader = new TreeDownloader(root);
+        downloader.get(function() {
           callback(root);
         });
       }
     };
   });
-  DownloadManager = DM;
+  DownloadManager = new DM();
 })();

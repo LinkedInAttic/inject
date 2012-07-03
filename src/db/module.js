@@ -78,7 +78,7 @@ var ModuleDBRecord = GenericDBRecord.extend(function(GenericDBRecord) {
       }
 
       // check if we have always fetch on
-      if (USER_CONFIG.fileExpires === 0) {
+      if (userConfig.fileExpires === 0) {
         return false;
       }
 
@@ -99,7 +99,7 @@ var ModuleDBRecord = GenericDBRecord.extend(function(GenericDBRecord) {
 
       // pass through localstorage
       if (HAS_LOCAL_STORAGE && path) {
-        cache.set(path, value, USER_CONFIG.fileExpires);
+        cache.set(path, value, userConfig.fileExpires);
       }
       return row.file;
     }
