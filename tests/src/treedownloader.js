@@ -110,15 +110,19 @@ asyncTest("DownloadTree", 2, function() {
 
   var td = new TreeDownloader(root);
   td.get(function(tree, files) {
-
     // test circular
     var out = [];
     tree.postOrder(function(item) {
-      if (item.isCircular) {
-        out.push("("+item.name+")");
+      if (!item.getValue()) {
+        out.push(null);
+        return;
+      }
+      
+      if (item.isCircular()) {
+        out.push("("+item.getValue().name+")");
       }
       else {
-        out.push(item.name);
+        out.push(item.getValue().name);
       }
     });
     deepEqual(out, expected, "circular dependencies located");

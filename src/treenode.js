@@ -24,16 +24,16 @@ var TreeNode = Class.extend(function() {
       this.left = null;
       this.right = null;
       this.parent = null;
-      this.isCircular = false;
+      this.isCircularNode = false;
     },
     getValue: function() {
       return this.value;
     },
     flagCircular: function() {
-      this.isCircular = true;
+      this.isCircularNode = true;
     },
     isCircular: function() {
-      return this.isCircular;
+      return this.isCircularNode;
     },
     addChild: function(node) {
       var rightChild;
