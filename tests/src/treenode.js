@@ -18,7 +18,7 @@ governing permissions and limitations under the License.
 var sandbox;
 module("TreeNode", {
   setup: function() {
-    sandbox = new Sandbox(true);
+    sandbox = new Sandbox(false);
     loadDependencies(sandbox, [
       "/src/lib/class.js",
       "/src/treenode.js"
@@ -98,6 +98,11 @@ test("Scaffolding", function() {
 });
 
 test("Tree Walk", function() {
-  var results = buildSampleTree();
-  deepEqual(results.tree.postOrder(), results.postOrder, "postOrder traversal");
+  var setupData = buildSampleTree();
+  var output = [];
+
+  setupData.tree.postOrder(function(node) {
+    output.push(node.getValue());
+  });
+  deepEqual(output, setupData.postOrder, "postOrder traversal");
 });

@@ -19,7 +19,11 @@ governing permissions and limitations under the License.
 var TreeNode = Class.extend(function() {
   return {
     init: function(value) {
-      this.value = null;
+      this.value = value;
+      this.children = [];
+      this.left = null;
+      this.right = null;
+      this.parent = null;
       this.isCircular = false;
     },
     getValue: function() {
@@ -69,7 +73,7 @@ var TreeNode = Class.extend(function() {
           direction = null,
           output = [],
           i = 0;
-
+      
       while (currentNode) {
         
         if (currentNode.getChildren().length > 0 && direction !== "up") {
@@ -78,7 +82,12 @@ var TreeNode = Class.extend(function() {
           continue;
         }
 
+        // node correct
         output.push(currentNode.getValue());
+        if (callback) {
+          callback(currentNode);
+        }
+        // end node correct
 
         if (currentNode.getRight()) {
           direction = "right";
@@ -90,12 +99,6 @@ var TreeNode = Class.extend(function() {
           direction = "up";
           currentNode = currentNode.getParent();
           continue;
-        }
-
-        if (callback) {
-          for (i = 0, len = output.length; i < len; i++) {
-            callback(output[i]);
-          }
         }
 
         return output;
