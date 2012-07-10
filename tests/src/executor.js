@@ -54,6 +54,9 @@ test("JS Execution", function() {
           exports: {}
         };
       },
+      createRequire: function() {
+        return function() {}
+      },
       require: function() {},
       defineAs: function() {},
       undefineAs: function() {},
@@ -67,6 +70,6 @@ test("JS Execution", function() {
   var moduleB = Executor.runModule("testId", testScript, "http://example.com/testid.js", {});
 
   equal(module.exports.foo, "bar", "module sandboxed and set exports");
+  ok(context.eval.calledOnce, "eval only called once despite loading multiple modules");
   equal(module, moduleB, "same execution yields same module result");
-  ok(context.eval.calledOnce, "eval only called once despite loading multiple modules - memoize");
 });

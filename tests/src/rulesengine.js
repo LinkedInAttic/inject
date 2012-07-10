@@ -18,16 +18,18 @@ governing permissions and limitations under the License.
 var sandbox;
 module("RulesEngine", {
   setup: function() {
-    sandbox = new Sandbox(true);
+    sandbox = new Sandbox(false);
     loadDependencies(sandbox, [
       "/src/includes/constants.js",
       "/src/includes/globals.js",
       "/src/lib/class.js",
-      "/src/database.js",
-      "/src/db/generic.js",
-      "/src/db/queue.js",
       "/src/rulesengine.js"
-    ]);
+    ], function() {
+      sandbox.global.userConfig = {
+        moduleRoot: "http://example.com",
+        useSuffix: true
+      }
+    });
   },
   teardown: function() {
     sandbox = null;
@@ -54,10 +56,10 @@ test("Basic Rules", function() {
     }
   });
 
-  equal(RulesEngine.resolve("stringTestReplace"), "stringTestReplaceResult", "basic rule resolution");
-  equal(RulesEngine.resolve("regexTestReplace"), "regexTestReplaceResult", "regex rule resolution");
-  equal(RulesEngine.resolve("regexObjectReplace"), "regexObjectReplaceResult", "regex rule with path in object");
-  equal(RulesEngine.resolve("regexObjectFnReplace"), "regexObjectFnReplaceResult", "regex rule with path as function");
+  equal(RulesEngine.resolve("stringTestReplace").path, "http://example.com/stringTestReplaceResult.js", "basic rule resolution");
+  equal(RulesEngine.resolve("regexTestReplace").path, "http://example.com/regexTestReplaceResult.js", "regex rule resolution");
+  equal(RulesEngine.resolve("regexObjectReplace").path, "http://example.com/regexObjectReplaceResult.js", "regex rule with path in object");
+  equal(RulesEngine.resolve("regexObjectFnReplace").path, "http://example.com/regexObjectFnReplaceResult.js", "regex rule with path as function");
 });
 
 test("Manifest", function() {
@@ -88,14 +90,26 @@ test("toUrl", function() {
 
   context.userConfig.moduleRoot = root;
 
-  RulesEngine.addRule("absolute/path", "http://absolutepath.com/absolute/path.js");
-
   equal(RulesEngine.toUrl("sample"), root+"/sample.js", "basic URL resolution");
-  equal(RulesEngine.toUrl("absolute/path"), "http://absolutepath.com/absolute/path.js", "absolute path resolution");
+  equal(RulesEngine.toUrl("http://absolutepath.com/absolute/path.js"), "http://absolutepath.com/absolute/path.js", "absolute path resolution");
   equal(RulesEngine.toUrl("../a/b", root+"/one/two"), root+"/one/a/b.js", "relative path resolution");
 });
 
-test("pointcuts", function() {
+test("rules to toUrl", function() {
+  var context = sandbox.global;
+  var RulesEngine = context.RulesEngine;
+  var root = "http://resolved.com/src/to/modules";
+  var path;
+
+  context.userConfig.moduleRoot = root;
+
+  RulesEngine.addRule("absolute/path", "http://absolutepath.com/absolute/path.js");
+
+  path = RulesEngine.resolve("absolute/path").path;
+  equal(RulesEngine.toUrl(path), "http://absolutepath.com/absolute/path.js", "absolute path resolution");
+});
+
+test("Resolution of Pointcuts", function() {
   var context = sandbox.global;
   var RulesEngine = context.RulesEngine;
 
@@ -108,6 +122,8 @@ test("pointcuts", function() {
     }
   });
 
-  ok(/this_is_before/.test(RulesEngine.getPointcuts("test").before), "before pointcut loaded");
-  ok(/this_is_after/.test(RulesEngine.getPointcuts("test").after), "after pointcut loaded");
+  var testPath = RulesEngine.resolve("test").path;
+
+  ok(/this_is_before/.test(RulesEngine.getPointcuts(testPath).before), "before pointcut loaded");
+  ok(/this_is_after/.test(RulesEngine.getPointcuts(testPath).after), "after pointcut loaded");
 });

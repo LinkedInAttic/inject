@@ -24,9 +24,6 @@ module("Communicator", {
       "/src/includes/constants.js",
       "/src/includes/globals.js",
       "/src/lib/class.js",
-      "/src/database.js",
-      "/src/db/generic.js",
-      "/src/db/queue.js",
       "/src/communicator.js"
     ]);
   },

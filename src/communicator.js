@@ -19,8 +19,10 @@ var Communicator;
 (function() {
   var AsStatic = Class.extend(function() {
     var pauseRequired = false;
-    var DB = DataBase.create("communicator", "queue");
-    var socketQueue = DB.create("pendingSocketRequests");
+
+    var socketConnectionQueue = [];
+    var downloadCompleteQueue = {};
+
     var socket;
 
     function trimHost(host) {
@@ -31,8 +33,7 @@ var Communicator;
     // when a file completes, resolve all callbacks in its queue
     function resolveCompletedFile(url, statusCode, contents) {
       // locate all callbacks associated with the URL
-      var cbQueue = DB.byId(url);
-      cbQueue.each(function(cb) {
+      each(downloadCompleteQueue[url], function(cb) {
         if (statusCode !== 200) {
           cb(false);
         }
@@ -40,7 +41,7 @@ var Communicator;
           cb(contents);
         }
       });
-      cbQueue.empty();
+      downloadCompleteQueue[url] = [];
     }
 
     // set up our easyXDM socket
@@ -65,16 +66,17 @@ var Communicator;
         },
         onReady: function() {
           pauseRequired = false;
-          socketQueue.each(function(fn) {
-            fn();
+          each(socketConnectionQueue, function(cb) {
+            cb();
           });
+          socketConnectionQueue = [];
         }
       });
     }
 
     // these are our two senders, either via easyXDM or via standard xmlHttpRequest
     function sendViaIframe(url) {
-      socket.postMessage("#{path}");
+      socket.postMessage(url);
     }
     function sendViaXHR(url) {
       var xhr = getXhr();
@@ -90,13 +92,11 @@ var Communicator;
     return {
       init: function() {},
       get: function(url, callback) {
-        // TODO: per URL
-        var cbQueue = DB.byId(url)
-        if (!cbQueue) {
-          cbQueue = DB.create(url);
+        if (!downloadCompleteQueue[url]) {
+          downloadCompleteQueue[url] = [];
         }
 
-        cbQueue.add(callback);
+        downloadCompleteQueue[url].push(callback);
 
         if (userConfig.xd.relayFile && !socket && !pauseRequired) {
           pauseRequired = true;
@@ -108,7 +108,7 @@ var Communicator;
         };
 
         if (pauseRequired) {
-          socketQueue.add(socketQueuedFn);
+          socketConnectionQueue.push(socketQueuedFn);
         }
         else {
           if (userConfig.xd.relayFile) {

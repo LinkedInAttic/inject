@@ -38,10 +38,6 @@ test("Scaffolding", function() {
 });
 
 test("Passthrough and config", function() {
-  sandbox.global.Analyzer = {
-    addRule: sinon.stub(),
-    manifest: sinon.stub()
-  };
   sandbox.global.Executor = {
     runModule: sinon.stub()
   };
@@ -58,23 +54,11 @@ test("Passthrough and config", function() {
   });
   context.Inject.setExpires(987654);
 
-  // tbd
-  // context.Inject.clearCache();
-  // context.Inject.reset();
-  // context.Inject.clearFileRegistry();
-
   // test userConfig
   equal(context.userConfig.moduleRoot, "http://testok.com", "moduleRoot");
   equal(context.userConfig.xd.relayFile, "http://testok-relay.com", "relayFile");
   equal(context.userConfig.xd.relaySwf, "http://testok-swf.com", "relaySwf");
   equal(context.userConfig.fileExpires, 987654, "fileExpires");
-
-  // test passthroughts
-  context.Inject.addRule("foo", "bar");
-  ok(sandbox.global.Analyzer.addRule.called, "Passed addRule through");
-  
-  context.Inject.manifest({});
-  ok(sandbox.global.Analyzer.manifest.called, "Passed manifest through");
 
 
 });

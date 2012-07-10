@@ -17,26 +17,48 @@ governing permissions and limitations under the License.
 
 // assign things to the global context
 // export the interface publicly
+// most of these should pass through to their proper objects
+var globalRequire = new RequireContext();
 context.Inject = {
   INTERNAL: {
     defineAs: function() {},
     undefineAs: function() {},
     createModule: function() {},
     setModuleExports: function() {},
-    require: Inject.require,
-    define: Inject.define,
-    execute: {}
+    execute: {},
+    globalRequire: globalRequire,
+    createRequire: function(path) {
+      return new RequireContext(path);
+    }
   },
   easyXDM: easyXDM,
   reset: function() {},
-  enableDebug: function() {},
-  toUrl: function() {},
-  setModuleRoot: function() {},
-  setExpires: function() {},
-  setCrossDomain: function() {},
+  enableDebug: function() {
+    Inject.enableDebug.apply(this, arguments);
+  },
+  toUrl: function() {
+    RulesEngine.toUrl.apply(this, arguments);
+  },
+  setModuleRoot: function() {
+    Inject.setModuleRoot.apply(this, arguments);
+  },
+  setExpires: function() {
+    Inject.setExpires.apply(this, arguments);
+  },
+  setCrossDomain: function() {
+    Inject.setCrossDomain.apply(this, arguments);
+  },
   clearCache: function() {},
-  manifest: function() {},
-  addRule: function() {},
+  manifest: function() {
+    Analyzer.manifest.apply(Analyzer, arguments);
+  },
+  addRule: function() {
+    Analyzer.addRule.apply(Analyzer, arguments);
+  },
+  require: globalRequire.require,
+  ensure: globalRequire.ensure,
+  run: globalRequire.run,
+  define: globalRequire.define,
   version: INJECT_VERSION
 };
 

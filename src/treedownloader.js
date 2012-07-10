@@ -25,15 +25,6 @@ governing permissions and limitations under the License.
 // Analyzer
 
 var TreeDownloader = Class.extend(function() {
-
-  function createNode(path, isCircular) {
-    return new TreeNode({
-      path: path,
-      isCircular: isCircular,
-      failed: false
-    });
-  }
-
   return {
     init: function(root) {
       this.callsRemaining = 0;
@@ -90,13 +81,13 @@ var TreeDownloader = Class.extend(function() {
         while(parent = parent.getParent()) {
           value = parent.getValue().path;
           if (found[value]) {
-            node.getValue().isCircular = true;
+            node.flagCircular();
           }
           found[value] = true;
         }
 
         // if it is not circular, and we have contents
-        if (!node.getValue().isCircular && contents) {
+        if (!node.isCircular() && contents) {
           var requires = Analyzer.extractRequires(contents);
           var childNode;
           var path;
@@ -104,7 +95,7 @@ var TreeDownloader = Class.extend(function() {
           this.increaseCallsRemaining(requires.length);
           for (var i = 0, len = requires.length; i < len; i++) {
             path = RulesEngine.resolve(requires[i], node.getValue().path);
-            childNode = createNode(path);
+            childNode = TreeDownloader.createNode(requires[i], path);
             node.addChild(childNode);
             this.downloadTree(childNode, bind(function() {
               this.reduceCallsRemaining(callback, node);
@@ -123,3 +114,14 @@ var TreeDownloader = Class.extend(function() {
     }
   };
 });
+TreeDownloader.createNode = function(name, path, isCircular) {
+  var tn = new TreeNode({
+    name: name,
+    path: path,
+    failed: false
+  });
+  if (isCircular) {
+    tn.flagCircular();
+  }
+  return tn;
+}

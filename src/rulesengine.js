@@ -34,23 +34,25 @@ var RulesEngine;
   var AsStatic = Class.extend(function() {
     return {
       init: function() {
-        this.cache = {};
+        this.cache = {
+          byUrl: {}
+        };
       },
+      // resolve: apply rules AND get URL
       resolve: function(identifier, relativeTo) {
         // apply rules that match
         var result = this.applyRules(identifier);
         var url = this.toUrl(result.path, relativeTo);
+
+        this.cache.byUrl[url] = result;
 
         return {
           path: url,
           pointcuts: result.pointcuts
         };
       },
-      getPointcuts: function(url)
-
-
       getPointcuts: function(path, asString) {
-        var pointcuts = this.cache[path].pointcuts;
+        var pointcuts = this.cache.byUrl[path].pointcuts || [];
         var result = {
           before: [],
           after: []
@@ -97,7 +99,7 @@ var RulesEngine;
 
         // if weight was not set, create it
         if (!weight) {
-          weight = rules.size();
+          weight = rules.length;
         }
 
         if (typeof(ruleSet) === "string") {
@@ -127,11 +129,6 @@ var RulesEngine;
       applyRules: function(identifier) {
         if (rulesIsDirty) {
           sortRulesTable();
-          resetResolutionCache();
-        }
-
-        if (getFromCache(identifier)) {
-          return getFromCache(identifier).resolved;
         }
 
         var result = identifier;
@@ -166,24 +163,25 @@ var RulesEngine;
         });
 
         payload = {
-          path: path,
+          path: result,
           pointcuts: {
             before: beforePointCuts,
             after: afterPointCuts
           }
         };
 
+        this.cache[result] = payload;
+
         return payload;
 
       },
-      toUrl: function(moduleId, relativeTo) {
-        var resolvedId = this.resolve(moduleId);
+      toUrl: function(path, relativeTo) {
         var blownApartURL;
         var resolvedUrl = [];
 
         // exit early on resolved http URL
-        if (ABSOLUTE_PATH_REGEX.test(resolvedId)) {
-          return resolvedId;
+        if (ABSOLUTE_PATH_REGEX.test(path)) {
+          return path;
         }
 
         // if no module root, freak out
@@ -196,15 +194,15 @@ var RulesEngine;
         }
 
         // shortcut. If it starts with /, affix to module root
-        if (moduleId.indexOf("/") === 0) {
-          resolvedUrl = userConfig.moduleRoot + moduleId.substr(1);
+        if (path.indexOf("/") === 0) {
+          resolvedUrl = userConfig.moduleRoot + path.substr(1);
           if (userConfig.useSuffix && !FILE_SUFFIX_REGEX.test(resolvedUrl)) {
             resolvedUrl = resolvedUrl + BASIC_FILE_SUFFIX;
           }
           return resolvedUrl;
         }
 
-        blownApartURL = [].concat(relativeTo.split("/"), resolvedId.split("/"));
+        blownApartURL = [].concat(relativeTo.split("/"), path.split("/"));
         for (var i = 0, len = blownApartURL.length; i < len; i++) {
           piece = blownApartURL[i];
 

@@ -23,33 +23,23 @@ var Executor;
   var testScriptNode = createEvalScript(testScript);
   var oldError = context.onerror;
 
-  try {
-    docHead = document.getElementsByTagName("head")[0];
-  }
-  catch(e) {
-    docHead = false;
-  }
+  // capture document head
+  try { docHead = document.getElementsByTagName("head")[0]; }
+  catch(e) { docHead = false; }
 
   function createEvalScript(code) {
     var scr = document.createElement("script");
-    try {
-      scr.text = code;
-    }
-    catch (e) {
-      try {
-        scr.innerHTML = code;
-      }
-      catch (ee) {
-        return false;
-      }
-    }
+    try { scr.text = code; } catch (e) {
+    try { scr.innerHTML = code; } catch (ee) {
+      return false;
+    }}
     return scr;
   }
 
   function cleanupEvalScriptNode(node) {
     window.setTimeout(function() {
       if (docHead) {
-        return docHead.removeChild(node)
+        return docHead.removeChild(node);
       }
     });
   }
@@ -158,12 +148,47 @@ var Executor;
       init: function() {
         this.cache = {};
       },
-      executeTree: function(root, files) {
-        tree.postOrder(proxy(function(node) {
-
-        }, this);
+      runTree: function(root, files, callback) {
+        // do a post-order traverse of files for execution
+        root.postOrder(function(node) {
+          var path = node.getValue().path;
+          var file = fileDB[path];
+          var pointcuts = RulesEngine.getPointcuts(path);
+          Executor.createModule(moduleId, path);
+          if (!node.isCircular()) {
+            returns.push(Executor.runModule(moduleId, file, path, pointcuts));
+          }
+        });
+        // all files are executed
+        callback(returns);
+      },
+      createModule: function(moduleId, path) {
+        var module;
+        if (!this.cache[path]) {
+          module = {};
+          module.id = moduleId || null;
+          module.uri = path || null;
+          module.exports = {};
+          module.error = null;
+          module.setExports = function(xobj) {
+            for (var name in module.exports) {
+              throw new Error("cannot setExports when exports have already been set");
+            }
+            module.exports = xobj;
+          };
+          this.cache[path] = module;
+        }
+        return this.cache[path];
+      },
+      getExports: function(path) {
+        return this.cache[path] || null;
       },
       runModule: function(moduleId, code, path, pointcuts) {
+        // check cache
+        if (this.cache[path]) {
+          return this.cache[path];
+        }
+
         var functionId = "exec" + (functionCount++);
         var header = commonJSHeader.replace(/__MODULE_ID__/g, moduleId)
                                    .replace(/__MODULE_URI__/g, path)
@@ -204,6 +229,9 @@ var Executor;
           Inject.clearCache();
           throw errorObject;
         }
+
+        // cache the result
+        this.cache[path] = result;
 
         // return the result
         return result;
