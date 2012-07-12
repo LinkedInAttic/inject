@@ -61,6 +61,7 @@ socket = null                       # a cross domain RPC object (easyXdm)
 fileStorageToken = "INJECT"         # a storagetoken identifier we use (lscache)
 schemaVersion = 1                   # the version of data storage schema for lscache
 schemaVersionString = "!version"    # the schema version string for validation of lscache schema
+appCacheKeyString = "!appCacheKey"      # the cache version string for validation of developer set lscache code
 namespace = "Inject"                # the namespace for inject() that is publicly reachable
 userModules = {}                    # any mappings for module => handling defined by the user
 fileSuffix = /.*?\.(js|txt)(\?.*)?$/# Regex for identifying things that end in *.js or *.txt
@@ -1261,6 +1262,18 @@ setCrossDomain = (options) ->
   userConfig.xd.hash = options.hash || false
   userConfig.xd.relaySwf = options.relaySwf || null
 
+setCacheKey = (cacheKey) ->
+  if !cacheKey || cacheKey < 0
+    return false;
+  if hasLocalStorage
+    lscacheAppCacheKey = lscache.get(appCacheKeyString)
+    
+    if lscacheAppCacheKey && lscacheAppCacheKey > 0 && lscacheAppCacheKey < cacheKey
+      lscache.flush()
+      lscacheAppCacheKey = 0
+    
+    if !lscacheAppCacheKey then lscache.set(appCacheKeyString, cacheKey)
+
 clearCache = () ->
   ###
   ## clearCache() ##
@@ -1407,7 +1420,7 @@ require.toUrl = (moduleId) ->
   Convert a module ID to URL for AMD compliance
   ###
   applyRules(moduleId, false).path;
-
+  
 define = (moduleId, deps, callback) ->
   # Allow for anonymous functions, adjust args appropriately
   if typeof(moduleId) isnt "string"
@@ -1502,6 +1515,7 @@ context['Inject'] = {
   'clearCache': clearCache
   'manifest': manifest
   'addRule': addRule
+  'setCacheKey': setCacheKey
   'version': INJECT_VERSION
 }
 
