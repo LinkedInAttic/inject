@@ -25,7 +25,15 @@ module("Communicator", {
       "/src/includes/globals.js",
       "/src/lib/class.js",
       "/src/communicator.js"
-    ]);
+    ], function() {
+      // lscache stub
+      sandbox.global.lscache = {
+        setBucket: function() {},
+        flush: function() {},
+        set: sinon.stub(),
+        get: sinon.stub()
+      };
+    });
   },
   teardown: function() {
     sandbox = null;
@@ -45,4 +53,29 @@ asyncTest("Simple Get", 1, function() {
     ok(results, "got results from communicator");
     start();
   });
+});
+
+asyncTest("Get uses lscache", 2, function() {
+  var context = sandbox.global;
+  var Communicator = context.Communicator;
+
+  Communicator.get(location.href, function(results) {
+    ok(sandbox.global.lscache.get.called, "lscache get called");
+    ok(sandbox.global.lscache.set.called, "lscache set called");
+    start();
+  });
+});
+
+asyncTest("in lscache doesn't redownload", 2, function() {
+  var context = sandbox.global;
+  var Communicator = context.Communicator;
+
+  context.lscache.get.withArgs(location.href).returns("content");
+
+  Communicator.get(location.href, function(results) {
+    ok(sandbox.global.lscache.get.called, "lscache get called");
+    ok(!sandbox.global.lscache.set.called, "lscache set not called");
+    start();
+  });
+
 });

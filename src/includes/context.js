@@ -23,12 +23,13 @@ context.Inject = {
   INTERNAL: {
     defineAs: function() {},
     undefineAs: function() {},
-    createModule: function() {},
+    createModule: proxy(Executor.createModule, Executor),
     setModuleExports: function() {},
     execute: {},
     globalRequire: globalRequire,
-    createRequire: function(path) {
-      return new RequireContext(path);
+    createRequire: function(path, baseDir) {
+      var req = new RequireContext(path);
+      return proxy(req.require, req);
     }
   },
   easyXDM: easyXDM,
@@ -63,11 +64,11 @@ context.Inject = {
 };
 
 // commonJS
-context.require = Inject.require;
-context.require.ensure = Inject.ensure;
-context.require.run = Inject.run;
+context.require = proxy(globalRequire.require, globalRequire);
+context.require.ensure = proxy(globalRequire.ensure, globalRequire);
+context.require.run = proxy(globalRequire.run, globalRequire);
 
 // AMD
-context.define = Inject.define;
+context.define = proxy(globalRequire.define, globalRequire);
 context.define.amd = true;
 context.require.toUrl = Analyzer.toUrl;

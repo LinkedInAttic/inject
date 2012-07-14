@@ -25,6 +25,16 @@ var Communicator;
 
     var socket;
 
+    function writeToCache(url, contents) {
+      // lscache and passthrough
+      return lscache.set(url, contents, userConfig.fileExpires);
+    }
+
+    function readFromCache(url) {
+      // lscache and passthrough
+      return lscache.get(url);
+    }
+
     function trimHost(host) {
       host = host.replace(HOST_PREFIX_REGEX, "").replace(HOST_SUFFIX_REGEX, "$1");
       return host;
@@ -32,6 +42,13 @@ var Communicator;
 
     // when a file completes, resolve all callbacks in its queue
     function resolveCompletedFile(url, statusCode, contents) {
+      console.log("Communicator", "downloaded", url, statusCode, contents.length);
+
+      // write cache
+      if (statusCode === 200) {
+        writeToCache(url, contents);
+      }
+
       // locate all callbacks associated with the URL
       each(downloadCompleteQueue[url], function(cb) {
         if (statusCode !== 200) {
@@ -96,6 +113,21 @@ var Communicator;
           downloadCompleteQueue[url] = [];
         }
 
+        console.log("Communicator", "requesting", url);
+
+        var cachedResults = readFromCache(url);
+        if (cachedResults) {
+          console.log("Communicator", "cached", url, cachedResults.length);
+          callback(cachedResults);
+          return;
+        }
+
+        console.log("Communicator", "queued", url);
+        if (downloadCompleteQueue[url].length) {
+          downloadCompleteQueue[url].push(callback);
+          console.log("Communicator", "early exit (in progress)", url);
+          return;
+        }
         downloadCompleteQueue[url].push(callback);
 
         if (userConfig.xd.relayFile && !socket && !pauseRequired) {

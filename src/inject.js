@@ -20,10 +20,6 @@ var Inject;
   var AsStatic = Class.extend(function() {
     return {
       init: function() {},
-      // creates a require suite scoped to a path
-      createRequire: function(path) {
-        return new RequireContext(path);
-      },
       setModuleRoot: function(root) {
         userConfig.moduleRoot = root;
       },
@@ -38,9 +34,11 @@ var Inject;
       reset: function() {
         // remove all files from our communicator
         // remove all results from our executor
+        throw new Error("TODO");
       },
       clearFileRegistry: function() {
         // remove all files from our communicator
+        throw new Error("TODO");
       },
       enableDebug: function(key, value) {
         userConfig.debug[key] = value || true;

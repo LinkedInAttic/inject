@@ -208,8 +208,8 @@ exports.buildChain = Futures.chainify({
       });
     }
     catch(err) {
-      console.log(err);
       console.log(data);
+      console.log(err);
       throw err;
     }
   }

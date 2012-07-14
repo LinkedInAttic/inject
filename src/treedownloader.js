@@ -31,16 +31,21 @@ var TreeDownloader = Class.extend(function() {
       this.root = root;
       this.files = {};
     },
+    log: function() {
+      var args = [].slice.call(arguments);
+      console.log("TreeDownloader", "("+this.root.getValue().name+")", "\n"+args.join(" "));
+    },
     reduceCallsRemaining: function(callback, args) {
       this.callsRemaining--;
-      console.log(this.callsRemaining);
-      if (!this.callsRemaining) {
+      this.log("reduce. outstanding", this.callsRemaining);
+      // TODO: there is a -1 logic item here to fix
+      if (this.callsRemaining <= 0) {
         callback.apply(null, args);
       }
     },
     increaseCallsRemaining: function(by) {
       this.callsRemaining += by || 1;
-      console.log(this.callsRemaining);
+      this.log("increase. outstanding", this.callsRemaining);
     },
     getFiles: function() {
       return this.files;
@@ -63,37 +68,27 @@ var TreeDownloader = Class.extend(function() {
        C: download // count = 2 - 1 = 1 (remove C)
        D: download // count = 1 - 1 = 0 (remove D)
       */
+      this.log("started download");
       this.downloadTree(this.root, bind(function(root) {
         callback(this.root, this.getFiles());
       }, this));
     },
     downloadTree: function(node, callback) {
-      var rootCallsRemaining = 0;
-      if (typeof(node.getValue()) === "undefined" || node.getValue() === null) {
-        // this is the root
-        // increase downloads by children, spawn more overlords
-        rootCallsRemaining += node.getChildren().length;
-        for (var i = 0, len = node.getChildren().length; i < len; i++) {
-          this.downloadTree(node.getChildren()[i], bind(function() {
-            rootCallsRemaining--;
-            if (!rootCallsRemaining) {
-              callback(node);
-            }
-          }, this));
-        }
-        return;
-      }
-
       // Normalize Module Path. Download. Analyze.
       var parentPath = (node.getParent() && node.getParent().getValue())
                         ? node.getParent().getValue().path
                         : userConfig.moduleRoot;
       node.getValue().path = RulesEngine.resolve(node.getValue().name, parentPath).path;
 
-      console.log("downloading ", node.getValue().path);
+      // top level starts at 1
+      if (!node.getParent()) {
+        this.increaseCallsRemaining();
+      }
 
       // download the file
+      this.log("requesting file", node.getValue().path);
       Communicator.get(node.getValue().path, bind(function(contents) {
+        this.log("download complete", node.getValue().path);
         var parent = node;
         var found = {};
         var value;
@@ -110,6 +105,7 @@ var TreeDownloader = Class.extend(function() {
 
           value = parent.getValue().path;
           if (found[value]) {
+            this.log("circular reference found", node.getValue().path);
             node.flagCircular();
           }
           found[value] = true;
@@ -124,10 +120,15 @@ var TreeDownloader = Class.extend(function() {
           var requires = Analyzer.extractRequires(contents);
           var childNode;
           var path;
+
+          this.log("dependencies for", node.getValue().path, requires.join(", "));
+
           // for each requires, create a child and spawn
-          this.increaseCallsRemaining(requires.length);
+          if (requires.length) {
+            this.increaseCallsRemaining(requires.length);
+          }
           for (var i = 0, len = requires.length; i < len; i++) {
-            path = RulesEngine.resolve(requires[i], node.getValue().path);
+            path = RulesEngine.resolve(requires[i], node.getValue().path).path;
             childNode = TreeDownloader.createNode(requires[i], path);
             node.addChild(childNode);
             this.downloadTree(childNode, bind(function() {

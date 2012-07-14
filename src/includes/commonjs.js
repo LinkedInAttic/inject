@@ -21,12 +21,11 @@ var commonJSHeader = ([
 '__INJECT_NS__.INTERNAL.execute.__FUNCTION_ID__ = function() {',
 '  with (window) {',
 '    var __module = __INJECT_NS__.INTERNAL.createModule("__MODULE_ID__", "__MODULE_URI__"),',
-'        __require = __INJECT_NS__.INTERNAL.createRequire("__PATH__"),',
+'        __require = __INJECT_NS__.INTERNAL.createRequire("__MODULE_URI__"),',
 '        __exe = null;',
-'    __INJECT_NS__.INTERNAL.setModuleExports("__MODULE_ID__", __module.exports);',
 '    __exe = function(require, module, exports) {',
 '      __POINTCUT_BEFORE__'
-]).join('');
+]).join('\n');
 var commonJSFooter = ([
 '      __POINTCUT_AFTER__',
 '    };',
@@ -41,4 +40,4 @@ var commonJSFooter = ([
 '    return __module;',
 '  }',
 '};'
-]).join('');
+]).join('\n');

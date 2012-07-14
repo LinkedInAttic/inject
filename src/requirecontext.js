@@ -18,23 +18,28 @@ governing permissions and limitations under the License.
 var RequireContext = Class.extend(function() {
   return {
     init: function(path) {
+      this.path = path || null;
+    },
+    getPath: function() {
       if (!userConfig.moduleRoot) {
         throw new Error("moduleRoot must be defined. Please use Inject.setModuleRoot()");
       }
-      this.path = path || userConfig.moduleRoot;
+      return this.path || userConfig.moduleRoot;
     },
     require: function(moduleIdOrList, callback) {
-      if (typeof(moduleId) === "string") {
-        path = Analyzer.toUrl(moduleId, this.path);
+      var path;
+      var module;
+      if (typeof(moduleIdOrList) === "string") {
+        path = RulesEngine.resolve(moduleIdOrList, this.getPath()).path;
         module = Executor.getModule(path);
         if (!module) {
-          throw new Error("module "+moduleId+" not found at "+path);
+          throw new Error("module "+moduleIdOrList+" not found at "+path);
         }
         return module.exports;
       }
 
       // AMD require
-      var strippedModules = Analyzer.stripBuiltins(moduleId);
+      var strippedModules = Analyzer.stripBuiltins(moduleIdOrList);
       this.ensure(strippedModules, proxy(function(localRequire) {
         var args = [];
         for (mId in strippedModules) {
@@ -57,7 +62,7 @@ var RequireContext = Class.extend(function() {
     },
     ensure: function(moduleList, callback) {
       // create our root node
-      var root = new TreeNode(this.path || userConfig.moduleRoot);
+      var root = TreeDownloader.createNode(null, this.getPath() || userConfig.moduleRoot);
       var tn;
       var td;
       var callsRemaining = moduleList.length;
@@ -66,7 +71,7 @@ var RequireContext = Class.extend(function() {
       // when all executions have ran, fire the callback with the local require
       // scope
       for (var i = 0, len = moduleList.length; i < len; i++) {
-        tn = new TreeNode(moduleList[i]);
+        tn = TreeDownloader.createNode(moduleList[i]);
         td = new TreeDownloader(tn);
         // get the tree, then run the tree, then --count
         // if count is 0, callback
@@ -75,11 +80,11 @@ var RequireContext = Class.extend(function() {
             // test if all modules are done
             if (--callsRemaining === 0) {
               if (callback) {
-                callback(this.require);
+                callback(proxy(this.require, this));
               }
             }
           }, this));
-        }, this);
+        }, this));
       }
     },
     run: function(moduleId) {

@@ -40,9 +40,23 @@ var RulesEngine;
       },
       // resolve: apply rules AND get URL
       resolve: function(identifier, relativeTo) {
+        var dir = relativeTo;
+        if (dir && !userConfig.baseDir) {
+          dir = dir.split("/");
+          if (dir[dir.length - 1]) {
+            // not ending in /
+            dir.pop();
+          }
+          dir = dir.join("/");
+        }
+        else if (dir) {
+          // TODO: baseDir support for the wacky path people
+          dir = userConfig.baseDir(dir);
+        }
+
         // apply rules that match
         var result = this.applyRules(identifier);
-        var url = this.toUrl(result.path, relativeTo);
+        var url = this.toUrl(result.path, dir);
 
         this.cache.byUrl[url] = result;
 
@@ -163,7 +177,7 @@ var RulesEngine;
         });
 
         payload = {
-          path: result,
+          path: result || "",
           pointcuts: {
             before: beforePointCuts,
             after: afterPointCuts
@@ -206,8 +220,8 @@ var RulesEngine;
         for (var i = 0, len = blownApartURL.length; i < len; i++) {
           piece = blownApartURL[i];
 
-          if (piece === ".") {
-            // skip .
+          if (piece === "." || (piece === "" && i > 0)) {
+            // skip . or "" (was "//" in url at position 0)
             continue;
           }
           else if (piece === "..") {

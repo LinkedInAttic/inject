@@ -116,12 +116,13 @@ var Executor;
       // no parse errors
       if (!docHead || userConfig.debug.sourceMap) {
         var sourceString = IS_IE ? "" : "//@ sourceURL=" + options.url;
-        var toExec = ["(", Inject.INTERNAL.execute[options.functionId].toString(), ")()"].join("");
+        // toExec explicitly hits the window object
+        var toExec = ["(", window.Inject.INTERNAL.execute[options.functionId].toString(), ")()"].join("");
         toExec = [toExec, sourceString].join("\n");
         result = eval(toExec);
       }
       else {
-        result = Inject.INTERNAL.execute[options.functionId]();
+        result = context.Inject.INTERNAL.execute[options.functionId]();
       }
     }
 
@@ -129,8 +130,8 @@ var Executor;
     context.onerror = oldError;
 
     // clean up the function we globally created if it exists
-    if(Inject.INTERNAL.execute[options.functionId]) {
-      delete Inject.INTERNAL.execute[options.functionId];
+    if(context.Inject.INTERNAL.execute[options.functionId]) {
+      delete context.Inject.INTERNAL.execute[options.functionId];
     }
 
     // if we have an error, throw it
@@ -147,16 +148,22 @@ var Executor;
     return {
       init: function() {
         this.cache = {};
+        this.executed = {};
       },
       runTree: function(root, files, callback) {
         // do a post-order traverse of files for execution
+        var returns = [];
         root.postOrder(function(node) {
+          if (!node.getValue().name) {
+            return; // root node
+          }
+          var name = node.getValue().name;
           var path = node.getValue().path;
-          var file = fileDB[path];
+          var file = files[path];
           var pointcuts = RulesEngine.getPointcuts(path);
-          Executor.createModule(moduleId, path);
+          Executor.createModule(name, path);
           if (!node.isCircular()) {
-            returns.push(Executor.runModule(moduleId, file, path, pointcuts));
+            returns.push(Executor.runModule(name, file, path, pointcuts));
           }
         });
         // all files are executed
@@ -180,12 +187,13 @@ var Executor;
         }
         return this.cache[path];
       },
-      getExports: function(path) {
+      getModule: function(path) {
         return this.cache[path] || null;
       },
       runModule: function(moduleId, code, path, pointcuts) {
+        console.log("Executor", "executing", path);
         // check cache
-        if (this.cache[path]) {
+        if (this.cache[path] && this.executed[path]) {
           return this.cache[path];
         }
 
@@ -232,6 +240,12 @@ var Executor;
 
         // cache the result
         this.cache[path] = result;
+        this.executed[path] = true;
+
+        console.log("Executor", "executed", path, result);
+        if (path.match(/bar/) && !result.exports.Bar) {
+          debugger;
+        }
 
         // return the result
         return result;
