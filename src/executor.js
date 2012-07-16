@@ -191,7 +191,7 @@ var Executor;
         return this.cache[path] || null;
       },
       runModule: function(moduleId, code, path, pointcuts) {
-        console.log("Executor", "executing", path);
+        debugLog("Executor", "executing", path);
         // check cache
         if (this.cache[path] && this.executed[path]) {
           return this.cache[path];
@@ -242,7 +242,7 @@ var Executor;
         this.cache[path] = result;
         this.executed[path] = true;
 
-        console.log("Executor", "executed", path, result);
+        debugLog("Executor", "executed", path, result);
         if (path.match(/bar/) && !result.exports.Bar) {
           debugger;
         }

@@ -16,7 +16,7 @@ governing permissions and limitations under the License.
 */
 
 var sandbox;
-module("TreeDownloader", {
+module("src :: TreeDownloader", {
   setup: function() {
     sandbox = new Sandbox(false);
 
@@ -45,6 +45,11 @@ module("TreeDownloader", {
         ["(a)", "d", "b", "c", "a", "(b)", "c", "a", "d", "b", "ROOT"]
       */
       var context = sandbox.global;
+
+      var rootJS = "root.js contents";
+      var rootUrl = "http://example.com/root.js";
+      var rootRequires = ["a", "b"];
+
       var aJS = "a.js contents";
       var aUrl = "http://example.com/a.js";
       var aRequires = ["b", "c"];
@@ -63,6 +68,7 @@ module("TreeDownloader", {
 
       // stub our rules engine
       sinon.stub(context.RulesEngine, "toUrl")
+        .withArgs("root").returns(rootUrl)
         .withArgs("a").returns(aUrl)
         .withArgs("b").returns(bUrl)
         .withArgs("c").returns(cUrl)
@@ -70,6 +76,7 @@ module("TreeDownloader", {
 
       // stub our communicator calls
       sinon.stub(context.Communicator, "get")
+        .withArgs(rootUrl).callsArgWith(1, rootJS)
         .withArgs(aUrl).callsArgWith(1, aJS)
         .withArgs(bUrl).callsArgWith(1, bJS)
         .withArgs(cUrl).callsArgWith(1, cJS)
@@ -77,6 +84,7 @@ module("TreeDownloader", {
 
       // stub our analyzer calls
       sinon.stub(context.Analyzer, "extractRequires")
+        .withArgs(rootJS).returns(rootRequires)
         .withArgs(aJS).returns(aRequires)
         .withArgs(bJS).returns(bRequires)
         .withArgs(cJS).returns(cRequires)
@@ -94,19 +102,11 @@ test("Scaffolding", function() {
 });
 
 asyncTest("DownloadTree", 2, function() {
-  var expected = ["(a)", "d", "b", "c", "a", "(b)", "c", "a", "d", "b", null];
+  var expected = ["(a)", "d", "b", "c", "a", "(b)", "c", "a", "d", "b", "root"];
   var context = sandbox.global;
   var TreeDownloader = context.TreeDownloader;
   var TreeNode = context.TreeNode;
-  var root = new TreeNode();
-  var a = new TreeNode({
-    name: "a"
-  });
-  var b = new TreeNode({
-    name: "b"
-  });
-  root.addChild(a);
-  root.addChild(b);
+  var root = TreeDownloader.createNode("root");
 
   var td = new TreeDownloader(root);
   td.get(function(tree, files) {
@@ -132,7 +132,7 @@ asyncTest("DownloadTree", 2, function() {
     for (var name in files) {
       count++;
     }
-    equal(count, 4, "response contains 4 files from the tree");
+    equal(count, 5, "response contains 5 files from the tree");
 
     start();
   })

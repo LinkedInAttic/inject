@@ -33,7 +33,8 @@ var TreeDownloader = Class.extend(function() {
     },
     log: function() {
       var args = [].slice.call(arguments);
-      console.log("TreeDownloader", "("+this.root.getValue().name+")", "\n"+args.join(" "));
+      var name = (this.root.getValue()) ? this.root.getValue().name : null;
+      debugLog("TreeDownloader", "("+name+")", "\n"+args.join(" "));
     },
     reduceCallsRemaining: function(callback, args) {
       this.callsRemaining--;

@@ -16,7 +16,7 @@ governing permissions and limitations under the License.
 */
 
 var sandbox;
-module("Executor", {
+module("src :: Executor", {
   setup: function() {
     sandbox = new Sandbox(true);
     console.log("Executor should throw 1 error per module due to the env syntax check");

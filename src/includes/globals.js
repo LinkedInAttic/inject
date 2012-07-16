@@ -85,3 +85,15 @@ function each(collection, fn) {
     fn(collection[i]);
   }
 }
+
+var debugLog;
+(function() {
+  var logs = [];
+  var canLog = (console && console.log && typeof(console.log) === "function");
+  var doLog = function(origin, message) {
+    if (canLog) {
+      console.log(origin, message);
+    }
+  };
+  debugLog = doLog;
+})();

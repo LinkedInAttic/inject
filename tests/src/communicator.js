@@ -16,7 +16,7 @@ governing permissions and limitations under the License.
 */
 
 var sandbox;
-module("Communicator", {
+module("src :: Communicator", {
   setup: function() {
     // communicator does not use sandbox safeguards, beware!
     sandbox = new Sandbox(false);

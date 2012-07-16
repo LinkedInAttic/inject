@@ -19,54 +19,12 @@
   -->
   <meta charset="UTF-8" />
   <title>QUnit Test Suite</title>
-  <link rel="stylesheet" href="/tests/qunit/qunit.css" type="text/css" media="screen">
-  <script type="text/javascript" src="/tests/qunit/qunit.js"></script>
-  <script type="text/javascript" src="/tests/sandbox.js"></script>
-  <script type="text/javascript" src="/tests/sinon.js"></script>
-  <script type="text/javascript">
-    QUnit.config.testTimeout = 3000;
-
-    var loadDependencies = function(into, deps, then) {
-      var doLoad = function() {
-        var dep = deps.shift();
-        if (dep) {
-          into.load(dep, function() {
-            doLoad();
-          });
-        }
-        else {
-          if (then) {
-            then();
-          }
-          start();
-        }
-      };
-      stop();
-      doLoad();
-    };
-  </script>
-  
-  
-  
-  <!-- SRC tests -->
-  <script type="text/javascript" src="/tests/src/analyzer.js"></script>
-  <script type="text/javascript" src="/tests/src/communicator.js"></script>
-  <script type="text/javascript" src="/tests/src/executor.js"></script>
-  <script type="text/javascript" src="/tests/src/inject.js"></script>
-  <script type="text/javascript" src="/tests/src/rulesengine.js"></script>
-  <script type="text/javascript" src="/tests/src/treenode.js"></script>
-  <script type="text/javascript" src="/tests/src/treedownloader.js"></script>
-
-  <!-- integration -->
-  <!-- todo, port back from index_cjs -->
-
 </head>
 <body>
-  <h1 id="qunit-header">QUnit Test Suite</h1>
-  <h2 id="qunit-banner"></h2>
-  <div id="qunit-testrunner-toolbar"></div>
-  <h2 id="qunit-userAgent"></h2>
-  <ol id="qunit-tests"></ol>
-  <div id="qunit-fixture">test markup</div>
+  <h1>Inject Tests</h1>
+  <ul>
+    <li><a href="tests.html?filter=src%20%3A%3A">src tests</a></li>
+    <li><a href="tests.html">all tests</a></li>
+  </ul>
 </body>
 </html>

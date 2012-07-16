@@ -16,7 +16,7 @@ governing permissions and limitations under the License.
 */
 
 var sandbox;
-module("Inject", {
+module("src :: Inject", {
   setup: function() {
     sandbox = new Sandbox(true);
     loadDependencies(sandbox, [

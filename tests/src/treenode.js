@@ -16,7 +16,7 @@ governing permissions and limitations under the License.
 */
 
 var sandbox;
-module("TreeNode", {
+module("src :: TreeNode", {
   setup: function() {
     sandbox = new Sandbox(false);
     loadDependencies(sandbox, [

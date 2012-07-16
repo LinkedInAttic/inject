@@ -16,7 +16,7 @@ governing permissions and limitations under the License.
 */
 
 var sandbox;
-module("Analyzer", {
+module("src :: Analyzer", {
   setup: function() {
     sandbox = new Sandbox(true);
     loadDependencies(sandbox, [

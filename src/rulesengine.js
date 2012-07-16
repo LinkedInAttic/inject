@@ -216,6 +216,10 @@ var RulesEngine;
           return resolvedUrl;
         }
 
+        // take off the strip ://
+        relativeTo = relativeTo.replace(/:\/\//, "__INJECT_PROTOCOL_COLON_SLASH_SLASH__");
+        path = path.replace(/:\/\//, "__INJECT_PROTOCOL_COLON_SLASH_SLASH__");
+
         blownApartURL = [].concat(relativeTo.split("/"), path.split("/"));
         for (var i = 0, len = blownApartURL.length; i < len; i++) {
           piece = blownApartURL[i];
@@ -238,6 +242,7 @@ var RulesEngine;
         }
 
         resolvedUrl = resolvedUrl.join("/");
+        resolvedUrl = resolvedUrl.replace(/__INJECT_PROTOCOL_COLON_SLASH_SLASH__/, "://");
 
         if (userConfig.useSuffix && !FILE_SUFFIX_REGEX.test(resolvedUrl)) {
           resolvedUrl = resolvedUrl + BASIC_FILE_SUFFIX;
