@@ -35,19 +35,19 @@ context.Inject = {
   easyXDM: easyXDM,
   reset: function() {},
   enableDebug: function() {
-    Inject.enableDebug.apply(this, arguments);
+    InjectCore.enableDebug.apply(this, arguments);
   },
   toUrl: function() {
     RulesEngine.toUrl.apply(this, arguments);
   },
   setModuleRoot: function() {
-    Inject.setModuleRoot.apply(this, arguments);
+    InjectCore.setModuleRoot.apply(this, arguments);
   },
   setExpires: function() {
-    Inject.setExpires.apply(this, arguments);
+    InjectCore.setExpires.apply(this, arguments);
   },
   setCrossDomain: function() {
-    Inject.setCrossDomain.apply(this, arguments);
+    InjectCore.setCrossDomain.apply(this, arguments);
   },
   clearCache: function() {},
   manifest: function() {

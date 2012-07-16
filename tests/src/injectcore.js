@@ -23,7 +23,7 @@ module("src :: Inject", {
       "/src/includes/constants.js",
       "/src/includes/globals.js",
       "/src/lib/class.js",
-      "/src/inject.js"
+      "/src/injectcore.js"
     ], function() {
     });
   },
@@ -34,7 +34,7 @@ module("src :: Inject", {
 
 test("Scaffolding", function() {
   var context = sandbox.global;
-  ok(typeof(context.Inject) === "object", "object exists");
+  ok(typeof(context.InjectCore) === "object", "object exists");
 });
 
 test("Passthrough and config", function() {
@@ -47,12 +47,12 @@ test("Passthrough and config", function() {
 
   var context = sandbox.global;
 
-  context.Inject.setModuleRoot("http://testok.com");
-  context.Inject.setCrossDomain({
+  context.InjectCore.setModuleRoot("http://testok.com");
+  context.InjectCore.setCrossDomain({
     relayFile: "http://testok-relay.com",
     relaySwf: "http://testok-swf.com"
   });
-  context.Inject.setExpires(987654);
+  context.InjectCore.setExpires(987654);
 
   // test userConfig
   equal(context.userConfig.moduleRoot, "http://testok.com", "moduleRoot");

@@ -147,8 +147,14 @@ var Executor;
     var functionCount = 0;
     return {
       init: function() {
+        // cache of resolved exports
         this.cache = {};
+
+        // cache of executed modules (true/false)
         this.executed = {};
+
+        // cache of "broken" modules (true/false)
+        this.broken = {};
       },
       runTree: function(root, files, callback) {
         // do a post-order traverse of files for execution
@@ -187,7 +193,13 @@ var Executor;
         }
         return this.cache[path];
       },
+      flagModuleAsBroken: function(path) {
+        this.broken[path] = true;
+      },
       getModule: function(path) {
+        if (this.broken[path]) {
+          throw new Error("module at "+path+" failed to load successfully");
+        }
         return this.cache[path] || null;
       },
       runModule: function(moduleId, code, path, pointcuts) {

@@ -10,11 +10,20 @@ var loadDependencies = function(into, deps, then) {
     }
     else {
       if (then) {
-        then();
+        then(into);
       }
       start();
     }
   };
   stop();
   doLoad();
+};
+
+var exposeQUnit = function(into) {
+  var calls = ["asyncTest", "deepEqual", "equal", "expect", "module", "ok", "start", "stop", "strictEqual", "test", "throws"];
+  var fn;
+  for (var i = 0, len = calls.length; i < len; i++) {
+    fn = calls[i];
+    into.global[fn] = window[fn];
+  }
 };

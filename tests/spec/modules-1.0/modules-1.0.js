@@ -15,39 +15,28 @@ express or implied.   See the License for the specific language
 governing permissions and limitations under the License.
 */
 
-module("CommonJS: Modules 1.0", {
+var sandbox;
+module("spec :: CommonJS :: Modules 1.0", {
   setup: function() {
-    if (localStorage) {
-      localStorage.clear();
-    }
-    Inject.reset();
+    sandbox = new Sandbox(false);
+    loadDependencies(sandbox, [
+      "/inject.js"
+    ], function(sandbox) {
+      exposeQUnit(sandbox);
+    });
   },
   teardown: function() {
-    if (localStorage) {
-      localStorage.clear();
-    }
+    sandbox = null;
   }
 });
 
 asyncTest("Sample Code", 4, function() {
-  Inject.setModuleRoot("/tests/modules-1.0/includes/spec");
-  require.run("program");
+  sandbox.global.Inject.setModuleRoot("/tests/spec/modules-1.0/includes/spec/");
+  sandbox.global.require.run("program");
 });
 
 asyncTest("Compliance", 8, function() {
-  Inject.setModuleRoot("/tests/modules-1.0/includes/spec");
-  require.run("compliance");
+  sandbox.global.Inject.setModuleRoot("/tests/spec/modules-1.0/includes/spec/");
+  sandbox.global.require.run("compliance");
 });
 
-// require math twice, the second time after a reset (simulate page reload)
-asyncTest("#57 require from cache simulates an OK 200", 3, function() {
-  Inject.setModuleRoot("/tests/modules-1.0/includes/spec");
-  require.ensure(["math"], function() {
-    Inject.reset();
-    Inject.setModuleRoot("/tests/modules-1.0/includes/spec");
-    require.ensure(["math"], function() {
-      ok(true, "module loaded from localStorage cache correctly");
-      start();
-    });
-  });
-});

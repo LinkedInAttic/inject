@@ -52,6 +52,9 @@ var Communicator;
       // locate all callbacks associated with the URL
       each(downloadCompleteQueue[url], function(cb) {
         if (statusCode !== 200) {
+          if (Executor) {
+            Executor.flagModuleAsBroken(url);
+          }
           cb(false);
         }
         else {

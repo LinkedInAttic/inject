@@ -15,7 +15,7 @@ express or implied.   See the License for the specific language
 governing permissions and limitations under the License.
 */
 
-var Inject;
+var InjectCore;
 (function() {
   var AsStatic = Class.extend(function() {
     return {
@@ -45,5 +45,5 @@ var Inject;
       }
     };
   });
-  Inject = new AsStatic();
+  InjectCore = new AsStatic();
 })();

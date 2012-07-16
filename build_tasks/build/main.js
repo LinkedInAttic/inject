@@ -17,7 +17,7 @@ exports.task = function(options) {
       "analyzer.js",
       "communicator.js",
       "executor.js",
-      "inject.js",
+      "injectcore.js",
       "requirecontext.js",
       "rulesengine.js",
       "treedownloader.js",
