@@ -21,35 +21,38 @@ governing permissions and limitations under the License.
 // helps ensure we are consistent in our tests
 var EXPECTATIONS = 4;
 
-module("Multiple domain tests (based on Modules 1.0)", {
+var sandbox;
+module("spec :: CommonJS :: Modules 1.0 on multiple domains", {
   setup: function() {
-    if (localStorage) {
-      localStorage.clear();
-    }
-    Inject.reset();
+    sandbox = new Sandbox(false);
+    loadDependencies(sandbox, [
+      "/inject.js"
+    ], function(sandbox) {
+      clearAllCaches(sandbox);
+      exposeQUnit(sandbox);
+    });
   },
   teardown: function() {
-    if (localStorage) {
-      localStorage.clear();
-    }
+    sandbox = null;
   }
 });
 
+// skip these tests if not running localhost...
 if (/localhost/.test(location.host)) {
   var urlBase = ([location.protocol,"//",location.host]).join(""),
       altBase = urlBase.replace(/:4000/, ":4001");
   asyncTest("same domain (baseline)", EXPECTATIONS, function() {
-    Inject.setModuleRoot(urlBase+"/tests/modules-1.0/includes/spec");
-    require.run("program");
+    sandbox.global.Inject.setModuleRoot(urlBase+"/tests/spec/modules-1.0/includes/spec/");
+    sandbox.global.require.run("program");
   });
 
   asyncTest("alternate domain", EXPECTATIONS, function() {
-    Inject.setModuleRoot(altBase+"/tests/modules-1.0/includes/spec");
-    Inject.setCrossDomain({
+    sandbox.global.Inject.setModuleRoot(altBase+"/tests/spec/modules-1.0/includes/spec/");
+    sandbox.global.Inject.setCrossDomain({
       relayFile: altBase+"/relay.html",
-      relayHelper: altBase+"/relay_helper.html"
+      relaySwf: altBase+"/relay.swf"
     });
-    require.run("program");
+    sandbox.global.require.run("program");
   });
 }
 

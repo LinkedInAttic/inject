@@ -29,6 +29,11 @@ var RequireContext = Class.extend(function() {
     require: function(moduleIdOrList, callback) {
       var path;
       var module;
+
+      if (/^[\d]+$/.test(moduleIdOrList)) {
+        throw new Error("require() must be a string containing a-z, slash(/), dash(-), and dots(.)");
+      }
+
       if (typeof(moduleIdOrList) === "string") {
         path = RulesEngine.resolve(moduleIdOrList, this.getPath()).path;
         module = Executor.getModule(path);
@@ -61,6 +66,13 @@ var RequireContext = Class.extend(function() {
       }, this));
     },
     ensure: function(moduleList, callback) {
+      if (Object.prototype.toString.call(moduleList) !== '[object Array]') {
+        throw new Error("require.ensure() must take an Array as the first argument");
+      }
+
+      // strip builtins (CommonJS doesn't download or make these available)
+      moduleList = Analyzer.stripBuiltins(moduleList);
+
       // create our root node
       var root = TreeDownloader.createNode(null, this.getPath() || userConfig.moduleRoot);
       var tn;
@@ -91,10 +103,11 @@ var RequireContext = Class.extend(function() {
       this.ensure([moduleId]);
     },
     define: function() {
-      var args = Array.prototype.slice(arguments, 0);
+      var args = Array.prototype.slice.call(arguments, 0);
       var id = args[0];
       var dependencies = args[1];
       var executionFunctionOrLiteral = args[2];
+
       if (!executionFunctionOrLiteral) {
         executionFunctionOrLiteral = dependencies;
         dependencies = id;

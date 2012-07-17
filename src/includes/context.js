@@ -27,9 +27,13 @@ context.Inject = {
     setModuleExports: function() {},
     execute: {},
     globalRequire: globalRequire,
-    createRequire: function(path, baseDir) {
+    createRequire: function(path) {
       var req = new RequireContext(path);
-      return proxy(req.require, req);
+      var require = proxy(req.require, req);
+      require.ensure = proxy(req.ensure, req);
+      require.run = proxy(req.run, req);
+      require.toUrl = proxy(Analyzer.toUrl, Analyzer);
+      return require;
     }
   },
   easyXDM: easyXDM,
@@ -63,12 +67,9 @@ context.Inject = {
   version: INJECT_VERSION
 };
 
-// commonJS
-context.require = proxy(globalRequire.require, globalRequire);
-context.require.ensure = proxy(globalRequire.ensure, globalRequire);
-context.require.run = proxy(globalRequire.run, globalRequire);
+// commonJS (and AMD's toUrl)
+context.require = context.Inject.INTERNAL.createRequire();
 
 // AMD
 context.define = proxy(globalRequire.define, globalRequire);
 context.define.amd = true;
-context.require.toUrl = Analyzer.toUrl;

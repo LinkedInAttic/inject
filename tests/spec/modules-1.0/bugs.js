@@ -15,34 +15,36 @@ express or implied.   See the License for the specific language
 governing permissions and limitations under the License.
 */
 
-module("CommonJS: Modules 1.0 Bugs", {
+var sandbox;
+module("spec :: CommonJS :: Modules 1.0 bugs", {
   setup: function() {
-    if (localStorage) {
-      localStorage.clear();
-    }
-    Inject.reset();
+    sandbox = new Sandbox(false);
+    loadDependencies(sandbox, [
+      "/inject.js"
+    ], function(sandbox) {
+      clearAllCaches(sandbox);
+      exposeQUnit(sandbox);
+    });
   },
   teardown: function() {
-    if (localStorage) {
-      localStorage.clear();
-    }
+    sandbox = null;
   }
 });
 
 // requiring a module that has commented lines- those lines should not run
 asyncTest("#59 require() statements in commented lines should be ignored", 1, function() {
-  Inject.setModuleRoot("/tests/modules-1.0/includes/bugs");
-  require.run("bug_59");
+  sandbox.global.Inject.setModuleRoot("/tests/spec/modules-1.0/includes/bugs/");
+  sandbox.global.require.run("bug_59");
 });
 
 // circular dependencies
 asyncTest("#65 circular dependencies should be resolved", 4, function() {
-  Inject.setModuleRoot("/tests/modules-1.0/includes/bugs");
-  require.run("bug_65");
+  sandbox.global.Inject.setModuleRoot("/tests/spec/modules-1.0/includes/bugs/");
+  sandbox.global.require.run("bug_65");
 });
 
 // requiring a module that has commented lines- those lines should not run
 asyncTest("#88 require() statements with no space before them should still run", 2, function() {
-  Inject.setModuleRoot("/tests/modules-1.0/includes/bugs");
-  require.run("bug_88");
+  sandbox.global.Inject.setModuleRoot("/tests/spec/modules-1.0/includes/bugs/");
+  sandbox.global.require.run("bug_88");
 });

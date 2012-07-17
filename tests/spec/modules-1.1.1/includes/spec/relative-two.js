@@ -1,1 +1,1 @@
-exports.divide = require("divide").divide;
+exports.divide = require("./identifiers/divide").divide;

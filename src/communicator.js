@@ -42,7 +42,8 @@ var Communicator;
 
     // when a file completes, resolve all callbacks in its queue
     function resolveCompletedFile(url, statusCode, contents) {
-      debugLog("Communicator", "downloaded "+url+" with status "+statusCode+". Length: "+contents.length);
+      statusCode = 1*statusCode;
+      debugLog("Communicator", "downloaded "+url+" with status "+statusCode+". Length: "+(contents) ? contents.length : "NaN");
 
       // write cache
       if (statusCode === 200) {

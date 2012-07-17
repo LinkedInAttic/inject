@@ -74,9 +74,3 @@ test("extraction", function() {
     }
   }
 });
-
-test("function args", function() {
-  var context = sandbox.global;
-  var result = context.Analyzer.getFunctionArgs(sampleFunction);
-  deepEqual(result, ["one", "two", "three"], "function contains all proper arguments");
-});

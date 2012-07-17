@@ -19,8 +19,18 @@ var loadDependencies = function(into, deps, then) {
   doLoad();
 };
 
+var clearAllCaches = function(into) {
+  if (into.localStorage && typeof(into.localStorage.clear) === "function") {
+    into.localStorage.clear();
+  }
+
+  if (into !== window) {
+    clearAllCaches(window);
+  }
+};
+
 var exposeQUnit = function(into) {
-  var calls = ["asyncTest", "deepEqual", "equal", "expect", "module", "ok", "start", "stop", "strictEqual", "test", "throws"];
+  var calls = ["asyncTest", "deepEqual", "equal", "expect", "module", "ok", "raises", "start", "stop", "strictEqual", "test", "throws"];
   var fn;
   for (var i = 0, len = calls.length; i < len; i++) {
     fn = calls[i];

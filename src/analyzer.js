@@ -20,6 +20,17 @@ var Analyzer;
   var AsStatic = Class.extend(function() {
     return {
       init: function() {},
+      stripBuiltins: function(modules) {
+        var strippedModuleList = [];
+        var moduleId;
+        for (var i = 0, len = modules.length; i < len; i++) {
+          moduleId = modules[i];
+          if (moduleId !== "require" && moduleId !== "exports" && moduleId !== "module") {
+            strippedModuleList.push(moduleId);
+          }
+        }
+        return strippedModuleList;
+      },    
       extractRequires: function(file) {
         var requires = [];
         var uniques = {};
@@ -63,18 +74,6 @@ var Analyzer;
         }
 
         return requires;
-      },
-      getFunctionArgs: function(fn) {
-        // extract the function line, remove all newlines, remove all whitespace, split on commas
-        var result = fn.toString().match(FUNCTION_REGEX)[1]
-          .replace(FUNCTION_NEWLINES_REGEX, "")
-          .replace(WHITESPACE_REGEX, "")
-          .split(",");
-        if (result.length === 1 && !result[0]) {
-          // corner case, we actually extracted nothing here...
-          return [];
-        }
-        return result;
       }
     };
   });

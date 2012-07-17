@@ -15,26 +15,28 @@ express or implied.   See the License for the specific language
 governing permissions and limitations under the License.
 */
 
-module("CommonJS: Modules 1.1", {
+var sandbox;
+module("spec :: CommonJS :: Modules 1.1", {
   setup: function() {
-    if (localStorage) {
-      localStorage.clear();
-    }
-    Inject.reset();
+    sandbox = new Sandbox(false);
+    loadDependencies(sandbox, [
+      "/inject.js"
+    ], function(sandbox) {
+      clearAllCaches(sandbox);
+      exposeQUnit(sandbox);
+    });
   },
   teardown: function() {
-    if (localStorage) {
-      localStorage.clear();
-    }
+    sandbox = null;
   }
 });
 
 asyncTest("Compliance", 13, function() {
-  Inject.setModuleRoot("/tests/modules-1.1/includes/spec");
-  require.run("compliance");
+  sandbox.global.Inject.setModuleRoot("/tests/spec/modules-1.1/includes/spec/");
+  sandbox.global.require.run("compliance");
 });
 
 asyncTest("Sample Code", 5, function() {
-  Inject.setModuleRoot("/tests/modules-1.1/includes/spec");
-  require.run("program");
+  sandbox.global.Inject.setModuleRoot("/tests/spec/modules-1.1/includes/spec/");
+  sandbox.global.require.run("program");
 });

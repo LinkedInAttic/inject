@@ -22,6 +22,7 @@ module("spec :: CommonJS :: Modules 1.0", {
     loadDependencies(sandbox, [
       "/inject.js"
     ], function(sandbox) {
+      clearAllCaches(sandbox);
       exposeQUnit(sandbox);
     });
   },
