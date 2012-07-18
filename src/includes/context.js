@@ -65,5 +65,4 @@ context.Inject = {
 context.require = context.Inject.INTERNAL.createRequire();
 
 // AMD
-context.define = proxy(globalRequire.define, globalRequire);
-context.define.amd = true;
+context.define = context.Inject.INTERNAL.createDefine();

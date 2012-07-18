@@ -30,7 +30,9 @@ var InjectCore;
       },
       createDefine: function(path) {
         var req = new RequireContext(path);
-        return proxy(req.define, req);
+        var define = proxy(req.define, req);
+        define.amd = {};
+        return define;
       },
       setModuleRoot: function(root) {
         userConfig.moduleRoot = root;

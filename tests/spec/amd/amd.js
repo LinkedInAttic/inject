@@ -70,7 +70,7 @@ asyncTest("Anon - relativeModuleId", 4, function() {
 });
 
 test("Basic - defineAmd", 1, function() {
-  equal("object", typeof define.amd);
+  equal("object", typeof(sandbox.global.define.amd));
 });
 
 asyncTest("Basic - simple", 3, function() {
