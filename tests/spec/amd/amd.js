@@ -59,8 +59,7 @@ asyncTest("Anon - circular", 6, function() {
 });
 
 asyncTest("Anon - relativeModuleId", 4, function() {
-  sandbox.global.Inject.setModuleRoot("/tests/spec/amd/includes/spec/anon/");
-  sandbox.global.Inject.addRule("array", {path:"impl/array"});
+  sandbox.global.Inject.setModuleRoot("/tests/spec/amd/includes/spec/anon/impl/");
   sandbox.global.require(["require", "array"], function(require, array) {
     equal("impl/array", array.name);
     equal("util", array.utilNameUl);
