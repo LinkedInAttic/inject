@@ -64,9 +64,13 @@ var Analyzer;
         // handle static require statements via define() API
         // then attach to master requires[] list
         if(DEFINE_REGEX.exec(file)) {
-          staticRequires = DEFINE_REGEX.exec(file)[2].replace(BUILTINS_REGEX, "").split(",");
+          staticRequires = DEFINE_REGEX.exec(file)[2].replace(BUILTINS_REPLACE_REGEX, "").split(",");
         }
         for (var i = 0, len = staticRequires.length; i < len; i++) {
+          if (!staticRequires[i]) {
+            // this was a builtin
+            continue;
+          }
           if (uniques[staticRequires[i]] !== true) {
             requires.push(staticRequires[i]);
           }

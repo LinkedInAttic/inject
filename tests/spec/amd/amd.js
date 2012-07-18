@@ -15,23 +15,25 @@ express or implied.   See the License for the specific language
 governing permissions and limitations under the License.
 */
 
-module("AMD Specification", {
+var sandbox;
+module("spec :: AMD :: AMD 1.0", {
   setup: function() {
-    if (localStorage) {
-      localStorage.clear();
-    }
-    Inject.reset();
+    sandbox = new Sandbox(false);
+    loadDependencies(sandbox, [
+      "/inject.js"
+    ], function(sandbox) {
+      clearAllCaches(sandbox);
+      exposeQUnit(sandbox);
+    });
   },
   teardown: function() {
-    if (localStorage) {
-      localStorage.clear();
-    }
+    sandbox = null;
   }
 });
 
 asyncTest("Anon - simple", 3, function() {
-  Inject.setModuleRoot("/tests/amd/includes/spec/anon");
-  require(["a","b"], function(a, b) {
+  sandbox.global.Inject.setModuleRoot("/tests/spec/amd/includes/spec/anon/");
+  sandbox.global.require(["a","b"], function(a, b) {
     equal("a", a.name);
     equal("b", b.name);
     equal("c", b.cName);
@@ -40,8 +42,8 @@ asyncTest("Anon - simple", 3, function() {
 });
 
 asyncTest("Anon - circular", 6, function() {
-  Inject.setModuleRoot("/tests/amd/includes/spec/anon");
-  require(["require", "two", "funcTwo", "funcThree"], function(require, two, funcTwo, funcThree) {
+  sandbox.global.Inject.setModuleRoot("/tests/spec/amd/includes/spec/anon/");
+  sandbox.global.require(["require", "two", "funcTwo", "funcThree"], function(require, two, funcTwo, funcThree) {
     var args = two.doSomething(),
         twoInst = new funcTwo("TWO"),
         oneMod = two.getOneModule();
@@ -57,9 +59,9 @@ asyncTest("Anon - circular", 6, function() {
 });
 
 asyncTest("Anon - relativeModuleId", 4, function() {
-  Inject.setModuleRoot("/tests/amd/includes/spec/anon");
-  Inject.addRule("array", {path:"impl/array"});
-  require(["require", "array"], function(require, array) {
+  sandbox.global.Inject.setModuleRoot("/tests/spec/amd/includes/spec/anon/");
+  sandbox.global.Inject.addRule("array", {path:"impl/array"});
+  sandbox.global.require(["require", "array"], function(require, array) {
     equal("impl/array", array.name);
     equal("util", array.utilNameUl);
     equal("impl/util", array.utilNameCl);
@@ -73,8 +75,8 @@ test("Basic - defineAmd", 1, function() {
 });
 
 asyncTest("Basic - simple", 3, function() {
-  Inject.setModuleRoot("/tests/amd/includes/spec/basic");
-  require(["a", "b"], function(a, b) {
+  sandbox.global.Inject.setModuleRoot("/tests/spec/amd/includes/spec/basic/");
+  sandbox.global.require(["a", "b"], function(a, b) {
     equal("a", a.name);
     equal("b", b.name);
     equal("c", b.cName);
@@ -83,8 +85,8 @@ asyncTest("Basic - simple", 3, function() {
 });
 
 asyncTest("Basic - circular", 6, function() {
-  Inject.setModuleRoot("/tests/amd/includes/spec/basic");
-  require(["require", "two", "funcTwo", "funcThree"], function(require, two, funcTwo, funcThree) {
+  sandbox.global.Inject.setModuleRoot("/tests/spec/amd/includes/spec/basic/");
+  sandbox.global.require(["require", "two", "funcTwo", "funcThree"], function(require, two, funcTwo, funcThree) {
     var args = two.doSomething(),
         twoInst = new funcTwo("TWO"),
         oneMod = two.getOneModule();
@@ -100,8 +102,8 @@ asyncTest("Basic - circular", 6, function() {
 });
 
 asyncTest("Function String - funcString", 8, function() {
-  Inject.setModuleRoot("/tests/amd/includes/spec/funcstring");
-  require(["one", "two", "three"], function(one, two, three) {
+  sandbox.global.Inject.setModuleRoot("/tests/spec/amd/includes/spec/funcstring/");
+  sandbox.global.require(["one", "two", "three"], function(one, two, three) {
     var args = two.doSomething(),
         oneMod = two.getOneModule();
 
@@ -118,8 +120,8 @@ asyncTest("Function String - funcString", 8, function() {
 });
 
 asyncTest("Named Wrapped - basic", 3, function() {
-  Inject.setModuleRoot("/tests/amd/includes/spec/namewrapped");
-  require(["car"], function(car) {
+  sandbox.global.Inject.setModuleRoot("/tests/spec/amd/includes/spec/namewrapped/");
+  sandbox.global.require(["car"], function(car) {
     equal("car", car.name);
     equal("wheels", car.wheels.name);
     equal("engine", car.engine.name);
@@ -128,8 +130,8 @@ asyncTest("Named Wrapped - basic", 3, function() {
 });
 
 asyncTest("Require - basic", 4, function() {
-  Inject.setModuleRoot("/tests/amd/includes/spec/require");
-  require.ensure(["require", "a"], function(require) {
+  sandbox.global.Inject.setModuleRoot("/tests/spec/amd/includes/spec/require/");
+  sandbox.global.require.ensure(["require", "a"], function(require) {
     require(["b", "c"], function(b, c) {
       equal("a", require('a').name);
       equal("b", b.name);

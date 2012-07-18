@@ -25,7 +25,8 @@ var userConfig = {
   	relaySwf: null
   },
   debug: {
-  	sourceMap: false
+  	sourceMap: false,
+    logging: true
   }
 };
 
@@ -68,13 +69,10 @@ var getXhr = (function(){
   }
 }());
 
-function bind(fn, scope) {
-  return function() {
-    return fn.apply(scope, arguments);
-  }
-}
-
 function proxy(fn, scope) {
+  if (!scope) {
+    throw new Error("proxying requires a scope");
+  }
   return function() {
     return fn.apply(scope, arguments);
   }
@@ -86,16 +84,17 @@ function each(collection, fn) {
   }
 }
 
-function debugLog(){}
+var debugLog = function() {};
 // TODO: more robust logging solution
-// var debugLog;
-// (function() {
-//   var logs = [];
-//   var canLog = (console && console.log && typeof(console.log) === "function");
-//   var doLog = function(origin, message) {
-//     if (canLog) {
-//       console.log(origin, message);
-//     }
-//   };
-//   debugLog = doLog;
-// })();
+(function() {
+  var logs = [];
+  var canLog = (console && console.log && typeof(console.log) === "function");
+  var doLog = function(origin, message) {
+    if (userConfig.debug.logging) {
+      console.log("## "+ origin +" ##" + "\n" + message);
+    };
+  }
+  if (canLog) {
+    debugLog = doLog;
+  }
+})();

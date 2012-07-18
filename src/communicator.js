@@ -43,7 +43,7 @@ var Communicator;
     // when a file completes, resolve all callbacks in its queue
     function resolveCompletedFile(url, statusCode, contents) {
       statusCode = 1*statusCode;
-      debugLog("Communicator", "downloaded "+url+" with status "+statusCode+". Length: "+(contents) ? contents.length : "NaN");
+      debugLog("Communicator ("+url+")", "status "+statusCode+". Length: "+((contents) ? contents.length : "NaN"));
 
       // write cache
       if (statusCode === 200) {
@@ -117,19 +117,19 @@ var Communicator;
           downloadCompleteQueue[url] = [];
         }
 
-        debugLog("Communicator", "requesting: "+url);
+        debugLog("Communicator ("+url+")", "requesting");
 
         var cachedResults = readFromCache(url);
         if (cachedResults) {
-          debugLog("Communicator", "retrieved from cache "+url+". Length: "+cachedResults.length);
+          debugLog("Communicator ("+url+")", "retireved from cache. length: "+cachedResults.length);
           callback(cachedResults);
           return;
         }
 
-        debugLog("Communicator", "queued download of "+url);
+        debugLog("Communicator ("+url+")", "queued");
         if (downloadCompleteQueue[url].length) {
           downloadCompleteQueue[url].push(callback);
-          debugLog("Communicator", url+" is already in progress");
+          debugLog("Communicator ("+url+")", "request already in progress");
           return;
         }
         downloadCompleteQueue[url].push(callback);

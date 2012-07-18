@@ -15,23 +15,25 @@ express or implied.   See the License for the specific language
 governing permissions and limitations under the License.
 */
 
-module("AMD Bugs", {
+var sandbox;
+module("spec :: AMD :: AMD 1.0 bugs", {
   setup: function() {
-    if (localStorage) {
-      localStorage.clear();
-    }
-    Inject.reset();
+    sandbox = new Sandbox(false);
+    loadDependencies(sandbox, [
+      "/inject.js"
+    ], function(sandbox) {
+      clearAllCaches(sandbox);
+      exposeQUnit(sandbox);
+    });
   },
   teardown: function() {
-    if (localStorage) {
-      localStorage.clear();
-    }
+    sandbox = null;
   }
 });
 
 asyncTest("#56 require.ensure with delay", 5, function() {
-  Inject.setModuleRoot("/tests/amd/includes/original");
-  require.ensure(["increment.delay"], function(require) {
+  sandbox.global.Inject.setModuleRoot("/tests/spec/amd/includes/original/");
+  sandbox.global.require.ensure(["increment.delay"], function(require) {
     var delayInc = require("increment.delay");
     equal(delayInc.inc(5), 6, "increments");
     equal(delayInc.delayedBy, 2000, "delayedBy");
@@ -40,8 +42,8 @@ asyncTest("#56 require.ensure with delay", 5, function() {
 });
 
 asyncTest("#91 module.exports should be able to have a function assigned to it in AMD mode", 1, function() {
-  Inject.setModuleRoot("/tests/amd/includes/bugs");
-  require.ensure(["bug_91"], function(require) {
+  sandbox.global.Inject.setModuleRoot("/tests/spec/amd/includes/bugs/");
+  sandbox.global.require.ensure(["bug_91"], function(require) {
     var f = require('bug_91');
     equal(f("Bob"), "hello Bob");
     start();
@@ -49,16 +51,16 @@ asyncTest("#91 module.exports should be able to have a function assigned to it i
 });
 
 asyncTest("#106 inline define() calls make module.exports available to later require() calls", 1, function() {
-  Inject.setModuleRoot("/tests/amd/includes/bugs");
+  sandbox.global.Inject.setModuleRoot("/tests/spec/amd/includes/bugs/");
   
   // manually define a module
-  define("bug_106_pre", function() {
+  sandbox.global.define("bug_106_pre", function() {
     return {
       foo: "foo"
     };
   });
 
-  require.ensure(["bug_106"], function(require) {
+  sandbox.global.require.ensure(["bug_106"], function(require) {
     var mod = require('bug_106');
     equal(mod.foo, "foo");
     start();

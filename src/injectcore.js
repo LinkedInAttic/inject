@@ -20,6 +20,18 @@ var InjectCore;
   var AsStatic = Class.extend(function() {
     return {
       init: function() {},
+      createRequire: function(path) {
+        var req = new RequireContext(path);
+        var require = proxy(req.require, req);
+        require.ensure = proxy(req.ensure, req);
+        require.run = proxy(req.run, req);
+        require.toUrl = proxy(Analyzer.toUrl, Analyzer);
+        return require;
+      },
+      createDefine: function(path) {
+        var req = new RequireContext(path);
+        return proxy(req.define, req);
+      },
       setModuleRoot: function(root) {
         userConfig.moduleRoot = root;
       },

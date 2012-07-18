@@ -67,7 +67,9 @@ var REQUIRE_REGEX = /(?:^|[^\w\$_.\(])require\s*\(\s*("[^"\\]*(?:\\.[^"\\]*)*"|'
 var DEFINE_REGEX = /^[\r\n\s]*define\(\s*("\S+",|'\S+',|\s*)\s*\[([^\]]*)\],\s*(function\s*\(|\{).+/;
 
 // match all commonJS builtins in a function arg collection
-var BUILTINS_REGEX = /\s|"|'|require|exports|module/g;
+var BUILTINS = {require: true, exports: true, module: true};
+
+var BUILTINS_REPLACE_REGEX = /[\s]|"|'|(require)|(exports)|(module)/g;
 
 // capture anything that involves require*, aggressive to cut down the number of lines we analyze
 var GREEDY_REQUIRE_REXEX = /require.*/;

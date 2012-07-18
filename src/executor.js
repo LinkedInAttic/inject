@@ -155,6 +155,21 @@ var Executor;
 
         // cache of "broken" modules (true/false)
         this.broken = {};
+
+        // cache of "circular" modules (true/false)
+        this.circular = {};
+
+        // the stack of AMD define functions, because they "could" be anonymous
+        this.anonymousAMDStack = [];
+      },
+      defineExecutingModuleAs: function(moduleId) {
+        return this.anonymousAMDStack.push(moduleId);
+      },
+      undefineExecutingModule: function() {
+        return this.anonymousAMDStack.pop();
+      },
+      getCurrentExecutingModuleName: function() {
+        return this.anonymousAMDStack[this.anonymousAMDStack.length - 1];
       },
       runTree: function(root, files, callback) {
         // do a post-order traverse of files for execution
@@ -196,6 +211,12 @@ var Executor;
       flagModuleAsBroken: function(path) {
         this.broken[path] = true;
       },
+      flagModuleAsCircular: function(path) {
+        this.circular[path] = true;
+      },
+      isModuleCircular: function(path) {
+        return this.circular[path];
+      },
       getModule: function(path) {
         if (this.broken[path]) {
           throw new Error("module at "+path+" failed to load successfully");
@@ -203,7 +224,7 @@ var Executor;
         return this.cache[path] || null;
       },
       runModule: function(moduleId, code, path, pointcuts) {
-        debugLog("Executor", "executing", path);
+        debugLog("Executor", "executing " + path);
         // check cache
         if (this.cache[path] && this.executed[path]) {
           return this.cache[path];
@@ -255,9 +276,6 @@ var Executor;
         this.executed[path] = true;
 
         debugLog("Executor", "executed", path, result);
-        if (path.match(/bar/) && !result.exports.Bar) {
-          debugger;
-        }
 
         // return the result
         return result;

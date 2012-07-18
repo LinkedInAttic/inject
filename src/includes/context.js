@@ -21,20 +21,14 @@ governing permissions and limitations under the License.
 var globalRequire = new RequireContext();
 context.Inject = {
   INTERNAL: {
-    defineAs: function() {},
-    undefineAs: function() {},
+    defineExecutingModuleAs: proxy(Executor.defineExecutingModuleAs, Executor),
+    undefineExecutingModule: proxy(Executor.undefineExecutingModule, Executor),
     createModule: proxy(Executor.createModule, Executor),
     setModuleExports: function() {},
     execute: {},
     globalRequire: globalRequire,
-    createRequire: function(path) {
-      var req = new RequireContext(path);
-      var require = proxy(req.require, req);
-      require.ensure = proxy(req.ensure, req);
-      require.run = proxy(req.run, req);
-      require.toUrl = proxy(Analyzer.toUrl, Analyzer);
-      return require;
-    }
+    createRequire: proxy(InjectCore.createRequire, InjectCore),
+    createDefine: proxy(InjectCore.createDefine, InjectCore)
   },
   easyXDM: easyXDM,
   reset: function() {},

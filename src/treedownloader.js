@@ -32,9 +32,9 @@ var TreeDownloader = Class.extend(function() {
       this.files = {};
     },
     log: function() {
-      var args = [].slice.call(arguments);
+      var args = [].slice.call(arguments, 0);
       var name = (this.root.getValue()) ? this.root.getValue().name : null;
-      debugLog("TreeDownloader", "("+name+")", "\n"+args.join(" "));
+      debugLog("TreeDownloader ("+name+")", args.join(" "));
     },
     reduceCallsRemaining: function(callback, args) {
       this.callsRemaining--;
@@ -70,7 +70,7 @@ var TreeDownloader = Class.extend(function() {
        D: download // count = 1 - 1 = 0 (remove D)
       */
       this.log("started download");
-      this.downloadTree(this.root, bind(function(root) {
+      this.downloadTree(this.root, proxy(function(root) {
         callback(this.root, this.getFiles());
       }, this));
     },
@@ -88,7 +88,7 @@ var TreeDownloader = Class.extend(function() {
 
       // download the file
       this.log("requesting file", node.getValue().path);
-      Communicator.get(node.getValue().path, bind(function(contents) {
+      Communicator.get(node.getValue().path, proxy(function(contents) {
         this.log("download complete", node.getValue().path);
         var parent = node;
         var found = {};
@@ -107,7 +107,9 @@ var TreeDownloader = Class.extend(function() {
           value = parent.getValue().path;
           if (found[value]) {
             this.log("circular reference found", node.getValue().path);
+            // flag the node as circular (commonJS) and the module itself (AMD)
             node.flagCircular();
+            Executor.flagModuleAsCircular(node.getValue().path);
           }
           found[value] = true;
           parent = parent.getParent();
@@ -122,7 +124,7 @@ var TreeDownloader = Class.extend(function() {
           var childNode;
           var path;
 
-          this.log("dependencies for", node.getValue().path, requires.join(", "));
+          this.log("dependencies ("+requires.length+"):" + requires.join(", "));
 
           // for each requires, create a child and spawn
           if (requires.length) {
@@ -132,7 +134,7 @@ var TreeDownloader = Class.extend(function() {
             path = RulesEngine.resolve(requires[i], node.getValue().path).path;
             childNode = TreeDownloader.createNode(requires[i], path);
             node.addChild(childNode);
-            this.downloadTree(childNode, bind(function() {
+            this.downloadTree(childNode, proxy(function() {
               this.reduceCallsRemaining(callback, node);
             }, this));
           }

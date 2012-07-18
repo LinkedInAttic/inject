@@ -59,7 +59,6 @@ var RulesEngine;
         var url = this.toUrl(result.path, dir);
 
         this.cache.byUrl[url] = result;
-        if (url == "/tests/spec/modules-1.1.1/includes/spec/divide.js") debugger;
         return {
           path: url,
           pointcuts: result.pointcuts

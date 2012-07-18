@@ -22,21 +22,22 @@ var commonJSHeader = ([
 '  with (window) {',
 '    var __module = __INJECT_NS__.INTERNAL.createModule("__MODULE_ID__", "__MODULE_URI__"),',
 '        __require = __INJECT_NS__.INTERNAL.createRequire("__MODULE_URI__"),',
+'        __define = __INJECT_NS__.INTERNAL.createDefine("__MODULE_URI__"),',
 '        __exe = null;',
-'    __exe = function(require, module, exports) {',
+'    __exe = function(require, module, exports, define) {',
 '      __POINTCUT_BEFORE__'
 ]).join('\n');
 var commonJSFooter = ([
 '      __POINTCUT_AFTER__',
 '    };',
-'    __INJECT_NS__.INTERNAL.defineAs(__module.id);',
+'    __INJECT_NS__.INTERNAL.defineExecutingModuleAs(__module.id);',
 '    try {',
-'      __exe.call(__module, __require, __module, __module.exports);',
+'      __exe.call(__module, __require, __module, __module.exports, __define);',
 '    }',
 '    catch (__EXCEPTION__) {',
 '      __module.error = __EXCEPTION__;',
 '    }',
-'    __INJECT_NS__.INTERNAL.undefineAs();',
+'    __INJECT_NS__.INTERNAL.undefineExecutingModule();',
 '    return __module;',
 '  }',
 '};'
