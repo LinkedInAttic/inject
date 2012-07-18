@@ -32,9 +32,9 @@ module("spec :: AMD :: AMD 1.0 bugs", {
 });
 
 asyncTest("#56 require.ensure with delay", 5, function() {
-  sandbox.global.Inject.setModuleRoot("/tests/spec/amd/includes/original/");
-  sandbox.global.require.ensure(["increment.delay"], function(require) {
-    var delayInc = require("increment.delay");
+  sandbox.global.Inject.setModuleRoot("/tests/spec/amd/includes/bugs/");
+  sandbox.global.require.ensure(["bug_56"], function(require) {
+    var delayInc = require("bug_56");
     equal(delayInc.inc(5), 6, "increments");
     equal(delayInc.delayedBy, 2000, "delayedBy");
     start();

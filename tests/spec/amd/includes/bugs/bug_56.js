@@ -1,4 +1,4 @@
-define('increment.delay', ['exports', 'math', 'delay'], function(exports, math, delay) {
+define(['exports', 'bug_56a', 'bug_56b'], function(exports, math, delay) {
   exports.inc = function(val) {
     return math.add(val, 1);
   };

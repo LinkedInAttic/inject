@@ -91,7 +91,7 @@ function server(request, response) {
       serve(request, response, function(err, result) {});
     }, 300);
   }
-  if(request.url === '/amd/includes/original/delay.js') {
+  if(request.url === '/amd/includes/bugs/bug_56_a.js') {
     // delayed server call 300 msec for amd ensure overlap unit test in amd
     // originally was 2 seconds, reduced just for rerun sake
     return setTimeout(function() {
