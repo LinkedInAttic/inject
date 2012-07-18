@@ -165,13 +165,16 @@ var Executor;
         // the stack of AMD define functions, because they "could" be anonymous
         this.anonymousAMDStack = [];
       },
-      defineExecutingModuleAs: function(moduleId) {
-        return this.anonymousAMDStack.push(moduleId);
+      defineExecutingModuleAs: function(moduleId, path) {
+        return this.anonymousAMDStack.push({
+          id: moduleId,
+          path: path
+        });
       },
       undefineExecutingModule: function() {
         return this.anonymousAMDStack.pop();
       },
-      getCurrentExecutingModuleName: function() {
+      getCurrentExecutingAMD: function() {
         return this.anonymousAMDStack[this.anonymousAMDStack.length - 1];
       },
       runTree: function(root, files, callback) {
@@ -248,6 +251,11 @@ var Executor;
         debugLog("Executor", "executing " + path);
         // check cache
         if (this.cache[path] && this.executed[path]) {
+          return this.cache[path];
+        }
+
+        // check AMD define-style cache
+        if (this.cache[path] && this.defined[path]) {
           return this.cache[path];
         }
 

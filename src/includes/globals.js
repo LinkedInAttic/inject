@@ -73,6 +73,9 @@ function proxy(fn, scope) {
   if (!scope) {
     throw new Error("proxying requires a scope");
   }
+  if (!fn) {
+    throw new Error("proxying requires a function");
+  }
   return function() {
     return fn.apply(scope, arguments);
   }

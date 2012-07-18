@@ -47,7 +47,8 @@ module("src :: TreeDownloader", {
       var context = sandbox.global;
 
       context.Executor = {
-        flagModuleAsCircular: function() {}
+        flagModuleAsCircular: function() {},
+        isModuleDefined: function() {}
       };
 
       var rootJS = "root.js contents";

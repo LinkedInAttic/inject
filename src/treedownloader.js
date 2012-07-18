@@ -86,7 +86,13 @@ var TreeDownloader = Class.extend(function() {
         this.increaseCallsRemaining();
       }
 
-      // download the file
+      // do not bother to download AMD define()-ed files
+      if (Executor.isModuleDefined(node.getValue().path)) {
+        this.log("AMD defined module, no download required", node.getValue().path);
+        this.reduceCallsRemaining(callback, node);
+        return;
+      }
+
       this.log("requesting file", node.getValue().path);
       Communicator.get(node.getValue().path, proxy(function(contents) {
         this.log("download complete", node.getValue().path);
@@ -120,9 +126,18 @@ var TreeDownloader = Class.extend(function() {
           // store file contents for later
           this.files[node.getValue().path] = contents;
 
-          var requires = Analyzer.extractRequires(contents);
+          var tempRequires = Analyzer.extractRequires(contents);
+          var requires = [];
           var childNode;
           var path;
+
+          // remote already-defined AMD modules before we go further
+          for (var i = 0, len = tempRequires.length; i < len; i++) {
+            path = RulesEngine.resolve(tempRequires[i], node.getValue().path).path;
+            if (!Executor.isModuleDefined(path)) {
+              requires.push(tempRequires[i]);
+            }
+          }
 
           this.log("dependencies ("+requires.length+"):" + requires.join(", "));
 

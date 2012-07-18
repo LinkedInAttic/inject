@@ -202,7 +202,9 @@ var RulesEngine;
           throw new Error("module root needs to be defined for resolving URLs");
         }
 
-        if (!relativeTo) {
+        // if there was no relativeTo, its relative to root
+        // if this is not a relative path, work from root
+        if (!relativeTo || path.indexOf(".") !== 0) {
           relativeTo = userConfig.moduleRoot;
         }
 
@@ -215,7 +217,9 @@ var RulesEngine;
           return resolvedUrl;
         }
 
-        // take off the strip ://
+        console.log("CONVERTING:", relativeTo, path);
+
+        // take off the :// to replace later
         relativeTo = relativeTo.replace(/:\/\//, "__INJECT_PROTOCOL_COLON_SLASH_SLASH__");
         path = path.replace(/:\/\//, "__INJECT_PROTOCOL_COLON_SLASH_SLASH__");
 
@@ -242,6 +246,8 @@ var RulesEngine;
 
         resolvedUrl = resolvedUrl.join("/");
         resolvedUrl = resolvedUrl.replace(/__INJECT_PROTOCOL_COLON_SLASH_SLASH__/, "://");
+
+        console.log("RESULT:", resolvedUrl);
 
         if (userConfig.useSuffix && !FILE_SUFFIX_REGEX.test(resolvedUrl)) {
           resolvedUrl = resolvedUrl + BASIC_FILE_SUFFIX;

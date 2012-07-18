@@ -31,7 +31,7 @@ var commonJSHeader = ([
 var commonJSFooter = ([
 '      __POINTCUT_AFTER__',
 '    };',
-'    __INJECT_NS__.INTERNAL.defineExecutingModuleAs(module.id);',
+'    __INJECT_NS__.INTERNAL.defineExecutingModuleAs(module.id, module.uri);',
 '    try {',
 '      __exe.call(module);',
 '    }',

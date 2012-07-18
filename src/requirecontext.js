@@ -100,7 +100,7 @@ var RequireContext = Class.extend(function() {
       // exit early when we have no builtins left
       if (!callsRemaining) {
         if (callback) {
-          callback(proxy(this.require, this));
+          callback(InjectCore.createRequire(this.getPath()));
         }
         return;
       }
@@ -118,7 +118,7 @@ var RequireContext = Class.extend(function() {
             // test if all modules are done
             if (--callsRemaining === 0) {
               if (callback) {
-                callback(proxy(this.require, this));
+                callback(InjectCore.createRequire(this.getPath()));
               }
             }
           }, this));
@@ -134,9 +134,10 @@ var RequireContext = Class.extend(function() {
       var id = null;
       var dependencies = ["require", "exports", "module"];
       var executionFunctionOrLiteral = {};
-      var nonCircularDependencies = [];
+      var remainingDependencies = [];
       var tempModule = null;
       var tempModulePath = null;
+      var thisModulePath;
 
       // these are the various AMD interfaces and what they map to
       // we loop through the args by type and map them down into values
@@ -187,17 +188,20 @@ var RequireContext = Class.extend(function() {
 
       // handle anonymous modules
       if (!id) {
-        id = Executor.getCurrentExecutingModuleName();
-        this.log("AMD identified module as "+id);
+        id = Executor.getCurrentExecutingAMD().id;
+        thisModulePath = Executor.getCurrentExecutingAMD().path;
+        this.log("AMD identified anonymous module as "+id+" using URL "+thisModulePath);
+      }
+      else {
+        thisModulePath = RulesEngine.resolve(id, this.getPath()).path;
+        this.log("AMD non-anonymous module "+id+" at URL "+thisModulePath);
       }
 
-      // take care of define()ing only once
-      tempModulePath = RulesEngine.resolve(id, this.getPath()).path;
-      if (Executor.isModuleDefined(tempModulePath)) {
-        this.log("AMD module at url "+tempModulePath+" has already ran once");
+      if (Executor.isModuleDefined(thisModulePath)) {
+        this.log("AMD module at url "+thisModulePath+" has already ran once");
         return;
       }
-      Executor.flagModuleAsDefined(tempModulePath);
+      Executor.flagModuleAsDefined(thisModulePath);
 
       if (typeof(executionFunctionOrLiteral) === "function") {
         dependencies.concat(Analyzer.extractRequires(executionFunctionOrLiteral.toString()));
@@ -213,18 +217,18 @@ var RequireContext = Class.extend(function() {
           continue;
         }
         tempModulePath = RulesEngine.resolve(dependencies[i], this.getPath()).path;
-        if (!Executor.isModuleCircular(tempModulePath)) {
-          nonCircularDependencies.push(dependencies[i]);
+        if (!Executor.isModuleCircular(tempModulePath) && !Executor.isModuleDefined(tempModulePath)) {
+          remainingDependencies.push(dependencies[i]);
         }
       }
 
-      this.log("AMD define(...) of "+id+" will retrieve on: "+nonCircularDependencies.join(", "));
+      this.log("AMD define(...) of "+id+" will retrieve: "+remainingDependencies.join(", "));
 
       // ask only for the missed items + a require
-      nonCircularDependencies.unshift("require");
-      this.require(nonCircularDependencies, proxy(function(require) {
+      remainingDependencies.unshift("require");
+      this.require(remainingDependencies, proxy(function(require) {
         // use require as our first arg
-        var module = Executor.getModule(this.getPath());
+        var module = Executor.createModule(id, thisModulePath);
         var resolvedDependencies = this.getAllModules(dependencies, require, module);
         var results;
 
