@@ -159,6 +159,9 @@ var Executor;
         // cache of "circular" modules (true/false)
         this.circular = {};
 
+        // AMD style defined modules (true/false)
+        this.defined = {};
+
         // the stack of AMD define functions, because they "could" be anonymous
         this.anonymousAMDStack = [];
       },
@@ -191,6 +194,7 @@ var Executor;
         callback(returns);
       },
       createModule: function(moduleId, path) {
+        if (path == "/tests/spec/amd/includes/spec/anon/sub/sub/c.js") debugger;
         var module;
         if (!this.cache[path]) {
           module = {};
@@ -202,11 +206,29 @@ var Executor;
             for (var name in module.exports) {
               throw new Error("cannot setExports when exports have already been set");
             }
-            module.exports = xobj;
+            switch(typeof(xobj)) {
+              case "object":
+                // objects are enumerated and added
+                for (var name in xobj) {
+                  module.exports[name] = xobj[name];
+                }
+                break;
+              case "function":
+              default:
+                // non objects are written directly, blowing away exports
+                module.exports = xobj;
+                break;
+            }
           };
           this.cache[path] = module;
         }
         return this.cache[path];
+      },
+      isModuleDefined: function(path) {
+        return this.defined[path];
+      },
+      flagModuleAsDefined: function(path) {
+        this.defined[path] = true;
       },
       flagModuleAsBroken: function(path) {
         this.broken[path] = true;

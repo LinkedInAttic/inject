@@ -34,9 +34,9 @@ module("spec :: AMD :: AMD 1.0", {
 asyncTest("Anon - simple", 3, function() {
   sandbox.global.Inject.setModuleRoot("/tests/spec/amd/includes/spec/anon/");
   sandbox.global.require(["a","b"], function(a, b) {
-    equal("a", a.name);
-    equal("b", b.name);
-    equal("c", b.cName);
+    equal(a.name, "a");
+    equal(b.name, "b");
+    equal(b.cName, "c");
     start();
   });
 });

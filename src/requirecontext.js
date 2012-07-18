@@ -159,6 +159,14 @@ var RequireContext = Class.extend(function() {
         this.log("AMD identified module as "+id);
       }
 
+      // take care of define()ing only once
+      tempModulePath = RulesEngine.resolve(id, this.getPath()).path;
+      if (Executor.isModuleDefined(tempModulePath)) {
+        this.log("AMD module at url "+tempModulePath+" has already ran once");
+        return;
+      }
+      Executor.flagModuleAsDefined(tempModulePath);
+
       if (typeof(executionFunctionOrLiteral) === "function") {
         dependencies.concat(Analyzer.extractRequires(executionFunctionOrLiteral.toString()));
       }
@@ -184,8 +192,7 @@ var RequireContext = Class.extend(function() {
       nonCircularDependencies.unshift("require");
       this.require(nonCircularDependencies, proxy(function(require) {
         // use require as our first arg
-        var modulePath = RulesEngine.resolve(id, this.getPath()).path;
-        var module = Executor.createModule(id, modulePath);
+        var module = Executor.getModule(this.getPath());
         var resolvedDependencies = this.getAllModules(dependencies, require, module);
         var results;
 
@@ -194,19 +201,7 @@ var RequireContext = Class.extend(function() {
         if (typeof(executionFunctionOrLiteral) === "function") {
           results = executionFunctionOrLiteral.apply(null, resolvedDependencies);
           if (results) {
-            switch(typeof(results)) {
-              case "object":
-                // objects are enumerated and added
-                for (name in results) {
-                  module.exports[name] = results[name];
-                }
-                break;
-              case "function":
-              default:
-                // non objects are written directly, blowing away exports
-                module.exports = results;
-                break;
-            }
+            module.setExports(results);
           }
         }
         else {
@@ -214,6 +209,7 @@ var RequireContext = Class.extend(function() {
             module.exports[name] = executionFunctionOrLiteral[name];
           }
         }
+
       }, this));
     }
   };

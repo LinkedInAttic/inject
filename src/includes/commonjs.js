@@ -20,25 +20,26 @@ governing permissions and limitations under the License.
 var commonJSHeader = ([
 '__INJECT_NS__.INTERNAL.execute.__FUNCTION_ID__ = function() {',
 '  with (window) {',
-'    var __module = __INJECT_NS__.INTERNAL.createModule("__MODULE_ID__", "__MODULE_URI__"),',
-'        __require = __INJECT_NS__.INTERNAL.createRequire("__MODULE_URI__"),',
-'        __define = __INJECT_NS__.INTERNAL.createDefine("__MODULE_URI__"),',
+'    var module = __INJECT_NS__.INTERNAL.createModule("__MODULE_ID__", "__MODULE_URI__"),',
+'        require = __INJECT_NS__.INTERNAL.createRequire("__MODULE_URI__"),',
+'        define = __INJECT_NS__.INTERNAL.createDefine("__MODULE_URI__"),',
 '        __exe = null;',
-'    __exe = function(require, module, exports, define) {',
+'        exports = module.exports;',
+'    __exe = function() {',
 '      __POINTCUT_BEFORE__'
 ]).join('\n');
 var commonJSFooter = ([
 '      __POINTCUT_AFTER__',
 '    };',
-'    __INJECT_NS__.INTERNAL.defineExecutingModuleAs(__module.id);',
+'    __INJECT_NS__.INTERNAL.defineExecutingModuleAs(module.id);',
 '    try {',
-'      __exe.call(__module, __require, __module, __module.exports, __define);',
+'      __exe.call(module);',
 '    }',
 '    catch (__EXCEPTION__) {',
-'      __module.error = __EXCEPTION__;',
+'      module.error = __EXCEPTION__;',
 '    }',
 '    __INJECT_NS__.INTERNAL.undefineExecutingModule();',
-'    return __module;',
+'    return module;',
 '  }',
 '};'
 ]).join('\n');
