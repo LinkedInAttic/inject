@@ -26,7 +26,7 @@ var userConfig = {
   },
   debug: {
   	sourceMap: false,
-    logging: true
+    logging: false
   }
 };
 

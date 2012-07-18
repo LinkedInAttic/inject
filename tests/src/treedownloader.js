@@ -46,6 +46,10 @@ module("src :: TreeDownloader", {
       */
       var context = sandbox.global;
 
+      context.Executor = {
+        flagModuleAsCircular: function() {}
+      };
+
       var rootJS = "root.js contents";
       var rootUrl = "http://example.com/root.js";
       var rootRequires = ["a", "b"];

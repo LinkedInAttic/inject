@@ -55,11 +55,14 @@ test("JS Execution", function() {
         };
       },
       createRequire: function() {
-        return function() {}
+        return function() {};
+      },
+      createDefine: function() {
+        return function() {};
       },
       require: function() {},
-      defineAs: function() {},
-      undefineAs: function() {},
+      defineExecutingModuleAs: function() {},
+      undefineExecutingModule: function() {},
       setModuleExports: function() {}
     },
     clearCache: function() {}
