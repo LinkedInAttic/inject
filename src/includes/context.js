@@ -49,10 +49,10 @@ context.Inject = {
   },
   clearCache: function() {},
   manifest: function() {
-    RulesEngine.manifest.apply(Analyzer, arguments);
+    RulesEngine.manifest.apply(RulesEngine, arguments);
   },
   addRule: function() {
-    RulesEngine.addRule.apply(Analyzer, arguments);
+    RulesEngine.addRule.apply(RulesEngine, arguments);
   },
   require: globalRequire.require,
   ensure: globalRequire.ensure,

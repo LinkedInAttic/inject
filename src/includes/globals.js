@@ -93,7 +93,7 @@ var debugLog = function() {};
   var logs = [];
   var canLog = (console && console.log && typeof(console.log) === "function");
   var doLog = function(origin, message) {
-    if (userConfig.debug.logging) {
+    if (userConfig.debug && userConfig.debug.logging) {
       console.log("## "+ origin +" ##" + "\n" + message);
     };
   }

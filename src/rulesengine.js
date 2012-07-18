@@ -191,6 +191,7 @@ var RulesEngine;
       toUrl: function(path, relativeTo) {
         var blownApartURL;
         var resolvedUrl = [];
+        var startingUrl = [path, relativeTo];
 
         // exit early on resolved http URL
         if (ABSOLUTE_PATH_REGEX.test(path)) {
@@ -216,8 +217,6 @@ var RulesEngine;
           }
           return resolvedUrl;
         }
-
-        console.log("CONVERTING:", relativeTo, path);
 
         // take off the :// to replace later
         relativeTo = relativeTo.replace(/:\/\//, "__INJECT_PROTOCOL_COLON_SLASH_SLASH__");
@@ -247,7 +246,7 @@ var RulesEngine;
         resolvedUrl = resolvedUrl.join("/");
         resolvedUrl = resolvedUrl.replace(/__INJECT_PROTOCOL_COLON_SLASH_SLASH__/, "://");
 
-        console.log("RESULT:", resolvedUrl);
+        debugLog("RulesEngine", "Converted "+startingUrl.join("&&")+" to "+resolvedUrl);
 
         if (userConfig.useSuffix && !FILE_SUFFIX_REGEX.test(resolvedUrl)) {
           resolvedUrl = resolvedUrl + BASIC_FILE_SUFFIX;

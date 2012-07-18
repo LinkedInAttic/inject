@@ -187,7 +187,7 @@ var Executor;
           var name = node.getValue().name;
           var path = node.getValue().path;
           var file = files[path];
-          var pointcuts = RulesEngine.getPointcuts(path);
+          var pointcuts = RulesEngine.getPointcuts(path, true);
           Executor.createModule(name, path);
           if (!node.isCircular()) {
             returns.push(Executor.runModule(name, file, path, pointcuts));
