@@ -131,24 +131,56 @@ var RequireContext = Class.extend(function() {
     },
     define: function() {
       var args = Array.prototype.slice.call(arguments, 0);
-      var id = args[0];
-      var dependencies = args[1];
-      var executionFunctionOrLiteral = args[2];
+      var id = null;
+      var dependencies = ["require", "exports", "module"];
+      var executionFunctionOrLiteral = {};
       var nonCircularDependencies = [];
       var tempModule = null;
       var tempModulePath = null;
 
-      if (!executionFunctionOrLiteral) {
-        executionFunctionOrLiteral = dependencies;
-        dependencies = id;
-        id = null;
+      // these are the various AMD interfaces and what they map to
+      // we loop through the args by type and map them down into values
+      // while not efficient, it makes this overloaed interface easier to
+      // maintain
+      var interfaces = {
+        "string array object": ["id", "dependencies", "executionFunctionOrLiteral"],
+        "string object":       ["id", "executionFunctionOrLiteral"],
+        "array object":        ["dependencies", "executionFunctionOrLiteral"],
+        "object":              ["executionFunctionOrLiteral"]
+      };
+      var key = [];
+      var value;
+      for (var i = 0, len = args.length; i < len; i++) {
+        if (Object.prototype.toString.apply(args[i]) === '[object Array]') {
+          key.push("array");
+        }
+        else if (typeof(args[i]) === "object" || typeof(args[i]) === "function") {
+          key.push("object");
+        }
+        else {
+          key.push(typeof(args[i]));
+        }
       }
-      if (!executionFunctionOrLiteral) {
-        executionFunctionOrLiteral = dependencies;
-        dependencies = ["require", "exports", "module"];
+      key = key.join(" ");
+
+      if (!interfaces[key]) {
+        throw new Error("You did not use an AMD compliant interface. Please check your define() calls");
       }
-      if (!executionFunctionOrLiteral) {
-        throw new Error("You must provide at least 1 argument to define");
+
+      key = interfaces[key];
+      for (var i = 0, len = key.length; i < len; i++) {
+        value = args[i];
+        switch(key[i]) {
+          case "id":
+            id = value;
+            break;
+          case "dependencies":
+            dependencies = value;
+            break;
+          case "executionFunctionOrLiteral":
+            executionFunctionOrLiteral = value;
+            break;
+        }
       }
 
       this.log("AMD define(...) of "+ ((id) ? id : "anonymous"));
