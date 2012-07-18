@@ -194,7 +194,6 @@ var Executor;
         callback(returns);
       },
       createModule: function(moduleId, path) {
-        if (path == "/tests/spec/amd/includes/spec/anon/sub/sub/c.js") debugger;
         var module;
         if (!this.cache[path]) {
           module = {};
