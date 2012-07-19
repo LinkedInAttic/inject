@@ -54,10 +54,8 @@ context.Inject = {
   addRule: function() {
     RulesEngine.addRule.apply(RulesEngine, arguments);
   },
-  require: globalRequire.require,
-  ensure: globalRequire.ensure,
-  run: globalRequire.run,
-  define: globalRequire.define,
+  require: InjectCore.createRequire(),
+  define: InjectCore.createDefine(),
   version: INJECT_VERSION
 };
 

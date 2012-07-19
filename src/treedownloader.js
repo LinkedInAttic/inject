@@ -79,7 +79,14 @@ var TreeDownloader = Class.extend(function() {
       var parentPath = (node.getParent() && node.getParent().getValue())
                         ? node.getParent().getValue().path
                         : userConfig.moduleRoot;
-      node.getValue().path = RulesEngine.resolve(node.getValue().name, parentPath).path;
+      var parentName =  (node.getParent() && node.getParent().getValue())
+                        ? node.getParent().getValue().name
+                        : "";
+
+      // get the path and REAL identifier for this module (resolve relative references)
+      var identifier = RulesEngine.resolveIdentifier(node.getValue().name, parentName);
+      node.getValue().path = RulesEngine.resolveUrl(identifier);
+      node.getValue().resolvedId = identifier;
 
       // top level starts at 1
       if (!node.getParent()) {
@@ -87,21 +94,21 @@ var TreeDownloader = Class.extend(function() {
       }
 
       // do not bother to download AMD define()-ed files
-      if (Executor.isModuleDefined(node.getValue().path)) {
-        this.log("AMD defined module, no download required", node.getValue().path);
+      if (Executor.isModuleDefined(node.getValue().name)) {
+        this.log("AMD defined module, no download required", node.getValue().name);
         this.reduceCallsRemaining(callback, node);
         return;
       }
 
       this.log("requesting file", node.getValue().path);
-      Communicator.get(node.getValue().path, proxy(function(contents) {
+      Communicator.get(node.getValue().name, node.getValue().path, proxy(function(contents) {
         this.log("download complete", node.getValue().path);
         var parent = node;
         var found = {};
         var value;
 
         // seed found with the first item
-        found[node.getValue().path] = true;
+        found[node.getValue().name] = true;
         parent = parent.getParent();
         // test if you are a circular reference. check every parent back to root
         while(parent) {
@@ -110,12 +117,12 @@ var TreeDownloader = Class.extend(function() {
             break;
           }
 
-          value = parent.getValue().path;
+          value = parent.getValue().name;
           if (found[value]) {
-            this.log("circular reference found", node.getValue().path);
+            this.log("circular reference found", node.getValue().name);
             // flag the node as circular (commonJS) and the module itself (AMD)
             node.flagCircular();
-            Executor.flagModuleAsCircular(node.getValue().path);
+            Executor.flagModuleAsCircular(node.getValue().name);
           }
           found[value] = true;
           parent = parent.getParent();
@@ -124,17 +131,18 @@ var TreeDownloader = Class.extend(function() {
         // if it is not circular, and we have contents
         if (!node.isCircular() && contents) {
           // store file contents for later
-          this.files[node.getValue().path] = contents;
+          this.files[node.getValue().name] = contents;
 
           var tempRequires = Analyzer.extractRequires(contents);
           var requires = [];
           var childNode;
+          var name;
           var path;
 
-          // remote already-defined AMD modules before we go further
+          // remove already-defined AMD modules before we go further
           for (var i = 0, len = tempRequires.length; i < len; i++) {
-            path = RulesEngine.resolve(tempRequires[i], node.getValue().path).path;
-            if (!Executor.isModuleDefined(path)) {
+            name = RulesEngine.resolveIdentifier(tempRequires[i], node.getValue().name);
+            if (!Executor.isModuleDefined(name) && !Executor.isModuleDefined(tempRequires[i])) {
               requires.push(tempRequires[i]);
             }
           }
@@ -146,8 +154,9 @@ var TreeDownloader = Class.extend(function() {
             this.increaseCallsRemaining(requires.length);
           }
           for (var i = 0, len = requires.length; i < len; i++) {
-            path = RulesEngine.resolve(requires[i], node.getValue().path).path;
-            childNode = TreeDownloader.createNode(requires[i], path);
+            name = requires[i];
+            path = RulesEngine.resolveUrl(RulesEngine.resolveIdentifier(name, node.getValue().name));
+            childNode = TreeDownloader.createNode(name, path);
             node.addChild(childNode);
             this.downloadTree(childNode, proxy(function() {
               this.reduceCallsRemaining(callback, node);

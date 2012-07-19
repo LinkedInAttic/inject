@@ -186,11 +186,18 @@ var Executor;
           }
           var name = node.getValue().name;
           var path = node.getValue().path;
-          var file = files[path];
+          var file = files[name];
+          var resolvedId = node.getValue().resolvedId;
+          // var resolvedName = (node.getParent())
+          //                  ? RulesEngine.resolveIdentifier(name, node.getParent().getValue().name)
+          //                  : resolvedId;
           var pointcuts = RulesEngine.getPointcuts(path, true);
-          Executor.createModule(name, path);
+          Executor.createModule(resolvedId, path);
           if (!node.isCircular()) {
-            returns.push(Executor.runModule(name, file, path, pointcuts));
+            // note: we use "name" here, because of CommonJS Spec 1.0 Modules
+            // the relative includes we find must be relative to "name", not the
+            // resovled name
+            returns.push(Executor.runModule(resolvedId, file, path, pointcuts));
           }
         });
         // all files are executed
@@ -198,7 +205,7 @@ var Executor;
       },
       createModule: function(moduleId, path) {
         var module;
-        if (!this.cache[path]) {
+        if (!this.cache[moduleId]) {
           module = {};
           module.id = moduleId || null;
           module.uri = path || null;
@@ -222,41 +229,50 @@ var Executor;
                 break;
             }
           };
-          this.cache[path] = module;
+
+          if (moduleId) {
+            this.cache[moduleId] = module;
+          }
         }
-        return this.cache[path];
-      },
-      isModuleDefined: function(path) {
-        return this.defined[path];
-      },
-      flagModuleAsDefined: function(path) {
-        this.defined[path] = true;
-      },
-      flagModuleAsBroken: function(path) {
-        this.broken[path] = true;
-      },
-      flagModuleAsCircular: function(path) {
-        this.circular[path] = true;
-      },
-      isModuleCircular: function(path) {
-        return this.circular[path];
-      },
-      getModule: function(path) {
-        if (this.broken[path]) {
-          throw new Error("module at "+path+" failed to load successfully");
+
+        if (moduleId) {
+          return this.cache[moduleId];
         }
-        return this.cache[path] || null;
+        else {
+          return module;
+        }
+      },
+      isModuleDefined: function(moduleId) {
+        return this.defined[moduleId];
+      },
+      flagModuleAsDefined: function(moduleId) {
+        this.defined[moduleId] = true;
+      },
+      flagModuleAsBroken: function(moduleId) {
+        this.broken[moduleId] = true;
+      },
+      flagModuleAsCircular: function(moduleId) {
+        this.circular[moduleId] = true;
+      },
+      isModuleCircular: function(moduleId) {
+        return this.circular[moduleId];
+      },
+      getModule: function(moduleId) {
+        if (this.broken[moduleId]) {
+          throw new Error("module "+moduleId+" failed to load successfully");
+        }
+        return this.cache[moduleId] || null;
       },
       runModule: function(moduleId, code, path, pointcuts) {
         debugLog("Executor", "executing " + path);
         // check cache
-        if (this.cache[path] && this.executed[path]) {
-          return this.cache[path];
+        if (this.cache[moduleId] && this.executed[moduleId]) {
+          return this.cache[moduleId];
         }
 
         // check AMD define-style cache
-        if (this.cache[path] && this.defined[path]) {
-          return this.cache[path];
+        if (this.cache[moduleId] && this.defined[moduleId]) {
+          return this.cache[moduleId];
         }
 
         var functionId = "exec" + (functionCount++);
@@ -301,10 +317,10 @@ var Executor;
         }
 
         // cache the result
-        this.cache[path] = result;
-        this.executed[path] = true;
+        this.cache[moduleId] = result;
+        this.executed[moduleId] = true;
 
-        debugLog("Executor", "executed", path, result);
+        debugLog("Executor", "executed", moduleId, path, result);
 
         // return the result
         return result;

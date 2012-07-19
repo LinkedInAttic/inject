@@ -34,38 +34,132 @@ var RulesEngine;
   var AsStatic = Class.extend(function() {
     return {
       init: function() {
-        this.cache = {
-          byUrl: {}
-        };
+        this.pointcuts = {};
       },
-      // resolve: apply rules AND get URL
-      resolve: function(identifier, relativeTo) {
-        var dir = relativeTo;
-        if (dir && !userConfig.baseDir) {
-          dir = dir.split("/");
-          if (dir[dir.length - 1]) {
+      resolveIdentifier: function(identifier, relativeTo) {
+        if (!relativeTo) {
+          relativeTo = "";
+        }
+
+        if (identifier.indexOf(".") !== 0) {
+          relativeTo = "";
+        }
+
+        // basedir
+        if (relativeTo) {
+          relativeTo = relativeTo.split("/");
+          relativeTo.pop();
+          relativeTo = relativeTo.join("/");
+        }
+
+        if (identifier.indexOf("/") === 0) {
+          return identifier;
+        }
+
+        identifier = this.computeRelativePath(identifier, relativeTo);
+
+        if (identifier.indexOf("/") === 0) {
+          identifier = identifier.split("/");
+          identifier.shift();
+          identifier = identifier.join("/");
+        }
+
+        return identifier;
+      },
+      resolveUrl: function(path, relativeTo) {
+        var resolvedUrl;
+
+        // if no module root, freak out
+        if (!userConfig.moduleRoot) {
+          throw new Error("module root needs to be defined for resolving URLs");
+        }
+
+        if (relativeTo && !userConfig.baseDir) {
+          relativeTo = relativeTo.split("/");
+          if (relativeTo[relativeTo.length - 1]) {
             // not ending in /
-            dir.pop();
+            relativeTo.pop();
           }
-          dir = dir.join("/");
+          relativeTo = relativeTo.join("/");
         }
-        else if (dir) {
-          // TODO: baseDir support for the wacky path people
-          dir = userConfig.baseDir(dir);
+        else if (relativeTo) {
+          relativeTo = userConfig.baseDir(relativeTo);
+        }
+        else {
+          relativeTo = userConfig.moduleRoot;
         }
 
-        // apply rules that match
-        var result = this.applyRules(identifier);
-        var url = this.toUrl(result.path, dir);
+        // exit early on resolved http URL
+        if (ABSOLUTE_PATH_REGEX.test(path)) {
+          return path;
+        }
 
-        this.cache.byUrl[url] = result;
-        return {
-          path: url,
-          pointcuts: result.pointcuts
-        };
+        // Apply our rules to the path in progress
+        var result = this.applyRules(path);
+        path = result.resolved;
+
+        // shortcut. If it starts with /, affix to module root
+        if (path.indexOf("/") === 0) {
+          resolvedUrl = userConfig.moduleRoot + path.substr(1);
+          if (userConfig.useSuffix && !FILE_SUFFIX_REGEX.test(resolvedUrl)) {
+            resolvedUrl = resolvedUrl + BASIC_FILE_SUFFIX;
+          }
+          return resolvedUrl;
+        }
+
+        // take off the :// to replace later
+        relativeTo = relativeTo.replace(/:\/\//, "__INJECT_PROTOCOL_COLON_SLASH_SLASH__");
+        path = path.replace(/:\/\//, "__INJECT_PROTOCOL_COLON_SLASH_SLASH__");
+
+        var resolvedUrl = this.computeRelativePath(path, relativeTo);
+
+        resolvedUrl = resolvedUrl.replace(/__INJECT_PROTOCOL_COLON_SLASH_SLASH__/, "://");
+
+        if (userConfig.useSuffix && !FILE_SUFFIX_REGEX.test(resolvedUrl)) {
+          resolvedUrl = resolvedUrl + BASIC_FILE_SUFFIX;
+        }
+
+        // store pointcuts based on the resolved URL
+        this.pointcuts[resolvedUrl] = result.pointcuts;
+
+        return resolvedUrl;
       },
+      computeRelativePath: function(id, base) {
+        var blownApartURL;
+        var resolved = [];
+
+        // exit early on resolved :// in a URL
+        if (ABSOLUTE_PATH_REGEX.test(id)) {
+          return id;
+        }
+
+        blownApartURL = [].concat(base.split("/"), id.split("/"));
+        for (var i = 0, len = blownApartURL.length; i < len; i++) {
+          piece = blownApartURL[i];
+
+          if (piece === "." || (piece === "" && i > 0)) {
+            // skip . or "" (was "//" in url at position 0)
+            continue;
+          }
+          else if (piece === "..") {
+            // up one directory
+            if (resolved.length === 0) {
+              throw new Error("could not traverse higher than highest path");
+            }
+            resolved.pop();
+          }
+          else {
+            // fragment okay, add
+            resolved.push(piece);
+          }
+        }
+
+        resolved = resolved.join("/");
+        return resolved;
+      },
+
       getPointcuts: function(path, asString) {
-        var pointcuts = this.cache.byUrl[path].pointcuts || [];
+        var pointcuts = this.pointcuts[path] || {before: [], after: []};
         var result = {
           before: [],
           after: []
@@ -139,12 +233,12 @@ var RulesEngine;
           this.addRule(key, rule);
         }
       },
-      applyRules: function(identifier) {
+      applyRules: function(path) {
         if (rulesIsDirty) {
           sortRulesTable();
         }
 
-        var result = identifier;
+        var result = path;
         var payload;
         var beforePointCuts = [];
         var afterPointCuts = [];
@@ -176,83 +270,14 @@ var RulesEngine;
         });
 
         payload = {
-          path: result || "",
+          resolved: result || "",
           pointcuts: {
             before: beforePointCuts,
             after: afterPointCuts
           }
         };
 
-        this.cache[result] = payload;
-
         return payload;
-
-      },
-      toUrl: function(path, relativeTo) {
-        var blownApartURL;
-        var resolvedUrl = [];
-        var startingUrl = [path, relativeTo];
-
-        // exit early on resolved http URL
-        if (ABSOLUTE_PATH_REGEX.test(path)) {
-          return path;
-        }
-
-        // if no module root, freak out
-        if (!userConfig.moduleRoot) {
-          throw new Error("module root needs to be defined for resolving URLs");
-        }
-
-        // if there was no relativeTo, its relative to root
-        // if this is not a relative path, work from root
-        if (!relativeTo || path.indexOf(".") !== 0) {
-          relativeTo = userConfig.moduleRoot;
-        }
-
-        // shortcut. If it starts with /, affix to module root
-        if (path.indexOf("/") === 0) {
-          resolvedUrl = userConfig.moduleRoot + path.substr(1);
-          if (userConfig.useSuffix && !FILE_SUFFIX_REGEX.test(resolvedUrl)) {
-            resolvedUrl = resolvedUrl + BASIC_FILE_SUFFIX;
-          }
-          return resolvedUrl;
-        }
-
-        // take off the :// to replace later
-        relativeTo = relativeTo.replace(/:\/\//, "__INJECT_PROTOCOL_COLON_SLASH_SLASH__");
-        path = path.replace(/:\/\//, "__INJECT_PROTOCOL_COLON_SLASH_SLASH__");
-
-        blownApartURL = [].concat(relativeTo.split("/"), path.split("/"));
-        for (var i = 0, len = blownApartURL.length; i < len; i++) {
-          piece = blownApartURL[i];
-
-          if (piece === "." || (piece === "" && i > 0)) {
-            // skip . or "" (was "//" in url at position 0)
-            continue;
-          }
-          else if (piece === "..") {
-            // up one directory
-            if (resolvedUrl.length === 0) {
-              throw new Error("could not traverse higher than highest path");
-            }
-            resolvedUrl.pop();
-          }
-          else {
-            // fragment okay, add
-            resolvedUrl.push(piece);
-          }
-        }
-
-        resolvedUrl = resolvedUrl.join("/");
-        resolvedUrl = resolvedUrl.replace(/__INJECT_PROTOCOL_COLON_SLASH_SLASH__/, "://");
-
-        debugLog("RulesEngine", "Converted "+startingUrl.join("&&")+" to "+resolvedUrl);
-
-        if (userConfig.useSuffix && !FILE_SUFFIX_REGEX.test(resolvedUrl)) {
-          resolvedUrl = resolvedUrl + BASIC_FILE_SUFFIX;
-        }
-
-        return resolvedUrl;
 
       }
     };

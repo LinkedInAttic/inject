@@ -36,8 +36,10 @@ asyncTest("Compliance", 13, function() {
   sandbox.global.require.run("compliance");
 });
 
-asyncTest("Compliance - Module Identifiers", 8, function() {
-  sandbox.global.Inject.setModuleRoot("/tests/spec/modules-1.1.1/includes/spec/identifiers/");
+asyncTest("Compliance - Module Identifiers", 5, function() {
+  sandbox.global.Inject.setModuleRoot("/tests/spec/modules-1.1.1/includes/spec/");
+  // this virtual mapping means pcl's call to ./divide should hit the top level divide
+  sandbox.global.Inject.addRule("divideproxy", "identifiers/deep/pcl");
   sandbox.global.require.run("terms");
 });
 

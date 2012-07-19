@@ -41,7 +41,7 @@ var Communicator;
     }
 
     // when a file completes, resolve all callbacks in its queue
-    function resolveCompletedFile(url, statusCode, contents) {
+    function resolveCompletedFile(moduleId, url, statusCode, contents) {
       statusCode = 1*statusCode;
       debugLog("Communicator ("+url+")", "status "+statusCode+". Length: "+((contents) ? contents.length : "NaN"));
 
@@ -54,7 +54,7 @@ var Communicator;
       each(downloadCompleteQueue[url], function(cb) {
         if (statusCode !== 200) {
           if (Executor) {
-            Executor.flagModuleAsBroken(url);
+            Executor.flagModuleAsBroken(moduleId);
           }
           cb(false);
         }
@@ -80,10 +80,11 @@ var Communicator;
             return;
           }
           var pieces = message.split("__INJECT_SPLIT__");
-          // pieces[0] file URL
-          // pieces[1] status code
-          // pieces[2] file contents
-          resolveCompletedFile(pieces[0], pieces[1], pieces[2]);
+          // pieces[0] moduleId
+          // pieces[1] file URL
+          // pieces[2] status code
+          // pieces[3] file contents
+          resolveCompletedFile(pieces[0], pieces[1], pieces[2], pieces[3]);
         },
         onReady: function() {
           pauseRequired = false;
@@ -96,15 +97,15 @@ var Communicator;
     }
 
     // these are our two senders, either via easyXDM or via standard xmlHttpRequest
-    function sendViaIframe(url) {
-      socket.postMessage(url);
+    function sendViaIframe(moduleId, url) {
+      socket.postMessage(moduleId + "__INJECT_SPLIT__" + url);
     }
-    function sendViaXHR(url) {
+    function sendViaXHR(moduleId, url) {
       var xhr = getXhr();
       xhr.open("GET", url);
       xhr.onreadystatechange = function() {
         if (xhr.readyState === 4) {
-          resolveCompletedFile(url, xhr.status, xhr.responseText);
+          resolveCompletedFile(moduleId, url, xhr.status, xhr.responseText);
         }
       };
       xhr.send(null);
@@ -112,7 +113,7 @@ var Communicator;
 
     return {
       init: function() {},
-      get: function(url, callback) {
+      get: function(moduleId, url, callback) {
         if (!downloadCompleteQueue[url]) {
           downloadCompleteQueue[url] = [];
         }
@@ -140,7 +141,7 @@ var Communicator;
         }
 
         var socketQueuedFn = function() {
-          sendViaIframe(url);
+          sendViaIframe(moduleId, url);
         };
 
         if (pauseRequired) {
@@ -148,10 +149,10 @@ var Communicator;
         }
         else {
           if (userConfig.xd.relayFile) {
-            sendViaIframe(url);
+            sendViaIframe(moduleId, url);
           }
           else {
-            sendViaXHR(url);
+            sendViaXHR(moduleId, url);
           }
         }
       }

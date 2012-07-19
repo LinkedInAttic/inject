@@ -20,18 +20,21 @@ var InjectCore;
   var AsStatic = Class.extend(function() {
     return {
       init: function() {},
-      createRequire: function(path) {
-        var req = new RequireContext(path);
+      createRequire: function(id, path) {
+        var req = new RequireContext(id, path);
         var require = proxy(req.require, req);
         require.ensure = proxy(req.ensure, req);
         require.run = proxy(req.run, req);
-        require.toUrl = function(url) {
-          return RulesEngine.resolve(url, path).path;
+        // resolve an identifier to a URL
+        require.toUrl = function(identifier) {
+          var resolvedId = RulesEngine.resolveIdentifier(identifier, id);
+          var resolvedPath = RulesEngine.resolveUrl(resolvedId);
+          return resolvedPath;
         };
         return require;
       },
-      createDefine: function(path) {
-        var req = new RequireContext(path);
+      createDefine: function(id, path) {
+        var req = new RequireContext(id, path);
         var define = proxy(req.define, req);
         define.amd = {};
         return define;

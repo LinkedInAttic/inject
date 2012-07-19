@@ -1,8 +1,6 @@
-define(['../util', './util', '../../util'], function (util_ul, util_cl, util_uul) {
+define(['./util'], function (util) {
     return {
         name: 'impl/array',
-        utilNameUl: util_ul.name,
-        utilNameCl: util_cl.name,
-        utilNameUUl: util_uul.name
+        utilName: util.name
     };
 });

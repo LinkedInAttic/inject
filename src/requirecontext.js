@@ -17,7 +17,8 @@ governing permissions and limitations under the License.
 
 var RequireContext = Class.extend(function() {
   return {
-    init: function(path) {
+    init: function(id, path) {
+      this.id = id || null;
       this.path = path || null;
     },
     log: function(message) {
@@ -29,9 +30,11 @@ var RequireContext = Class.extend(function() {
       }
       return this.path || userConfig.moduleRoot;
     },
+    getId: function() {
+      return this.id || "";
+    },
     getModule: function(moduleId) {
-      var modulePath = RulesEngine.resolve(moduleId, this.getPath()).path;
-      return Executor.getModule(modulePath).exports;
+      return Executor.getModule(moduleId).exports;
     },
     getAllModules: function(moduleIdOrList, require, module) {
       var args = [];
@@ -58,6 +61,7 @@ var RequireContext = Class.extend(function() {
     require: function(moduleIdOrList, callback) {
       var path;
       var module;
+      var identifier;
 
       if (typeof(moduleIdOrList) === "string") {
         this.log("CommonJS require(string) of "+moduleIdOrList);
@@ -65,12 +69,13 @@ var RequireContext = Class.extend(function() {
           throw new Error("require() must be a string containing a-z, slash(/), dash(-), and dots(.)");
         }
 
-        path = RulesEngine.resolve(moduleIdOrList, this.getPath()).path;
-        module = Executor.getModule(path);
+        identifier = RulesEngine.resolveIdentifier(moduleIdOrList, this.getId());
+        module = Executor.getModule(identifier);
 
         if (!module) {
-          throw new Error("module "+moduleIdOrList+" not found at "+path);
+          throw new Error("module "+moduleIdOrList+" not found");
         }
+
         return module.exports;
       }
 
@@ -78,7 +83,8 @@ var RequireContext = Class.extend(function() {
       this.log("AMD require(Array) of "+moduleIdOrList.join(", "));
       var strippedModules = Analyzer.stripBuiltins(moduleIdOrList);
       this.ensure(strippedModules, proxy(function(localRequire) {
-        var modules = this.getAllModules(moduleIdOrList, localRequire);
+        var module = Executor.createModule();
+        var modules = this.getAllModules(moduleIdOrList, localRequire, module);
         callback.apply(context, modules);
       }, this));
     },
@@ -100,7 +106,7 @@ var RequireContext = Class.extend(function() {
       // exit early when we have no builtins left
       if (!callsRemaining) {
         if (callback) {
-          callback(InjectCore.createRequire(this.getPath()));
+          callback(InjectCore.createRequire(this.getId(), this.getPath()));
         }
         return;
       }
@@ -118,7 +124,7 @@ var RequireContext = Class.extend(function() {
             // test if all modules are done
             if (--callsRemaining === 0) {
               if (callback) {
-                callback(InjectCore.createRequire(this.getPath()));
+                callback(InjectCore.createRequire(this.getId(), this.getPath()));
               }
             }
           }, this));
@@ -135,8 +141,9 @@ var RequireContext = Class.extend(function() {
       var dependencies = ["require", "exports", "module"];
       var executionFunctionOrLiteral = {};
       var remainingDependencies = [];
+      var resolvedDependencyList = [];
       var tempModule = null;
-      var tempModulePath = null;
+      var tempModuleId = null;
       var thisModulePath;
 
       // these are the various AMD interfaces and what they map to
@@ -189,19 +196,14 @@ var RequireContext = Class.extend(function() {
       // handle anonymous modules
       if (!id) {
         id = Executor.getCurrentExecutingAMD().id;
-        thisModulePath = Executor.getCurrentExecutingAMD().path;
-        this.log("AMD identified anonymous module as "+id+" using URL "+thisModulePath);
-      }
-      else {
-        thisModulePath = RulesEngine.resolve(id, this.getPath()).path;
-        this.log("AMD non-anonymous module "+id+" at URL "+thisModulePath);
+        this.log("AMD identified anonymous module as "+id);
       }
 
-      if (Executor.isModuleDefined(thisModulePath)) {
-        this.log("AMD module at url "+thisModulePath+" has already ran once");
+      if (Executor.isModuleDefined(id)) {
+        this.log("AMD module "+id+" has already ran once");
         return;
       }
-      Executor.flagModuleAsDefined(thisModulePath);
+      Executor.flagModuleAsDefined(id);
 
       if (typeof(executionFunctionOrLiteral) === "function") {
         dependencies.concat(Analyzer.extractRequires(executionFunctionOrLiteral.toString()));
@@ -214,10 +216,15 @@ var RequireContext = Class.extend(function() {
       for (var i = 0, len = dependencies.length; i < len; i++) {
         if (BUILTINS[dependencies[i]]) {
           // was a builtin, skip
+          resolvedDependencyList.push(dependencies[i]);
           continue;
         }
-        tempModulePath = RulesEngine.resolve(dependencies[i], this.getPath()).path;
-        if (!Executor.isModuleCircular(tempModulePath) && !Executor.isModuleDefined(tempModulePath)) {
+        // TODO: amd dependencies are resolved FIRST against their current ID
+        // then against the module Root (huge deviation from CommonJS which uses
+        // the filepaths)
+        tempModuleId = RulesEngine.resolveIdentifier(dependencies[i], this.getId());
+        resolvedDependencyList.push(tempModuleId);
+        if (!Executor.isModuleCircular(tempModuleId) && !Executor.isModuleDefined(tempModuleId)) {
           remainingDependencies.push(dependencies[i]);
         }
       }
@@ -228,8 +235,14 @@ var RequireContext = Class.extend(function() {
       remainingDependencies.unshift("require");
       this.require(remainingDependencies, proxy(function(require) {
         // use require as our first arg
-        var module = Executor.createModule(id, thisModulePath);
-        var resolvedDependencies = this.getAllModules(dependencies, require, module);
+        var module = Executor.getModule(id);
+
+        // if there is no module, it was defined inline
+        if (!module) {
+          module = Executor.createModule(id);
+        }
+
+        var resolvedDependencies = this.getAllModules(resolvedDependencyList, require, module);
         var results;
 
         // if the executor is a function, run it

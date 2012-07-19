@@ -26,7 +26,7 @@ module("src :: RulesEngine", {
       "/src/rulesengine.js"
     ], function() {
       sandbox.global.userConfig = {
-        moduleRoot: "http://example.com",
+        moduleRoot: "http://example.com/",
         useSuffix: true
       }
     });
@@ -41,25 +41,59 @@ test("Scaffolding", function() {
   ok(typeof(context.RulesEngine) === "object", "object exists");
 });
 
-test("Basic Rules", function() {
+test("Identifier Resolution", function() {
   var context = sandbox.global;
   var RulesEngine = context.RulesEngine;
 
-  RulesEngine.addRule("stringTestReplace", "stringTestReplaceResult");
-  RulesEngine.addRule(/regexTestReplace/, "regexTestReplaceResult");
-  RulesEngine.addRule(/regexObjectReplace/, {
-    path: "regexObjectReplaceResult"
+  equal(RulesEngine.resolveIdentifier("foo", "one/two/three/four/five"), "foo", "resolves to root");
+  equal(RulesEngine.resolveIdentifier("./foo", "one/two/three/four/five"), "one/two/three/four/foo", "./ is same dir as five");
+  equal(RulesEngine.resolveIdentifier("../foo", "one/two/three/four/five"), "one/two/three/foo", "../ is same dir as four");
+  equal(RulesEngine.resolveIdentifier("/foo", "one/two/three/four/five"), "/foo", "/ resolves to /foo (known absolute)");
+
+});
+
+test("URL Resolution", function() {
+  var context = sandbox.global;
+  var RulesEngine = context.RulesEngine;
+  var rootUrl   = "http://example.com/";
+  var baseUrl   = "http://example.com/a/b/c/d/e";
+  var baseUL    = "http://example.com/a/b/c/d/";
+  var baseUUL   = "http://example.com/a/b/c/";
+  var baseSlash = "http://example.com/a/b/c/d/e/";
+
+  RulesEngine.addRule("one", "ONE");
+  RulesEngine.addRule(/two/, "TWO");
+  RulesEngine.addRule(/three/, {
+    path: "THREE"
   });
-  RulesEngine.addRule(/regexObjectFnReplace/, {
+  RulesEngine.addRule(/four/, {
     path: function(path) {
-      return path + "Result";
+      return path.toUpperCase();
+    }
+  });
+  RulesEngine.addRule(/match/, {
+    path: function(path) {
+      return path.replace(/match/g, "MATCH");
     }
   });
 
-  equal(RulesEngine.resolve("stringTestReplace").path, "http://example.com/stringTestReplaceResult.js", "basic rule resolution");
-  equal(RulesEngine.resolve("regexTestReplace").path, "http://example.com/regexTestReplaceResult.js", "regex rule resolution");
-  equal(RulesEngine.resolve("regexObjectReplace").path, "http://example.com/regexObjectReplaceResult.js", "regex rule with path in object");
-  equal(RulesEngine.resolve("regexObjectFnReplace").path, "http://example.com/regexObjectFnReplaceResult.js", "regex rule with path as function");
+  equal(RulesEngine.resolveUrl("one"), rootUrl+"ONE.js");
+  equal(RulesEngine.resolveUrl("two"), rootUrl+"TWO.js");
+  equal(RulesEngine.resolveUrl("three"), rootUrl+"THREE.js");
+  equal(RulesEngine.resolveUrl("four"), rootUrl+"FOUR.js");
+
+  equal(RulesEngine.resolveUrl("http://absolute.com"), "http://absolute.com");
+
+  equal(RulesEngine.resolveUrl("./match", baseUrl), baseUL+"MATCH.js");
+  equal(RulesEngine.resolveUrl("../match", baseUrl), baseUUL+"MATCH.js");
+
+  // tests two rules at once
+  equal(RulesEngine.resolveUrl("./match", baseSlash), baseSlash+"MATCH.js");
+
+  // disable the auto-extension
+  context.global.userConfig.useSuffix = false;
+  equal(RulesEngine.resolveUrl("one"), rootUrl+"ONE");
+
 });
 
 test("Manifest", function() {
@@ -83,47 +117,52 @@ test("Manifest", function() {
   equal(calls, expectedCalls, "addRule was called internally");
 });
 
-test("toUrl", function() {
+test("converting URLs", function() {
   var context = sandbox.global;
   var RulesEngine = context.RulesEngine;
-  var root = "http://resolved.com/src/to/modules";
+  var root = "http://resolved.com/src/to/modules/foo.js";
+  var baseDir = "http://resolved.com/src/to/modules";
 
   context.userConfig.moduleRoot = root;
 
-  equal(RulesEngine.toUrl("sample"), root+"/sample.js", "basic URL resolution");
-  equal(RulesEngine.toUrl("http://absolutepath.com/absolute/path.js"), "http://absolutepath.com/absolute/path.js", "absolute path resolution");
-  equal(RulesEngine.toUrl("../a/b", root+"/one/two"), root+"/one/a/b.js", "relative path resolution");
+  equal(RulesEngine.resolveUrl("sample", root), baseDir+"/sample.js", "basic URL resolution");
+  equal(RulesEngine.resolveUrl("http://absolutepath.com/absolute/path.js", root), "http://absolutepath.com/absolute/path.js", "absolute path resolution");
+  equal(RulesEngine.resolveUrl("../a/b", baseDir+"/one/two/foo.js", root), baseDir+"/one/a/b.js", "relative path resolution");
 });
 
-test("rules to toUrl", function() {
-  var context = sandbox.global;
-  var RulesEngine = context.RulesEngine;
-  var root = "http://resolved.com/src/to/modules";
-  var path;
+// test("resolve from identifier to path with absolute URL", function() {
+//   var context = sandbox.global;
+//   var RulesEngine = context.RulesEngine;
+//   var root = "http://resolved.com/src/to/modules/foo.js";
+//   var baseDir = "http://resolved.com/src/to/modules";
+//   var path;
 
-  context.userConfig.moduleRoot = root;
+//   context.userConfig.moduleRoot = root;
 
-  RulesEngine.addRule("absolute/path", "http://absolutepath.com/absolute/path.js");
+//   RulesEngine.addRule("absolute/path", "http://absolutepath.com/absolute/path.js");
 
-  path = RulesEngine.resolve("absolute/path").path;
-  equal(RulesEngine.toUrl(path), "http://absolutepath.com/absolute/path.js", "absolute path resolution");
-});
+//   path = RulesEngine.resolveIdentifier("absolute/path");
+//   equal(RulesEngine.resolveUrl(path, baseDir), "http://absolutepath.com/absolute/path.js", "absolute path resolution");
+// });
 
-test("Resolution of Pointcuts", function() {
-  var context = sandbox.global;
-  var RulesEngine = context.RulesEngine;
+// test("Resolution of Pointcuts", function() {
+//   var context = sandbox.global;
+//   var RulesEngine = context.RulesEngine;
 
-  RulesEngine.addRule("test", {
-    before: function() {
-      this_is_before;
-    },
-    after: function() {
-      this_is_after;
-    }
-  });
+//   RulesEngine.addRule("test", {
+//     before: function() {
+//       this_is_before;
+//     },
+//     after: function() {
+//       this_is_after;
+//     }
+//   });
 
-  var testPath = RulesEngine.resolve("test").path;
+//   var resolvedId = RulesEngine.resolveIdentifier("test");
 
-  ok(/this_is_before/.test(RulesEngine.getPointcuts(testPath).before), "before pointcut loaded");
-  ok(/this_is_after/.test(RulesEngine.getPointcuts(testPath).after), "after pointcut loaded");
-});
+//   equal(typeof(RulesEngine.getPointcuts(resolvedId).before[0]), "function", "can return pointcuts as function");
+//   equal(typeof(RulesEngine.getPointcuts(resolvedId, true).before[0]), "string", "can return pointcuts as string");
+
+//   ok(/this_is_before/.test(RulesEngine.getPointcuts(resolvedId, true).before), "before pointcut loaded");
+//   ok(/this_is_after/.test(RulesEngine.getPointcuts(resolvedId, true).after), "after pointcut loaded");
+// });

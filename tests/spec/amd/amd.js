@@ -58,13 +58,13 @@ asyncTest("Anon - circular", 6, function() {
   });
 });
 
-asyncTest("Anon - relativeModuleId", 4, function() {
-  sandbox.global.Inject.setModuleRoot("/tests/spec/amd/includes/spec/anon/impl/");
+asyncTest("Anon - relativeModuleId", 2, function() {
+  sandbox.global.Inject.setModuleRoot("/tests/spec/amd/includes/spec/anon/");
+  sandbox.global.Inject.addRule("array", "impl/array");
+
   sandbox.global.require(["require", "array"], function(require, array) {
     equal(array.name, "impl/array");
-    equal(array.utilNameUl, "util");
-    equal(array.utilNameCl, "impl/util");
-    equal(array.utilNameUUl, "../util");
+    equal(array.utilName, "util", "./util should be relative to module name, not URL");
     start();
   });
 });

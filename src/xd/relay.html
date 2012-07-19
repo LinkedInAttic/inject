@@ -103,7 +103,7 @@ var socket = new window.Inject.easyXDM.Socket({
       return;
     }
     
-    doXmlHttpRequest(message);
+    doXmlHttpRequest(message.split("__INJECT_SPLIT__"));
   },
   onReady: function() {
     socketReady = true;
@@ -121,14 +121,15 @@ function trimHost(host) {
 }
 
 // makes an xhr, posts response
-function doXmlHttpRequest(path) {
+function doXmlHttpRequest(args) {
   var xhr = getXhr();
-  xhr.open("GET", path);
+  xhr.open("GET", args[1]);
   xhr.onreadystatechange = function() {
     if (xhr.readyState === 4) {
       var sendMessageNow = function() {
         socket.postMessage([
-          path,
+          args[0], // moduleId
+          args[1], // URL
           xhr.status,
           xhr.responseText
         ].join("__INJECT_SPLIT__"));

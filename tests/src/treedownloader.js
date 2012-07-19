@@ -72,7 +72,13 @@ module("src :: TreeDownloader", {
       var dRequires = ["a"];
 
       // stub our rules engine
-      sinon.stub(context.RulesEngine, "toUrl")
+      sinon.stub(context.RulesEngine, "resolveIdentifier")
+        .withArgs("root").returns("root")
+        .withArgs("a").returns("a")
+        .withArgs("b").returns("b")
+        .withArgs("c").returns("c")
+        .withArgs("d").returns("d")
+      sinon.stub(context.RulesEngine, "resolveUrl")
         .withArgs("root").returns(rootUrl)
         .withArgs("a").returns(aUrl)
         .withArgs("b").returns(bUrl)
@@ -81,11 +87,11 @@ module("src :: TreeDownloader", {
 
       // stub our communicator calls
       sinon.stub(context.Communicator, "get")
-        .withArgs(rootUrl).callsArgWith(1, rootJS)
-        .withArgs(aUrl).callsArgWith(1, aJS)
-        .withArgs(bUrl).callsArgWith(1, bJS)
-        .withArgs(cUrl).callsArgWith(1, cJS)
-        .withArgs(dUrl).callsArgWith(1, dJS);
+        .withArgs("root", rootUrl).callsArgWith(2, rootJS)
+        .withArgs("a", aUrl).callsArgWith(2, aJS)
+        .withArgs("b", bUrl).callsArgWith(2, bJS)
+        .withArgs("c", cUrl).callsArgWith(2, cJS)
+        .withArgs("d", dUrl).callsArgWith(2, dJS);
 
       // stub our analyzer calls
       sinon.stub(context.Analyzer, "extractRequires")
