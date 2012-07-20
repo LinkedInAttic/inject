@@ -19,39 +19,15 @@
   -->
   <meta charset="UTF-8" />
   <title>QUnit Test Suite</title>
-  <link rel="stylesheet" href="/tests/qunit/qunit.css" type="text/css" media="screen">
-  <script type="text/javascript" src="/tests/qunit/qunit.js"></script>
-  <script type="text/javascript">
-    QUnit.config.testTimeout = 3000;
-  </script>
-  
-  <script type="text/javascript" src="/inject.js"></script>
-  
-  <script type="text/javascript" src="/tests/modules-1.0/modules-1.0.js"></script>
-  <script type="text/javascript" src="/tests/modules-1.0/alternate-domain.js"></script>
-  <script type="text/javascript" src="/tests/modules-1.0/bugs.js"></script>
-  
-  <script type="text/javascript" src="/tests/modules-1.1/modules-1.1.js"></script>
-  <script type="text/javascript" src="/tests/modules-1.1/async-a.js"></script>
-  <script type="text/javascript" src="/tests/modules-1.1/setexports.js"></script>
-  
-  <script type="text/javascript" src="/tests/modules-1.1.1/modules-1.1.1.js"></script>
-  
-  <script type="text/javascript" src="/tests/amd/amd.js"></script>
-  <script type="text/javascript" src="/tests/amd/interface.js"></script>
-  <script type="text/javascript" src="/tests/amd/bugs.js"></script>
-  
-  <script type="text/javascript" src="/tests/manifest/manifest.js"></script>
-  <script type="text/javascript" src="/tests/inject/inject.js"></script>
-  <script type="text/javascript" src="/tests/inject/bugs.js"></script>
-
 </head>
 <body>
-  <h1 id="qunit-header">QUnit Test Suite</h1>
-  <h2 id="qunit-banner"></h2>
-  <div id="qunit-testrunner-toolbar"></div>
-  <h2 id="qunit-userAgent"></h2>
-  <ol id="qunit-tests"></ol>
-  <div id="qunit-fixture">test markup</div>
+  <h1>Inject Tests</h1>
+  <ul>
+    <li><a href="tests.html?filter=src%20%3A%3A">Unit Tests (src)</a></li>
+    <li><a href="tests.html?filter=spec%20%3A%3A%20CommonJS">CommonJS Spec Integration tests (spec :: CommonJS)</a></li>
+    <li><a href="tests.html?filter=spec%20%3A%3A%20AMD">AMD Spec Integration tests (spec :: AMD)</a></li>
+    <li><a href="tests.html?filter=integration%20%3A%3A">Integration and Feature tests (integration)</a></li>
+    <li><a href="tests.html">all tests</a></li>
+  </ul>
 </body>
 </html>

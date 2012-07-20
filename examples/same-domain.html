@@ -33,11 +33,11 @@
 <button id="clearit">Clear Cache</button>
 
 <script type="text/javascript">
-document.getElementById("clearit").onclick = function() {
-  require.clearCache();
-};
-
-Inject.setModuleRoot("/examples/deps");
+// document.getElementById("clearit").onclick = function() {
+//   require.clearCache();
+// };
+localStorage.clear();
+Inject.setModuleRoot("/examples/deps/");
 
 require.ensure(["foo", "bar"], function(require) {
   var foo = require("foo"),
