@@ -26,9 +26,9 @@ You can visit http://localhost:4000/examples/ for viewing some sample code, or h
 
 Getting Started
 ===
-In case you're looking: [Building Inject From Source](https://github.com/linkedin/inject/wiki/Building-Inject-From-Source)
+In case you're looking: [Building Inject From Source](https://github.com/linkedin/inject/wiki/0.3.x-Building-Inject-From-Source)
 
-We've put together a [Getting Started With inject Guide](https://github.com/linkedin/inject/wiki) which is a launching point to all to functionality inject has to offer. If you're already familiar with CommonJS-style modules, than you can probably start right there.
+We've put together a [Getting Started With inject Guide](https://github.com/linkedin/inject/wiki/0.3.x-Getting-Started) which is a launching point to all to functionality inject has to offer. If you're already familiar with CommonJS-style modules, than you can probably start right there.
 
 Writing CommonJS Compliant Modules
 ===
@@ -49,7 +49,7 @@ If you injected this file, you could then say `var duck = new moduleName.duck()`
 
 Modifying your Library to Work with Inject
 ===
-Sometimes, you have a library (jQuery, or Modernizr for example) which isn't CommonJS compliant. We've put together a [page of recipes](https://github.com/linkedin/inject/wiki/addRule-and-Your-Favorite-Library) for using the addRule() API with your favorite library.
+Sometimes, you have a library (jQuery, or Modernizr for example) which isn't CommonJS compliant. We've put together a [page of recipes](https://github.com/linkedin/inject/wiki/0.3.x-addRule-and-Your-Favorite-Library) for using the addRule() API with your favorite library.
 
 JavaScript Minifiers
 ===
