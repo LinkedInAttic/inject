@@ -14,12 +14,13 @@ Some of the awesome roadmap things coming soon(ish)
 
 Let's Start With Examples!
 ===
-We have a nodejs test server for both the examples and development. Install node, npm, & coffeescript, then:
+We have a nodejs test server for both the examples and development. Install node and npm, then:
 
 ```
-cake build
+cd inject
 npm install
-node testserver.js
+node makefile.js build
+node makefile.js server
 ```
 
 You can visit http://localhost:4000/examples/ for viewing some sample code, or http://localhost:4000/tests for running our unit test suite. We use alternate ports to create the cross domain environment instead of a CDN.
