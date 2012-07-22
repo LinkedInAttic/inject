@@ -79,11 +79,11 @@ function server(request, response) {
   }
   
   // delayed serving calls
-  if (request.url === '/deps/jqueryui/jquery.ui.widget.min.js') {
+  if (request.url === '/dependencies/addrule/jqueryui/jquery.ui.widget.min.js') {
     // delayed server call for the jquery ui example
     return setTimeout(function() {
       serve(request, response, function(err, result) {});
-    }, 5000);
+    }, 3000);
   }
   if (request.url === '/modules-1.1.1/includes/bugs/bug_56_a.js') {
     // delayed server call for the ensure-overlap unit test in modules 1.1.1 spec

@@ -31,7 +31,9 @@ context.Inject = {
     createDefine: proxy(InjectCore.createDefine, InjectCore)
   },
   easyXDM: easyXDM,
-  reset: function() {},
+  reset: function() {
+    InjectCore.reset();
+  },
   enableDebug: function() {
     InjectCore.enableDebug.apply(this, arguments);
   },
@@ -47,7 +49,9 @@ context.Inject = {
   setCrossDomain: function() {
     InjectCore.setCrossDomain.apply(this, arguments);
   },
-  clearCache: function() {},
+  clearCache: function() {
+    InjectCore.clearCache();
+  },
   manifest: function() {
     RulesEngine.manifest.apply(RulesEngine, arguments);
   },

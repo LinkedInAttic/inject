@@ -42,7 +42,7 @@ test("Scaffolding", function() {
 
 test("JS Execution", function() {
   var context = sandbox.global;
-  context.userConfig.debug.sourceMap = true;
+  context.userConfig.debug.sourceMap = false;
   var Executor = context.Executor;
 
   // inject facade
@@ -73,6 +73,6 @@ test("JS Execution", function() {
   var moduleB = Executor.runModule("testId", testScript, "http://example.com/testid.js", {});
 
   equal(module.exports.foo, "bar", "module sandboxed and set exports");
-  ok(context.eval.calledOnce, "eval only called once despite loading multiple modules");
+  ok(!context.eval.called, "eval not called when sourcemap is off");
   equal(module, moduleB, "same execution yields same module result");
 });

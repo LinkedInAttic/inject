@@ -28,7 +28,7 @@ var RulesEngine;
   }
 
   function functionToPointcut(fn) {
-    return "("+fn.toString().replace(/^\s\s*/, '').replace(/\s\s*$/, '')+")();";
+    return fn.toString().replace(FUNCTION_BODY_REGEX, "$1");
   }
 
   var AsStatic = Class.extend(function() {
@@ -218,9 +218,10 @@ var RulesEngine;
         rules.push({
           matches: ruleSet.matches || regexMatch,
           weight: ruleSet.weight || weight,
+          last: ruleSet.last || false,
           path: ruleSet.path,
-          after: ruleSet.after,
-          before: ruleSet.before
+          pcAfter: (ruleSet.pointcuts && ruleSet.pointcuts.after) ? ruleSet.pointcuts.after : null,
+          pcBefore: (ruleSet.pointcuts && ruleSet.pointcuts.before) ? ruleSet.pointcuts.before : null
         });
 
       },
@@ -230,6 +231,10 @@ var RulesEngine;
 
         for (key in manifestObj) {
           rule = manifestObj[key];
+          // update the key to a "matches" if included in manifest
+          if (rule.matches) {
+            key = rule.matches;
+          }
           this.addRule(key, rule);
         }
       },
@@ -242,7 +247,10 @@ var RulesEngine;
         var payload;
         var beforePointCuts = [];
         var afterPointCuts = [];
+        var done = false;
         each(rules, function(rule) {
+          if (done) return;
+
           var match = false;
           // rule matching
           if (typeof(rule.matches) === "string" && rule.matches === result) {
@@ -260,13 +268,17 @@ var RulesEngine;
               result = rule.path(result);
             }
 
-            if (rule.before) {
-              beforePointCuts.push(rule.before);
+            if (rule.pcBefore) {
+              beforePointCuts.push(rule.pcBefore);
             }
-            if (rule.after) {
-              afterPointCuts.push(rule.after);
+            if (rule.pcAfter) {
+              afterPointCuts.push(rule.pcAfter);
+            }
+            if (rule.last) {
+              done = true;
             }
           }
+
         });
 
         payload = {

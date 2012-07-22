@@ -57,6 +57,9 @@ var FUNCTION_REGEX = /^[\s\(]*function[^\(]*\(([^)]*)\)/;
 // locate newlines within a function body
 var FUNCTION_NEWLINES_REGEX = /\/\/.*?[\r\n]|\/\*(?:.|[\r\n])*?\*\//g;
 
+// captures the body of a JS function
+var FUNCTION_BODY_REGEX = /[\w\W]*?\{([\w\W]*)\}/m;
+
 // locate whitespace within a function body
 var WHITESPACE_REGEX = /\s+/g;
 

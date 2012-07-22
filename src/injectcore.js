@@ -46,18 +46,18 @@ var InjectCore;
         userConfig.xd.relayFile = crossDomainConfig.relayFile || null;
         userConfig.xd.relaySwf = crossDomainConfig.relaySwf || null;
       },
-      clearCache: function() {},
+      clearCache: function() {
+        if (HAS_LOCAL_STORAGE && lscache) {
+          lscache.flush();
+        }
+      },
       setExpires: function(seconds) {
         userConfig.fileExpires = seconds || 0;
       },
       reset: function() {
-        // remove all files from our communicator
-        // remove all results from our executor
-        throw new Error("TODO");
-      },
-      clearFileRegistry: function() {
-        // remove all files from our communicator
-        throw new Error("TODO");
+        this.clearCache();
+        Executor.clearCaches();
+        Communicator.clearCaches();
       },
       enableDebug: function(key, value) {
         userConfig.debug[key] = value || true;

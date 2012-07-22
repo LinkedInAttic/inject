@@ -20,10 +20,15 @@ var Communicator;
   var AsStatic = Class.extend(function() {
     var pauseRequired = false;
 
-    var socketConnectionQueue = [];
-    var downloadCompleteQueue = {};
+    var socketConnectionQueue;
+    var downloadCompleteQueue;
 
     var socket;
+
+    function clearCaches() {
+      socketConnectionQueue = [];
+      downloadCompleteQueue = {};      
+    }
 
     function writeToCache(url, contents) {
       // lscache and passthrough
@@ -112,7 +117,12 @@ var Communicator;
     }
 
     return {
-      init: function() {},
+      init: function() {
+        this.clearCaches();
+      },
+      clearCaches: function() {
+        clearCaches();
+      },
       get: function(moduleId, url, callback) {
         if (!downloadCompleteQueue[url]) {
           downloadCompleteQueue[url] = [];

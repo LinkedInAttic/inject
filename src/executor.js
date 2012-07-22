@@ -20,8 +20,8 @@ var Executor;
   var docHead = false;
   var onErrorOffset = 0;
   var testScript = 'function Inject_Test_Known_Error() {\n  function nil() {}\n  nil("Known Syntax Error Line 3";\n}';
+  var initOldError = context.onerror;
   var testScriptNode = createEvalScript(testScript);
-  var oldError = context.onerror;
 
   // capture document head
   try { docHead = document.getElementsByTagName("head")[0]; }
@@ -29,6 +29,7 @@ var Executor;
 
   function createEvalScript(code) {
     var scr = document.createElement("script");
+    scr.type = "text/javascript";
     try { scr.text = code; } catch (e) {
     try { scr.innerHTML = code; } catch (ee) {
       return false;
@@ -53,7 +54,7 @@ var Executor;
   if (docHead) {
     docHead.appendChild(testScriptNode);
   }
-  context.onerror = oldError;
+  context.onerror = initOldError;
   // test script completion
 
   function getLineNumberFromException(e) {
@@ -61,6 +62,9 @@ var Executor;
     var phrases;
     if (typeof(e.lineNumber) !== "undefined" && e.lineNumber !== null) {
       return e.lineNumber;
+    }
+    if (typeof(e.line) !== "undefined" && e.line !== null) {
+      return e.line;
     }
     if (e.stack) {
       lines = e.stack.split("\n");
@@ -72,74 +76,141 @@ var Executor;
   function executeJavaScriptModule(code, options) {
     var oldError = context.onerror;
     var errorObject = null;
+    var sourceString = IS_IE ? "" : "//@ sourceURL=" + options.url;
     var result;
 
     options = {
       moduleId: options.moduleId || null,
       functionId: options.functionId || null,
       preamble: options.preamble || "",
+      preambleLength: options.preamble.split("\n").length + 1,
+      epilogue: options.epilogue || "",
+      epilogueLength: options.epilogue.split("\n").length + 1,
       originalCode: options.originalCode || code,
       url: options.url || null
     };
 
+    // add source string in sourcemap compatible browsers
+    code = [code, sourceString].join("\n");
+
     // create a temp error handler for exactly this run of code
-    var tempErrorHandler = function(err, where, line) {
-      var actualErrorLine = onErrorOffset - options.preamble.split("\n").length + line;
-      var linesOfCode = code.split("\n").length;
-      var originalLinesOfCode = options.originalCode.split("\n").length;
+    // we use this for syntax error handling. It's an inner function
+    // because we need to set the universal "errorObject" object
+    // so we don't try and execute it later
+    var tempErrorHandler = function(err, where, line, type) {
+      var actualErrorLine =  line - options.preambleLength;
+      var originalCodeLength = options.originalCode.split("\n").length;
       var message = "";
 
-      if(line === linesOfCode) {
-        actualErrorLine = originalLinesOfCode
+      switch(type) {
+        case "runtime":
+          message = "Runtime error in " + options.moduleId + " (" + options.url + ") on line " + actualErrorLine + ":\n  " + err;
+          break;
+        case "parse":
+        default:
+          // end of input test
+          actualErrorLine = (actualErrorLine > originalCodeLength) ? originalCodeLength : actualErrorLine;
+          message = "Parsing error in " + options.moduleId + " (" + options.url + ") on line " + actualErrorLine + ":\n  " + err;
       }
 
-      message = "Parse error in " + options.moduleId + " (" + options.url + ") on line " + actualErrorLine + ":\n  " + err;
-      
+      // set the error object global to the executor's run
       errorObject = new Error(message);
-      return true
+      errorObject.line = actualErrorLine;
+      errorObject.stack = null;
+
+      context.onerror = oldError;
+
+      return true;
     };
 
     // set global onError handler
-    context.onerror = tempErrorHandler;
-
     // insert script - catches parse errors
+    context.onerror = tempErrorHandler;
     var scr = createEvalScript(code);
     if (scr && docHead) {
       docHead.appendChild(scr);
       cleanupEvalScriptNode(scr);
     }
 
-    // if there were no errors, tempErrorHandler never ran and
+    // if there were no errors, tempErrorHandler never ran and therefore
     // errorObject was never set. We can now evaluate using either the eval()
     // method or just running the function we built.
+    // if there is not a registered function in the INTERNAL namespace, there
+    // must have been a syntax error. Firefox mandates an eval to expose it, so
+    // we use that as the least common denominator
     if (!errorObject) {
-      // no parse errors
-      if (!docHead || userConfig.debug.sourceMap) {
-        var sourceString = IS_IE ? "" : "//@ sourceURL=" + options.url;
-        // toExec explicitly hits the window object
-        var toExec = ["(", window.Inject.INTERNAL.execute[options.functionId].toString(), ")()"].join("");
+      if (!context.Inject.INTERNAL.execute[options.functionId] || userConfig.debug.sourceMap) {
+        // source mapping means we will take the same source as before,
+        // add a () to the end to make it auto execute, and shove it through
+        // eval. This means we are doing dual eval (one for parse, one for
+        // runtime) when sourceMap is enabled. Some people really want their
+        // debug.
+        var toExec = code.replace(/([\w\W]*})[\w\W]*?$/, "$1()");
+        var relativeE;
         toExec = [toExec, sourceString].join("\n");
-        result = eval(toExec);
+        if (!context.Inject.INTERNAL.execute[options.functionId]) {
+          // there is nothing to run, so there must have been an uncaught
+          // syntax error (firefox). 
+          try {
+            try { eval("+"); } catch (ee) { relativeE = ee; } eval(toExec);
+          }
+          catch(e) {
+            if (e.lineNumber && relativeE.lineNumber) {
+              e.lineNumber = e.lineNumber - relativeE.lineNumber + 1;
+            }
+            else {
+              e.lineNumber = getLineNumberFromException(e);
+            }
+            tempErrorHandler(e.message, null, e.lineNumber, "parse")
+          }
+        }
+        else {
+          // again, we are creating a "relativeE" to capture the eval line
+          // this allows us to get accurate line numbers in firefox
+          try { eval("+"); } catch (ee) { relativeE = ee; } eval(toExec);
+        }
+        
+        if (context.Inject.INTERNAL.execute[options.functionId]) {
+          result = context.Inject.INTERNAL.execute[options.functionId];
+          // set the error object using our standard method
+          // result.error will be later overwritten with a clean and readable Error()
+          if (result.error) {
+            if (result.error.lineNumber && relativeE.lineNumber) {
+              result.error.lineNumber = result.error.lineNumber - relativeE.lineNumber + 1;
+            }
+            else {
+              result.error.lineNumber = getLineNumberFromException(result.error);
+            }
+            tempErrorHandler(result.error.message, null, result.error.lineNumber, "runtime");
+          }
+        }
       }
       else {
+        // just run it. Try/catch will capture exceptions and put them
+        // into result.error for us from commonjs harness
         result = context.Inject.INTERNAL.execute[options.functionId]();
+        if (result.error) {
+          tempErrorHandler(result.error.message, null, getLineNumberFromException(result.error), "runtime");
+        }
       }
     }
 
-    // restore the error handler
-    context.onerror = oldError;
+    // if we have an error object, we should attach it to the result
+    // if there is no result, make an empty shell so we can test for
+    // result.error in other code.
+    if (errorObject) {
+      if (!result) {
+        result = {};
+      }
+      result.error = errorObject;
+    }
 
-    // clean up the function we globally created if it exists
+    // clean up the function or object we globally created if it exists
     if(context.Inject.INTERNAL.execute[options.functionId]) {
       delete context.Inject.INTERNAL.execute[options.functionId];
     }
 
-    // if we have an error, throw it
-    if (errorObject) {
-      throw errorObject;
-    }
-
-    // return the results of the eval
+    // return the results
     return result;
   }
 
@@ -147,6 +218,9 @@ var Executor;
     var functionCount = 0;
     return {
       init: function() {
+        this.clearCaches();
+      },
+      clearCaches: function() {
         // cache of resolved exports
         this.cache = {};
 
@@ -290,30 +364,24 @@ var Executor;
         var message;
 
         // try to run the JS as a module, errors set errorObject
-        try {
+        // try {
           result = executeJavaScriptModule(runCommand, {
             moduleId: moduleId,
             functionId: functionId,
             preamble: header,
+            epilogue: footer,
             originalCode: code,
             url: path
           });
-        }
-        catch(e) {
-          errorObject = e;
-        }       
-
-        // if there was a result, but there was an error
-        if(result && result.error) {
-          actualErrorLine = onErrorOffset - header.split("\n").length + getLineNumberFromException(result.error);
-          message = "Parse error in " + moduleId + " (" + path + ") on line " + actualErrorLine + ":\n  " + result.error.message;
-          errorObject = new Error(message)
-        }
+        // }
+        // catch(e) {
+        //   errorObject = e;
+        // }       
 
         // if a global error object was created
-        if (errorObject) {
+        if (result && result.error) {
           Inject.clearCache();
-          throw errorObject;
+          throw result.error;
         }
 
         // cache the result

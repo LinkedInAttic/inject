@@ -41,7 +41,7 @@ var TreeDownloader = Class.extend(function() {
       this.log("reduce. outstanding", this.callsRemaining);
       // TODO: there is a -1 logic item here to fix
       if (this.callsRemaining <= 0) {
-        callback.apply(null, args);
+        callback.call(null, args);
       }
     },
     increaseCallsRemaining: function(by) {

@@ -23,26 +23,24 @@
   <script type="text/javascript" src="/inject.js"></script>
 </head>
 <body>
-<h1>Pointcuts</h1>
-<p>Items that haven't been properly externalized can still be captured. In this example, jQuery is loaded using the pointcuts in
-"view source". The "after" cut captures the results of jQuery.noConflict() and stores it as the module.exports. This makes $ available
-just like a developer would expect within their modules.</p>
 
-<p><a href="index.html">Back to examples</a></p>
+<h2>Pointcuts</h2>
 
-<p id="output-jq"></p>
-<button id="clearit">Clear Cache</button>
+<div class="about">
+  <p>Items that haven't been properly externalized can still be captured. In this example, jQuery is loaded using the pointcuts in "view source". The "after" cut captures the results of jQuery.noConflict() and stores it as the module.exports. This makes $ available just like a developer would expect within their modules.</p>
+</div>
 
-<script type="text/javascript">
-document.getElementById("clearit").onclick = function() {
-  require.clearCache();
-};
+<textarea id="code">
+sandbox([
+  '<p id="output-jq"></p>'
+]);
 
-Inject.setModuleRoot("/examples/deps");
+Inject.reset();
+Inject.setModuleRoot("/examples/dependencies/pointcuts/");
 
 Inject.manifest({
   "jQuery": {
-    path: "./jquery-1.6.4.min.js",
+    path: "jquery-1.6.4.min.js",
     after: function() {
       module.exports = jQuery.noConflict();
     }
@@ -55,6 +53,9 @@ require.ensure(["foo", "jQuery"], function(require) {
   
   $("#output-jq").html(foo.sampleString);
 });
-</script>
+</textarea>
+
+<script type="text/javascript" src="resources/layout.js"></script>
+
 </body>
 </html>

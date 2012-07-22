@@ -24,24 +24,25 @@
 </head>
 <body>
 
-<h2>Same Domain</h2>
+<h2>Inline AMD Definitions</h2>
 
 <textarea id="code">
 sandbox([
-  '<p id="output-foo"></p>',
-  '<p id="output-bar"></p>'
+  '<p id="output-foo"></p>'
 ]);
 
 Inject.reset();
-Inject.setModuleRoot("/examples/dependencies/samedomain/");
+Inject.setModuleRoot("/examples/dependencies/amdinline/");
 
-require.ensure(["foo", "bar"], function(require) {
-  var foo = require("foo"),
-      bar = require("bar");
-  document.getElementById("output-foo").innerHTML = foo.sampleString;
+define('inline-module', function() {
+  return {
+    foo: "bar"
+  };
+});
 
-  var b = new bar.Bar();
-  document.getElementById("output-bar").innerHTML = b.baz();
+require.ensure(["external-module"], function(require) {
+  var external = require("external-module");
+  document.getElementById("output-foo").innerHTML = external.inline.foo;
 });
 </textarea>
 
