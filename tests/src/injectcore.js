@@ -25,6 +25,26 @@ module("src :: Inject", {
       "/src/lib/class.js",
       "/src/injectcore.js"
     ], function() {
+      sandbox.global.HAS_LOCAL_STORAGE = true;
+
+      sandbox.global.Executor = {
+        runModule: sinon.stub()
+      };
+      sandbox.global.DownloadManager = {
+        download: sinon.stub()
+      };
+
+      // stub out lscache
+      sandbox.global.lscacheWithNoKey = {
+        set: sinon.spy(),
+        flush: sinon.spy(),
+        get: sinon.stub().withArgs("!appCacheKey").returns(null)
+      };
+      sandbox.global.lscacheWithTwoKey = {
+        set: sinon.spy(),
+        flush: sinon.spy(),
+        get: sinon.stub().withArgs("!appCacheKey").returns("2")
+      };
     });
   },
   teardown: function() {
@@ -38,13 +58,6 @@ test("Scaffolding", function() {
 });
 
 test("Passthrough and config", function() {
-  sandbox.global.Executor = {
-    runModule: sinon.stub()
-  };
-  sandbox.global.DownloadManager = {
-    download: sinon.stub()
-  };
-
   var context = sandbox.global;
 
   context.InjectCore.setModuleRoot("http://testok.com");
@@ -59,6 +72,17 @@ test("Passthrough and config", function() {
   equal(context.userConfig.xd.relayFile, "http://testok-relay.com", "relayFile");
   equal(context.userConfig.xd.relaySwf, "http://testok-swf.com", "relaySwf");
   equal(context.userConfig.fileExpires, 987654, "fileExpires");
+});
 
+test("setCacheKey wipes cache", function() {
+  sandbox.global.lscache = sandbox.global.lscacheWithNoKey;
+  sandbox.global.InjectCore.setCacheKey("5");
+  ok(sandbox.global.lscache.flush.called, "cache was flushed");
 
+  sandbox.global.lscache = sandbox.global.lscacheWithTwoKey;
+  sandbox.global.InjectCore.setCacheKey("2");
+  ok(!sandbox.global.lscache.flush.called, "cache was not flushed");
+
+  sandbox.global.InjectCore.setCacheKey("5");
+  ok(sandbox.global.lscache.flush.called, "cache was flushed");
 });
