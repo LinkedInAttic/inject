@@ -44,6 +44,9 @@ context.Inject = {
   setExpires: function() {
     InjectCore.setExpires.apply(this, arguments);
   },
+  setCacheKey: function() {
+    InjectCore.setCacheKey.apply(this, arguments);
+  },
   setCrossDomain: function() {
     InjectCore.setCrossDomain.apply(this, arguments);
   },

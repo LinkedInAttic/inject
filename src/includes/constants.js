@@ -30,6 +30,9 @@ var LSCACHE_SCHEMA_VERSION = 1;
 // the schema version string for validation of lscache schema
 var LSCACHE_SCHEMA_VERSION_STRING = "!version";
 
+// the cache version string for validation of developer lscache code
+var LSCACHE_APP_KEY_STRING = "!appCacheKey";
+
 // the namespace for inject() that is publicly reachable
 var NAMESPACE = "Inject";
 

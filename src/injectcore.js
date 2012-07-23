@@ -50,6 +50,27 @@ var InjectCore;
       setExpires: function(seconds) {
         userConfig.fileExpires = seconds || 0;
       },
+      setCacheKey: function(cacheKey) {
+
+        var lscacheAppCacheKey;
+
+        if( !cacheKey || cacheKey < 0 ) {
+          return false;
+        }
+
+        if( HAS_LOCAL_STORAGE ){
+          lscacheAppCacheKey = lscache.get(LSCACHE_APP_KEY_STRING)
+        }
+
+        if( lscacheAppCacheKey && lscacheAppCacheKey != cacheKey ){
+          lscache.flush();
+          lscacheAppCacheKey = 0;
+        }
+
+        if( !lscacheAppCacheKey ){
+          lscache.set(LSCACHE_APP_KEY_STRING, cacheKey);
+        }
+      },
       reset: function() {
         // remove all files from our communicator
         // remove all results from our executor
