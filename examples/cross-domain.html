@@ -23,23 +23,17 @@
   <script type="text/javascript" src="/inject.js"></script>
 </head>
 <body>
-<h1>Remote Domain</h1>
-<p>This pulls from the remote domain using iFrame Transports</p>
 
-<p><a href="index.html">Back to examples</a></p>
+<h2>Cross Domain</h2>
 
-<p id="output-foo"></p>
-<p id="output-bar"></p>
-<button id="clearit">Clear Cache</button>
+<textarea id="code">
+sandbox([
+  '<p id="output-foo"></p>',
+  '<p id="output-bar"></p>'
+]);
 
-<p>We are using <a href="http://localhost:4001">an alternate port</a> for the multi-domain support. It creates a self-contained example</p>
-
-<script type="text/javascript">
-document.getElementById("clearit").onclick = function() {
-  Inject.clearCache();
-};
-
-Inject.setModuleRoot("http://localhost:4001/examples/deps");
+Inject.reset();
+Inject.setModuleRoot("http://localhost:4001/examples/dependencies/crossdomain/");
 Inject.setCrossDomain({
   relayFile:    "http://localhost:4001/relay.html",
   relaySwf:     "http://localhost:4001/relay.swf"
@@ -53,6 +47,9 @@ require.ensure(["foo", "bar"], function(require) {
   var b = new bar.Bar();
   document.getElementById("output-bar").innerHTML = b.baz();
 });
-</script>
+</textarea>
+
+<script type="text/javascript" src="resources/layout.js"></script>
+
 </body>
 </html>

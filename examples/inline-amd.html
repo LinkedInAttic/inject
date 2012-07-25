@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <!--
+    Inject
+    Copyright 2011 LinkedIn
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing,
+    software distributed under the License is distributed on an "AS
+    IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+    express or implied.   See the License for the specific language
+    governing permissions and limitations under the License.
+  -->
+  <!--[if lte IE 7]>
+    <script src="/ie-localstorage-json-shim.js" type="text/javascript" id="ie-localstorage-shim"></script>
+  <![endif]-->
+  <script type="text/javascript" src="/inject.js"></script>
+</head>
+<body>
+
+<h2>Inline AMD Definitions</h2>
+
+<textarea id="code">
+sandbox([
+  '<p id="output-foo"></p>'
+]);
+
+Inject.reset();
+Inject.setModuleRoot("/examples/dependencies/amdinline/");
+
+define('inline-module', function() {
+  return {
+    foo: "bar"
+  };
+});
+
+require.ensure(["external-module"], function(require) {
+  var external = require("external-module");
+  document.getElementById("output-foo").innerHTML = external.inline.foo;
+});
+</textarea>
+
+<script type="text/javascript" src="resources/layout.js"></script>
+
+</body>
+</html>

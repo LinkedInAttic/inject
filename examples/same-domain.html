@@ -23,21 +23,17 @@
   <script type="text/javascript" src="/inject.js"></script>
 </head>
 <body>
-<h1>Local Domain</h1>
-<p>This pulls from the local domain using XMLHttpRequest</p>
 
-<p><a href="index.html">Back to examples</a></p>
+<h2>Same Domain</h2>
 
-<p id="output-foo"></p>
-<p id="output-bar"></p>
-<button id="clearit">Clear Cache</button>
+<textarea id="code">
+sandbox([
+  '<p id="output-foo"></p>',
+  '<p id="output-bar"></p>'
+]);
 
-<script type="text/javascript">
-document.getElementById("clearit").onclick = function() {
-  require.clearCache();
-};
-
-Inject.setModuleRoot("/examples/deps");
+Inject.reset();
+Inject.setModuleRoot("/examples/dependencies/samedomain/");
 
 require.ensure(["foo", "bar"], function(require) {
   var foo = require("foo"),
@@ -47,6 +43,9 @@ require.ensure(["foo", "bar"], function(require) {
   var b = new bar.Bar();
   document.getElementById("output-bar").innerHTML = b.baz();
 });
-</script>
+</textarea>
+
+<script type="text/javascript" src="resources/layout.js"></script>
+
 </body>
 </html>

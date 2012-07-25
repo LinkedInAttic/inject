@@ -1,7 +1,7 @@
 {
   "name":           "inject",
   "version":        "0.0.1",
-  "description":    "Test Server for inject",
+  "description":    "Test Server and Build Utils for inject",
   "author":         "Jakob Heuser",
   "private":        true,
   "maintainers": [
@@ -31,6 +31,7 @@
     "https://github.com/amdjs/amdjs-api/wiki/AMD"
   ],
   "dependencies": {
+    "futures":        ">=2.1.0",
     "coffee-script":  "1.3.3",
     "uglify-js":      "1.3.1",
     "seq":            "0.3.5",

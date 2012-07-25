@@ -20,7 +20,8 @@ var path = require("path"),
     util = require("util"),
     Uglify = require("uglify-js"),
     exec = require("child_process").exec,
-    Seq = require("seq");
+    Seq = require("seq"),
+    Futures = require("futures");
 
 // copy a file from src to dest
 exports.copy = function(src, dest, cb) {
@@ -142,3 +143,81 @@ exports.mkdirpSync = function (dir) {
     }
   }
 };
+
+exports.buildChain = Futures.chainify({
+  // providers: data retrieval
+  concat: function (next, src, files) {
+    var future = Futures.future();
+
+    // make async calls to get data
+    if (!files) {
+      files = src;
+      src = "";
+    }
+
+    // Seq chain the inclusion of all files
+    Seq()
+    .seq(function() {
+      this.ok(files);
+    })
+    .flatten()
+    .parEach(function(file) {
+      if (file === null) {
+        this.into(file)("");
+        return;
+      }
+
+      var location = path.resolve(src+"/"+file);
+      exports.grab(location, this.into(file));
+    })
+    .seq(function() {
+      var name;
+      var contents = [];
+      for (var i = 0, len = files.length; i < len; i++) {
+        name = files[i];
+        contents.push(this.vars[name]);
+      }
+      exports.concat(contents, this);
+    })
+    .seq(function(contents) {
+      next(contents);
+    });
+  }
+}, {
+  // modifiers: data changing
+  anonymize: function(next, data, signature, invoke) {
+    var signature = signature || "";
+    var invoke = invoke || "";
+    var out = ([
+      ";(function("+signature+") {",
+        data,
+      "})("+invoke+");"
+    ]).join("\n");
+    next(out);
+  },
+  write: function(next, data, dir, fileName) {
+    dest = path.resolve(dir+"/"+fileName);
+    exports.write(dest, data, function() {
+      next(data);
+    });
+  },
+  minify: function(next, data, params) {
+    try {
+      exports.uglify(data, function(err, result) {
+        next(result);
+      });
+    }
+    catch(err) {
+      console.log(data);
+      console.log(err);
+      throw err;
+    }
+  }
+}, {
+  // consumers
+  end: function(data, terminusCB) {
+    if (terminusCB && typeof(terminusCB) === "function") {
+      terminusCB(data);
+    }
+  }
+});
