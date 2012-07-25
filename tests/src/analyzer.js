@@ -61,7 +61,7 @@ test("extraction", function() {
   var totalOk = requireSampleCode.match(okRegex).length;
 
   ok(result.length > 0, "found some require statements");
-  equal(result.length, totalOk, "all expected require() statements found");
+  equal(result.length, totalOk, "all expected require() statements found: "+result.join(" "));
 
   // loop through everything in results, ensure we don't match a bad one
   for (var i = 0, len = result.length; i < len; i++) {

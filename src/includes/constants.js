@@ -33,6 +33,9 @@ var LSCACHE_SCHEMA_VERSION_STRING = "!version";
 // the cache version string for validation of developer lscache code
 var LSCACHE_APP_KEY_STRING = "!appCacheKey";
 
+// AMD modules that are deferred have this set as their "arg" as a way to flag
+var AMD_DEFERRED = "###DEFERRED###";
+
 // the namespace for inject() that is publicly reachable
 var NAMESPACE = "Inject";
 
@@ -70,7 +73,7 @@ var WHITESPACE_REGEX = /\s+/g;
 var REQUIRE_REGEX = /(?:^|[^\w\$_.\(])require\s*\(\s*("[^"\\]*(?:\\.[^"\\]*)*"|'[^'\\]*(?:\\.[^'\\]*)*')\s*\)/g;
 
 // extract define() statements from within a larger string
-var DEFINE_REGEX = /^[\r\n\s]*define\(\s*("\S+",|'\S+',|\s*)\s*\[([^\]]*)\],\s*(function\s*\(|\{).+/;
+var DEFINE_EXTRACTION_REGEX = /(?:^|[\s]+)define[\s]*\([\s]*((?:"|')\S+(?:"|'))?,?[\s]*(?:\[([\w\W]+)\])?/g;
 
 // match all commonJS builtins in a function arg collection
 var BUILTINS = {require: true, exports: true, module: true};

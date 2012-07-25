@@ -33,10 +33,13 @@ var Analyzer;
       },    
       extractRequires: function(file) {
         var requires = [];
+        var requireMatches = null;
+        var defines = null;
         var uniques = {};
-        var match;
         var dirtyRuntimeRequires = [];
+        var dirtyStaticRequires = [];
         var staticRequires = [];
+        var inlineAMD = {};
 
         // a local require function for eval purposes
         var require = function(term) {
@@ -63,18 +66,37 @@ var Analyzer;
 
         // handle static require statements via define() API
         // then attach to master requires[] list
-        if(DEFINE_REGEX.exec(file)) {
-          staticRequires = DEFINE_REGEX.exec(file)[2].replace(BUILTINS_REPLACE_REGEX, "").split(",");
-        }
-        for (var i = 0, len = staticRequires.length; i < len; i++) {
-          if (!staticRequires[i]) {
-            // this was a builtin
-            continue;
-          }
-          if (uniques[staticRequires[i]] !== true) {
-            requires.push(staticRequires[i]);
-          }
-          uniques[staticRequires[i]] = true;
+        // extract all define names, then all dependencies
+        defines = file.match(DEFINE_EXTRACTION_REGEX);
+        if (defines && defines.length) {
+          each(defines, function(match) {
+            var id = match.replace(DEFINE_EXTRACTION_REGEX, "$1");
+            var deps = match.replace(DEFINE_EXTRACTION_REGEX, "$2");
+
+            id = id.replace(BUILTINS_REPLACE_REGEX, "");
+            deps = deps.replace(BUILTINS_REPLACE_REGEX, "").split(",");
+
+            if (id) {
+              inlineAMD[id] = true;
+            }
+
+            if (deps && deps.length) {
+              for (var i = 0, len = deps.length; i < len; i++) {
+                if (deps[i]) {
+                  dirtyStaticRequires.push(deps[i]);
+                }
+              }
+            }
+          });
+
+          // for each possible require, make sure we aren't already
+          // running this inline
+          each(dirtyStaticRequires, function(req) {
+            if (uniques[req] !== true && inlineAMD[req] !== true) {
+              requires.push(req);
+            }
+            uniques[req] = true;
+          });
         }
 
         return requires;

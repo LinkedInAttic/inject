@@ -66,3 +66,10 @@ asyncTest("#106 inline define() calls make module.exports available to later req
     start();
   });
 });
+
+asyncTest("multiple defines in a file are resolved before dependencies are fetched", 1, function() {
+  sandbox.global.Inject.setModuleRoot("/tests/spec/amd/includes/bugs/");
+  sandbox.global.require.ensure(["bug_multi_define"], function(require) {
+    start();
+  });
+});
