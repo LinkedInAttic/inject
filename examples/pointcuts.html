@@ -41,8 +41,10 @@ Inject.setModuleRoot("/examples/dependencies/pointcuts/");
 Inject.manifest({
   "jQuery": {
     path: "jquery-1.6.4.min.js",
-    after: function() {
-      module.exports = jQuery.noConflict();
+    pointcuts: {
+      after: function() {
+        module.exports = jQuery.noConflict();
+      }
     }
   }
 });
@@ -50,7 +52,7 @@ Inject.manifest({
 require.ensure(["foo", "jQuery"], function(require) {
   var foo = require("foo"),
       $ = require("jQuery");
-  
+
   $("#output-jq").html(foo.sampleString);
 });
 </textarea>
