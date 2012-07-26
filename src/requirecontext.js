@@ -137,19 +137,6 @@ var RequireContext = Class.extend(function() {
     },
     define: function() {
       var args = Array.prototype.slice.call(arguments, 0);
-      var deferredDefine;
-      var deferredDefineScope;
-      var doDefer = false;
-
-      // ###DEFERRED### can't be a module ID, so it's a safe
-      // argument to put into args[0]
-      if (args[0] === AMD_DEFERRED) {
-        args.shift();
-      }
-      else {
-        doDefer = true;
-      }
-
       var id = null;
       var dependencies = ["require", "exports", "module"];
       var executionFunctionOrLiteral = {};
@@ -224,19 +211,6 @@ var RequireContext = Class.extend(function() {
         }
       }
 
-      // we can only "defer" named modules w/ setTimeout
-      // otherwise, how would we know what is running?
-      // we can also only immediate-process 0 dependency items
-      if (id && doDefer && remainingDependencies.length > 0) {
-        args.unshift(AMD_DEFERRED);
-        deferredDefine = proxy(this.define, this);
-        deferdDefineScope = this;
-        context.setTimeout(function(){
-          deferredDefine.apply(deferdDefineScope, args);
-        }, 0);
-        return;
-      }
-
       // handle anonymous modules
       if (!id) {
         id = Executor.getCurrentExecutingAMD().id;
@@ -259,6 +233,8 @@ var RequireContext = Class.extend(function() {
       // ask only for the missed items + a require
       remainingDependencies.unshift("require");
       this.require(remainingDependencies, proxy(function(require) {
+        this.log("AMD define(...) of "+id+" all downloads required");
+
         // use require as our first arg
         var module = Executor.getModule(id);
 

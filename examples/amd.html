@@ -33,6 +33,7 @@ sandbox([
 ]);
 
 Inject.reset();
+Inject.enableDebug("logging")
 Inject.setModuleRoot("/examples/dependencies/amd/");
 
 require.ensure(["qux.amd"], function(require){

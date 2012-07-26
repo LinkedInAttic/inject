@@ -73,3 +73,4 @@ asyncTest("multiple defines in a file are resolved before dependencies are fetch
     start();
   });
 });
+

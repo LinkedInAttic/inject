@@ -14,9 +14,11 @@ IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
 express or implied.   See the License for the specific language
 governing permissions and limitations under the License.
 */
-var Bar = function() {};
-Bar.prototype.baz = function() {
-  return "I am Baz";
-};
+define("bar", ["exports"], function(exports) {
+  var Bar = function() {};
+  Bar.prototype.baz = function() {
+    return "I am Baz";
+  };
 
-exports.Bar = Bar;
+  exports.Bar = Bar;
+});

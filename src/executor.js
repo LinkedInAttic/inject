@@ -384,10 +384,12 @@ var Executor;
           throw result.error;
         }
 
-        // cache the result
-        this.cache[moduleId] = result;
-        this.executed[moduleId] = true;
+        // cache the result (IF NOT AMD)
+        if (!DEFINE_EXTRACTION_REGEX.test(code)) {
+          this.cache[moduleId] = result;
+        }
 
+        this.executed[moduleId] = true;
         debugLog("Executor", "executed", moduleId, path, result);
 
         // return the result

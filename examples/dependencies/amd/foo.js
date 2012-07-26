@@ -16,10 +16,12 @@ governing permissions and limitations under the License.
 */
 
 // added multiple requires on the same line
-var bar = require("bar"); var baz = require("bar");
+define("foo", ["exports", "bar"], function(exports) {
+  var bar = require("bar"); var baz = require("bar");
 
-var barObj = new bar.Bar();
+  var barObj = new bar.Bar();
 
-exports.foo = function() {};
-exports.sampleString = "Stringness!";
-exports.baz = barObj.baz();
+  exports.foo = function() {};
+  exports.sampleString = "Stringness!";
+  exports.baz = barObj.baz();
+});
