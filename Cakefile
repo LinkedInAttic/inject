@@ -180,7 +180,6 @@ task "build", "Builds inject library", (options)->
 
     mappingsCount = 0
     callbackCount = 0
-    externsLocation = "./build/gcc/externs.js"
     for moduleName, path of config.outMappings
       mappingsCount += 1
       mod = config.modules[moduleName]
@@ -189,7 +188,7 @@ task "build", "Builds inject library", (options)->
       output_wrapper = mod.output_wrapper || "'(function() {%output%}).call(this)'"
       if typeof(output_wrapper) is 'function'
         output_wrapper = output_wrapper()
-      cmd = "--js_output_file #{config.out}/#{path} #{formatting} --output_wrapper #{output_wrapper} --externs #{externsLocation} --compilation_level #{cmdCompilationLevel} --js "
+      cmd = "--js_output_file #{config.out}/#{path} #{formatting} --output_wrapper #{output_wrapper} --compilation_level #{cmdCompilationLevel} --js "
       files = mod.files or []
 
       if mod.enabled isnt false
