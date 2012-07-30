@@ -14,6 +14,7 @@ IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
 express or implied.   See the License for the specific language
 governing permissions and limitations under the License.
 */
+
 var tasks = ["build", "server"],
     optimist = require("optimist")
     .usage("Inject command line tool.\nUsage: $0 [task]\ntasks are: "+tasks.join(", "))

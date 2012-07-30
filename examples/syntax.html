@@ -23,28 +23,46 @@
   <script type="text/javascript" src="/inject.js"></script>
 </head>
 <body>
-<h1>Syntax Errors</h1>
-<p>Even though it's eval(), you can still get all the proper debugging information.</p>
 
-<p><a href="index.html">Back to examples</a></p>
+<h2>Catching Syntax Errors</h2>
 
-<button id="clearit">Clear Cache</button>
+<div class="about">
+  <p>In the following example, we have files which throw various JS errors. We've created a window.onerror handler to catch them and display them in the sandbox. Line numbers are preserved, even when code is evaluated. Additionally, "sourceMap" can be turned on as a debug option, and files will be forced through the window.eval() in order to take advantage of advanced debugging in Firebug (using the @sourceURL parameter).</p>
+</div>
 
-<script type="text/javascript">
-document.getElementById("clearit").onclick = function() {
-  require.clearCache();
+<textarea id="code">
+sandbox([
+  '<p id="output-err" style="font-family: monospace"></p>'
+]);
+
+Inject.reset();
+Inject.enableDebug("sourceMap", true);
+Inject.setModuleRoot("/examples/dependencies/syntax/");
+
+window.onerror = function(message) {
+  var err = document.createElement("p");
+  err.innerHTML = message.replace("\n", "<br>");
+  document.getElementById("output-err").appendChild(err);
+  return true;
 };
 
-if (console && console.log && typeof(console.log) === "function") {
-  console.log("expected line numbers:\nsyntax: 31/37\nsyntaxb: 39/40\nreference: 32\nrange: 27\ntype: 30");
-}
+require.ensure(["syntaxerror"], function(require) {
+  // this should never run
+  alert("I never run!");
+});
 
-Inject.setModuleRoot("/examples/deps");
-require.run("errors/syntaxerror");
-require.run("errors/syntaxerrorb");
-require.run("errors/referenceerror");
-require.run("errors/rangeerror");
-require.run("errors/typeerror");
-</script>
+require.ensure(["typeerror"], function(require) {
+  // this should never run
+  alert("I never run!");
+});
+
+require.ensure(["referenceerror"], function(require) {
+  // this should never run
+  alert("I never run!");
+});
+</textarea>
+
+<script type="text/javascript" src="resources/layout.js"></script>
+
 </body>
 </html>

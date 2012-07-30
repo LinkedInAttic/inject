@@ -49,6 +49,7 @@ function createServer(path) {
 serveFromArtifacts = createServer(path.normalize("" + __dirname + "/../artifacts/dev"));
 serveFromExamples = createServer(path.normalize("" + __dirname + "/../examples"));
 serveFromTests = createServer(path.normalize("" + __dirname + "/../tests"));
+serveFromSrc = createServer(path.normalize("" + __dirname + "/../src"));
 
 // live server function, used on multiple ports
 function server(request, response) {
@@ -64,6 +65,10 @@ function server(request, response) {
     serve = serveFromTests;
     request.url = request.url.replace(/^\/tests/, "");
   }
+  else if (request.url.indexOf("/src") === 0) {
+    serve = serveFromSrc;
+    request.url = request.url.replace(/^\/src/, "");
+  }
   else {
     serve = serveFromArtifacts;
   }
@@ -74,11 +79,11 @@ function server(request, response) {
   }
   
   // delayed serving calls
-  if (request.url === '/deps/jqueryui/jquery.ui.widget.min.js') {
+  if (request.url === '/dependencies/addrule/jqueryui/jquery.ui.widget.min.js') {
     // delayed server call for the jquery ui example
     return setTimeout(function() {
       serve(request, response, function(err, result) {});
-    }, 5000);
+    }, 3000);
   }
   if (request.url === '/modules-1.1.1/includes/bugs/bug_56_a.js') {
     // delayed server call for the ensure-overlap unit test in modules 1.1.1 spec
@@ -86,7 +91,7 @@ function server(request, response) {
       serve(request, response, function(err, result) {});
     }, 300);
   }
-  if(request.url === '/amd/includes/original/delay.js') {
+  if(request.url === '/amd/includes/bugs/bug_56_a.js') {
     // delayed server call 300 msec for amd ensure overlap unit test in amd
     // originally was 2 seconds, reduced just for rerun sake
     return setTimeout(function() {

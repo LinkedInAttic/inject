@@ -21,34 +21,30 @@
     <script src="/ie-localstorage-json-shim.js" type="text/javascript" id="ie-localstorage-shim"></script>
   <![endif]-->
   <script type="text/javascript" src="/inject.js"></script>
-  <script type="text/javascript" src="/examples/deps/jquery-1.6.4.min.js"></script>
-  <script type="text/javascript">
-    Inject.setModuleRoot("/examples/deps");
-  </script>
 </head>
 <body>
-<h1>Asynchronous Module Definition</h1>
-<p>The Asynchronous Module Definition (AMD) API specifies a mechanism for defining modules such that the module and its dependencies can be asynchronously loaded.</p>
 
-<p><a href="index.html">Back to examples</a></p>
+<h2>AMD (Asynchronous Module Definition)</h2>
 
-<p id="output-sampleString"></p>
-<p id="output-Qux"></p>
-<button id="clearit">Clear Cache</button>
+<textarea id="code">
+sandbox([
+  '<p id="output-sampleString"></p>',
+  '<p id="output-Qux"></p>'
+]);
 
-<script type="text/javascript">
-document.getElementById("clearit").onclick = function() {
-  require.clearCache();
-};
+Inject.reset();
+Inject.enableDebug("logging")
+Inject.setModuleRoot("/examples/dependencies/amd/");
 
-$(document).ready(function() {
-  require.ensure(["qux.amd"], function(require){
-    var qux = require('qux.amd').qux;
+require.ensure(["qux.amd"], function(require){
+  var qux = require('qux.amd').qux;
 
-    $("#output-sampleString").html(new qux().sampleString);
-    $("#output-Qux").html(new qux().Qux());
-  });
+  document.getElementById("output-sampleString").innerHTML = new qux().sampleString;
+  document.getElementById("output-Qux").innerHTML = new qux().Qux();
 });
-</script>
+</textarea>
+
+<script type="text/javascript" src="resources/layout.js"></script>
+
 </body>
 </html>

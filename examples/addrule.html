@@ -21,69 +21,66 @@
     <script src="/ie-localstorage-json-shim.js" type="text/javascript" id="ie-localstorage-shim"></script>
   <![endif]-->
   <script type="text/javascript" src="/inject.js"></script>
-  <script type="text/javascript">
-    Inject.setModuleRoot("/examples/deps");
-    Inject.addRule(/^jquery$/, {
-      path: "jquery-1.7.js",
-      pointcuts: {
-        after: function() {
-          module.setExports(jQuery.noConflict());
-          delete window["jQuery"];
-        }
-      }
-    });
-    Inject.addRule(/jquery\.ui/, {
-      path: function(module) {
-        return "jqueryui/"+module+".min.js"
-      },
-      pointcuts: {
-        before: function() {
-          var jQuery = require("jquery");
-        },
-        after: function() {
-          module.setExports(jQuery);
-        }
-      }
-    });
-  </script>
-  <style>
-    .ui-button-text { color: red; }
-  </style>
 </head>
 <body>
-<h1>jQuery UI using addRule()</h1>
-<p>In this example, we're loading jQuery UI on top of jQuery 1.7. The purpose of this is to show how addRule works. We've set up examples for jquery itself and the jquery.ui namespace. For the more complex jQuery UI items, we have added pointcuts to all the applicable modules, ensuring jQuery is available in each UI item's scope.</p>
 
-<p>The button below will turn red once it gets a class of "ui-button-text", caused by the jQuery UI call.</p>
+<h2>addRule</h2>
 
-<p>For added impact, we slowed down a jQuery dependency: jquery.ui.widget.min.js to 5 seconds to demonstrate how only the modules that depend on it directly block. You will need to clear your cache to reintroduce the lag for browsers that intelligently cache content.</p>
+<div class="about">
+  <p>In this example, we're loading jQuery UI on top of jQuery 1.7. The purpose of this is to show how addRule works. We've set up examples for jquery itself and the jquery.ui namespace. For the more complex jQuery UI items, we have added pointcuts to all the applicable modules, ensuring jQuery is available in each UI item's scope.</p>
 
-<p><a href="index.html">Back to examples</a></p>
+  <p>The button below will turn red once it gets a class of "ui-button-text", caused by the jQuery UI call.</p>
 
-<p><a href="#" class="button">I turn into a jQuery button</a></p>
+  <p>For added impact, we slowed down a jQuery dependency: jquery.ui.widget.min.js to 3 seconds to demonstrate how only the modules that depend on it directly block. You will need to clear your cache to reintroduce the lag for browsers that intelligently cache content.</p>
+</div>
 
-<p id="output-foo"></p>
+<textarea id="code">
+sandbox([
+  '<p><a href="#" class="button">I turn into a jQuery button</a></p>',
+  '<p id="output-foo"></p>',
+  '<style>',
+    '.ui-button-text { color: red; }',
+  '</style>'
+]);
 
-<button id="clearit">Clear Cache</button>
+Inject.reset();
+Inject.setModuleRoot("/examples/dependencies/addrule/");
 
-<script type="text/javascript">
-document.getElementById("clearit").onclick = function() {
-  Inject.clearCache();
-};
-</script>
-
-<script type="text/javascript">
-Inject.clearCache();
+// note: weighting is important here because of replacements
+Inject.addRule(/jquery\.ui/, {
+  path: function(module) {
+    return "jqueryui/"+module+".min.js"
+  },
+  last: true,
+  pointcuts: {
+    before: function() {
+      var jQuery = require("jquery");
+    },
+    after: function() {
+      module.setExports(jQuery);
+    }
+  }
+});
+Inject.addRule(/jquery/, {
+  path: "jquery-1.7.js",
+  pointcuts: {
+    after: function() {
+      module.setExports(jQuery.noConflict());
+      delete window["jQuery"];
+    }
+  }
+});
 require.ensure(["sampleapp"], function() {
   var app = require("sampleapp");
   app.run();
 });
-</script>
-<script type="text/javascript">
 require.ensure(["foo"], function() {
   var foo = require("foo")
   document.getElementById("output-foo").innerHTML = foo.baz;
 });
-</script>
+</textarea>
+
+<script type="text/javascript" src="resources/layout.js"></script>
+
 </body>
 </html>

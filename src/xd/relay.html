@@ -59,6 +59,7 @@ governing permissions and limitations under the License.
 <script type="text/javascript">
 
 var swfLocation = location.href.match(/swf=(.*?)(&|$)/)[1];
+var queue = [];
 window.Inject = {
   easyXDM: easyXDM
 };
@@ -101,13 +102,8 @@ var socket = new window.Inject.easyXDM.Socket({
     if (ALLOWED_DOMAIN && trimHost(origin) !== trimHost(ALLOWED_DOMAIN)) {
       return;
     }
-
-    var pieces = message.split(" "),
-        txId = pieces[0],
-        module = pieces[1],
-        path = pieces[2]
     
-    doXmlHttpRequest(txId, module, path);
+    doXmlHttpRequest(message.split("__INJECT_SPLIT__"));
   },
   onReady: function() {
     socketReady = true;
@@ -125,17 +121,18 @@ function trimHost(host) {
 }
 
 // makes an xhr, posts response
-function doXmlHttpRequest(module, path) {
+function doXmlHttpRequest(args) {
   var xhr = getXhr();
-  xhr.open("GET", path);
+  xhr.open("GET", args[1]);
   xhr.onreadystatechange = function() {
     if (xhr.readyState === 4) {
       var sendMessageNow = function() {
         socket.postMessage([
+          args[0], // moduleId
+          args[1], // URL
           xhr.status,
-          module,
           xhr.responseText
-        ].join(" "));
+        ].join("__INJECT_SPLIT__"));
       };
       if (socketReady) {
         sendMessageNow();
