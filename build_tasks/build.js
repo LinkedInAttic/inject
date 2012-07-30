@@ -20,7 +20,6 @@ governing permissions and limitations under the License.
 var Seq = require("seq");
 var path = require("path");
 var fs = require("fs");
-var build = require("./build/instructions");
 var bu = require("./util");
 
 // optimist
@@ -48,28 +47,6 @@ var options = {
   dest: dest,
 };
 
-function doPackage(buildName, description, cb) {
-  function announce(statement) {
-    console.log("  "+description+": "+statement);
-  }
-  announce("BEGIN");
-  build[buildName](options, function(err, result) {
-    if (err) {
-      announce("ERROR");
-      cb(err, result);
-    }
-    else {
-      if (result === "SKIPPED") {
-        announce("SKIPPED");
-      }
-      else {
-        announce("OK");
-      }
-      cb(err, result);
-    }
-  });
-}
-
 // here is the export task for building
 exports.task = function() {
   // answer calls for help
@@ -82,20 +59,10 @@ exports.task = function() {
   bu.mkdirpSync(dest);
 
   Seq()
-  .par(function() {
-    doPackage("ie7compat", "ie7 compat files", this.into("ie7compat"));
-  })
-  .par(function() {
-    doPackage("main", "main inject file", this.into("main"));
-  })
-  .par(function() {
-    doPackage("crossDomain", "cross domain compatibilty", this.into("crossDomain"));
-  })
+  .par(require("./build/main").task(options))
+  .par(require("./build/ie7").task(options))
+  .par(require("./build/crossdomain").task(options))
   .seq(function() {
-    console.log("All files built successfully!");
-  })
-  .catch(function(err) {
-    console.log("There were one or more errors:");
-    console.dir(err);
+    console.log("done!");
   });
-}
+};
