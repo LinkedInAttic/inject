@@ -98,6 +98,11 @@ var RulesEngine;
         var result = this.applyRules(path);
         path = result.resolved;
 
+        // exit early on resolved http URL
+        if (ABSOLUTE_PATH_REGEX.test(path)) {
+          return path;
+        }
+
         // shortcut. If it starts with /, affix to module root
         if (path.indexOf("/") === 0) {
           resolvedUrl = userConfig.moduleRoot + path.substr(1);

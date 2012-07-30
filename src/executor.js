@@ -287,7 +287,8 @@ var Executor;
           module.error = null;
           module.setExports = function(xobj) {
             for (var name in module.exports) {
-              throw new Error("cannot setExports when exports have already been set");
+              debugLog("cannot setExports when exports have already been set. setExports skipped");
+              return;
             }
             switch(typeof(xobj)) {
               case "object":
