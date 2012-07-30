@@ -874,7 +874,9 @@ processCallbacks = (status, moduleId, file) ->
 extractRequires = (file) ->
   requires = []
   uniques = {}
-  require = (item) ->
+
+  # internalize the __require__ for google closure compiler... bug #133
+  context.Inject.__require__ = (item) ->
     requires.push(item) if uniques[item] isnt true
     uniques[item] = true
   # collect runtime requirements
@@ -887,9 +889,10 @@ extractRequires = (file) ->
   reqs.push(match[0].match(requireGreedyCapture)[0]) while (match = requireRegex.exec(file))
   if reqs?.length > 0
     try
-      eval(reqs.join(";"))
+      eval(reqs.join(";").replace(/require/g, "context.Inject.__require__"))
     catch err
       console?.log "Invalid require() syntax found in file: " + reqs.join(";")
+      context.require = oldRequire;
       throw err
 
   # get static requirements
