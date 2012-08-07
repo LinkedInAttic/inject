@@ -45,10 +45,6 @@ var Executor;
     });
   }
 
-  function defineEvalScriptNode(node, url) {
-    node.src = url;
-  }
-
   // build a test script and ensure it works
   context.onerror = function(err, where, line) {
     onErrorOffset = 3 - line;
@@ -133,8 +129,7 @@ var Executor;
     var scr = createEvalScript(code);
     if (scr && docHead) {
       docHead.appendChild(scr);
-      defineEvalScriptNode(scr, options.url);
-      // cleanupEvalScriptNode(scr);
+      cleanupEvalScriptNode(scr);
     }
 
     // if there were no errors, tempErrorHandler never ran and therefore
