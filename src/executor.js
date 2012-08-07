@@ -152,7 +152,7 @@ var Executor;
           // there is nothing to run, so there must have been an uncaught
           // syntax error (firefox). 
           try {
-            try { eval("+"); } catch (ee) { relativeE = ee; } eval(toExec);
+            try { eval("+\n//@ sourceURL=inject-executor-line.js"); } catch (ee) { relativeE = ee; } eval(toExec);
           }
           catch(e) {
             if (e.lineNumber && relativeE.lineNumber) {

@@ -15,7 +15,15 @@ express or implied.   See the License for the specific language
 governing permissions and limitations under the License.
 */
 
-// TODO: create a special define function in this scope
+/**
+ * Below are the "sandboxing" wrappers for our commonJS implementation
+ * we reach in to the inject namespace (default "Inject"), into the
+ * INTERNAL object, which contains methods reachable during the eval.
+ * Markers in the file for dynamic content are identified with
+ * __DOUBLE_UNDERSCORES__, while internal variables are marked with
+ * __singleUnderscores
+ * @file This file contains the commonJS header and footers
+**/
 
 var commonJSHeader = ([
 '__INJECT_NS__.INTERNAL.execute.__FUNCTION_ID__ = function() {',
