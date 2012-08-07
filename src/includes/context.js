@@ -14,11 +14,14 @@ IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
 express or implied.   See the License for the specific language
 governing permissions and limitations under the License.
 */
-
-// assign things to the global context
-// export the interface publicly
-// most of these should pass through to their proper objects
+/**
+ * This file defines the public interface for Inject
+ * many functions in this collection pass through via proxy
+ * to internal methods
+ * @file public interface for Inject
+ */
 var globalRequire = new RequireContext();
+
 context.Inject = {
   INTERNAL: {
     defineExecutingModuleAs: proxy(Executor.defineExecutingModuleAs, Executor),

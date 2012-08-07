@@ -117,6 +117,11 @@ exports.concat = function(files, cb) {
   cb(null, args.join("\n"));
 };
 
+// put evals on a line
+exports.evalToNewLines = function(file, cb) {
+  cb(null, file.replace(/eval\(/g, "\neval("));
+};
+
 // mkdir -p solution
 exports.mkdirpSync = function (dir) {
   dir = path.resolve(path.normalize(dir));
@@ -204,7 +209,9 @@ exports.buildChain = Futures.chainify({
   minify: function(next, data, params) {
     try {
       exports.uglify(data, function(err, result) {
-        next(result);
+        exports.evalToNewLines(result, function(err, fixedResult) {
+          next(fixedResult);
+        })
       });
     }
     catch(err) {

@@ -14,6 +14,11 @@ IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
 express or implied.   See the License for the specific language
 governing permissions and limitations under the License.
 */
+/*
+IE-7 localstorage shim. Provides a localstorage polyfill for older
+browsers using IE's "userData" object. This file works in conjunction
+with localstorage-assets.txt to provide the full IE7 shim
+*/
 (function() {
   var DEBUG = false,
       DONT_ENUMERATE = ['getItem', 'setItem', 'removeItem', 'key', 'clear'],
