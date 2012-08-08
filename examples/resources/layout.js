@@ -67,6 +67,6 @@ var sandbox = function(lines) {
   var code = document.getElementById("code");
   code.wrap = "off";
   if (code) {
-    eval(code.value);
+    eval(code.value+"\n//@ sourceURL=inject-sandbox.js");
   }
 })();

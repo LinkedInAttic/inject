@@ -145,14 +145,15 @@ var Executor;
         // eval. This means we are doing dual eval (one for parse, one for
         // runtime) when sourceMap is enabled. Some people really want their
         // debug.
-        var toExec = code.replace(/([\w\W]*})[\w\W]*?$/, "$1()");
+        var toExec = code.replace(/([\w\W]+?)=([\w\W]*})[\w\W]*?$/, "$1 = ($2)();");
         var relativeE;
         toExec = [toExec, sourceString].join("\n");
         if (!context.Inject.INTERNAL.execute[options.functionId]) {
           // there is nothing to run, so there must have been an uncaught
           // syntax error (firefox). 
           try {
-            try { eval("+"); } catch (ee) { relativeE = ee; } eval(toExec);
+            try { eval("+\n//@ sourceURL=inject-executor-line.js"); } catch (ee) { relativeE = ee; }
+            eval(toExec);
           }
           catch(e) {
             if (e.lineNumber && relativeE.lineNumber) {
@@ -167,7 +168,8 @@ var Executor;
         else {
           // again, we are creating a "relativeE" to capture the eval line
           // this allows us to get accurate line numbers in firefox
-          try { eval("+"); } catch (ee) { relativeE = ee; } eval(toExec);
+          try { eval("+\n//@ sourceURL=inject-executor-line.js"); } catch (ee) { relativeE = ee; }
+          eval(toExec);
         }
         
         if (context.Inject.INTERNAL.execute[options.functionId]) {
@@ -176,7 +178,7 @@ var Executor;
           // result.error will be later overwritten with a clean and readable Error()
           if (result.error) {
             if (result.error.lineNumber && relativeE.lineNumber) {
-              result.error.lineNumber = result.error.lineNumber - relativeE.lineNumber + 1;
+              result.error.lineNumber = result.error.lineNumber - relativeE.lineNumber;
             }
             else {
               result.error.lineNumber = getLineNumberFromException(result.error);
