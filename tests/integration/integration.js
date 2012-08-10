@@ -38,6 +38,7 @@ asyncTest("Make sure query string params are handled properly in pointcut paths"
 });
 
 asyncTest("Enable Source Map (if supported)", 1, function() {
+  ok(false);
   sandbox.global.Inject.enableDebug("sourceMap");
   sandbox.global.Inject.setModuleRoot("/tests/integration/includes/");
   sandbox.global.require.run("sourcemap");
