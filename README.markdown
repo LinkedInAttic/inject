@@ -1,4 +1,22 @@
-[![Build Status](https://secure.travis-ci.org/Jakobo/inject.png?branch=master)](http://travis-ci.org/Jakobo/inject) You are viewing the README for the current branch of Inject. This is master-0.4.x
+You are viewing the README for the current branch of Inject. This is master-0.4.x
+
+<table>
+  <tr>
+    <th colspan="2">Healthchecks</th>
+  </tr>
+  <tr>
+    <td>master</td>
+    <td><a href="http://travis-ci.org/#!/linkedin/inject/branch_summary"><img src="https://secure.travis-ci.org/linkedin/inject.png?branch=master"/></td>
+  </tr>
+  <tr>
+    <td>v0.4.x</td>
+    <td><a href="http://travis-ci.org/#!/linkedin/inject/branch_summary"><img src="https://secure.travis-ci.org/linkedin/inject.png?branch=v0.4.x"/></td>
+  </tr>
+  <tr>
+    <td>v0.3.x</td>
+    <td><a href="http://travis-ci.org/#!/linkedin/inject/branch_summary"><img src="https://secure.travis-ci.org/linkedin/inject.png?branch=v0.3.x"/></td>
+  </tr>
+</table>
 
 Inject: Dependency Management Got Awesome
 ===
