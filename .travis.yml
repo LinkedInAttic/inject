@@ -2,10 +2,8 @@ language: node_js
 node_js:
   - 0.6
 before_script:
-  - "export DISPLAY=:99.0" 
-  - "sh -e /etc/init.d/xvfb start"
   - npm install
   - node makefile.js build
   - node makefile.js server &
   - sleep 5
-script: phantomjs test/qunit/run-qunit.js "http://localhost:80/test/index.html"
+script: phantomjs tests/run-qunit.js http://localhost:4000/tests/tests.html?filter=src%20%3A%3A && phantomjs tests/run-qunit.js http://localhost:4000/tests/tests.html?filter=spec%20%3A%3A%20CommonJS && phantomjs tests/run-qunit.js http://localhost:4000/tests/tests.html?filter=spec%20%3A%3A%20AMD && phantomjs tests/run-qunit.js http://localhost:4000/tests/tests.html?filter=integration%20%3A%3A

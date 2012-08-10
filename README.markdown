@@ -34,13 +34,9 @@ phantomjs tests/run-qunit.js http://localhost:4000/tests/tests.html
 
 # or the travisCI version w/ granularity
 
-echo "src ::" &&
 phantomjs tests/run-qunit.js http://localhost:4000/tests/tests.html?filter=src%20%3A%3A &&
-echo "spec :: CommonJS" &&
 phantomjs tests/run-qunit.js http://localhost:4000/tests/tests.html?filter=spec%20%3A%3A%20CommonJS &&
-echo "spec :: AMD" &&
 phantomjs tests/run-qunit.js http://localhost:4000/tests/tests.html?filter=spec%20%3A%3A%20AMD &&
-echo "integration ::" &&
 phantomjs tests/run-qunit.js http://localhost:4000/tests/tests.html?filter=integration%20%3A%3A
 ```
 
