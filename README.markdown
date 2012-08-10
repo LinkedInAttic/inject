@@ -1,4 +1,4 @@
-You are viewing the README for the current branch of Inject. This is master-0.4.x
+[![Build Status](https://secure.travis-ci.org/Jakobo/inject.png?branch=master)](http://travis-ci.org/Jakobo/inject) You are viewing the README for the current branch of Inject. This is master-0.4.x
 
 Inject: Dependency Management Got Awesome
 ===
@@ -26,6 +26,19 @@ node makefile.js server
 ```
 
 You can visit http://localhost:4000/examples/ for viewing some sample code, or http://localhost:4000/tests for running our unit test suite. We use alternate ports to create the cross domain environment instead of a CDN.
+
+If you have PhantomJS (http://phantomjs.org/download.html) in your binary path, you can start the node server from above and kick off a PhantomJS version.
+
+```sh
+phantomjs tests/run-qunit.js http://localhost:4000/tests/tests.html
+
+# or the travisCI version w/ granularity
+
+phantomjs tests/run-qunit.js http://localhost:4000/tests/tests.html?filter=src%20%3A%3A &&
+phantomjs tests/run-qunit.js http://localhost:4000/tests/tests.html?filter=spec%20%3A%3A%20CommonJS &&
+phantomjs tests/run-qunit.js http://localhost:4000/tests/tests.html?filter=spec%20%3A%3A%20AMD &&
+phantomjs tests/run-qunit.js http://localhost:4000/tests/tests.html?filter=integration%20%3A%3A
+```
 
 Getting Started
 ===
