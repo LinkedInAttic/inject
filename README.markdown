@@ -1,4 +1,4 @@
-You are viewing the README for the current branch of Inject. This is master-0.4.x
+[![Build Status](https://secure.travis-ci.org/Jakobo/inject.png?branch=master)](http://travis-ci.org/Jakobo/inject) You are viewing the README for the current branch of Inject. This is master-0.4.x
 
 Inject: Dependency Management Got Awesome
 ===
