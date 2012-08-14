@@ -22,6 +22,11 @@ governing permissions and limitations under the License.
  */
 var globalRequire = new RequireContext();
 
+/**
+    This object contains the public interface for Inject (@see Executor,
+    @see InjectCore, @see RulesEngine, etc.).
+    @type {Object}
+ */
 context.Inject = {
   INTERNAL: {
     defineExecutingModuleAs: proxy(Executor.defineExecutingModuleAs, Executor),
@@ -33,10 +38,22 @@ context.Inject = {
     createRequire: proxy(InjectCore.createRequire, InjectCore),
     createDefine: proxy(InjectCore.createDefine, InjectCore)
   },
+  /**
+      Exposes API for doing cross-domain messaging.
+      @see <a href="http://www.easyxdm.net">easyXDM</a>
+      @public
+   */
   easyXDM: easyXDM,
+  /**
+      Clears any locally cached modules, downloads and local storage.
+      @public
+   */
   reset: function() {
     InjectCore.reset();
   },
+  /**
+      @public
+   */
   enableDebug: function() {
     InjectCore.enableDebug.apply(this, arguments);
   },
