@@ -20,18 +20,18 @@ governing permissions and limitations under the License.
  * It is able to create require() and define() methods within a
  * path context, as well as assign configuration for the
  * various options.
- * @see InjectCore
+ * @file
 **/
 var InjectCore;
 (function() {
   /**
    * This is the internal definition of the InjectCore class
-   * @class InjectCore
+   * @class
    */
   var AsStatic = Class.extend(function() {
     return {
       /**
-       * @constructs
+       * @constructs InjectCore
        */
       init: function() {},
 
@@ -39,9 +39,10 @@ var InjectCore;
        * create a require() method within a given context path
        * relative require() calls can be based on the provided
        * id and path
-       * @public
+       * @method InjectCore.createRequire
        * @param {string} id - the module identifier for relative module IDs
        * @param {string} path - the module path for relative path operations
+       * @public
        * @returns a function adhearing to CommonJS and AMD require()
        */
       createRequire: function(id, path) {
@@ -62,9 +63,10 @@ var InjectCore;
        * create a define() method within a given context path
        * relative define() calls can be based on the provided
        * id and path
-       * @public
+       * @method InjectCore.createDefine
        * @param {string} id - the module identifier for relative module IDs
        * @param {string} path - the module path for relative path operations
+       * @public
        * @returns a function adhearing to the AMD define() method
        */
       createDefine: function(id, path) {
@@ -76,7 +78,9 @@ var InjectCore;
 
       /**
        * set the base path for all module includes
+       * @method InjectCore.setModuleRoot
        * @param {string} root - the fully qualified URL for modules to be included from
+       * @public
        */
       setModuleRoot: function(root) {
         userConfig.moduleRoot = root;
@@ -87,8 +91,9 @@ var InjectCore;
        * the cross domain config is an object consisting of two properties,
        * the relayHtml and the relaySwf. The HTML and SWF file should be
        * located on the remote server (for example the CDN).
-       * @public
+       * @method InjectCore.setCrossDomain
        * @param {object} crossDomainConfig - the confuiguration object
+       * @public
        */
       setCrossDomain: function(crossDomainConfig) {
         userConfig.xd.relayFile = crossDomainConfig.relayFile || null;
@@ -97,6 +102,7 @@ var InjectCore;
 
       /**
        * clear the localstorage caches
+       * @method InjectCore.clearCache
        * @public
        */
       clearCache: function() {
@@ -108,9 +114,10 @@ var InjectCore;
       /**
        * set a time (in seconds) for how long to preserve items in cache
        * the default time is 300 seconds
-       * @see userConfig.fileExpires
-       * @public
+       * @method InjectCore.setExpires
        * @param {int} seconds - the number of seconds to retain files for
+       * @public
+       * @see userConfig.fileExpires
        */
       setExpires: function(seconds) {
         userConfig.fileExpires = seconds || 0;
@@ -120,8 +127,9 @@ var InjectCore;
        * set a unique cache identifier for Inject. This allows the parent
        * page to "bust" the cache by invoking setCacheKey with a different
        * value.
-       * @public
+       * @method InjectCore.setCacheKey
        * @param {string} cacheKey - the identifier to reference this cache version
+       * @public
        */
       setCacheKey: function(cacheKey) {
         var lscacheAppCacheKey;
@@ -144,6 +152,7 @@ var InjectCore;
       /**
        * reset the entire Inject system. This clears the cache, execution caches,
        * and any communicator caches.
+       * @method InjectCore.reset
        * @public
        */
       reset: function() {
@@ -156,15 +165,15 @@ var InjectCore;
        * enable debugging options. For a full list of debugging options,
        * the wiki page for "Debugging Options" lists the possible keys
        * and impact
-       * @public
+       * @method InjectCore.enableDebug
        * @param {string} key - the debugging key to enable or disable
        * @param {boolean} value - the value to assign for the key, defaults to true
+       * @public
        */
       enableDebug: function(key, value) {
         userConfig.debug[key] = value || true;
       }
     };
   });
-  /** assign the instance to the outer scope */
   InjectCore = new AsStatic();
 })();
