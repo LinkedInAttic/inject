@@ -24,13 +24,11 @@ governing permissions and limitations under the License.
 **/
 var InjectCore;
 (function() {
-  /**
-   * This is the internal definition of the InjectCore class
-   * @class
-   */
   var AsStatic = Class.extend(function() {
     return {
       /**
+       * The InjectCore object is meant to be instantiated once, and have its
+       * reference assigned to a location outside of the closure.
        * @constructs InjectCore
        */
       init: function() {},
@@ -175,5 +173,6 @@ var InjectCore;
       }
     };
   });
+  // Assign the instantiated object outside of our closure
   InjectCore = new AsStatic();
 })();
