@@ -45,7 +45,9 @@ else {
 }
 })();
 
-/*
-Class.js configuration
-*/
+/**
+    Class.js instance
+	@type
+	@global
+ */
 var Class = this.Class.noConflict();

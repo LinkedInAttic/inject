@@ -16,6 +16,10 @@ governing permissions and limitations under the License.
 */
 
 // user configuration options (see reset)
+/**
+ * @type {Object}
+ * @global
+ */
 var userConfig = {
   moduleRoot: null,
   fileExpires: 300,
@@ -36,15 +40,34 @@ var context = this;
 // any mappings for module => handling defined by the user
 var userModules = {};
 
-// a placeholder for the easyXDM lib if loaded
+/**
+    Reference to easyXDM library, if loaded.
+    @see <a href="http://www.easyxdm.net">easyXDM</a>
+ */
 var easyXdm = false;
 
 // an XHR reference, loaded once
+/**
+    Returns whether or not 'property' exists in 'object' as a Function
+    or Object.
+    @param {Object} object The object to inspect.
+    @param {*} property The property to assert exists in 'object'
+    @return {Boolean} true if 'property' exists in 'object', and false
+      otherwise.
+    @method
+    @global
+ */
 var isHostMethod = function(object, property) {
+  // Return if typeof is 'function', 'object' or 'unknown' (can occur for IE)
+  // See http://stackoverflow.com/questions/10982739/typeof-returning-unknown-in-ie
   var t = typeof object[property];
   return t == 'function' || (!!(t == 'object' && object[property])) || t == 'unknown';
 };
 
+/**
+    Returns object for doing async requests.
+    @return {XMLHttpRequest|ActiveXObject}
+ */
 var getXhr = (function(){
   if (isHostMethod(window, "XMLHttpRequest")) {
     return function(){
@@ -69,6 +92,13 @@ var getXhr = (function(){
   }
 }());
 
+/**
+    Calls the specified function in the specified scope.
+    @param {Function} fn The function to call
+    @param {Object} scope The scope to execute the function in.
+    @method
+    @global
+ */
 function proxy(fn, scope) {
   if (!scope) {
     throw new Error("proxying requires a scope");
@@ -81,6 +111,14 @@ function proxy(fn, scope) {
   }
 }
 
+/**
+    Apples fn to each item in given collection.
+    @param {*[]} collection An array of arbitrary elements.
+    @param {Function} fn A function that takes one argument.
+      Each element from 'collection' will be passed to 'fn'.
+    @method
+    @global
+ */
 function each(collection, fn) {
   for (var i = 0, len = collection.length; i < len; i++) {
     fn(collection[i]);
