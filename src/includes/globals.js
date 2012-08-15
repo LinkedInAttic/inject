@@ -15,29 +15,34 @@ express or implied.   See the License for the specific language
 governing permissions and limitations under the License.
 */
 
-// user configuration options (see reset)
 /**
- * @type {Object}
- * @global
+    User configuration options
+    @type {Object}
+    @global
  */
 var userConfig = {
   moduleRoot: null,
   fileExpires: 300,
   useSuffix: true,
   xd: {
-  	relayFile: null,
-  	relaySwf: null
+    relayFile: null,
+    relaySwf: null
   },
   debug: {
-  	sourceMap: false,
+    sourceMap: false,
     logging: false
   }
 };
 
-// context is our local scope. Should be "window"
+/**
+    The local scope
+    @global
+ */
 var context = this;
 
-// any mappings for module => handling defined by the user
+/**
+    Mappings for module => handling defined by the user.
+  */
 var userModules = {};
 
 /**
@@ -46,7 +51,6 @@ var userModules = {};
  */
 var easyXdm = false;
 
-// an XHR reference, loaded once
 /**
     Returns whether or not 'property' exists in 'object' as a Function
     or Object.
@@ -67,6 +71,8 @@ var isHostMethod = function(object, property) {
 /**
     Returns object for doing async requests.
     @return {XMLHttpRequest|ActiveXObject}
+    @method
+    @global
  */
 var getXhr = (function(){
   if (isHostMethod(window, "XMLHttpRequest")) {
@@ -94,8 +100,9 @@ var getXhr = (function(){
 
 /**
     Calls the specified function in the specified scope.
-    @param {Function} fn The function to call
+    @param {Function} fn The function to call.
     @param {Object} scope The scope to execute the function in.
+    @return {*} The result of calling fn.
     @method
     @global
  */
@@ -125,6 +132,11 @@ function each(collection, fn) {
   }
 }
 
+/**
+    Function for logging debug output.
+    @type {Function}
+    @global
+ */
 var debugLog = function() {};
 // TODO: more robust logging solution
 (function() {

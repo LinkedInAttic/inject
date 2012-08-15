@@ -137,9 +137,9 @@ context.Inject = {
     RulesEngine.manifest.apply(RulesEngine, arguments);
   },
   /**
-   * @see RulesEngine#addRule
-   * @method
-   * @public
+      @see RulesEngine#addRule
+      @method
+      @public
    */
   addRule: function() {
     RulesEngine.addRule.apply(RulesEngine, arguments);
