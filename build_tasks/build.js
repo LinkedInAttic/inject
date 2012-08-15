@@ -36,7 +36,8 @@ var argv = optimist.argv;
 
 // okay, lets do this
 var src = path.resolve(path.normalize("./src"));
-var dest = path.resolve(path.normalize("./artifacts/dev"));
+var dest = path.resolve(path.normalize("./artifacts/inject-dev"));
+var docs = path.resolve(path.normalize("./artifacts/inject-docs"));
 var tmp = path.resolve(path.normalize("./artifacts/tmp"));
 
 // options collection
@@ -45,6 +46,7 @@ var options = {
   nolegacy: argv.nolegacy,
   src: argv.output || src,
   dest: dest,
+  docs: docs
 };
 
 // here is the export task for building
@@ -60,9 +62,10 @@ exports.task = function() {
 
   Seq()
   .par(require("./build/main").task(options))
+  .par(require("./build/docs").task(options))
   .par(require("./build/ie7").task(options))
   .par(require("./build/crossdomain").task(options))
   .seq(function() {
-    console.log("done!");
+    require("util").log("Build Successful");
   });
 };
