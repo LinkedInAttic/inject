@@ -17,7 +17,23 @@ governing permissions and limitations under the License.
 
 /**
     User configuration options
-    @type {Object}
+    @property {string} moduleRoot Base path for all module includes
+      @see InjectCore.setModuleRoot
+    @property {number} fileExpires Time (in seconds) for how long to preserve
+      items in cache @see InjectCore.setExpires
+    @property {boolean} useSuffix Specify true to append file suffix when
+      resolving an identifier to a URL.  @see RulesEngine.resolveUrl
+    @property {object} xd Contains properties related to cross-domain requests
+    @property {string|null} xd.relayFile URL to easyXDM provider document
+      @see <a href="https://github.com/oyvindkinsey/easyXDM">easyXDM</a>
+    @property {string|null} xd.relaySwf URL for easyXDM FlashTransport
+      @see <a href="https://github.com/oyvindkinsey/easyXDM">easyXDM</a>
+    @property {object} debug
+    @property {boolean} debug.sourceMap Specify true to enable source
+      mapping @see Executor
+    @property {boolean} debug.logging Specify true to enable logging
+      @see debugLog
+    @type {object}
     @global
  */
 var userConfig = {
@@ -42,23 +58,25 @@ var context = this;
 
 /**
     Mappings for module => handling defined by the user.
+    @global
   */
 var userModules = {};
 
 /**
     Reference to easyXDM library, if loaded.
     @see <a href="http://www.easyxdm.net">easyXDM</a>
+    @global
  */
 var easyXdm = false;
 
 /**
     Returns whether or not 'property' exists in 'object' as a Function
     or Object.
-    @param {Object} object The object to inspect.
+    @param {object} object The object to inspect.
     @param {*} property The property to assert exists in 'object'
     @return {Boolean} true if 'property' exists in 'object', and false
       otherwise.
-    @method
+    @function
     @global
  */
 var isHostMethod = function(object, property) {
@@ -71,7 +89,7 @@ var isHostMethod = function(object, property) {
 /**
     Returns object for doing async requests.
     @return {XMLHttpRequest|ActiveXObject}
-    @method
+    @function
     @global
  */
 var getXhr = (function(){
@@ -101,9 +119,9 @@ var getXhr = (function(){
 /**
     Calls the specified function in the specified scope.
     @param {Function} fn The function to call.
-    @param {Object} scope The scope to execute the function in.
+    @param {object} scope The scope to execute the function in.
     @return {*} The result of calling fn.
-    @method
+    @function
     @global
  */
 function proxy(fn, scope) {
@@ -123,7 +141,7 @@ function proxy(fn, scope) {
     @param {*[]} collection An array of arbitrary elements.
     @param {Function} fn A function that takes one argument.
       Each element from 'collection' will be passed to 'fn'.
-    @method
+    @function
     @global
  */
 function each(collection, fn) {

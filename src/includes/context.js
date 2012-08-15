@@ -25,7 +25,7 @@ var globalRequire = new RequireContext();
 /**
     This object contains the public interface for Inject.
     @class
-    @type {Object}
+    @type {object}
     @global
  */
 context.Inject = {
@@ -58,14 +58,14 @@ context.Inject = {
   easyXDM: easyXDM,
   /**
       Clears any locally cached modules, downloads and local storage.
-      @see InjectCore#reset
+      @see InjectCore.reset
       @method
       @public
    */
   reset: proxy(InjectCore.reset, InjectCore),
   /**
       Enables debugging options.
-      @see InjectCore#enableDebug
+      @see InjectCore.enableDebug
       @method
       @public
    */
@@ -73,7 +73,7 @@ context.Inject = {
     InjectCore.enableDebug.apply(this, arguments);
   },
   /**
-      @see RulesEngine#toUrl
+      @see RulesEngine.toUrl
       @method
       @public
    */
@@ -82,7 +82,7 @@ context.Inject = {
   },
   /**
       Sets base path for all module includes.
-      @see InjectCore#setModuleRoot
+      @see InjectCore.setModuleRoot
       @method
       @public
    */
@@ -92,7 +92,7 @@ context.Inject = {
   /**
       Set a time for how long to preserve items in cache.
       The default time is 300 seconds.
-      @see InjectCore#setExpires
+      @see InjectCore.setExpires
       @method
       @public
    */
@@ -102,7 +102,7 @@ context.Inject = {
   /**
       Sets unique cache identifier for Inject.  This allows the parent page
       to "bust" the cache by invoking setCacheKey with a different value.
-      @see InjectCore#setCacheKey
+      @see InjectCore.setCacheKey
       @method
       @public
    */
@@ -114,7 +114,7 @@ context.Inject = {
       is an object consisting of two properties: relayHtml and relaySwf.  The
       HTML and SWF file should be located on the remote server (for example
       the CDN).
-      @see InjectCore#setCrossDomain
+      @see InjectCore.setCrossDomain
       @method
       @public
    */
@@ -123,13 +123,13 @@ context.Inject = {
   },
   /**
       Clears the local storage caches.
-      @see InjectCore#clearCache
+      @see InjectCore.clearCache
       @method
       @public
    */
   clearCache: proxy(InjectCore.clearCache, InjectCore),
   /**
-      @see RulesEngine#manifest
+      @see RulesEngine.manifest
       @method
       @public
    */
@@ -137,7 +137,7 @@ context.Inject = {
     RulesEngine.manifest.apply(RulesEngine, arguments);
   },
   /**
-      @see RulesEngine#addRule
+      @see RulesEngine.addRule
       @method
       @public
    */
@@ -146,7 +146,7 @@ context.Inject = {
   },
   /**
       CommonJS and AMD require()
-      @see InjectCore#createRequire
+      @see InjectCore.createRequire
       @see <a href="http://wiki.commonjs.org/wiki/Modules/1.1">CommonJS require()</a>
       @see <a href="https://github.com/amdjs/amdjs-api/wiki/require">AMD require()</a>
       @method
@@ -155,7 +155,7 @@ context.Inject = {
   require: InjectCore.createRequire(),
   /**
       AMD define()
-      @see InjectCore#createDefine
+      @see InjectCore.createDefine
       @see <a href="https://github.com/amdjs/amdjs-api/wiki/AMD">AMD define()</a>
       @method
       @public
@@ -171,7 +171,7 @@ context.Inject = {
 
 /**
     CommonJS and AMD require()
-    @see InjectCore#createRequire
+    @see InjectCore.createRequire
     @see <a href="http://wiki.commonjs.org/wiki/Modules/1.1">CommonJS require()</a>
     @see <a href="https://github.com/amdjs/amdjs-api/wiki/require">AMD require()</a>
     @method
@@ -181,7 +181,7 @@ context.require = context.Inject.INTERNAL.createRequire();
 
 /**
     AMD define()
-    @see InjectCore#createDefine
+    @see InjectCore.createDefine
     @see <a href="https://github.com/amdjs/amdjs-api/wiki/AMD">AMD define()</a>
     @method
     @public

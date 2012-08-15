@@ -47,7 +47,7 @@ else {
 
 /**
     Class.js instance
-    @type {Object}
+    @type {object}
     @global
  */
 var Class = this.Class.noConflict();
