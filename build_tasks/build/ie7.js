@@ -2,6 +2,7 @@ var Seq = require("seq");
 var bu = require("../util");
 exports.task = function(options) {
   return function () {
+    require("util").log("Building IE7 support");
     // this == next build step
     // ie7 compat
     if (options.nolegacy) {
