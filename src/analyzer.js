@@ -26,16 +26,15 @@ var Analyzer;
   var AsStatic = Class.extend(function() {
     return {
       /**
-       * TODO: Add implementation of analyzer initialization
-       * @function
-       * @public
+       * analyzer initialization
+       * @constructs Analyzer
        */
       init: function() {},
       
       /**
        * Clean up moduleIds by removing all buildin modules 
        * (requie, exports, module) from a given module list
-       * @function
+       * @method Analyzer.stripBuiltins
        * @param {Array} modules - a list of moduleIds
        * @public
        */
@@ -53,11 +52,11 @@ var Analyzer;
       
       /**
        * Extract the clean dependency requires from a given file as
-       * String, remove all buildin requires, support merging requires
-       * from AMD define purpose
-       * @function
+       * String, remove all buildin requires, merge requires from
+       * AMD define purpose
+       * @method Analyzer.extractRequires
        * @param {String} file - a string of a file
-       * @private
+       * @public
        */
       extractRequires: function(file) {
         var requires = [];
