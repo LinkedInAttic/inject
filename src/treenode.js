@@ -15,9 +15,19 @@ express or implied.   See the License for the specific language
 governing permissions and limitations under the License.
 */
 
-// TreeNode JS
+/**
+ * The TreeNode is a data structure object for building N-ary
+ * trees. It also collects methods for iterating on itself
+ * via various traversal methods.
+ * @file
+**/
 var TreeNode = Class.extend(function() {
   return {
+    /**
+     * Create a TreeNode with a defined value
+     * @constructs TreeNode
+     * @param {TreeNode} value - the value of this node
+     */
     init: function(value) {
       this.value = value;
       this.children = [];
@@ -26,15 +36,43 @@ var TreeNode = Class.extend(function() {
       this.parent = null;
       this.isCircularNode = false;
     },
+
+    /**
+     * Get the value associated with the TreeNode
+     * @method TreeNode#getValue
+     * @public
+     * @returns {variable} the value of the node
+     */
     getValue: function() {
       return this.value;
     },
+
+    /**
+     * Flag this tree node as circular
+     * @method TreeNode#flagCircular
+     * @public
+     */
     flagCircular: function() {
       this.isCircularNode = true;
     },
+
+    /**
+     * return if this node is a circular reference
+     * @method TreeNode#isCircular
+     * @public
+     * @returns {boolean} true if this is a circular reference
+     */
     isCircular: function() {
       return this.isCircularNode;
     },
+
+    /**
+     * Add a child to the node. It also sets up left
+     * and right relationships as well as the parent.
+     * @method TreeNode#addChild
+     * @param {TreeNode} node - the TreeNode to add
+     * @public
+     */
     addChild: function(node) {
       var rightChild;
       if (this.children.length > 0) {
@@ -45,27 +83,88 @@ var TreeNode = Class.extend(function() {
       this.children.push(node);
       return node.setParent(this);
     },
+
+    /**
+     * Get all the children of this node
+     * @method TreeNode#getChildren
+     * @public
+     * @returns {Array} an array of child TreeNode objects
+     */
     getChildren: function() {
       return this.children;
     },
+
+    /**
+     * An interface for setting the "left" node of the tree
+     * @method TreeNode#setLeft
+     * @param {TreeNode} node - the node to set
+     * @public
+     * @returns {TreeNode}
+     */
     setLeft: function(node) {
       return this.left = node;
     },
+
+    /**
+     * Get the node "left" of the current
+     * @method TreeNode#getLeft
+     * @public
+     * @returns {TreeNode}
+     */
     getLeft: function() {
       return this.left;
     },
+
+    /**
+     * An interface for setting the "right" node of the tree
+     * @method TreeNode#setRight
+     * @param {TreeNode} node - the node to set
+     * @public
+     * @returns {TreeNode}
+     */
     setRight: function(node) {
       return this.right = node;
     },
+
+    /**
+     * Get the node "right" of the current
+     * @method TreeNode#getRight
+     * @public
+     * @returns {TreeNode}
+     */
     getRight: function() {
       return this.right;
     },
+
+    /**
+     * An interface for setting the "parent" node of current
+     * @method TreeNode#setParent
+     * @param {TreeNode} node - the node to set
+     * @public
+     * @returns {TreeNode}
+     */
     setParent: function(node) {
       return this.parent = node;
     },
+
+    /**
+     * Get the node "parent" of the current
+     * @method TreeNode#getParent
+     * @public
+     * @returns {TreeNode}
+     */
     getParent: function() {
       return this.parent;
     },
+
+    /**
+     * Perform a postOrder traversal over the tree, optionally running
+     * a supplied callback
+     * @method TreeNode#postOrder
+     * @param {Function} callback - a callback to run for each node
+     * @public
+     * @returns {Array} the nodes of the tree, ordered by post-order
+     */
     postOrder: function(callback) {
       // post order traversal to an array
       // left, right, parent
