@@ -15,11 +15,30 @@ express or implied.   See the License for the specific language
 governing permissions and limitations under the License.
 */
 
+/**
+ * The analyzer module handles extract the clean dependencies list 
+ * from a given file and supports remove buildin modules from a
+ * given module list
+ * @file
+**/
 var Analyzer;
 (function() {
   var AsStatic = Class.extend(function() {
     return {
+      /**
+       * TODO: Add implementation of analyzer initialization
+       * @function
+       * @public
+       */
       init: function() {},
+      
+      /**
+       * Clean up moduleIds by removing all buildin modules 
+       * (requie, exports, module) from a given module list
+       * @function
+       * @param {Array} modules - a list of moduleIds
+       * @public
+       */
       stripBuiltins: function(modules) {
         var strippedModuleList = [];
         var moduleId;
@@ -30,7 +49,16 @@ var Analyzer;
           }
         }
         return strippedModuleList;
-      },    
+      },
+      
+      /**
+       * Extract the clean dependency requires from a given file as
+       * String, remove all buildin requires, support merging requires
+       * from AMD define purpose
+       * @function
+       * @param {String} file - a string of a file
+       * @private
+       */
       extractRequires: function(file) {
         var requires = [];
         var requireMatches = null;
@@ -48,7 +76,9 @@ var Analyzer;
           }
           uniques[term] = true;
         };
-
+        
+        // remove comment lines from the file to avoid adding
+        // any requires from comments
         file = file.replace(JS_COMMENTS_REGEX, "");
 
         // handle runtime require statements
