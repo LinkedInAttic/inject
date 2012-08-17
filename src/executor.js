@@ -563,20 +563,14 @@ var Executor;
         var actualErrorLine;
         var message;
 
-        // try to run the JS as a module, errors set errorObject
-        // try {
-          result = executeJavaScriptModule(runCommand, {
-            moduleId: moduleId,
-            functionId: functionId,
-            preamble: header,
-            epilogue: footer,
-            originalCode: code,
-            url: path
-          });
-        // }
-        // catch(e) {
-        //   errorObject = e;
-        // }       
+        result = executeJavaScriptModule(runCommand, {
+          moduleId: moduleId,
+          functionId: functionId,
+          preamble: header,
+          epilogue: footer,
+          originalCode: code,
+          url: path
+        });    
 
         // if a global error object was created
         if (result && result.error) {
