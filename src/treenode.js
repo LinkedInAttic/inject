@@ -15,9 +15,19 @@ express or implied.   See the License for the specific language
 governing permissions and limitations under the License.
 */
 
-// TreeNode JS
+/**
+ * The TreeNode is a data structure object for building N-ary
+ * trees. It also collects methods for iterating on itself
+ * via various traversal methods.
+ * @file
+**/
 var TreeNode = Class.extend(function() {
   return {
+    /**
+     * Create a TreeNode with a defined value
+     * @constructs TreeNode
+     * @param {TreeNode} value - the value of this node
+     */
     init: function(value) {
       this.value = value;
       this.children = [];
@@ -26,9 +36,22 @@ var TreeNode = Class.extend(function() {
       this.parent = null;
       this.isCircularNode = false;
     },
+
+    /**
+     * Get the value associated with the TreeNode
+     * @method TreeNode#getValue
+     * @public
+     * @returns {variable} the value of the node
+     */
     getValue: function() {
       return this.value;
     },
+
+    /**
+     * Flag this tree node as circular
+     * @method flagCircular
+     * @public
+     */
     flagCircular: function() {
       this.isCircularNode = true;
     },
