@@ -35,8 +35,9 @@ var Analyzer;
        * Clean up moduleIds by removing all buildin modules 
        * (requie, exports, module) from a given module list
        * @method Analyzer.stripBuiltins
-       * @param {Array} modules - a list of moduleIds
+       * @param {Array} modules - a dirty list of modules
        * @public
+       * @returns {Array} a clean list of modules without buildins
        */
       stripBuiltins: function(modules) {
         var strippedModuleList = [];
@@ -57,6 +58,8 @@ var Analyzer;
        * @method Analyzer.extractRequires
        * @param {String} file - a string of a file
        * @public
+       * @returns {Array} a clean list of dependency requires from a 
+       * module file
        */
       extractRequires: function(file) {
         var requires = [];
