@@ -46,7 +46,8 @@ function createServer(path) {
 }
 
 // three serving locations for this project
-serveFromArtifacts = createServer(path.normalize("" + __dirname + "/../artifacts/dev"));
+serveFromArtifacts = createServer(path.normalize("" + __dirname + "/../artifacts/inject-dev"));
+serveFromDocs = createServer(path.normalize("" + __dirname + "/../artifacts/inject-docs"));
 serveFromExamples = createServer(path.normalize("" + __dirname + "/../examples"));
 serveFromTests = createServer(path.normalize("" + __dirname + "/../tests"));
 serveFromSrc = createServer(path.normalize("" + __dirname + "/../src"));
@@ -60,6 +61,10 @@ function server(request, response) {
   if (request.url.indexOf("/examples") === 0) {
     serve = serveFromExamples;
     request.url = request.url.replace(/^\/examples/, "");
+  }
+  else if (request.url.indexOf("/docs") === 0) {
+    serve = serveFromDocs;
+    request.url = request.url.replace(/^\/docs/, "");
   }
   else if (request.url.indexOf("/tests") === 0) {
     serve = serveFromTests;
@@ -111,8 +116,9 @@ exports.task = function() {
   
   http.createServer(server).listen(4000);
   http.createServer(server).listen(4001);
-  util.log("inject() server running on ports 4000 and 4001");
+  util.log("Inject server running on ports 4000 and 4001");
   util.log("-----")
+  util.log("access docs:     http://localhost:4000/docs/index.html");
   util.log("access examples: http://localhost:4000/examples/index.html");
   util.log("access tests:    http://localhost:4000/tests/index.html");
 };

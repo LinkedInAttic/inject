@@ -15,27 +15,83 @@ express or implied.   See the License for the specific language
 governing permissions and limitations under the License.
 */
 
+/**
+ * RequireContext is an instance object which provides the
+ * CommonJS and AMD interfaces of require(string),
+ * require(array, callback) ensure (require.ensure),
+ * run (require.run), and define.
+ * @file
+**/
 var RequireContext = Class.extend(function() {
   return {
+    /**
+     * Creates a new RequireContext
+     * @constructs RequireContext
+     * @param {String} id - the current module ID for this context
+     * @param {String} path - the current module URL for this context
+     * @public
+     */
     init: function(id, path) {
       this.id = id || null;
       this.path = path || null;
     },
+
+    /**
+     * Log an operation for this context
+     * @method RequireContext#log
+     * @param {String} message - the message to log
+     * @protected
+     */
     log: function(message) {
       debugLog("RequireContext for "+this.path, message);
     },
+
+    /**
+     * get the path associated with this context
+     * @method RequireContext#getPath
+     * @public
+     * @returns {String} the path for the current context
+     */
     getPath: function() {
       if (!userConfig.moduleRoot) {
         throw new Error("moduleRoot must be defined. Please use Inject.setModuleRoot()");
       }
       return this.path || userConfig.moduleRoot;
     },
+
+    /**
+     * get the ID associated with this context
+     * @method RequireContext#getId
+     * @public
+     * @returns {String} the id of the current context
+     */
     getId: function() {
       return this.id || "";
     },
+
+    /**
+     * Get the module for a provided module ID. Used as a passthrough
+     * to collect modules during depenency resolution
+     * @method requireContext#getModule
+     * @param {String} moduleId - the module ID to retrieve
+     * @protected
+     * @see Executor.getModule
+     */
     getModule: function(moduleId) {
       return Executor.getModule(moduleId).exports;
     },
+
+    /**
+     * Get all modules that have loaded up to this point based on
+     * a list. Require and module calls are transparently added
+     * to the output
+     * @method RequireContext#getAllModules
+     * @param {Array|String} moduleIdOrList - a single or list of modules to resolve
+     * @param {Function} require - a require function, usually from a RequireContext
+     * @param {Object} module - a module representing the current executor, from Executor
+     * @protected
+     * @returns {Array} an array of modules matching moduleIdOrList
+     */
     getAllModules: function(moduleIdOrList, require, module) {
       var args = [];
       var mId = null;
@@ -58,6 +114,19 @@ var RequireContext = Class.extend(function() {
       }
       return args;
     },
+
+    /**
+     * The CommonJS and AMD require interface<br>
+     * CommonJS: <strong>require(moduleId)</strong><br>
+     * AMD: <strong>require(moduleList, callback)</strong>
+     * @method RequireContext#require
+     * @param {String|Array} moduleIdOrList - a string (CommonJS) or Array (AMD) of modules to include
+     * @param {Function} callback - a callback (AMD) to run on completion
+     * @public
+     * @returns {Object|null} the object at the module ID (CommonJS) or null (AMD)
+     * @see <a href="http://wiki.commonjs.org/wiki/Modules/1.0">http://wiki.commonjs.org/wiki/Modules/1.0</a>
+     * @see <a href="https://github.com/amdjs/amdjs-api/wiki/require">https://github.com/amdjs/amdjs-api/wiki/require</a>
+     */
     require: function(moduleIdOrList, callback) {
       var path;
       var module;
@@ -88,6 +157,15 @@ var RequireContext = Class.extend(function() {
         callback.apply(context, modules);
       }, this));
     },
+
+    /**
+     * the CommonJS require.ensure interface based on the async/a spec
+     * @method RequireContext#ensure
+     * @param {Array} moduleList - an array of modules to load
+     * @param {Function} callback - a callback to run when all modules are loaded
+     * @public
+     * @see <a href="http://wiki.commonjs.org/wiki/Modules/Async/A">http://wiki.commonjs.org/wiki/Modules/Async/A</a>
+     */
     ensure: function(moduleList, callback) {
       if (Object.prototype.toString.call(moduleList) !== '[object Array]') {
         throw new Error("require.ensure() must take an Array as the first argument");
@@ -131,10 +209,34 @@ var RequireContext = Class.extend(function() {
         }, this));
       }
     },
+
+    /**
+     * Run a module as a one-time approach. This is common verbage
+     * in many AMD based systems
+     * @method RequireContext#run
+     * @param {String} moduleId - the module ID to run
+     * @public
+     */
     run: function(moduleId) {
       this.log("AMD require.run(string) of "+moduleId);
       this.ensure([moduleId]);
     },
+
+    /**
+     * Define a module with its arguments. Define has multiple signatures:
+     * <ul>
+     *  <li>define(id, dependencies, factory)</li>
+     *  <li>define(id, factory)</li>
+     *  <li>define(dependencies, factory)</li>
+     *  <li>define(factory)</li>
+     * </ul>
+     * @method RequireContext#define
+     * @param {string} id - if provided, the name of the module being defined
+     * @param {Array} dependencies - if provided, an array of dependencies for this module
+     * @param {Object|Function} factory - an object literal that defines the module or a function to run that will define the module
+     * @public
+     * @see <a href="https://github.com/amdjs/amdjs-api/wiki/AMD">https://github.com/amdjs/amdjs-api/wiki/AMD</a>
+     */
     define: function() {
       var args = Array.prototype.slice.call(arguments, 0);
       var id = null;

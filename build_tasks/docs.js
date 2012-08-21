@@ -19,34 +19,26 @@ governing permissions and limitations under the License.
 
 var Seq = require("seq");
 var path = require("path");
-var fs = require("fs");
 var bu = require("./util");
 
 // optimist
 var optimist = require("optimist")
-    .usage("Build inject with various options.\nUsage: $0 build")
+    .usage("Build the documentation for inject.\nUsage: $0 docs")
     .boolean("help")
     .describe("help", "show this message")
-    .default("noxd", false)
-    .describe("noxd", "build for local only (disable cross domain support)")
-    .default("nolegacy", false)
-    .describe("nolegacy", "build for modern browsers only (disable ie7 support)")
     .describe("output", "select an output directory, defaults to ./artifacts");
 var argv = optimist.argv;
 
 // okay, lets do this
 var src = path.resolve(path.normalize("./src"));
-var dest = (argv.output) ? path.resolve(argv.output) : path.resolve(path.normalize("./artifacts"));
-var tmp = path.resolve(path.normalize("./artifacts/tmp"));
+var docs = (argv.output) ? path.resolve(argv.output) : path.resolve(path.normalize("./artifacts"));
 
-dest = path.resolve(dest+"/inject-dev");
+docs = path.resolve(docs + "/inject-docs");
 
 // options collection
 var options = {
-  noxd: argv.noxd,
-  nolegacy: argv.nolegacy,
   src: src,
-  dest: dest
+  docs: docs
 };
 
 // here is the export task for building
@@ -58,13 +50,19 @@ exports.task = function() {
   }
 
   // create output directory
-  bu.mkdirpSync(dest);
+  bu.mkdirpSync(docs);
 
   Seq()
-  .par(require("./build/main").task(options))
-  .par(require("./build/ie7").task(options))
-  .par(require("./build/crossdomain").task(options))
   .seq(function() {
-    require("util").log("Build Successful");
+    require("util").log("Generating documentation");
+    // this == next build step
+    // master file
+    var docs = options.docs;
+    var src = options.src;
+    var next = this;
+    bu.JSDoc(src, docs, next);
+  })
+  .seq(function() {
+    require("util").log("Doc Generation Successful");
   });
 };

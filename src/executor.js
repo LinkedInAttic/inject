@@ -15,18 +15,67 @@ express or implied.   See the License for the specific language
 governing permissions and limitations under the License.
 */
 
+/**
+ * The executor module handles the raw JS execution and sandboxing
+ * of modules when they are ran. The resulting exports are cached
+ * here for later. The executor is also the authority on what
+ * modules have been AMD-defined, are broken, or contain circular
+ * references.
+ * @file
+**/
 var Executor;
 (function() {
+
+  /**
+   * the document head
+   * @private
+   * @type {boolean}
+   */
   var docHead = false;
+
+  /**
+   * on error, this offset represents the delta between actual
+   * errors and the reported line
+   * @private
+   * @type {int}
+   */
   var onErrorOffset = 0;
+
+  /**
+   * A test script designed to generate a known error
+   * @private
+   * @type {int}
+   */
   var testScript = 'function Inject_Test_Known_Error() {\n  function nil() {}\n  nil("Known Syntax Error Line 3";\n}';
+  
+  /**
+   * the old onerror object for restoring
+   * @private
+   * @type {*}
+   */
   var initOldError = context.onerror;
+
+  /**
+   * the test script node is a node containing the test script,
+   * which will trigger an error on injection
+   * @private
+   * @type {Node}
+   */
   var testScriptNode = createEvalScript(testScript);
 
   // capture document head
   try { docHead = document.getElementsByTagName("head")[0]; }
   catch(e) { docHead = false; }
 
+  /**
+   * create a script node containing code to execute when
+   * placed into the page. IE behaves differently from other
+   * browsers, which is why the logic has been encapsulated into
+   * a function.
+   * @function
+   * @param {String} code - the code to create a node with
+   * @private
+   */
   function createEvalScript(code) {
     var scr = document.createElement("script");
     scr.type = "text/javascript";
@@ -37,8 +86,16 @@ var Executor;
     return scr;
   }
 
+  /**
+   * remove an inserted script node from the page.
+   * It is put into a setTimeout call so that it will
+   * happen after all other code in queue has completed.
+   * @function
+   * @param {node} node - the HTML node to clean
+   * @private
+   */
   function cleanupEvalScriptNode(node) {
-    window.setTimeout(function() {
+    context.setTimeout(function() {
       if (docHead) {
         return docHead.removeChild(node);
       }
@@ -57,6 +114,16 @@ var Executor;
   context.onerror = initOldError;
   // test script completion
 
+  /**
+   * extract line numbers from an exception.
+   * it turns out that an exception can have an error line
+   * in multiple places. If there is e.lineNumber, then we
+   * can use that. Otherwise, we deconstruct the stack and
+   * locate the trace line with a line number
+   * @function
+   * @param {Exception} e - the exception to get a line number from
+   * @private
+   */
   function getLineNumberFromException(e) {
     var lines;
     var phrases;
@@ -73,6 +140,22 @@ var Executor;
     }
   }
 
+  /**
+   * execute a javascript module after wrapping it in sandbox code
+   * this way, the entire module process is encapsulated
+   * The options contain:
+   * <pre>
+   * moduleId     - the id of the module
+   * functionId   - the anonymous function id
+   * preamble     - the sandbox preamble code
+   * epilogue     - the sandbox epilogue code
+   * originalCode - the original unmodified code
+   * url          - the URL used to retrieve the module
+   * </pre>
+   * @function
+   * @param {String} code - the code to execute
+   * @param {Object} options - a collection of options
+   */
   function executeJavaScriptModule(code, options) {
     var oldError = context.onerror;
     var errorObject = null;
@@ -93,10 +176,17 @@ var Executor;
     // add source string in sourcemap compatible browsers
     code = [code, sourceString].join("\n");
 
-    // create a temp error handler for exactly this run of code
-    // we use this for syntax error handling. It's an inner function
-    // because we need to set the universal "errorObject" object
-    // so we don't try and execute it later
+    /**
+     * a temp error handler that lasts for the duration of this code
+     * run. It allows us to catch syntax error handling in this specific
+     * code execution. It sets an errorObject via closure so that
+     * we know we entered an error state
+     * @function
+     * @param {string} err - the error string
+     * @param {string} where - the file with the error
+     * @param {int} line - the line number of the error
+     * @param {string} type - the type of error (runtime, parse)
+     */
     var tempErrorHandler = function(err, where, line, type) {
       var actualErrorLine =  line - options.preambleLength;
       var originalCodeLength = options.originalCode.split("\n").length;
@@ -219,9 +309,19 @@ var Executor;
   var AsStatic = Class.extend(function() {
     var functionCount = 0;
     return {
+      /**
+       * Create the executor and initialize its caches
+       * @constructs Executor
+       */
       init: function() {
         this.clearCaches();
       },
+
+      /**
+       * Clear all the caches for the executor
+       * @method Executor.clearCaches
+       * @public
+       */
       clearCaches: function() {
         // cache of resolved exports
         this.cache = {};
@@ -241,18 +341,51 @@ var Executor;
         // the stack of AMD define functions, because they "could" be anonymous
         this.anonymousAMDStack = [];
       },
+
+      /**
+       * Define the executing module by a moduleId and path.
+       * when using AMD style defines with just CommonJS
+       * wrappers, it's important to know what module we are
+       * currently trying to run.
+       * @method Executor.defineExecutingModuleAs
+       * @param {string} moduleId - the module ID being ran
+       * @param {string} path - the path for the current module
+       * @public
+       */
       defineExecutingModuleAs: function(moduleId, path) {
         return this.anonymousAMDStack.push({
           id: moduleId,
           path: path
         });
       },
+
+      /**
+       * Remove the currently executing module from the define stack
+       * @method Executor.undefineExecutingModule
+       * @public
+       */
       undefineExecutingModule: function() {
         return this.anonymousAMDStack.pop();
       },
+
+      /**
+       * Get the current executing AMD module
+       * @method Executor.getCurrentExecutingAMD
+       * @public
+       * @returns {object} the id and path of the current module
+       */
       getCurrentExecutingAMD: function() {
         return this.anonymousAMDStack[this.anonymousAMDStack.length - 1];
       },
+
+      /**
+       * run all items within the tree, then run the provided callback
+       * @method Executor.runTree
+       * @param {TreeNode} root - the root TreeNode to run execution on
+       * @param {Object} files - a hash of filename / contents
+       * @param {Function} callback - a callback to run when the tree is executed
+       * @public
+       */
       runTree: function(root, files, callback) {
         // do a post-order traverse of files for execution
         var returns = [];
@@ -279,6 +412,15 @@ var Executor;
         // all files are executed
         callback(returns);
       },
+
+      /**
+       * Create a module if it doesn't exist, and store it locally
+       * @method Executor.createModule
+       * @param {string} moduleId - the module identifier
+       * @param {string} path - the module's proposed URL
+       * @public
+       * @returns {Object} - a module object representation
+       */
       createModule: function(moduleId, path) {
         var module;
         if (!this.cache[moduleId]) {
@@ -319,27 +461,82 @@ var Executor;
           return module;
         }
       },
+
+      /**
+       * Check if a module is an AMD style define
+       * @method Executor.isModuleDefined
+       * @param {string} moduleId - the module ID
+       * @public
+       * @returns {boolean} if the module is AMD defined
+       */
       isModuleDefined: function(moduleId) {
         return this.defined[moduleId];
       },
+
+      /**
+       * Flag a module as defined AMD style
+       * @method Executor.flagModuleAsDefined
+       * @param {string} moduleId - the module ID
+       * @public
+       */
       flagModuleAsDefined: function(moduleId) {
         this.defined[moduleId] = true;
       },
+
+      /**
+       * Flag a module as broken
+       * @method Executor.flagModuleAsBroken
+       * @param {string} moduleId - the module ID
+       * @public
+       */
       flagModuleAsBroken: function(moduleId) {
         this.broken[moduleId] = true;
       },
+
+      /**
+       * Flag a module as circular
+       * @method Executor.flagModuleAsCircular
+       * @param {string} moduleId - the module ID
+       * @public
+       */
       flagModuleAsCircular: function(moduleId) {
         this.circular[moduleId] = true;
       },
+
+      /**
+       * returns if the module is circular or not
+       * @method Executor.isModuleCircular
+       * @param {string} moduleId - the module ID
+       * @public
+       * @returns {boolean} true if the module is circular
+       */
       isModuleCircular: function(moduleId) {
         return this.circular[moduleId];
       },
+
+      /**
+       * Get the module matching the specified Identifier
+       * @method Executor.getModule
+       * @param {string} moduleId - the module ID
+       * @public
+       * @returns {object} the module at the identifier
+       */
       getModule: function(moduleId) {
         if (this.broken[moduleId]) {
           throw new Error("module "+moduleId+" failed to load successfully");
         }
         return this.cache[moduleId] || null;
       },
+
+      /**
+       * Build a sandbox around and execute a module
+       * @method Executor.runModule
+       * @param {string} moduleId - the module ID
+       * @param {string} code - the code to execute
+       * @param {string} path - the URL for the module to run
+       * @param {object} pointcuts - the AOP pointcuts for the module
+       * @public
+       */
       runModule: function(moduleId, code, path, pointcuts) {
         debugLog("Executor", "executing " + path);
         // check cache
@@ -366,20 +563,14 @@ var Executor;
         var actualErrorLine;
         var message;
 
-        // try to run the JS as a module, errors set errorObject
-        // try {
-          result = executeJavaScriptModule(runCommand, {
-            moduleId: moduleId,
-            functionId: functionId,
-            preamble: header,
-            epilogue: footer,
-            originalCode: code,
-            url: path
-          });
-        // }
-        // catch(e) {
-        //   errorObject = e;
-        // }       
+        result = executeJavaScriptModule(runCommand, {
+          moduleId: moduleId,
+          functionId: functionId,
+          preamble: header,
+          epilogue: footer,
+          originalCode: code,
+          url: path
+        });    
 
         // if a global error object was created
         if (result && result.error) {

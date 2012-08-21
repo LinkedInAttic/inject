@@ -25,6 +25,12 @@ governing permissions and limitations under the License.
  * @file This file contains the commonJS header and footers
 **/
 
+/**
+    CommonJS header with placeholders for Inject namespace, module ID,
+    module URI, function ID and pointcut before advice.
+    @type {string}
+    @global
+*/
 var commonJSHeader = ([
 '__INJECT_NS__.INTERNAL.execute.__FUNCTION_ID__ = function() {',
 '  with (window) {',
@@ -36,6 +42,13 @@ var commonJSHeader = ([
 '    __exe = function() {',
 '      __POINTCUT_BEFORE__'
 ]).join('\n');
+
+/**
+    CommonJS footer with placeholders for Inject namespace, exception, and
+    pointcut after advice.
+    @type {string}
+    @global
+*/
 var commonJSFooter = ([
 '      __POINTCUT_AFTER__',
 '    };',

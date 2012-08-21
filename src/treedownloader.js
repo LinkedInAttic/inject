@@ -15,27 +15,50 @@ express or implied.   See the License for the specific language
 governing permissions and limitations under the License.
 */
 
-// depends on
-// ModuleDB
-//  GenericDB
-// ModuleDBRecord
-//  GenericDBRecord
-// TreeNode
-// Communicator
-// Analyzer
-
+/**
+ * TreeDownloader, as its name implies, downloads a tree starting
+ * at its root node. Once all nodes have been downloaded, a
+ * callback can be invoked. Circular references are resolved
+ * into a downloaded state and the TreeNode object is flagged
+ * as downloaded.
+ * @file
+**/
 var TreeDownloader = Class.extend(function() {
   return {
+    /**
+     * Create a TreeDownloader with a root node. From this node,
+     * it and its children can be analyzed and downloaded
+     * @constructs TreeDownloader
+     * @param {TreeNode} root - the root TreeNode to download
+     */
     init: function(root) {
       this.callsRemaining = 0;
       this.root = root;
       this.files = {};
     },
+
+    /**
+     * A logging function to help keep track of which "root" a call
+     * comes from
+     * @method TreeDownloader#log
+     * @param {variable} args - a collection of args to output
+     * @protected
+     */
     log: function() {
       var args = [].slice.call(arguments, 0);
       var name = (this.root.getValue()) ? this.root.getValue().name : null;
       debugLog("TreeDownloader ("+name+")", args.join(" "));
     },
+
+    /**
+     * Reduces the total number of calls remaining
+     * If the calls reach 0, the callback is invoked with the provided
+     * arguments
+     * @method TreeDownloader#reduceCallsRemaining
+     * @param {function} callback - a callback to run if 0 calls remain
+     * @param {array} args - a collection of arguments for callback
+     * @protected
+     */
     reduceCallsRemaining: function(callback, args) {
       this.callsRemaining--;
       this.log("reduce. outstanding", this.callsRemaining);
@@ -44,36 +67,68 @@ var TreeDownloader = Class.extend(function() {
         callback.call(null, args);
       }
     },
+
+    /**
+     * increase the total number of calls remaining
+     * @method TreeDownloader#increaseCallsRemaining
+     * @param {int} by - an amount to increase by, defaults to 1
+     * @protected
+     */
     increaseCallsRemaining: function(by) {
       this.callsRemaining += by || 1;
       this.log("increase. outstanding", this.callsRemaining);
     },
+
+    /**
+     * get a collection of the files downloaded
+     * @method TreeDownloader#getFiles
+     * @public
+     * @returns {object} an object containing url/file pairs
+     */
     getFiles: function() {
       return this.files;
     },
-    get: function(callback) {
-      /*
-          root
-          /  \
-         A    B
-        / \   |
-       B   C  D
-       |      |
-       D      A
-       |     / \
-      (A)  (B)  C
 
-       root: no-download. Add A, Add B. Spawn A, Spawn B // count = 0 + 2 = 2 (add A, add B)
-       A: download. Add B, Add C. Spawn C (B logged) // count = 2 - 1 + 1 = 2 (remove A, add C)
-       B: download. Add D. Spawn D // count = 2 - 1 + 1 = 2 (remove B, add D)
-       C: download // count = 2 - 1 = 1 (remove C)
-       D: download // count = 1 - 1 = 0 (remove D)
-      */
+    /**
+     * download the tree, invoking a callback on completion
+     * This recursively downloads an entire tree
+     * Consider the following tree:
+     * <pre>
+     *     root
+     *     /  \
+     *    A    B
+     *   / \   |
+     *  B   C  D
+     *  |      |
+     *  D      A
+     *  |     / \
+     * (A)  (B)  C
+     * </pre>
+     * root: no-download. Add A, Add B. Spawn A, Spawn B // count = 0 + 2 = 2 (add A, add B)<br>
+     * A: download. Add B, Add C. Spawn C (B logged) // count = 2 - 1 + 1 = 2 (remove A, add C)<br>
+     * B: download. Add D. Spawn D // count = 2 - 1 + 1 = 2 (remove B, add D)<br>
+     * C: download // count = 2 - 1 = 1 (remove C)<br>
+     * D: download // count = 1 - 1 = 0 (remove D)
+     * @method TreeDownloader#get
+     * @param {function} callback - a callback invoked on completion
+     * @public
+     */
+    get: function(callback) {
       this.log("started download");
       this.downloadTree(this.root, proxy(function(root) {
         callback(this.root, this.getFiles());
       }, this));
     },
+
+    /**
+     * The recursive loop of tree downloading, spawned by the top
+     * level get() call. A callback is called at the "complete" state,
+     * when all its dependencies have also been downloaded.
+     * @method TreeDownloader#downloadTree
+     * @param {TreeNode} node - a TreeNode to download and analyze
+     * @param {function} callback - a callback to invoke when this node is "complete"
+     * @protected
+     */
     downloadTree: function(node, callback) {
       // Normalize Module Path. Download. Analyze.
       var parentPath = (node.getParent() && node.getParent().getValue())
@@ -175,6 +230,15 @@ var TreeDownloader = Class.extend(function() {
     }
   };
 });
+/**
+ * Create a TreeNode object through a factory
+ * @method TreeDownloader.createNode
+ * @param {string} name - the moduleId for the tree node
+ * @param {string} path - the URL for the module
+ * @param {boolean} isCircular - if true, this node is a circular reference
+ * @public
+ * @returns {TreeNode} the created TreeNode object
+ */
 TreeDownloader.createNode = function(name, path, isCircular) {
   var tn = new TreeNode({
     name: name,
