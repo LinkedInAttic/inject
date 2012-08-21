@@ -15,10 +15,15 @@ express or implied.   See the License for the specific language
 governing permissions and limitations under the License.
 */
 
+/**
+ * 
+ * @file
+ */
 var RulesEngine;
 (function() {
   var rules = [];
   var rulesIsDirty = false;
+
 
   function sortRulesTable() {
     rules.sort(function(a, b) {
@@ -33,9 +38,25 @@ var RulesEngine;
 
   var AsStatic = Class.extend(function() {
     return {
+      /**
+       * Creates a RulesEngine instance and initializes internal state.
+       * @constructs RulesEngine
+       */
       init: function() {
         this.pointcuts = {};
       },
+      /**
+       * Returns a path containing 'identifier', relative to the
+       * 'relativeTo' path.  Any relative references (ex. '.' or '..')
+       * are also resolved.
+       * If 'identifier' is an absolute path, then relativeTo is ignored.
+       * @param {string} identifier The identifier/path to resolve.
+       * @param {string} [relativeTo] The path which 'identifier' is
+       *    relatively resolved against.
+       * @return {string} The 'identifier' parameter resolved.
+       * @method
+       * @public
+       */
       resolveIdentifier: function(identifier, relativeTo) {
         if (!relativeTo) {
           relativeTo = "";
@@ -66,6 +87,17 @@ var RulesEngine;
 
         return identifier;
       },
+      /**
+       * For a given 'path' and 'relativeTo', returns a resolved URL.
+       * @param {string} path The path to resolve
+       * @param {string} [relativeTo] If specified, 'path' is resolved
+       *   relatively against this value.  If not specified, then
+       *    userConfig.moduleRoot is used to resolve relatively against.
+       * @return {string} Returns a URL resolved.  If 'path' itself is a
+       *    URI, then path is returned.
+       * @method
+       * @public
+       */
       resolveUrl: function(path, relativeTo) {
         var resolvedUrl;
 
@@ -129,6 +161,16 @@ var RulesEngine;
 
         return resolvedUrl;
       },
+      /**
+       * Returns a path utilizing the given 'id' and 'base', resolving any
+       * relative paths (ex. '.' or '..').
+       * @param {string} id The 
+       * @param {string} base The base
+       * @return {string} A path of the form [base] + [id], with all relative
+       *   paths resolved.
+       * @method
+       * @public
+       */
       computeRelativePath: function(id, base) {
         var blownApartURL;
         var resolved = [];
@@ -163,6 +205,20 @@ var RulesEngine;
         return resolved;
       },
 
+      /**
+       * Returns before and after advice to be run for a given join point,
+       * specific to the given path.
+       * @param {string} path The path whose pointcuts will be retrieved
+       * @param {boolean} [asString] Specify a value to return the advice as
+       *   string instances.  Otherwise, advice will be returned as functions.
+       * @return {Object} An object with the following properties:
+       *   <ul>
+       *     <li>before {string[]|function[]}</li>
+       *     <li>after {string[]|function[]}</li>
+       *   </ul>
+       * @method
+       * @public
+       */
       getPointcuts: function(path, asString) {
         var pointcuts = this.pointcuts[path] || {before: [], after: []};
         var result = {
@@ -193,6 +249,27 @@ var RulesEngine;
         return result;
 
       },
+      /**
+       * Allows customization through specifying rules regarding how a given
+       * module is resolved.
+       * @see <a href="https://github.com/linkedin/inject/wiki/0.4.x-addRule-and-Your-Favorite-Library">Using addRule()</a>
+       * @param {string|RegExp} regexMatch The regular expression or string
+       *    of the module to resolve.
+       * @param {number} [weight] The priority to give to the rule.  Useful
+       *    when multiple matching rules are specified.
+       * @param {string|Object} [ruleSet] An object that contains various
+       *    properties for customizing how matches are resolved.
+       * @param {string|Function} ruleSet.path The path to use when a match
+       *    occurs.
+       * @param {Object} ruleSet.pointcuts An object containing advice to run
+       *    before and/or after a match is found.
+       * @param {Function} ruleSet.pointcuts.before The function to execute
+       *    before the join point is executed.
+       * @param {Function} ruleSet.pointcuts.after The function to execute
+       *    after the join point is executed.
+       * @method
+       * @public
+       */
       addRule: function(regexMatch, weight, ruleSet) {
         // regexMatch, ruleSet
         // regexMatch, weight, ruleSet
@@ -230,6 +307,16 @@ var RulesEngine;
         });
 
       },
+      /**
+       * Adds rules specified in the given manifest.
+       * @see RulesEngine#addRule
+       * @param {Object} manifestObj Rules to apply.  For each property/key in
+       *   the object, the property/key will be the regexMatch in the call to
+       *   addRule().  The property value will be the ruleSet.  If the value
+       *   contains a 'matches' property, it will be used as the key instead.
+       * @method
+       * @public
+       */
       manifest: function(manifestObj) {
         var key;
         var rule;
@@ -243,6 +330,20 @@ var RulesEngine;
           this.addRule(key, rule);
         }
       },
+      /**
+       * Applies rules to given path.
+       * @param {string} path
+       * @return {Object} An object with the following properties:
+       *   <ul>
+       *     <li>resolved - the resolved path after applying rules.</li>
+       *     <li>
+       *       pointcuts - An object with 'before' and 'after' properties,
+       *       each containing AOP advice to run
+       *     </li>
+       *   </ul>
+       * @method
+       * @public
+       */
       applyRules: function(path) {
         if (rulesIsDirty) {
           sortRulesTable();
