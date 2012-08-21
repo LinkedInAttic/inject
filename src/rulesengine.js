@@ -15,11 +15,36 @@ express or implied.   See the License for the specific language
 governing permissions and limitations under the License.
 */
 
+/**
+ * The Rules Engine is used to handle the deriving of pointcut and path
+ * information for a given module identifier. It maintains an internal
+ * rules table for the environment, and also caches the results of its
+ * resolution.
+ * @file
+**/
+
 var RulesEngine;
 (function() {
+
+  /**
+   * the collection of rules
+   * @private
+   * @type {Array}
+   */
   var rules = [];
+
+  /**
+   * have the rules been added to since last sorted
+   * @private
+   * @type {boolean}
+   */
   var rulesIsDirty = false;
 
+  /**
+   * sort the rules table based on their "weight" property
+   * @method RulesEngine.sortRulesTable
+   * @private
+   */
   function sortRulesTable() {
     rules.sort(function(a, b) {
       return a.weight - b.weight;
@@ -27,15 +52,36 @@ var RulesEngine;
     rulesIsDirty = false;
   }
 
+  /**
+   * convert a function to a pointcut string
+   * @method RulesEngine.functionToPointcut
+   * @param {Function} fn - the function to convert
+   * @private
+   * @returns {String} the internal body of the function
+   */
   function functionToPointcut(fn) {
     return fn.toString().replace(FUNCTION_BODY_REGEX, "$1");
   }
 
   var AsStatic = Class.extend(function() {
     return {
+      /**
+       * Create a RulesEngine Object
+       * @constructs RulesEngine
+       */
       init: function() {
         this.pointcuts = {};
       },
+
+      /**
+       * Resolve an identifier after applying all rules
+       * @method RulesEngine.resolveIdentifier
+       * @param {String} identifier - the identifier to resolve
+       * @param {String} relativeTo - a base path for relative identifiers
+       * @public
+       * @returns {String} the resolved identifier
+       * @see RulesEngine.applyRules
+       */
       resolveIdentifier: function(identifier, relativeTo) {
         if (!relativeTo) {
           relativeTo = "";
@@ -66,6 +112,15 @@ var RulesEngine;
 
         return identifier;
       },
+
+      /**
+       * resolve a URL relative to a base path
+       * @method RulesEngine.resolveUrl
+       * @param {String} path - the path to resolve
+       * @param {String} relativeTo - a base path for relative URLs
+       * @public
+       * @returns {String} a resolved URL
+       */
       resolveUrl: function(path, relativeTo) {
         var resolvedUrl;
 
@@ -129,6 +184,15 @@ var RulesEngine;
 
         return resolvedUrl;
       },
+
+      /**
+       * Dismantles and reassembles a relative path by exploding on slashes
+       * @method RulesEngine.computeRelativePath
+       * @param {String} id - the initial identifier
+       * @param {String} base - the base path for relative declarations
+       * @private
+       * @returns {String} a resolved path with no relative references
+       */
       computeRelativePath: function(id, base) {
         var blownApartURL;
         var resolved = [];
@@ -163,6 +227,14 @@ var RulesEngine;
         return resolved;
       },
 
+      /**
+       * Get the pointcuts associated with a given URL path
+       * @method RulesEngine.getPointcuts
+       * @param {String} path - the url path to get pointcuts for
+       * @param {Boolean} asString - if TRUE, return the pointcuts bodies as a string
+       * @public
+       * @returns {Object} an object containing all pointcuts for the URL
+       */
       getPointcuts: function(path, asString) {
         var pointcuts = this.pointcuts[path] || {before: [], after: []};
         var result = {
@@ -193,6 +265,29 @@ var RulesEngine;
         return result;
 
       },
+
+      /**
+       * Add a rule to the database. It can be called as:<br>
+       * addRule(regexMatch, weight, ruleSet)<br>
+       * addRule(regexMatch, ruleSet)<br>
+       * addRule(ruleSet)<br>
+       * The ruleSet object to apply contains a set of options.
+       * <ul>
+       * <li>ruleSet.matches: replaces regexMatch if found</li>
+       * <li>ruleSet.weight: replaces weight if found</li>
+       * <li>ruleSet.last: if true, no further rules are ran</li>
+       * <li>ruleSet.path: a path to use instead of a derived path<br>
+       *  you can also set ruleSet.path to a function, and that function will
+       *  passed the current path for mutation</li>
+       * <li>ruleSet.pointcuts.before: a function to run before executing this module</li>
+       * <li>ruleSet.pointcuts.after: a function to run after executing this module</li>
+       * </ul>
+       * @method RulesEngine.addRule
+       * @param {RegExp|String} regexMatch - a stirng or regex to match on
+       * @param {int} weight - a weight for the rule. Larger values run later
+       * @param {Object} ruleSet - an object containing the rules to apply
+       * @public
+       */
       addRule: function(regexMatch, weight, ruleSet) {
         // regexMatch, ruleSet
         // regexMatch, weight, ruleSet
@@ -230,6 +325,14 @@ var RulesEngine;
         });
 
       },
+
+      /**
+       * a shortcut method for multiple addRule calls
+       * @method RulesEngine.manifest
+       * @param {Object} manifestObj - a "matchString":ruleSet object
+       * @public
+       * @see RulesEngine.addRule
+       */
       manifest: function(manifestObj) {
         var key;
         var rule;
@@ -243,6 +346,14 @@ var RulesEngine;
           this.addRule(key, rule);
         }
       },
+
+      /**
+       * Apply a set of rules to a given path
+       * @method RulesEngine.applyRules
+       * @param {String} path - the path to apply rules to
+       * @private
+       * @returns {Object} an object containing the resolved path and pointcuts
+       */
       applyRules: function(path) {
         if (rulesIsDirty) {
           sortRulesTable();
