@@ -142,4 +142,4 @@ Libraries Used By This Project
 ===
 * easyXDM: Cross Domain Communication
 * lscache: LocalStorage Cache Provider 
-* Google Closure Compiler
+* (and a whole lot of npm related things for development)

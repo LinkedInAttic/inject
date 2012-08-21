@@ -2,6 +2,7 @@ var Seq = require("seq");
 var bu = require("../util");
 exports.task = function(options) {
   return function () {
+    require("util").log("Building cross-domain files");
     // this == next build step
     var src = options.src;
     var dest = options.dest;

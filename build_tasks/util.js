@@ -89,6 +89,28 @@ exports.compileCoffeeScript = function(src, cb) {
   });
 };
 
+// JSDoc a directory
+// compile coffeescript
+exports.JSDoc = function(src, dest, cb) {
+  src = path.normalize(src);
+  dest = path.normalize(dest);
+  var JSDocBinary = path.resolve(".", "node_modules/JSDoc/jsdoc"),
+      cmd = ([
+        JSDocBinary,
+        "-r",
+        "-d "+dest,
+        src,
+      ]).join(" ");
+
+  Seq()
+  .seq(function() {
+    exec(cmd, this);
+  })
+  .seq(function(output) {
+    cb(null, true);
+  });
+};
+
 // write a file to the fs
 exports.write = function(dest, file, cb) {
   dest = path.normalize(dest);

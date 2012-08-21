@@ -2,6 +2,7 @@ var Seq = require("seq");
 var bu = require("../util");
 exports.task = function(options) {
   return function () {
+    require("util").log("Building inject");
     // this == next build step
     // master file
     var src = options.src;
