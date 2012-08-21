@@ -19,7 +19,7 @@ governing permissions and limitations under the License.
 /**
 * Communicator handles the logic for 
 * downloading and executing required files and dependencies
-* @see Communicator
+* @file
 **/
 var Communicator;
 (function() {
@@ -35,7 +35,7 @@ var Communicator;
     * Clear the records to socket connections and 
     * downloaded files
     * @function
-    * @public
+    * @private
     **/
     function clearCaches() {
       socketConnectionQueue = [];
@@ -45,9 +45,10 @@ var Communicator;
     /**
     * Write file contents to local storage
     * @function
-    * @param {String} url - url to use as a key to store file content
-    * @param {String} contents file contents to be stored in cache
+    * @param {string} url - url to use as a key to store file content
+    * @param {string} contents file contents to be stored in cache
     * @private
+    * @returns a function adhearing to the lscache set() method
     **/
     function writeToCache(url, contents) {
       // lscache and passthrough
@@ -57,8 +58,10 @@ var Communicator;
     /**
     * read cached file contents from local storage
     * @function
-    * @param {String} url - url key that the content is stored under
+    * @param {string} url - url key that the content is stored under
     * @private
+    * @returns the content that is stored under the url key
+    * 
     **/
     function readFromCache(url) {
       // lscache and passthrough
@@ -69,8 +72,9 @@ var Communicator;
     * Utility function to cleanup Host name by removing leading 
     * http or https string
     * @function
-    * @param {String} host - The host name to trim.
+    * @param {string} host - The host name to trim.
     * @private
+    * @returns hostname without leading http or https string
     **/
     function trimHost(host) {
       host = host.replace(HOST_PREFIX_REGEX, "").replace(HOST_SUFFIX_REGEX, "$1");
@@ -81,10 +85,10 @@ var Communicator;
     * function that resolves all callbacks that are associated 
     * to the loaded file
     * @function
-    * @param {String} moduleId - The id of the module that has been loaded
-    * @param {String} url - The location of the module that has loaded
-    * @param {Int} statusCode - The result of the attempt to load the file at url
-    * @param {String} contents - The contents that were loaded from url
+    * @param {string} moduleId - The id of the module that has been loaded
+    * @param {string} url - The location of the module that has loaded
+    * @param {int} statusCode - The result of the attempt to load the file at url
+    * @param {string} contents - The contents that were loaded from url
     * @private
     **/
     function resolveCompletedFile(moduleId, url, statusCode, contents) {
@@ -115,6 +119,7 @@ var Communicator;
     * Creates an easyXDM socket
     * @function
     * @private
+    @ @returns and instance of a easyXDM Socket
     **/
     function createSocket() {
       var relayFile = userConfig.xd.relayFile;
@@ -149,8 +154,8 @@ var Communicator;
     /**
     * Creates a standard xmlHttpRequest
     * @function
-    * @param {String} moduleId - id of the module for the request
-    * @param {String} url - url where the content is located
+    * @param {string} moduleId - id of the module for the request
+    * @param {string} url - url where the content is located
     * @private
     **/
     function sendViaIframe(moduleId, url) {
@@ -160,8 +165,8 @@ var Communicator;
     /**
     * Get contents via xhr for cross-domain requests
     * @function
-    * @param {String} moduleId - id of the module for the request
-    * @param {String} url - url where the content is located
+    * @param {string} moduleId - id of the module for the request
+    * @param {string} url - url where the content is located
     * @private
     **/
     function sendViaXHR(moduleId, url) {
@@ -176,13 +181,32 @@ var Communicator;
     }
 
     return {
-      
+      /**
+      *   The Communicator object is meant to be instantiated once, and have its
+      *   reference assigned to a location outside of the closure.
+      *   @constructs Communicator
+      **/
       init: function() {
         this.clearCaches();
       },
+
+      /**
+      * clear list of socket connections and list of downloaded files
+      * @method Communicator.clearCaches
+      * @public
+      */
       clearCaches: function() {
         clearCaches();
       },
+
+      /**
+      * retrieve file via download or cache keyed by the given url
+      * @method Communicator.get
+      * @param {string} moduleId - The id of the module to be fetched
+      * @param {string} url - The location of the script to be fetched
+      * @param {object} callback - The function callback to execute after the file is retrieved and loaded
+      * @public
+      */
       get: function(moduleId, url, callback) {
         if (!downloadCompleteQueue[url]) {
           downloadCompleteQueue[url] = [];
