@@ -119,7 +119,7 @@ var Communicator;
     * Creates an easyXDM socket
     * @function
     * @private
-    @ @returns and instance of a easyXDM Socket
+    * @returns and instance of a easyXDM Socket
     **/
     function createSocket() {
       var relayFile = userConfig.xd.relayFile;
