@@ -14,11 +14,17 @@ IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
 express or implied.   See the License for the specific language
 governing permissions and limitations under the License.
 */
-/*
-IE-7 localstorage shim. Provides a localstorage polyfill for older
-browsers using IE's "userData" object. This file works in conjunction
-with localstorage-assets.txt to provide the full IE7 shim
-*/
+/**
+ * IE-7 localstorage shim. Provides a localstorage polyfill for older
+ * browsers using IE's "userData" object. This file works in conjunction
+ * with localstorage-assets.txt to provide the full IE7 shim
+ * Compatible with IE 6, 7
+ * @file
+ */
+/**
+ * we wrap everything in a self executing closure and expose
+ * window.localstorage
+ */
 (function() {
   var DEBUG = false,
       DONT_ENUMERATE = ['getItem', 'setItem', 'removeItem', 'key', 'clear'],
@@ -45,12 +51,25 @@ with localstorage-assets.txt to provide the full IE7 shim
     //for the moment we can only get ride of the 'ie' prefix
     return key ? key.replace(/^ie/,'') : key;
   }
+
+  /**
+   * Creates a localStorage shim object
+   * @function localStorageShim.createLocalStorageObject
+   * @private
+   * @returns localStorageShim
+   */
   function createLocalStorageObject() {
     var doc = iframe.contentWindow.document,
         id = 'localstorage-ieshim-inject',
         storageElement = doc.getElementById(id),
         _storedKeys = [];
 
+    /**
+     * syncs the keys with the internal key list, and relays it to
+     * the iframe object
+     * @function localStorageShim.syncStoredKeys
+     * @private
+     */
     function syncStoredKeys() {
       var storageAttr;
       _storedKeys = [];
@@ -65,7 +84,20 @@ with localstorage-assets.txt to provide the full IE7 shim
       }
       localStorageShim.length = _storedKeys.length;
     }
+
+    /**
+     * This is the localStorage API emulation.
+     * @class localStorageShim
+     * @public
+     */
     localStorageShim = {
+      /**
+       * Get an item from "localStorage". Loads the object
+       * from the iframe's userdata
+       * @method localStorageShim.getItem
+       * @public
+       * @returns {*} result of query
+       */
       'getItem': function(key) {
         var val = null;
         key = cleanStorageKey(key);
@@ -78,6 +110,15 @@ with localstorage-assets.txt to provide the full IE7 shim
 
         return val;
       },
+
+      /**
+       * Set an item into "localStorage". Syncs all data back into
+       * IE UserData
+       * @method localStorageShim.setItem
+       * @param {string} key - the key to store under
+       * @param {*} value - the value to store
+       * @public
+       */
       'setItem': function(key, value) {
         key = cleanStorageKey(key);
         try{
@@ -89,6 +130,13 @@ with localstorage-assets.txt to provide the full IE7 shim
         }
         syncStoredKeys();//adds to internal cache and updates length
       },
+
+      /**
+       * Remove an item from "localStorage" by name
+       * @method localStorageShim.removeItem
+       * @param {string} key - the name of the key to remove
+       * @public
+       */
       'removeItem': function(key) {
         key = cleanStorageKey(key);
         try {
@@ -99,10 +147,24 @@ with localstorage-assets.txt to provide the full IE7 shim
           if (DEBUG) throw e;
         }
       },
+
+      /**
+       * return the key of an item in "localStorage" for a given index
+       * @method localStorageShim.key
+       * @param {int} index - the index to retrieve
+       * @public
+       * @returns {string} the key at the given index
+       */
       'key': function(index) {
         syncStoredKeys();
         return uncleanStorageKey(_storedKeys[index]);
       },
+
+      /**
+       * Removes all keys from "localStorage"
+       * @method localStorageShim.clear
+       * @public
+       */
       'clear': function() {
         syncStoredKeys();//updates internal store and localStorage.length
         for (var x = _storedKeys.length-1, key; x >= 0; x--) {
@@ -110,8 +172,23 @@ with localstorage-assets.txt to provide the full IE7 shim
           key && localStorageShim.removeItem(key);
         }
       },
+
+      /**
+       * the length property of "localStorage" updated when keys are saved
+       * @name localStorageShim.length
+       * @type {int}
+       * @public
+       */
       'length': _storedKeys.length
     };
+
+    /**
+     * This is the globally exposed localStorage object when using
+     * browsers without native support (IE for example)
+     * @global
+     * @type {Object}
+     * @see localStorageShim
+     */
     window['localStorage'] = window['localStorage'] || localStorageShim;
     syncStoredKeys();
   }
