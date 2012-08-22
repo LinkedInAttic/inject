@@ -166,7 +166,7 @@ context.Inject = {
       @type {String}
       @public
    */
-  version: INJECT_VERSION
+  version: "undefined"
 };
 
 /**

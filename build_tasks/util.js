@@ -89,6 +89,20 @@ exports.compileCoffeeScript = function(src, cb) {
   });
 };
 
+exports.tagVersion = function(contents, template, cb) {
+  Seq()
+  .seq(function() {
+    exec("git describe", this);
+  })
+  .seq(function(version) {
+    version = version.replace(/[\s]/g, "");
+    cb(null, ([contents, template.replace(/__INJECT_VERSION__/g, version)]).join("\n"));
+  })
+  .catch(function(err) {
+    cb(null, ([contents, template.replace(/__INJECT_VERSION__/g, "unknown")]).join("\n"));
+  });
+};
+
 // JSDoc a directory
 // compile coffeescript
 exports.JSDoc = function(src, dest, cb) {
@@ -212,6 +226,11 @@ exports.buildChain = Futures.chainify({
   }
 }, {
   // modifiers: data changing
+  tagVersion: function(next, data, template) {
+    exports.tagVersion(data, template, function(err, result) {
+      next(result);
+    });
+  },
   anonymize: function(next, data, signature, invoke) {
     var signature = signature || "";
     var invoke = invoke || "";
