@@ -38,6 +38,7 @@ exports.task = function(options) {
         "treenode.js",
         "includes/context.js"
       ])
+      .tagVersion("context.Inject.version = \"__INJECT_VERSION__\";")
       .anonymize("context, undefined", "this")
       .write(options.dest, "inject.js")
       .minify()
