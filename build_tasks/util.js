@@ -89,6 +89,7 @@ exports.compileCoffeeScript = function(src, cb) {
   });
 };
 
+// add a tagged version string to contents
 exports.tagVersion = function(contents, template, cb) {
   Seq()
   .seq(function() {
