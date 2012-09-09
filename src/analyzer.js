@@ -57,7 +57,7 @@ var Analyzer;
         }
         if (dirtyRuntimeRequires.length > 0) {
           try {
-            eval([dirtyRuntimeRequires.join(";"), "//@ sourceURL=inject-analyzer.js"].join("\n"));
+            eval([dirtyRuntimeRequires.join(";"), "//@ sourceURL=Inject-Analyzer.js"].join("\n"));
           }
           catch(err) {
             throw new Error("Invalid require() syntax found in file: " + dirtyRuntimeRequires.join(";"));
