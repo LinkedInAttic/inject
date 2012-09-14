@@ -242,7 +242,7 @@ var Executor;
           // there is nothing to run, so there must have been an uncaught
           // syntax error (firefox). 
           try {
-            try { eval("+\n//@ sourceURL=inject-executor-line.js"); } catch (ee) { relativeE = ee; }
+            try { eval("+\n//@ sourceURL=Inject-Executor-line.js"); } catch (ee) { relativeE = ee; }
             eval(toExec);
           }
           catch(e) {
@@ -258,7 +258,7 @@ var Executor;
         else {
           // again, we are creating a "relativeE" to capture the eval line
           // this allows us to get accurate line numbers in firefox
-          try { eval("+\n//@ sourceURL=inject-executor-line.js"); } catch (ee) { relativeE = ee; }
+          try { eval("+\n//@ sourceURL=Inject-Executor-line.js"); } catch (ee) { relativeE = ee; }
           eval(toExec);
         }
         
