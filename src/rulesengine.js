@@ -130,12 +130,12 @@ var RulesEngine;
         }
 
         if (relativeTo && !userConfig.baseDir) {
-          relativeTo = relativeTo.split("/");
-          if (relativeTo[relativeTo.length - 1]) {
+          relativeTo = relativeTo.replace(PROTOCOL_REGEX, PROTOCOL_EXPANDED_STRING).split("/");
+          if (relativeTo[relativeTo.length - 1] && relativeTo.length !== 1) {
             // not ending in /
             relativeTo.pop();
           }
-          relativeTo = relativeTo.join("/");
+          relativeTo = relativeTo.join("/").replace(PROTOCOL_EXPANDED_REGEX, PROTOCOL_STRING);
         }
         else if (relativeTo) {
           relativeTo = userConfig.baseDir(relativeTo);
@@ -168,12 +168,18 @@ var RulesEngine;
         }
 
         // take off the :// to replace later
-        relativeTo = relativeTo.replace(/:\/\//, "__INJECT_PROTOCOL_COLON_SLASH_SLASH__");
-        path = path.replace(/:\/\//, "__INJECT_PROTOCOL_COLON_SLASH_SLASH__");
+        relativeTo = relativeTo.replace(PROTOCOL_REGEX, PROTOCOL_EXPANDED_STRING);
+        path = path.replace(PROTOCOL_REGEX, PROTOCOL_EXPANDED_STRING);
 
-        var resolvedUrl = this.computeRelativePath(path, relativeTo);
+        // #169: query strings in base
+        if (/\?/.test(relativeTo)) {
+          resolvedUrl = relativeTo + path;
+        }
+        else {
+          resolvedUrl = this.computeRelativePath(path, relativeTo);
+        }
 
-        resolvedUrl = resolvedUrl.replace(/__INJECT_PROTOCOL_COLON_SLASH_SLASH__/, "://");
+        resolvedUrl = resolvedUrl.replace(PROTOCOL_EXPANDED_REGEX, PROTOCOL_STRING);
 
         if (userConfig.useSuffix && !FILE_SUFFIX_REGEX.test(resolvedUrl)) {
           resolvedUrl = resolvedUrl + BASIC_FILE_SUFFIX;

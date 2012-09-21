@@ -168,6 +168,30 @@ var RELATIVE_PATH_REGEX = /^(\.{1,2}\/).+/;
 var ABSOLUTE_PATH_REGEX = /^([A-Za-z]+:)?\/\//;
 
 /**
+ * The :// part of the protocol (to remove when splitting on / for URLs)
+ * @constant 
+ */
+var PROTOCOL_REGEX = /:\/\//;
+
+/**
+ * A string equivalent of the protocol regex
+ * @constant 
+ */
+var PROTOCOL_STRING = "://";
+
+/**
+ * A replacement for :// that doesn't contain slashes
+ * @constant 
+ */
+var PROTOCOL_EXPANDED_REGEX = /__INJECT_PROTOCOL_COLON_SLASH_SLASH__/;
+
+/**
+ * A string version of the expanded protocol regex
+ * @constant 
+ */
+var PROTOCOL_EXPANDED_STRING = "__INJECT_PROTOCOL_COLON_SLASH_SLASH__";
+
+/**
  * run a test to determine if localstorage is available
  * @constant 
  */
