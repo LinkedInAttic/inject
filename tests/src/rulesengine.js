@@ -130,39 +130,10 @@ test("converting URLs", function() {
   equal(RulesEngine.resolveUrl("../a/b", baseDir+"/one/two/foo.js", root), baseDir+"/one/a/b.js", "relative path resolution");
 });
 
-// test("resolve from identifier to path with absolute URL", function() {
-//   var context = sandbox.global;
-//   var RulesEngine = context.RulesEngine;
-//   var root = "http://resolved.com/src/to/modules/foo.js";
-//   var baseDir = "http://resolved.com/src/to/modules";
-//   var path;
+test("moduleRoot shouldn't force a slash", function() {
+  var context = sandbox.global;
+  var RulesEngine = context.RulesEngine;
+  root = "http://example.com?file=";
 
-//   context.userConfig.moduleRoot = root;
-
-//   RulesEngine.addRule("absolute/path", "http://absolutepath.com/absolute/path.js");
-
-//   path = RulesEngine.resolveIdentifier("absolute/path");
-//   equal(RulesEngine.resolveUrl(path, baseDir), "http://absolutepath.com/absolute/path.js", "absolute path resolution");
-// });
-
-// test("Resolution of Pointcuts", function() {
-//   var context = sandbox.global;
-//   var RulesEngine = context.RulesEngine;
-
-//   RulesEngine.addRule("test", {
-//     before: function() {
-//       this_is_before;
-//     },
-//     after: function() {
-//       this_is_after;
-//     }
-//   });
-
-//   var resolvedId = RulesEngine.resolveIdentifier("test");
-
-//   equal(typeof(RulesEngine.getPointcuts(resolvedId).before[0]), "function", "can return pointcuts as function");
-//   equal(typeof(RulesEngine.getPointcuts(resolvedId, true).before[0]), "string", "can return pointcuts as string");
-
-//   ok(/this_is_before/.test(RulesEngine.getPointcuts(resolvedId, true).before), "before pointcut loaded");
-//   ok(/this_is_after/.test(RulesEngine.getPointcuts(resolvedId, true).after), "after pointcut loaded");
-// });
+  equal(RulesEngine.resolveUrl("sample", root), "http://example.com?file=sample.js", "no auto-slash insertion with query strings");
+});
