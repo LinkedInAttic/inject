@@ -3,7 +3,6 @@
 * master: [![View Summary](https://secure.travis-ci.org/linkedin/inject.png?branch=master)](http://travis-ci.org/#!/linkedin/inject/branch_summary)
 
 # Welcome
-
 **Inject** (Apache Software License 2.0) is a revolutionary way to manage your dependencies in a *Library Agnostic* way. Some of its major features include:
 
 * CommonJS Compliance in the Browser (exports.*)
