@@ -93,12 +93,13 @@ exports.compileCoffeeScript = function(src, cb) {
 exports.tagVersion = function(contents, template, cb) {
   Seq()
   .seq(function() {
-    exec("git log --oneline --decorate=short --first-parent | grep '(tag:' | head -n1", this);
+    exec("git describe HEAD", this);
   })
-  .seq(function(longVersion) {
-    var tagId = longVersion.replace(/.*?\(tag: (.*?)\).*/, "$1");
-    exec("git describe --tags --long --match "+tagId, this);
-  })
+  // removed for simplicity
+  // .seq(function(longVersion) {
+  //   var tagId = longVersion.replace(/.*?\(tag: (.*?)\).*/, "$1");
+  //   exec("git describe --tags --long --match "+tagId, this);
+  // })
   .seq(function(version) {
     version = version.replace(/[\s]/g, "");
     cb(null, ([contents, template.replace(/__INJECT_VERSION__/g, version)]).join("\n"));
