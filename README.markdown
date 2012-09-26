@@ -1,4 +1,4 @@
-You are viewing the README for the current branch of Inject. This is master-0.4.x
+You are viewing the README for the current branch of Inject. This is 0.4.x
 
 <table>
   <tr>
