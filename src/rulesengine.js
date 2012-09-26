@@ -47,7 +47,7 @@ var RulesEngine;
    */
   function sortRulesTable() {
     rules.sort(function(a, b) {
-      return a.weight - b.weight;
+      return b.weight - a.weight;
     });
     rulesIsDirty = false;
   }
@@ -321,6 +321,7 @@ var RulesEngine;
           };
         }
 
+        rulesIsDirty = true;
         rules.push({
           matches: ruleSet.matches || regexMatch,
           weight: ruleSet.weight || weight,
