@@ -66,12 +66,14 @@ test("Passthrough and config", function() {
     relaySwf: "http://testok-swf.com"
   });
   context.InjectCore.setExpires(987654);
+  context.InjectCore.setUseSuffix(true);
 
   // test userConfig
   equal(context.userConfig.moduleRoot, "http://testok.com", "moduleRoot");
   equal(context.userConfig.xd.relayFile, "http://testok-relay.com", "relayFile");
   equal(context.userConfig.xd.relaySwf, "http://testok-swf.com", "relaySwf");
   equal(context.userConfig.fileExpires, 987654, "fileExpires");
+  equal(context.userConfig.useSuffix, true, "useSuffix");
 });
 
 test("setCacheKey wipes cache", function() {

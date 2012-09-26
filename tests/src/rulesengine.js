@@ -130,10 +130,54 @@ test("converting URLs", function() {
   equal(RulesEngine.resolveUrl("../a/b", baseDir+"/one/two/foo.js", root), baseDir+"/one/a/b.js", "relative path resolution");
 });
 
-test("moduleRoot shouldn't force a slash", function() {
+test("#169 moduleRoot shouldn't force a slash", function() {
   var context = sandbox.global;
   var RulesEngine = context.RulesEngine;
   root = "http://example.com?file=";
 
   equal(RulesEngine.resolveUrl("sample", root), "http://example.com?file=sample.js", "no auto-slash insertion with query strings");
+});
+
+test("#167 useSuffix config needs to be respected", function() {
+  var context = sandbox.global;
+  var RulesEngine = context.RulesEngine;
+  context.userConfig.moduleRoot = "http://example.com?file=";
+  context.userConfig.useSuffix = false;
+
+  equal(RulesEngine.resolveUrl("sample", root), "http://example.com?file=sample", "no auto suffix insertion");
+});
+
+test("addRule weights respected", function() {
+  var context = sandbox.global;
+  var RulesEngine = context.RulesEngine;
+
+  var order = ["one", "two", "three"];
+  var last = null;
+
+  RulesEngine.addRule("example", {
+    weight: 100,
+    path: function() {
+      order.shift();
+      return "example";
+    }
+  });
+
+  RulesEngine.addRule("example", {
+    weight: 23,
+    path: function() {
+      last = order.join(",");
+      return "example";
+    }
+  });
+
+  RulesEngine.addRule("example", {
+    weight: 67,
+    path: function() {
+      order.shift();
+      return "example";
+    }
+  });
+
+  RulesEngine.resolveUrl("example");
+  equal(last, "three", "rules were ran in weight order: 100, 67, 23");
 });

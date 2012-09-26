@@ -99,6 +99,17 @@ var InjectCore;
       },
 
       /**
+       * Set the useSuffix value. useSuffix is used to determine globally if
+       * a ".js" extension should be added to files by default
+       * @method InjectCore.setUseSuffix
+       * @param {Boolean} useSuffix - should a suffix be used
+       * @public
+       */
+      setUseSuffix: function(useSuffix) {
+        userConfig.useSuffix = useSuffix;
+      },
+
+      /**
        * clear the localstorage caches
        * @method InjectCore.clearCache
        * @public

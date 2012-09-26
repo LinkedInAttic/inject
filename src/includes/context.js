@@ -121,6 +121,16 @@ context.Inject = {
   setCrossDomain: function() {
     InjectCore.setCrossDomain.apply(this, arguments);
   },
+
+  /**
+      Sets the useSuffix user config. The useSuffix config tells the RulesEngine
+      not to auto-append a .js extension. This is highly helpful in concatenated
+      environments or environments with JS being generated programatically.
+  */
+  setUseSuffix: function(val) {
+    InjectCore.setUseSuffix(val);
+  },
+
   /**
       Clears the local storage caches.
       @see InjectCore.clearCache
