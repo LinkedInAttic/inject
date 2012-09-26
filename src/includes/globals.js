@@ -159,7 +159,7 @@ var debugLog = function() {};
 // TODO: more robust logging solution
 (function() {
   var logs = [];
-  var canLog = (console && console.log && typeof(console.log) === "function");
+  var canLog = (typeof(console) !=="undefined" && console.log  && typeof(console.log) === "function");
   var doLog = function(origin, message) {
     if (userConfig.debug && userConfig.debug.logging) {
       console.log("## "+ origin +" ##" + "\n" + message);
