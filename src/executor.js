@@ -157,7 +157,6 @@ var Executor;
    * @param {Object} options - a collection of options
    */
   function executeJavaScriptModule(code, options) {
-    var oldError = context.onerror;
     var errorObject = null;
     var sourceString = IS_IE ? "" : "//@ sourceURL=" + options.url;
     var result;
@@ -207,8 +206,6 @@ var Executor;
       errorObject = new Error(message);
       errorObject.line = actualErrorLine;
       errorObject.stack = null;
-
-      context.onerror = oldError;
 
       return true;
     };
@@ -296,6 +293,9 @@ var Executor;
       }
       result.error = errorObject;
     }
+
+    // clean up our error handler
+    context.onerror = initOldError;
 
     // clean up the function or object we globally created if it exists
     if(context.Inject.INTERNAL.execute[options.functionId]) {
