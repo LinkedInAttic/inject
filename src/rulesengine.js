@@ -155,16 +155,9 @@ var RulesEngine;
 
         // exit early on resolved http URL
         if (ABSOLUTE_PATH_REGEX.test(path)) {
+          // store pointcuts based on the resolved URL
+          this.pointcuts[resolvedUrl] = result.pointcuts;
           return path;
-        }
-
-        // shortcut. If it starts with /, affix to module root
-        if (path.indexOf("/") === 0) {
-          resolvedUrl = userConfig.moduleRoot + path.substr(1);
-          if (userConfig.useSuffix && !FILE_SUFFIX_REGEX.test(resolvedUrl)) {
-            resolvedUrl = resolvedUrl + BASIC_FILE_SUFFIX;
-          }
-          return resolvedUrl;
         }
 
         // take off the :// to replace later
