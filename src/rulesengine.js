@@ -174,7 +174,7 @@ var RulesEngine;
 
         resolvedUrl = resolvedUrl.replace(PROTOCOL_EXPANDED_REGEX, PROTOCOL_STRING);
 
-        if (userConfig.useSuffix && !FILE_SUFFIX_REGEX.test(resolvedUrl)) {
+        if (result.useSuffix && userConfig.useSuffix && !FILE_SUFFIX_REGEX.test(resolvedUrl)) {
           resolvedUrl = resolvedUrl + BASIC_FILE_SUFFIX;
         }
 
@@ -236,30 +236,31 @@ var RulesEngine;
        */
       getPointcuts: function(path, asString) {
         var pointcuts = this.pointcuts[path] || {before: [], after: []};
-        var result = {
-          before: [],
-          after: []
-        };
+        var result = {};
         var pointcut;
+        var type;
 
         if (typeof(asString) === "undefined") {
-          return {
-            before: pointcuts.before,
-            after: pointcuts.after
+          return pointcuts;
+        }
+
+        for (type in pointcuts) {
+          if (pointcuts.hasOwnProperty(type)) {
+            for (var i = 0, len = pointcuts[type].length; i < len; i++) {
+              pointcut = pointcuts[type][i];
+              if (!result[type]) {
+                result[type] = [];
+              }
+              result[type].push(functionToPointcut(pointcut));
+            }
           }
         }
 
-        for (var i = 0, len = pointcuts.before.length; i < len; i++) {
-          pointcut = pointcuts.before[i];
-          result.before.push(functionToPointcut(pointcut));
+        for (type in result) {
+          if (result.hasOwnProperty(type)) {
+            result[type] = result[type].join("\n");
+          }
         }
-        for (var i = 0, len = pointcuts.after.length; i < len; i++) {
-          pointcut = pointcuts.after[i];
-          result.after.push(functionToPointcut(pointcut));
-        }
-
-        result.before = result.before.join("\n");
-        result.after = result.after.join("\n");
 
         return result;
 
@@ -314,14 +315,18 @@ var RulesEngine;
           };
         }
 
+        if (!ruleSet.pointcuts) {
+          ruleSet.pointcuts = {};
+        }
+
         rulesIsDirty = true;
         rules.push({
           matches: ruleSet.matches || regexMatch,
           weight: ruleSet.weight || weight,
+          useSuffix: (ruleSet.useSuffix === false) ? false : true,
           last: ruleSet.last || false,
           path: ruleSet.path,
-          pcAfter: (ruleSet.pointcuts && ruleSet.pointcuts.after) ? ruleSet.pointcuts.after : null,
-          pcBefore: (ruleSet.pointcuts && ruleSet.pointcuts.before) ? ruleSet.pointcuts.before : null
+          pointcuts: ruleSet.pointcuts || {}
         });
 
       },
@@ -361,8 +366,8 @@ var RulesEngine;
 
         var result = path;
         var payload;
-        var beforePointCuts = [];
-        var afterPointCuts = [];
+        var allPointcuts = {};
+        var useSuffix = true;
         var done = false;
         each(rules, function(rule) {
           if (done) return;
@@ -384,12 +389,19 @@ var RulesEngine;
               result = rule.path(result);
             }
 
-            if (rule.pcBefore) {
-              beforePointCuts.push(rule.pcBefore);
+            if (rule.useSuffix === false) {
+              useSuffix = false;
             }
-            if (rule.pcAfter) {
-              afterPointCuts.push(rule.pcAfter);
+
+            for (var type in rule.pointcuts) {
+              if (rule.pointcuts.hasOwnProperty(type)) {
+                if (!allPointcuts[type]) {
+                  allPointcuts[type] = [];
+                }
+                allPointcuts[type].push(rule.pointcuts[type]);
+              }
             }
+
             if (rule.last) {
               done = true;
             }
@@ -399,10 +411,8 @@ var RulesEngine;
 
         payload = {
           resolved: result || "",
-          pointcuts: {
-            before: beforePointCuts,
-            after: afterPointCuts
-          }
+          useSuffix: useSuffix,
+          pointcuts: allPointcuts
         };
 
         return payload;

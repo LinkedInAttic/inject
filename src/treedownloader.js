@@ -158,6 +158,15 @@ var TreeDownloader = Class.extend(function() {
       this.log("requesting file", node.getValue().path);
       Communicator.get(node.getValue().name, node.getValue().path, proxy(function(contents) {
         this.log("download complete", node.getValue().path);
+
+        // afterDownload pointcut if available
+        // this.pointcuts[resolvedUrl] = result.pointcuts;
+        var pointcuts = RulesEngine.getPointcuts(node.getValue().path);
+        var afterDownload = pointcuts.afterDownload || [];
+        for (var i = 0, len = afterDownload.length; i < len; i++) {
+          contents = afterDownload[i](contents);
+        }
+
         var parent = node;
         var found = {};
         var value;

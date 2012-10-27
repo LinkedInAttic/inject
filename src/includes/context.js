@@ -154,6 +154,18 @@ context.Inject = {
   addRule: function() {
     RulesEngine.addRule.apply(RulesEngine, arguments);
   },
+
+  /**
+   * Add a plugin to Inject, registering a rule and global functions
+   * @see InjectCore.plugin
+   * @method
+   * @public
+   */
+  plugin: function() {
+    var args = [].slice.call(arguments, 0);
+    args.push(context.Inject);
+    InjectCore.plugin.apply(InjectCore, args);
+  },
   /**
       CommonJS and AMD require()
       @see InjectCore.createRequire
