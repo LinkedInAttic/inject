@@ -103,15 +103,19 @@ var Executor;
   }
 
   // build a test script and ensure it works
-  context.onerror = function(err, where, line) {
-    onErrorOffset = 3 - line;
-    cleanupEvalScriptNode(testScriptNode);
-    return true;
-  };
-  if (docHead) {
-    docHead.appendChild(testScriptNode);
+  // internet explorer's engine does not need this
+  // functionality. Sorry in advance for the sniff
+  if (!IS_IE) {
+    context.onerror = function(err, where, line) {
+      onErrorOffset = 3 - line;
+      cleanupEvalScriptNode(testScriptNode);
+      return true;
+    };
+    if (docHead) {
+      docHead.appendChild(testScriptNode);
+    }
+    context.onerror = initOldError;
   }
-  context.onerror = initOldError;
   // test script completion
 
   /**
