@@ -229,12 +229,30 @@ exports.buildChain = Futures.chainify({
     .seq(function(contents) {
       next(contents);
     });
-  }
+  },
+  header: function(next, file) {
+    Seq()
+    .seq(function() {
+      exports.grab(file, this);
+    })
+    .seq(function(contents) {
+      next(contents.toString());
+    });
+  },
 }, {
   // modifiers: data changing
   tagVersion: function(next, data, template) {
     exports.tagVersion(data, template, function(err, result) {
       next(result);
+    });
+  },
+  header: function(next, data, file) {
+    Seq()
+    .seq(function() {
+      exports.grab(file, this);
+    })
+    .seq(function(contents) {
+      next([contents.toString(), data].join("\n"));
     });
   },
   anonymize: function(next, data, signature, invoke) {

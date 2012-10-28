@@ -45,7 +45,7 @@ governing permissions and limitations under the License.
         return [
           'var cssText = "',
           encodeURIComponent(text),
-          '"'
+          '";'
         ].join('');
       },
       after: function() {
