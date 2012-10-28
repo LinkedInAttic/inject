@@ -43,6 +43,13 @@ var requireSampleCode = ([
 ' require(ignoreF);',
 '']).join("\n");
 
+var requireSampleCode_177 = ([
+'define("player", ["exports"], function(exports) {',
+'    var colors = ["#ff0000", "#0000ff"];',
+'    exports.colors = colors;',
+'});',
+'']).join("\n");
+
 var sampleFunction = "function foo(one, two, three) {};";
 
 test("Scaffolding", function() {
@@ -73,4 +80,10 @@ test("extraction", function() {
       ok(true, "found expected regex: "+item);
     }
   }
+});
+
+test("#177 define syntax messes up with arrays", function() {
+  var context = sandbox.global;;
+  var result = context.Analyzer.extractRequires(requireSampleCode_177);
+  console.log(result);
 });
