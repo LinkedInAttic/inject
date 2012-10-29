@@ -21,6 +21,7 @@ module("src :: Analyzer", {
     sandbox = new Sandbox(true);
     loadDependencies(sandbox, [
       "/src/includes/constants.js",
+      "/src/includes/globals.js",
       "/src/lib/class.js",
       "/src/analyzer.js"
     ]);
@@ -41,6 +42,13 @@ var requireSampleCode = ([
 "var c=require('expectedC');",
 ' require("ignoreD", "ignoreE");',
 ' require(ignoreF);',
+'']).join("\n");
+
+var requireSampleCode_177 = ([
+'define("player", ["one, two, three, exports"], function(one, two, three, exports) {',
+'    var colors = ["#ff0000", "#0000ff"];',
+'    exports.colors = colors;',
+'});',
 '']).join("\n");
 
 var sampleFunction = "function foo(one, two, three) {};";
@@ -73,4 +81,10 @@ test("extraction", function() {
       ok(true, "found expected regex: "+item);
     }
   }
+});
+
+test("#177 define syntax messes up with arrays", function() {
+  var context = sandbox.global;;
+  var result = context.Analyzer.extractRequires(requireSampleCode_177);
+  equal(result.length, 3, "only three modules identified");
 });
