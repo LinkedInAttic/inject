@@ -70,6 +70,7 @@ var Analyzer;
         var dirtyStaticRequires = [];
         var staticRequires = [];
         var inlineAMD = {};
+        var match;
 
         // a local require function for eval purposes
         var require = function(term) {
