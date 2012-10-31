@@ -18,7 +18,7 @@
     governing permissions and limitations under the License.
   -->
   <meta charset="UTF-8" />
-  <title>QUnit Test Suite</title>
+  <title>Inject Test Suite</title>
 </head>
 <body>
   <h1>Inject Tests</h1>
@@ -32,7 +32,14 @@
 
   <h1>Official AMD Tests</h1>
   <ul>
-    <li><a href="external/amdjs-amdjs-tests-561ca7a/tests/doh/runner.html?config=inject/config.js&amp;impl=inject/inject.js">all tests</a></li>
+    <li><a id="amdTests" href="http://amdjs-online.github.com/amdjs-tests-online/tests/doh/runner.html?config={{CONFIG}}&amp;impl={{IMPL}}">all tests</a></li>
   </ul>
+  <script type="text/javascript">
+    var urlBase = [window.location.protocol, '//', window.location.host].join('');
+    document.getElementById("amdTests").href
+      .replace(/\{\{CONFIG\}\})/g, 'tests/external/amd/config.js')
+      .replace(/\{\{IMPL\}\})/g, 'inject.js');
+  </script>
+  
 </body>
 </html>
