@@ -32,6 +32,7 @@ app.use('/examples/dependencies/addrule/jqueryui/jquery.ui.widget.min.js', delay
 app.use('/tests/spec/modules-1.1.1/includes/bugs/bug_56_a.js', delay(300));
 app.use('/tests/spec/amd/includes/bugs/bug_56_a.js', delay(300));
 
+app.use('/docs', express.static(path.normalize(path.join(__dirname, '../', 'artifacts', 'inject-docs'))));
 app.use(express.static(path.normalize(path.join(__dirname, '../'))));
 app.use(express.static(path.normalize(path.join(__dirname, '../', 'artifacts', 'inject-dev'))));
 

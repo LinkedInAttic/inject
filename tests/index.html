@@ -36,10 +36,10 @@
   </ul>
   <script type="text/javascript">
     var urlBase = [window.location.protocol, '//', window.location.host].join('');
-    document.getElementById("amdTests").href
-      .replace(/\{\{CONFIG\}\})/g, 'tests/external/amd/config.js')
-      .replace(/\{\{IMPL\}\})/g, 'inject.js');
+    document.getElementById("amdTests").href = document.getElementById("amdTests").href
+      .replace(/\{\{CONFIG\}\}/g, urlBase + '/tests/external/amd/config.js')
+      .replace(/\{\{IMPL\}\}/g, urlBase + '/inject.js');
   </script>
-  
+
 </body>
 </html>
