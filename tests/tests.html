@@ -18,51 +18,30 @@
     governing permissions and limitations under the License.
   -->
   <meta charset="UTF-8" />
-  <title>QUnit Test Suite</title>
+  <title>Inject Test Suite</title>
   <!-- Framework -->
   <link rel="stylesheet" href="/tests/resources/qunit.css" type="text/css" media="screen">
   <script type="text/javascript" src="/tests/resources/qunit.js"></script>
-  <script type="text/javascript" src="/tests/resources/sandbox.js"></script>
-  <script type="text/javascript" src="/tests/resources/sinon.js"></script>
   <script type="text/javascript" src="/tests/resources/config.js"></script>
-  
-  <!-- SRC tests -->
-  <script type="text/javascript" src="/tests/src/analyzer.js"></script>
-  <script type="text/javascript" src="/tests/src/communicator.js"></script>
-  <script type="text/javascript" src="/tests/src/executor.js"></script>
-  <script type="text/javascript" src="/tests/src/injectcore.js"></script>
-  <script type="text/javascript" src="/tests/src/rulesengine.js"></script>
-  <script type="text/javascript" src="/tests/src/treenode.js"></script>
-  <script type="text/javascript" src="/tests/src/treedownloader.js"></script>
-
-  <!-- integration tests (remember to clearAllCaches(sandbox) first on these) -->
-  <!-- CJS Modules 1.0 -->
-  <script type="text/javascript" src="/tests/spec/modules-1.0/modules-1.0.js"></script>
-  <script type="text/javascript" src="/tests/spec/modules-1.0/alternate-domain.js"></script>
-  <script type="text/javascript" src="/tests/spec/modules-1.0/bugs.js"></script>
-
-  <!-- CJS Modules 1.1 -->
-  <script type="text/javascript" src="/tests/spec/modules-1.1/modules-1.1.js"></script>
-  <script type="text/javascript" src="/tests/spec/modules-1.1/async-a.js"></script>
-  <script type="text/javascript" src="/tests/spec/modules-1.1/setexports.js"></script>
-
-  <!-- CJS Modules 1.1.1 -->
-  <script type="text/javascript" src="/tests/spec/modules-1.1.1/modules-1.1.1.js"></script>
-
-  <!-- AMD 1.0 -->
-  <script type="text/javascript" src="/tests/spec/amd/amd.js"></script>
-  <script type="text/javascript" src="/tests/spec/amd/bugs.js"></script>
-
-  <!-- Integration Tests -->
-  <script type="text/javascript" src="/tests/integration/integration.js"></script>
 
 </head>
 <body>
-  <h1 id="qunit-header">QUnit Test Suite</h1>
+  <h1 id="qunit-header">Inject Test Suite</h1>
   <h2 id="qunit-banner"></h2>
+
   <div id="qunit-testrunner-toolbar"></div>
   <h2 id="qunit-userAgent"></h2>
   <ol id="qunit-tests"></ol>
+  <ul>
+    <li><a id="amdTests" href="http://amdjs-online.github.com/amdjs-tests-online/tests/doh/runner.html?config={{CONFIG}}&amp;impl={{IMPL}}">AMD Compliance</a></li>
+  </ul>
+  <script type="text/javascript">
+    var urlBase = [window.location.protocol, '//', window.location.host].join('');
+    document.getElementById("amdTests").href = document.getElementById("amdTests").href
+      .replace(/\{\{CONFIG\}\}/g, urlBase + '/tests/external/amd/config.js')
+      .replace(/\{\{IMPL\}\}/g, urlBase + '/inject.js');
+  </script>
+
   <div id="qunit-fixture">test markup</div>
 </body>
 </html>
