@@ -16,10 +16,7 @@ governing permissions and limitations under the License.
 */
 
 function run() {
-  var $ = require("jquery");
-  require("jquery.ui.core");
-  require("jquery.ui.widget");
-  require("jquery.ui.button");
+  var $ = require("jquery.ui.button");
   require("bar");
   
   $("a.button").button();

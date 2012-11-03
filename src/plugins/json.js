@@ -30,16 +30,15 @@ governing permissions and limitations under the License.
       return path.replace(/^json!\s*/, '');
     },
     pointcuts: {
-      afterDownload: function(text) {
+      afterFetch: function(text) {
         return [
           'var json = "',
           encodeURIComponent(text),
-          '";'
-        ].join('');
-      },
-      after: function() {
-        module.setExports(JSON.parse(decodeURIComponent(json)));
+          '";',
+          'module.setExports(JSON.parse(decodeURIComponent(json)));',
+        ''].join('');
       }
     }
-  });
+  },
+  {});
 })();

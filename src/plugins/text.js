@@ -31,16 +31,15 @@ governing permissions and limitations under the License.
       return path.replace(/^text!\s*/, '');
     },
     pointcuts: {
-      afterDownload: function(text) {
+      afterFetch: function(text) {
         return [
           'var text = "',
           encodeURIComponent(text),
-          '";'
-        ].join('');
-      },
-      after: function() {
-        module.setExports(decodeURIComponent(text));
+          '";',
+          'module.setExports(decodeURIComponent(text));',
+        ''].join('');
       }
     }
-  });
+  },
+  {});
 })();

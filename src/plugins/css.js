@@ -41,15 +41,11 @@ governing permissions and limitations under the License.
       return path.replace(/^css!\s*/, '');
     },
     pointcuts: {
-      afterDownload: function(text) {
+      afterFetch: function(text) {
         return [
-          'var cssText = "',
-          encodeURIComponent(text),
-          '";'
-        ].join('');
-      },
-      after: function() {
-        module.setExports(Inject.plugins.css.create(decodeURIComponent(cssText)));
+          ['var cssText = decodeURIComponent("',encodeURIComponent(text),'");'].join(''),
+          'module.setExports(Inject.plugins.css.create(cssText))',
+        ''].join('\n');
       }
     }
   },

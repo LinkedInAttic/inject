@@ -40,8 +40,7 @@ var commonJSHeader = ([
 '        __exe = null;',
 '        exports = module.exports;',
 '    __exe = function() {',
-'      __POINTCUT_BEFORE__'
-]).join('\n');
+'']).join('\n');
 
 /**
     CommonJS footer with placeholders for Inject namespace, exception, and
@@ -50,7 +49,6 @@ var commonJSHeader = ([
     @global
 */
 var commonJSFooter = ([
-'      __POINTCUT_AFTER__',
 '    };',
 '    __INJECT_NS__.INTERNAL.defineExecutingModuleAs(module.id, module.uri);',
 '    __error = window.onerror;',
@@ -63,5 +61,5 @@ var commonJSFooter = ([
 '    __INJECT_NS__.INTERNAL.undefineExecutingModule();',
 '    return module;',
 '  }',
-'};'
-]).join('\n');
+'};',
+'']).join('\n');

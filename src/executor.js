@@ -397,16 +397,13 @@ var Executor;
           var path = node.getValue().path;
           var file = files[name];
           var resolvedId = node.getValue().resolvedId;
-          // var resolvedName = (node.getParent())
-          //                  ? RulesEngine.resolveIdentifier(name, node.getParent().getValue().name)
-          //                  : resolvedId;
-          var pointcuts = RulesEngine.getPointcuts(path, true);
+
           Executor.createModule(resolvedId, path);
           if (!node.isCircular()) {
             // note: we use "name" here, because of CommonJS Spec 1.0 Modules
             // the relative includes we find must be relative to "name", not the
             // resovled name
-            returns.push(Executor.runModule(resolvedId, file, path, pointcuts));
+            returns.push(Executor.runModule(resolvedId, file, path));
           }
         });
         // all files are executed
@@ -534,10 +531,9 @@ var Executor;
        * @param {string} moduleId - the module ID
        * @param {string} code - the code to execute
        * @param {string} path - the URL for the module to run
-       * @param {object} pointcuts - the AOP pointcuts for the module
        * @public
        */
-      runModule: function(moduleId, code, path, pointcuts) {
+      runModule: function(moduleId, code, path) {
         debugLog("Executor", "executing " + path);
         // check cache
         if (this.cache[moduleId] && this.executed[moduleId]) {
@@ -553,10 +549,8 @@ var Executor;
         var header = commonJSHeader.replace(/__MODULE_ID__/g, moduleId)
                                    .replace(/__MODULE_URI__/g, path)
                                    .replace(/__FUNCTION_ID__/g, functionId)
-                                   .replace(/__INJECT_NS__/g, NAMESPACE)
-                                   .replace(/__POINTCUT_BEFORE__/g, pointcuts.before || "");
-        var footer = commonJSFooter.replace(/__INJECT_NS__/g, NAMESPACE)
-                                   .replace(/__POINTCUT_AFTER__/g, pointcuts.after || "");
+                                   .replace(/__INJECT_NS__/g, NAMESPACE);
+        var footer = commonJSFooter.replace(/__INJECT_NS__/g, NAMESPACE);
         var runCommand = ([header, ";", code, footer]).join("\n");
         var errorObject;
         var result;
