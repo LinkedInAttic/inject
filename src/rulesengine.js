@@ -265,6 +265,11 @@ var RulesEngine;
 
       },
 
+      clearRules: function() {
+        rules = [];
+        rulesIsDirty = false;
+      },
+
       /**
        * Add a rule to the database. It can be called as:<br>
        * addRule(regexMatch, weight, ruleSet)<br>
