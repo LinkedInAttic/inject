@@ -23,9 +23,10 @@ QUnit.testSuites([
   "./src/injectcore.html",
   "./src/rulesengine.html",
   "./src/treedownloader.html",
-  "./src/treenode.html"
+  "./src/treenode.html",
 
-  // AMD Smoke Tests
+  // AMD Tests
+  "./spec/amd/all.html"
 
   // CJS Smoke Tests
 ]);

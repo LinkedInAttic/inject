@@ -1,0 +1,3 @@
+[submodule "tests/spec/amd/amdjs-tests"]
+	path = tests/spec/amd/amdjs-tests
+	url = git@github.com:amdjs/amdjs-tests.git
