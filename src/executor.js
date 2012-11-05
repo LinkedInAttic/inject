@@ -102,16 +102,19 @@ var Executor;
     });
   }
 
+  // TODO: this causes syntax errors in phantom and warnings
+  // we are going to remove this for now, pending a better answer
+  // appologies to firebug users
   // build a test script and ensure it works
-  context.onerror = function(err, where, line) {
-    onErrorOffset = 3 - line;
-    cleanupEvalScriptNode(testScriptNode);
-    return true;
-  };
-  if (docHead) {
-    docHead.appendChild(testScriptNode);
-  }
-  context.onerror = initOldError;
+  // context.onerror = function(err, where, line) {
+  //   onErrorOffset = 3 - line;
+  //   cleanupEvalScriptNode(testScriptNode);
+  //   return true;
+  // };
+  // if (docHead) {
+  //   docHead.appendChild(testScriptNode);
+  // }
+  // context.onerror = initOldError;
   // test script completion
 
   /**

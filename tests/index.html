@@ -25,8 +25,6 @@
   <script type="text/javascript" src="resources/qunit.js"></script>
   <script type="text/javascript" src="resources/qunit-composite.js"></script>
   <script type="text/javascript" src="resources/config.js"></script>
-
-  <script type="text/javascript" src="testsuites.js"></script>
 </head>
 <body>
   <h1 id="qunit-header">Inject Test Suite</h1>
@@ -37,25 +35,26 @@
   <div id="qunit-fixture">test markup</div>
 
   <script type="text/javascript">
-    QUnit.testSuites([
-      // SRC Tests
-      "./src/analyzer.html",
-      "./src/communicator.html",
-      "./src/executor.html",
-      "./src/injectcore.html",
-      "./src/rulesengine.html",
-      "./src/treedownloader.html",
-      "./src/treenode.html",
+    var testSuite = [];
 
-      // Integration Tests
-      "./integration/all.html",
+    // SRC tests
+    testSuite.push("./src/analyzer.html");
+    testSuite.push("./src/communicator.html");
+    testSuite.push("./src/executor.html");
+    testSuite.push("./src/injectcore.html");
+    testSuite.push("./src/rulesengine.html");
+    testSuite.push("./src/treedownloader.html");
+    testSuite.push("./src/treenode.html");
 
-      // AMD Tests
-      "./spec/amd/all.html",
+    // Integration Tests
+    testSuite.push("./integration/all.html");
 
-      // CJS Tests
-      "./spec/cjs/all.html"
-    ]);
+    // Specification Tests
+    testSuite.push("./spec/amd/all.html");
+    testSuite.push("./spec/cjs/all.html");
+    
+    // run the test suite
+    QUnit.testSuites(testSuite);
   </script>
 
 </body>

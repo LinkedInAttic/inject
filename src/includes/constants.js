@@ -1,4 +1,3 @@
-
 /*
 Inject
 Copyright 2011 LinkedIn

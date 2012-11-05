@@ -7,4 +7,4 @@ before_script:
   - node makefile.js docs
   - node makefile.js server &
   - sleep 5
-script: phantomjs tests/run-qunit.js http://localhost:4000/tests/tests.html?filter=src%20%3A%3A && phantomjs tests/run-qunit.js http://localhost:4000/tests/tests.html?filter=spec%20%3A%3A%20CommonJS && phantomjs tests/run-qunit.js http://localhost:4000/tests/tests.html?filter=spec%20%3A%3A%20AMD && phantomjs tests/run-qunit.js http://localhost:4000/tests/tests.html?filter=integration%20%3A%3A
+script: phantomjs tests/resources/phantom-run-qunit.js http://localhost:4000/tests/index.html
