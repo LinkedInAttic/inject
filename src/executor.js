@@ -523,6 +523,7 @@ var Executor;
        */
       getModule: function(moduleId) {
         if (this.broken[moduleId]) {
+          // TODO: this fails CJS hasOwnProperty test
           throw new Error("module "+moduleId+" failed to load successfully");
         }
         return this.cache[moduleId] || null;
@@ -550,13 +551,18 @@ var Executor;
         }
 
         var functionId = "exec" + (functionCount++);
-        var header = commonJSHeader.replace(/__MODULE_ID__/g, moduleId)
+
+        function swap__VARS__(text) {
+          return text.replace(/__MODULE_ID__/g, moduleId)
                                    .replace(/__MODULE_URI__/g, path)
                                    .replace(/__FUNCTION_ID__/g, functionId)
                                    .replace(/__INJECT_NS__/g, NAMESPACE)
-                                   .replace(/__POINTCUT_BEFORE__/g, pointcuts.before || "");
-        var footer = commonJSFooter.replace(/__INJECT_NS__/g, NAMESPACE)
+                                   .replace(/__POINTCUT_BEFORE__/g, pointcuts.before || "")
                                    .replace(/__POINTCUT_AFTER__/g, pointcuts.after || "");
+        }
+
+        var header = swap__VARS__(commonJSHeader);
+        var footer = swap__VARS__(commonJSFooter);
         var runCommand = ([header, ";", code, footer]).join("\n");
         var errorObject;
         var result;

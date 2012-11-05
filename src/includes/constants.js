@@ -192,6 +192,11 @@ var PROTOCOL_EXPANDED_REGEX = /__INJECT_PROTOCOL_COLON_SLASH_SLASH__/;
 var PROTOCOL_EXPANDED_STRING = "__INJECT_PROTOCOL_COLON_SLASH_SLASH__";
 
 /**
+ * the default hasOwnProperty method
+ */
+var HAS_OWN_PROPERTY = Object.prototype.hasOwnProperty;
+
+/**
  * run a test to determine if localstorage is available
  * @constant 
  */

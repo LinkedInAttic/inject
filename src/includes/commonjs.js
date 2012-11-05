@@ -34,14 +34,14 @@ governing permissions and limitations under the License.
 var commonJSHeader = ([
 '__INJECT_NS__.INTERNAL.execute.__FUNCTION_ID__ = function() {',
 '  with (window) {',
-'    var module = __INJECT_NS__.INTERNAL.createModule("__MODULE_ID__", "__MODULE_URI__"),',
-'        require = __INJECT_NS__.INTERNAL.createRequire("__MODULE_ID__", "__MODULE_URI__"),',
-'        define = __INJECT_NS__.INTERNAL.createDefine("__MODULE_ID__", "__MODULE_URI__"),',
-'        __exe = null;',
-'        exports = module.exports;',
-'    __exe = function() {',
-'      __POINTCUT_BEFORE__'
-]).join('\n');
+'	 __INJECT_NS__.INTERNAL.modules.__FUNCTION_ID__ = __INJECT_NS__.INTERNAL.createModule("__MODULE_ID__", "__MODULE_URI__");',
+'    __INJECT_NS__.INTERNAL.execs.__FUNCTION_ID__ = function() {',
+'      var module = __INJECT_NS__.INTERNAL.modules.__FUNCTION_ID__,',
+'          require = __INJECT_NS__.INTERNAL.createRequire(module.id, module.uri),',
+'          define = __INJECT_NS__.INTERNAL.createDefine(module.id, module.uri),',
+'          exports = module.exports;',
+'      ;__POINTCUT_BEFORE__',
+'']).join('\n');
 
 /**
     CommonJS footer with placeholders for Inject namespace, exception, and
@@ -50,18 +50,19 @@ var commonJSHeader = ([
     @global
 */
 var commonJSFooter = ([
-'      __POINTCUT_AFTER__',
+'      ;__POINTCUT_AFTER__;',
+'	   __INJECT_NS__.INTERNAL.modules.__FUNCTION_ID__ = module;',
 '    };',
-'    __INJECT_NS__.INTERNAL.defineExecutingModuleAs(module.id, module.uri);',
+'    __INJECT_NS__.INTERNAL.defineExecutingModuleAs("__MODULE_ID__", "__MODULE_URI__");',
 '    __error = window.onerror;',
 '    try {',
-'      __exe.call(module);',
+'      __INJECT_NS__.INTERNAL.execs.__FUNCTION_ID__.call(__INJECT_NS__.INTERNAL.modules.__FUNCTION_ID__);',
 '    }',
 '    catch (__EXCEPTION__) {',
-'      module.error = __EXCEPTION__;',
+'      __INJECT_NS__.INTERNAL.modules.__FUNCTION_ID__.error = __EXCEPTION__;',
 '    }',
 '    __INJECT_NS__.INTERNAL.undefineExecutingModule();',
-'    return module;',
+'    return __INJECT_NS__.INTERNAL.modules.__FUNCTION_ID__;',
 '  }',
-'};'
-]).join('\n');
+'};',
+'']).join('\n');

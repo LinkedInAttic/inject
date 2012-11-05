@@ -43,6 +43,12 @@ context.Inject = {
     // a hash of publicly reachable module sandboxes ie exec0, exec1...
     execute: {},
 
+    // a hash of publicly reachable module objects ie exec0's modules, exec1's modules...
+    modules: {},
+
+    // a hash of publicly reachable executor scopes ie exec0's __exe function
+    execs: {},
+
     // a globally available require() call for the window and base page
     globalRequire: globalRequire,
 

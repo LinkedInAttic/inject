@@ -31,10 +31,29 @@
 <body>
   <h1 id="qunit-header">Inject Test Suite</h1>
   <h2 id="qunit-banner"></h2>
-
   <div id="qunit-testrunner-toolbar"></div>
   <h2 id="qunit-userAgent"></h2>
   <ol id="qunit-tests"></ol>
   <div id="qunit-fixture">test markup</div>
+
+  <script type="text/javascript">
+    QUnit.testSuites([
+      // SRC Tests
+      "./src/analyzer.html",
+      "./src/communicator.html",
+      "./src/executor.html",
+      "./src/injectcore.html",
+      "./src/rulesengine.html",
+      "./src/treedownloader.html",
+      "./src/treenode.html",
+
+      // AMD Tests
+      "./spec/amd/all.html",
+
+      // CJS Tests
+      "./spec/cjs/all.html"
+    ]);
+  </script>
+
 </body>
 </html>
