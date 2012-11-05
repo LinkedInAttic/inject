@@ -10,7 +10,4 @@ iframe.qunit-subsuite{
   width: 100%;
 
   background: #fff;
-
-  z-index: -1;
-  opacity: 0;
 }

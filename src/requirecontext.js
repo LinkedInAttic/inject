@@ -326,7 +326,12 @@ var RequireContext = Class.extend(function() {
       Executor.flagModuleAsDefined(id);
 
       if (typeof(executionFunctionOrLiteral) === "function") {
-        dependencies.concat(Analyzer.extractRequires(executionFunctionOrLiteral.toString()));
+        // with Link.JS, we only scan the body of the function
+        var fnBody = [
+          'function linkJS() {',
+            executionFunctionOrLiteral.toString().replace(FUNCTION_BODY_REGEX, "$1"),
+          '}'].join('\n');
+        dependencies.concat(Analyzer.extractRequires(fnBody));
       }
 
       this.log("AMD define(...) of "+id+" depends on: "+dependencies.join(", "));
