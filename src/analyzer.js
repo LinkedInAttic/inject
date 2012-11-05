@@ -1,3 +1,4 @@
+/*global Class:true, LinkJS:true */
 /*
 Inject
 Copyright 2011 LinkedIn
@@ -16,35 +17,35 @@ governing permissions and limitations under the License.
 */
 
 /**
- * The analyzer module handles extract the clean dependencies list 
+ * The analyzer module handles extract the clean dependencies list
  * from a given file and supports remove buildin modules from a
  * given module list
  * @file
 **/
 var Analyzer;
-(function() {
-  var AsStatic = Class.extend(function() {
+(function () {
+  var AsStatic = Class.extend(function () {
     return {
       /**
        * analyzer initialization
        * @constructs Analyzer
        */
-      init: function() {},
+      init: function () {},
       
       /**
-       * Clean up moduleIds by removing all buildin modules 
+       * Clean up moduleIds by removing all buildin modules
        * (requie, exports, module) from a given module list
        * @method Analyzer.stripBuiltins
        * @param {Array} modules - a dirty list of modules
        * @public
        * @returns {Array} a clean list of modules without buildins
        */
-      stripBuiltins: function(modules) {
+      stripBuiltins: function (modules) {
         var strippedModuleList = [];
         var moduleId;
         for (var i = 0, len = modules.length; i < len; i++) {
           moduleId = modules[i];
-          if (moduleId !== "require" && moduleId !== "exports" && moduleId !== "module") {
+          if (moduleId !== 'require' && moduleId !== 'exports' && moduleId !== 'module') {
             strippedModuleList.push(moduleId);
           }
         }
@@ -58,10 +59,10 @@ var Analyzer;
        * @method Analyzer.extractRequires
        * @param {String} file - a string of a file
        * @public
-       * @returns {Array} a clean list of dependency requires from a 
+       * @returns {Array} a clean list of dependency requires from a
        * module file
        */
-      extractRequires: function(file) {
+      extractRequires: function (file) {
         var result = LinkJS.parse(file);
         return result.requires;
       }
