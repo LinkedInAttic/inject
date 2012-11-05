@@ -1,4 +1,4 @@
-QUnit.config.testTimeout = 3000;
+QUnit.config.testTimeout = 5000;
 
 var clearAllCaches = function(into) {
   if (into.localStorage && typeof(into.localStorage.clear) === "function") {

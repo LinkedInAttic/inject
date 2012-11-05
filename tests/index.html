@@ -35,16 +35,6 @@
   <div id="qunit-testrunner-toolbar"></div>
   <h2 id="qunit-userAgent"></h2>
   <ol id="qunit-tests"></ol>
-  <ul>
-    <li><a id="amdTests" href="http://amdjs-online.github.com/amdjs-tests-online/tests/doh/runner.html?config={{CONFIG}}&amp;impl={{IMPL}}">AMD Compliance</a></li>
-  </ul>
-  <script type="text/javascript">
-    var urlBase = [window.location.protocol, '//', window.location.host].join('');
-    document.getElementById("amdTests").href = document.getElementById("amdTests").href
-      .replace(/\{\{CONFIG\}\}/g, urlBase + '/tests/external/amd/config.js')
-      .replace(/\{\{IMPL\}\}/g, urlBase + '/inject.js');
-  </script>
-
   <div id="qunit-fixture">test markup</div>
 </body>
 </html>

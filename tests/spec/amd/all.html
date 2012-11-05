@@ -20,16 +20,64 @@ governing permissions and limitations under the License.
 */
 -->
   <meta charset="UTF-8" />
-  <title>Inject Test Suite - Analyzer SRC Tests</title>
+  <title>Inject Test Suite - AMD Compliance Tests</title>
   <link rel="stylesheet" href="../../resources/qunit.css" type="text/css" media="screen">
   <script type="text/javascript" src="../../resources/qunit.js"></script>
   <script type="text/javascript" src="../../resources/config.js"></script>
-  <script type="text/javascript" src="../../resources/qunit-doh.js"></script>
 </head>
 <body>
   <div id="qunit"></div>
-  <script type="text/javascript" src="/inject.js"></script>
-  <script type="text/javascript" src="amd-config.js"></script>
-  <script type="text/javascript" src="amdjs-tests/tests/basic/simple-tests.js"></script>
+  <iframe id="amdTests" src="amdjs-tests/tests/doh/runner.html?config=inject/config.js&amp;impl=inject/inject.js"></iframe>
+  <script type="text/javascript">
+    var EXPECTED_TESTS = 20;
+
+    module("AMD External Tests");
+    asyncTest("All External AMD Tests", EXPECTED_TESTS, function() {
+
+      var counter = EXPECTED_TESTS;
+      var testsWaiting = {};
+      var testsRan = [];
+      function done() { --counter || start(); }
+
+      window.BeginListening = function() {
+        // treat the entire AMD structure as a single async test
+        var dohWindow = document.getElementById("amdTests").contentWindow;
+
+        var existingDohMethods = {
+          _onEnd: dohWindow.doh._onEnd,
+          _groupFinished: dohWindow.doh._groupFinished,
+          _groupStarted: dohWindow.doh._groupStarted,
+          _handleFailure: dohWindow.doh._handleFailure,
+          _testFinished: dohWindow.doh._testFinished,
+          _testStarted: dohWindow.doh._testStarted
+        }
+
+        function change(name, fn) {
+          var oldMethod = existingDohMethods[name];
+          dohWindow.doh[name] = function() {
+            var args = [].slice.call(arguments, 0);
+            oldMethod.apply(dohWindow.doh, args);
+            fn.apply(this, args);
+          };
+        }
+
+        change('_testStarted', function(startName, startFixture) {
+            testsWaiting[startName] = true;
+        });
+
+        change('_testFinished', function(finishedName, finishedFixture, resultOfTest) {
+          if (testsWaiting[finishedName]) {
+            ok(resultOfTest, finishedName);
+          }
+          else {
+            ok(false, "unrecognised test: "+finishedName);
+          }
+          done();
+        });
+
+        dohWindow.doh.run();
+      };
+    });
+  </script>
 </body>
 </html>
