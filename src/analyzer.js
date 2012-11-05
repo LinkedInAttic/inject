@@ -62,76 +62,8 @@ var Analyzer;
        * module file
        */
       extractRequires: function(file) {
-        var requires = [];
-        var requireMatches = null;
-        var defines = null;
-        var uniques = {};
-        var dirtyRuntimeRequires = [];
-        var dirtyStaticRequires = [];
-        var staticRequires = [];
-        var inlineAMD = {};
-
-        // a local require function for eval purposes
-        var require = function(term) {
-          if (uniques[term] !== true) {
-            requires.push(term);
-          }
-          uniques[term] = true;
-        };
-        
-        // remove comment lines from the file to avoid adding
-        // any requires from comments
-        file = file.replace(JS_COMMENTS_REGEX, "");
-
-        // handle runtime require statements
-        while(match = REQUIRE_REGEX.exec(file)) {
-          dirtyRuntimeRequires.push(match[0].match(GREEDY_REQUIRE_REXEX)[0]);
-        }
-        if (dirtyRuntimeRequires.length > 0) {
-          try {
-            eval([dirtyRuntimeRequires.join(";"), "//@ sourceURL=Inject-Analyzer.js"].join("\n"));
-          }
-          catch(err) {
-            throw new Error("Invalid require() syntax found in file: " + dirtyRuntimeRequires.join(";"));
-          }
-        }
-
-        // handle static require statements via define() API
-        // then attach to master requires[] list
-        // extract all define names, then all dependencies
-        defines = file.match(DEFINE_EXTRACTION_REGEX);
-        if (defines && defines.length) {
-          each(defines, function(match) {
-            var id = match.replace(DEFINE_EXTRACTION_REGEX, "$1");
-            var deps = match.replace(DEFINE_EXTRACTION_REGEX, "$2");
-
-            id = id.replace(BUILTINS_REPLACE_REGEX, "");
-            deps = deps.replace(BUILTINS_REPLACE_REGEX, "").split(",");
-
-            if (id) {
-              inlineAMD[id] = true;
-            }
-
-            if (deps && deps.length) {
-              for (var i = 0, len = deps.length; i < len; i++) {
-                if (deps[i]) {
-                  dirtyStaticRequires.push(deps[i]);
-                }
-              }
-            }
-          });
-
-          // for each possible require, make sure we aren't already
-          // running this inline
-          each(dirtyStaticRequires, function(req) {
-            if (uniques[req] !== true && inlineAMD[req] !== true) {
-              requires.push(req);
-            }
-            uniques[req] = true;
-          });
-        }
-
-        return requires;
+        var result = LinkJS.parse(file);
+        return result.requires;
       }
     };
   });

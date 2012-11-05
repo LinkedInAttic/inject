@@ -522,8 +522,7 @@ var Executor;
        * @returns {object} the module at the identifier
        */
       getModule: function(moduleId) {
-        if (this.broken[moduleId]) {
-          // TODO: this fails CJS hasOwnProperty test
+        if (this.broken[moduleId] && this.broken.hasOwnProperty(moduleId)) {
           throw new Error("module "+moduleId+" failed to load successfully");
         }
         return this.cache[moduleId] || null;

@@ -43,37 +43,44 @@ governing permissions and limitations under the License.
     var q = getQueryVariables();
     var testName = q.test;
 
+    /*
+    From the test docs:
+    All of these tests presume the existence of an
+    "print" free variable or a "system" module on
+    which a ".stdout.print" method exists for test
+    reporting.  Tests call the "print" method with a
+    "message" and a "label" argument that is one of
+    "pass" or "fail".  "window.console.log" in most
+    browsers suffices.
+    */
+
+    function cjsPrinter(message, passFail) {
+      passFail = passFail.toLowerCase();
+      switch (passFail) {
+        case 'pass':
+          ok(true, message);
+          break;
+        case 'fail':
+          ok(false, message);
+          break;
+        case 'info':
+          break;
+      }
+    }
+
+    Inject.reset();
+    Inject.setModuleRoot('/tests/spec/cjs/interoperablejs/'+q.test);
+    define('system', {
+      stdout: {
+        print: cjsPrinter
+      }
+    });
+
+    // this ensures there is no globally available print function
+    window.print = cjsPrinter;
+
     module(q.test);
     asyncTest(q.test + 'program', function() {
-      /*
-      From the test docs:
-      All of these tests presume the existence of an
-      "print" free variable or a "system" module on
-      which a ".stdout.print" method exists for test
-      reporting.  Tests call the "print" method with a
-      "message" and a "label" argument that is one of
-      "pass" or "fail".  "window.console.log" in most
-      browsers suffices.
-      */
-      window.print = function(message, passFail) {
-        passFail = passFail.toLowerCase();
-        switch (passFail) {
-          case 'pass':
-            ok(true, message);
-            break;
-          case 'fail':
-            ok(false, message);
-            break;
-          case 'info':
-            if (message.toLowerCase() === 'done') {
-              // start();
-            }
-            break;
-        }
-      };
-
-      Inject.reset();
-      Inject.setModuleRoot('/tests/spec/cjs/interoperablejs/'+q.test);
       require.ensure(['program'], function() {
         start();
       });
