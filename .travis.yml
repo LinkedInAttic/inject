@@ -7,7 +7,7 @@ before_script:
   - npm install
   - ./node_modules/.bin/jshint .
   - node makefile.js build
-  - node makefile.js docs
+  # - node makefile.js docs
   - node makefile.js server &
   - sleep 5
 script: phantomjs tests/resources/phantom-run-qunit.js http://localhost:4000/tests/index.html
