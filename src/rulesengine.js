@@ -24,7 +24,7 @@ governing permissions and limitations under the License.
 **/
 
 var RulesEngine;
-(function() {
+(function () {
 
   /**
    * the collection of rules
@@ -46,7 +46,7 @@ var RulesEngine;
    * @private
    */
   function sortRulesTable() {
-    rules.sort(function(a, b) {
+    rules.sort(function (a, b) {
       return b.weight - a.weight;
     });
     rulesIsDirty = false;
@@ -60,16 +60,16 @@ var RulesEngine;
    * @returns {String} the internal body of the function
    */
   function functionToPointcut(fn) {
-    return fn.toString().replace(FUNCTION_BODY_REGEX, "$1");
+    return fn.toString().replace(FUNCTION_BODY_REGEX, '$1');
   }
 
-  var AsStatic = Class.extend(function() {
+  var AsStatic = Class.extend(function () {
     return {
       /**
        * Create a RulesEngine Object
        * @constructs RulesEngine
        */
-      init: function() {
+      init: function () {
         this.pointcuts = {};
       },
 
@@ -82,32 +82,32 @@ var RulesEngine;
        * @returns {String} the resolved identifier
        * @see RulesEngine.applyRules
        */
-      resolveIdentifier: function(identifier, relativeTo) {
+      resolveIdentifier: function (identifier, relativeTo) {
         if (!relativeTo) {
-          relativeTo = "";
+          relativeTo = '';
         }
 
-        if (identifier.indexOf(".") !== 0) {
-          relativeTo = "";
+        if (identifier.indexOf('.') !== 0) {
+          relativeTo = '';
         }
 
         // basedir
         if (relativeTo) {
-          relativeTo = relativeTo.split("/");
+          relativeTo = relativeTo.split('/');
           relativeTo.pop();
-          relativeTo = relativeTo.join("/");
+          relativeTo = relativeTo.join('/');
         }
 
-        if (identifier.indexOf("/") === 0) {
+        if (identifier.indexOf('/') === 0) {
           return identifier;
         }
 
         identifier = this.computeRelativePath(identifier, relativeTo);
 
-        if (identifier.indexOf("/") === 0) {
-          identifier = identifier.split("/");
+        if (identifier.indexOf('/') === 0) {
+          identifier = identifier.split('/');
           identifier.shift();
-          identifier = identifier.join("/");
+          identifier = identifier.join('/');
         }
 
         return identifier;
@@ -121,21 +121,21 @@ var RulesEngine;
        * @public
        * @returns {String} a resolved URL
        */
-      resolveUrl: function(path, relativeTo) {
+      resolveUrl: function (path, relativeTo) {
         var resolvedUrl;
 
         // if no module root, freak out
         if (!userConfig.moduleRoot) {
-          throw new Error("module root needs to be defined for resolving URLs");
+          throw new Error('module root needs to be defined for resolving URLs');
         }
 
         if (relativeTo && !userConfig.baseDir) {
-          relativeTo = relativeTo.replace(PROTOCOL_REGEX, PROTOCOL_EXPANDED_STRING).split("/");
+          relativeTo = relativeTo.replace(PROTOCOL_REGEX, PROTOCOL_EXPANDED_STRING).split('/');
           if (relativeTo[relativeTo.length - 1] && relativeTo.length !== 1) {
             // not ending in /
             relativeTo.pop();
           }
-          relativeTo = relativeTo.join("/").replace(PROTOCOL_EXPANDED_REGEX, PROTOCOL_STRING);
+          relativeTo = relativeTo.join('/').replace(PROTOCOL_EXPANDED_REGEX, PROTOCOL_STRING);
         }
         else if (relativeTo) {
           relativeTo = userConfig.baseDir(relativeTo);
@@ -192,27 +192,28 @@ var RulesEngine;
        * @private
        * @returns {String} a resolved path with no relative references
        */
-      computeRelativePath: function(id, base) {
+      computeRelativePath: function (id, base) {
         var blownApartURL;
         var resolved = [];
+        var piece;
 
         // exit early on resolved :// in a URL
         if (ABSOLUTE_PATH_REGEX.test(id)) {
           return id;
         }
 
-        blownApartURL = [].concat(base.split("/"), id.split("/"));
+        blownApartURL = [].concat(base.split('/'), id.split('/'));
         for (var i = 0, len = blownApartURL.length; i < len; i++) {
           piece = blownApartURL[i];
 
-          if (piece === "." || (piece === "" && i > 0)) {
+          if (piece === '.' || (piece === '' && i > 0)) {
             // skip . or "" (was "//" in url at position 0)
             continue;
           }
-          else if (piece === "..") {
+          else if (piece === '..') {
             // up one directory
             if (resolved.length === 0) {
-              throw new Error("could not traverse higher than highest path");
+              throw new Error('could not traverse higher than highest path');
             }
             resolved.pop();
           }
@@ -222,7 +223,7 @@ var RulesEngine;
           }
         }
 
-        resolved = resolved.join("/");
+        resolved = resolved.join('/');
         return resolved;
       },
 
@@ -234,7 +235,7 @@ var RulesEngine;
        * @public
        * @returns {Object} an object containing all pointcuts for the URL
        */
-      getPointcuts: function(path, asString) {
+      getPointcuts: function (path, asString) {
         var pointcuts = this.pointcuts[path] || {before: [], after: []};
         var result = {
           before: [],
@@ -242,11 +243,11 @@ var RulesEngine;
         };
         var pointcut;
 
-        if (typeof(asString) === "undefined") {
+        if (typeof(asString) === 'undefined') {
           return {
             before: pointcuts.before,
             after: pointcuts.after
-          }
+          };
         }
 
         for (var i = 0, len = pointcuts.before.length; i < len; i++) {
@@ -258,14 +259,14 @@ var RulesEngine;
           result.after.push(functionToPointcut(pointcut));
         }
 
-        result.before = result.before.join("\n");
-        result.after = result.after.join("\n");
+        result.before = result.before.join('\n');
+        result.after = result.after.join('\n');
 
         return result;
 
       },
 
-      clearRules: function() {
+      clearRules: function () {
         rules = [];
         rulesIsDirty = false;
       },
@@ -292,11 +293,11 @@ var RulesEngine;
        * @param {Object} ruleSet - an object containing the rules to apply
        * @public
        */
-      addRule: function(regexMatch, weight, ruleSet) {
+      addRule: function (regexMatch, weight, ruleSet) {
         // regexMatch, ruleSet
         // regexMatch, weight, ruleSet
-        if (typeof(ruleSet) === "undefined") {
-          if (typeof(weight) === "undefined") {
+        if (typeof(ruleSet) === 'undefined') {
+          if (typeof(weight) === 'undefined') {
             // one param
             ruleSet = regexMatch;
             weight = null;
@@ -313,7 +314,7 @@ var RulesEngine;
           weight = rules.length;
         }
 
-        if (typeof(ruleSet) === "string") {
+        if (typeof(ruleSet) === 'string') {
           ruleSet = {
             path: ruleSet
           };
@@ -338,7 +339,7 @@ var RulesEngine;
        * @public
        * @see RulesEngine.addRule
        */
-      manifest: function(manifestObj) {
+      manifest: function (manifestObj) {
         var key;
         var rule;
 
@@ -359,7 +360,7 @@ var RulesEngine;
        * @private
        * @returns {Object} an object containing the resolved path and pointcuts
        */
-      applyRules: function(path) {
+      applyRules: function (path) {
         if (rulesIsDirty) {
           sortRulesTable();
         }
@@ -369,23 +370,25 @@ var RulesEngine;
         var beforePointCuts = [];
         var afterPointCuts = [];
         var done = false;
-        each(rules, function(rule) {
-          if (done) return;
+        each(rules, function (rule) {
+          if (done) {
+            return;
+          }
 
           var match = false;
           // rule matching
-          if (typeof(rule.matches) === "string" && rule.matches === result) {
+          if (typeof(rule.matches) === 'string' && rule.matches === result) {
             match = true;
           }
-          else if (typeof(rule.matches) === "object" && rule.matches.test(result)) {
+          else if (typeof(rule.matches) === 'object' && rule.matches.test(result)) {
             match = true;
           }
           // if we have a match, do a replace
           if (match) {
-            if (typeof(rule.path) === "string") {
+            if (typeof(rule.path) === 'string') {
               result = rule.path;
             }
-            else if (typeof(rule.path) === "function") {
+            else if (typeof(rule.path) === 'function') {
               result = rule.path(result);
             }
 
@@ -403,7 +406,7 @@ var RulesEngine;
         });
 
         payload = {
-          resolved: result || "",
+          resolved: result || '',
           pointcuts: {
             before: beforePointCuts,
             after: afterPointCuts

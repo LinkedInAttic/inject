@@ -23,7 +23,7 @@ governing permissions and limitations under the License.
  * as downloaded.
  * @file
 **/
-var TreeDownloader = Class.extend(function() {
+var TreeDownloader = Class.extend(function () {
   return {
     /**
      * Create a TreeDownloader with a root node. From this node,
@@ -31,7 +31,7 @@ var TreeDownloader = Class.extend(function() {
      * @constructs TreeDownloader
      * @param {TreeNode} root - the root TreeNode to download
      */
-    init: function(root) {
+    init: function (root) {
       this.callsRemaining = 0;
       this.root = root;
       this.files = {};
@@ -44,10 +44,10 @@ var TreeDownloader = Class.extend(function() {
      * @param {variable} args - a collection of args to output
      * @protected
      */
-    log: function() {
+    log: function () {
       var args = [].slice.call(arguments, 0);
       var name = (this.root.getValue()) ? this.root.getValue().name : null;
-      debugLog("TreeDownloader ("+name+")", args.join(" "));
+      debugLog('TreeDownloader (' + name + ')', args.join(' '));
     },
 
     /**
@@ -59,9 +59,9 @@ var TreeDownloader = Class.extend(function() {
      * @param {array} args - a collection of arguments for callback
      * @protected
      */
-    reduceCallsRemaining: function(callback, args) {
+    reduceCallsRemaining: function (callback, args) {
       this.callsRemaining--;
-      this.log("reduce. outstanding", this.callsRemaining);
+      this.log('reduce. outstanding', this.callsRemaining);
       // TODO: there is a -1 logic item here to fix
       if (this.callsRemaining <= 0) {
         callback.call(null, args);
@@ -74,9 +74,9 @@ var TreeDownloader = Class.extend(function() {
      * @param {int} by - an amount to increase by, defaults to 1
      * @protected
      */
-    increaseCallsRemaining: function(by) {
+    increaseCallsRemaining: function (by) {
       this.callsRemaining += by || 1;
-      this.log("increase. outstanding", this.callsRemaining);
+      this.log('increase. outstanding', this.callsRemaining);
     },
 
     /**
@@ -85,7 +85,7 @@ var TreeDownloader = Class.extend(function() {
      * @public
      * @returns {object} an object containing url/file pairs
      */
-    getFiles: function() {
+    getFiles: function () {
       return this.files;
     },
 
@@ -113,9 +113,9 @@ var TreeDownloader = Class.extend(function() {
      * @param {function} callback - a callback invoked on completion
      * @public
      */
-    get: function(callback) {
-      this.log("started download");
-      this.downloadTree(this.root, proxy(function(root) {
+    get: function (callback) {
+      this.log('started download');
+      this.downloadTree(this.root, proxy(function () {
         callback(this.root, this.getFiles());
       }, this));
     },
@@ -129,14 +129,11 @@ var TreeDownloader = Class.extend(function() {
      * @param {function} callback - a callback to invoke when this node is "complete"
      * @protected
      */
-    downloadTree: function(node, callback) {
+    downloadTree: function (node, callback) {
       // Normalize Module Path. Download. Analyze.
-      var parentPath = (node.getParent() && node.getParent().getValue())
-                        ? node.getParent().getValue().path
-                        : userConfig.moduleRoot;
-      var parentName =  (node.getParent() && node.getParent().getValue())
-                        ? node.getParent().getValue().name
-                        : "";
+      var parentName =  (node.getParent() && node.getParent().getValue()) ?
+                         node.getParent().getValue().name :
+                         '';
 
       // get the path and REAL identifier for this module (resolve relative references)
       var identifier = RulesEngine.resolveIdentifier(node.getValue().name, parentName);
@@ -150,14 +147,14 @@ var TreeDownloader = Class.extend(function() {
 
       // do not bother to download AMD define()-ed files
       if (Executor.isModuleDefined(node.getValue().name)) {
-        this.log("AMD defined module, no download required", node.getValue().name);
+        this.log('AMD defined module, no download required', node.getValue().name);
         this.reduceCallsRemaining(callback, node);
         return;
       }
 
-      this.log("requesting file", node.getValue().path);
-      Communicator.get(node.getValue().name, node.getValue().path, proxy(function(contents) {
-        this.log("download complete", node.getValue().path);
+      this.log('requesting file', node.getValue().path);
+      Communicator.get(node.getValue().name, node.getValue().path, proxy(function (contents) {
+        this.log('download complete', node.getValue().path);
         var parent = node;
         var found = {};
         var value;
@@ -166,7 +163,7 @@ var TreeDownloader = Class.extend(function() {
         found[node.getValue().name] = true;
         parent = parent.getParent();
         // test if you are a circular reference. check every parent back to root
-        while(parent) {
+        while (parent) {
           if (!parent.getValue()) {
             // reached root
             break;
@@ -174,7 +171,7 @@ var TreeDownloader = Class.extend(function() {
 
           value = parent.getValue().name;
           if (found[value]) {
-            this.log("circular reference found", node.getValue().name);
+            this.log('circular reference found', node.getValue().name);
             // flag the node as circular (commonJS) and the module itself (AMD)
             node.flagCircular();
             Executor.flagModuleAsCircular(node.getValue().name);
@@ -193,6 +190,9 @@ var TreeDownloader = Class.extend(function() {
           var childNode;
           var name;
           var path;
+          var callReduceCommand = proxy(function () {
+            this.reduceCallsRemaining(callback, node);
+          }, this);
 
           // remove already-defined AMD modules before we go further
           for (var i = 0, len = tempRequires.length; i < len; i++) {
@@ -202,7 +202,7 @@ var TreeDownloader = Class.extend(function() {
             }
           }
 
-          this.log("dependencies ("+requires.length+"):" + requires.join(", "));
+          this.log('dependencies (' + requires.length + '):' + requires.join(', '));
 
           // for each requires, create a child and spawn
           if (requires.length) {
@@ -213,9 +213,7 @@ var TreeDownloader = Class.extend(function() {
             path = RulesEngine.resolveUrl(RulesEngine.resolveIdentifier(name, node.getValue().name));
             childNode = TreeDownloader.createNode(name, path);
             node.addChild(childNode);
-            this.downloadTree(childNode, proxy(function() {
-              this.reduceCallsRemaining(callback, node);
-            }, this));
+            this.downloadTree(childNode, callReduceCommand);
           }
         }
 
@@ -239,7 +237,7 @@ var TreeDownloader = Class.extend(function() {
  * @public
  * @returns {TreeNode} the created TreeNode object
  */
-TreeDownloader.createNode = function(name, path, isCircular) {
+TreeDownloader.createNode = function (name, path, isCircular) {
   var tn = new TreeNode({
     name: name,
     path: path,
@@ -249,4 +247,4 @@ TreeDownloader.createNode = function(name, path, isCircular) {
     tn.flagCircular();
   }
   return tn;
-}
+};

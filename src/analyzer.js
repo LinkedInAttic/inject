@@ -1,4 +1,3 @@
-/*global Class:true, LinkJS:true */
 /*
 Inject
 Copyright 2011 LinkedIn

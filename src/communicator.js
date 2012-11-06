@@ -1,3 +1,4 @@
+/*global context:true */
 /*
 Inject
 Copyright 2011 LinkedIn
@@ -17,13 +18,13 @@ governing permissions and limitations under the License.
 
 
 /**
-* Communicator handles the logic for 
+* Communicator handles the logic for
 * downloading and executing required files and dependencies
 * @file
 **/
 var Communicator;
-(function() {
-  var AsStatic = Class.extend(function() {
+(function () {
+  var AsStatic = Class.extend(function () {
     var pauseRequired = false;
 
     var socketConnectionQueue;
@@ -32,14 +33,14 @@ var Communicator;
     var socket;
 
     /**
-    * Clear the records to socket connections and 
+    * Clear the records to socket connections and
     * downloaded files
     * @function
     * @private
     **/
     function clearCaches() {
       socketConnectionQueue = [];
-      downloadCompleteQueue = {};      
+      downloadCompleteQueue = {};
     }
 
     /**
@@ -61,7 +62,7 @@ var Communicator;
     * @param {string} url - url key that the content is stored under
     * @private
     * @returns the content that is stored under the url key
-    * 
+    *
     **/
     function readFromCache(url) {
       // lscache and passthrough
@@ -69,7 +70,7 @@ var Communicator;
     }
 
     /**
-    * Utility function to cleanup Host name by removing leading 
+    * Utility function to cleanup Host name by removing leading
     * http or https string
     * @function
     * @param {string} host - The host name to trim.
@@ -77,12 +78,12 @@ var Communicator;
     * @returns hostname without leading http or https string
     **/
     function trimHost(host) {
-      host = host.replace(HOST_PREFIX_REGEX, "").replace(HOST_SUFFIX_REGEX, "$1");
+      host = host.replace(HOST_PREFIX_REGEX, '').replace(HOST_SUFFIX_REGEX, '$1');
       return host;
     }
 
     /**
-    * function that resolves all callbacks that are associated 
+    * function that resolves all callbacks that are associated
     * to the loaded file
     * @function
     * @param {string} moduleId - The id of the module that has been loaded
@@ -92,8 +93,9 @@ var Communicator;
     * @private
     **/
     function resolveCompletedFile(moduleId, url, statusCode, contents) {
-      statusCode = 1*statusCode;
-      debugLog("Communicator ("+url+")", "status "+statusCode+". Length: "+((contents) ? contents.length : "NaN"));
+      statusCode = 1 * statusCode;
+      debugLog('Communicator (' + url + ')', 'status ' + statusCode + '. Length: ' +
+          ((contents) ? contents.length : 'NaN'));
 
       // write cache
       if (statusCode === 200) {
@@ -101,7 +103,7 @@ var Communicator;
       }
 
       // locate all callbacks associated with the URL
-      each(downloadCompleteQueue[url], function(cb) {
+      each(downloadCompleteQueue[url], function (cb) {
         if (statusCode !== 200) {
           if (Executor) {
             Executor.flagModuleAsBroken(moduleId);
@@ -123,27 +125,27 @@ var Communicator;
     **/
     function createSocket() {
       var relayFile = userConfig.xd.relayFile;
-      var relaySwf = userConfig.xd.relaySwf || "";
-      relayFile += (relayFile.indexOf("?") >= 0) ? "&" : "?";
-      relayFile += "swf="+relaySwf;
+      var relaySwf = userConfig.xd.relaySwf || '';
+      relayFile += (relayFile.indexOf('?') >= 0) ? '&' : '?';
+      relayFile += 'swf=' + relaySwf;
 
       socket = new easyXDM.Socket({
         remote: relayFile,
         swf: relaySwf,
-        onMessage: function(message, origin) {
-          if (typeof(userConfig.moduleRoot) === "string" && trimHost(userConfig.moduleRoot) !== trimHost(origin)) {
+        onMessage: function (message, origin) {
+          if (typeof(userConfig.moduleRoot) === 'string' && trimHost(userConfig.moduleRoot) !== trimHost(origin)) {
             return;
           }
-          var pieces = message.split("__INJECT_SPLIT__");
+          var pieces = message.split('__INJECT_SPLIT__');
           // pieces[0] moduleId
           // pieces[1] file URL
           // pieces[2] status code
           // pieces[3] file contents
           resolveCompletedFile(pieces[0], pieces[1], pieces[2], pieces[3]);
         },
-        onReady: function() {
+        onReady: function () {
           pauseRequired = false;
-          each(socketConnectionQueue, function(cb) {
+          each(socketConnectionQueue, function (cb) {
             cb();
           });
           socketConnectionQueue = [];
@@ -159,7 +161,7 @@ var Communicator;
     * @private
     **/
     function sendViaIframe(moduleId, url) {
-      socket.postMessage(moduleId + "__INJECT_SPLIT__" + url);
+      socket.postMessage(moduleId + '__INJECT_SPLIT__' + url);
     }
 
     /**
@@ -171,8 +173,8 @@ var Communicator;
     **/
     function sendViaXHR(moduleId, url) {
       var xhr = getXhr();
-      xhr.open("GET", url);
-      xhr.onreadystatechange = function() {
+      xhr.open('GET', url);
+      xhr.onreadystatechange = function () {
         if (xhr.readyState === 4) {
           resolveCompletedFile(moduleId, url, xhr.status, xhr.responseText);
         }
@@ -186,7 +188,7 @@ var Communicator;
       *   reference assigned to a location outside of the closure.
       *   @constructs Communicator
       **/
-      init: function() {
+      init: function () {
         this.clearCaches();
       },
 
@@ -195,7 +197,7 @@ var Communicator;
       * @method Communicator.clearCaches
       * @public
       */
-      clearCaches: function() {
+      clearCaches: function () {
         clearCaches();
       },
 
@@ -207,34 +209,34 @@ var Communicator;
       * @param {object} callback - The function callback to execute after the file is retrieved and loaded
       * @public
       */
-      get: function(moduleId, url, callback) {
+      get: function (moduleId, url, callback) {
         if (!downloadCompleteQueue[url]) {
           downloadCompleteQueue[url] = [];
         }
 
-        debugLog("Communicator ("+url+")", "requesting");
+        debugLog('Communicator (' + url + ')', 'requesting');
 
         var cachedResults = readFromCache(url);
         if (cachedResults) {
-          debugLog("Communicator ("+url+")", "retireved from cache. length: "+cachedResults.length);
+          debugLog('Communicator (' + url + ')', 'retireved from cache. length: ' + cachedResults.length);
           callback(cachedResults);
           return;
         }
 
-        debugLog("Communicator ("+url+")", "queued");
+        debugLog('Communicator (' + url + ')', 'queued');
         if (downloadCompleteQueue[url].length) {
           downloadCompleteQueue[url].push(callback);
-          debugLog("Communicator ("+url+")", "request already in progress");
+          debugLog('Communicator (' + url + ')', 'request already in progress');
           return;
         }
         downloadCompleteQueue[url].push(callback);
 
         if (userConfig.xd.relayFile && !socket && !pauseRequired) {
           pauseRequired = true;
-          window.setTimeout(createSocket);
+          context.setTimeout(createSocket);
         }
 
-        var socketQueuedFn = function() {
+        var socketQueuedFn = function () {
           sendViaIframe(moduleId, url);
         };
 

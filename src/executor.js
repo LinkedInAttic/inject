@@ -1,3 +1,6 @@
+/*jshint evil:true */
+/*global context:true, document:true */
+
 /*
 Inject
 Copyright 2011 LinkedIn
@@ -24,7 +27,49 @@ governing permissions and limitations under the License.
  * @file
 **/
 var Executor;
-(function() {
+(function () {
+
+  /**
+   * create a script node containing code to execute when
+   * placed into the page. IE behaves differently from other
+   * browsers, which is why the logic has been encapsulated into
+   * a function.
+   * @function
+   * @param {String} code - the code to create a node with
+   * @private
+   */
+  function createEvalScript(code) {
+    var scr = document.createElement('script');
+    scr.type = 'text/javascript';
+    try {
+      scr.text = code;
+    }
+    catch (e) {
+      try {
+        scr.innerHTML = code;
+      }
+      catch (ee) {
+        return false;
+      }
+    }
+    return scr;
+  }
+
+  /**
+   * remove an inserted script node from the page.
+   * It is put into a setTimeout call so that it will
+   * happen after all other code in queue has completed.
+   * @function
+   * @param {node} node - the HTML node to clean
+   * @private
+   */
+  function cleanupEvalScriptNode(node) {
+    context.setTimeout(function () {
+      if (docHead) {
+        return docHead.removeChild(node);
+      }
+    });
+  }
 
   /**
    * the document head
@@ -39,15 +84,8 @@ var Executor;
    * @private
    * @type {int}
    */
-  var onErrorOffset = 0;
+  var onErrorOffset = (IS_GK) ? -3 : 0;
 
-  /**
-   * A test script designed to generate a known error
-   * @private
-   * @type {int}
-   */
-  var testScript = 'function Inject_Test_Known_Error() {\n  function nil() {}\n  nil("Known Syntax Error Line 3";\n}';
-  
   /**
    * the old onerror object for restoring
    * @private
@@ -55,67 +93,9 @@ var Executor;
    */
   var initOldError = context.onerror;
 
-  /**
-   * the test script node is a node containing the test script,
-   * which will trigger an error on injection
-   * @private
-   * @type {Node}
-   */
-  var testScriptNode = createEvalScript(testScript);
-
   // capture document head
-  try { docHead = document.getElementsByTagName("head")[0]; }
-  catch(e) { docHead = false; }
-
-  /**
-   * create a script node containing code to execute when
-   * placed into the page. IE behaves differently from other
-   * browsers, which is why the logic has been encapsulated into
-   * a function.
-   * @function
-   * @param {String} code - the code to create a node with
-   * @private
-   */
-  function createEvalScript(code) {
-    var scr = document.createElement("script");
-    scr.type = "text/javascript";
-    try { scr.text = code; } catch (e) {
-    try { scr.innerHTML = code; } catch (ee) {
-      return false;
-    }}
-    return scr;
-  }
-
-  /**
-   * remove an inserted script node from the page.
-   * It is put into a setTimeout call so that it will
-   * happen after all other code in queue has completed.
-   * @function
-   * @param {node} node - the HTML node to clean
-   * @private
-   */
-  function cleanupEvalScriptNode(node) {
-    context.setTimeout(function() {
-      if (docHead) {
-        return docHead.removeChild(node);
-      }
-    });
-  }
-
-  // TODO: this causes syntax errors in phantom and warnings
-  // we are going to remove this for now, pending a better answer
-  // appologies to firebug users
-  // build a test script and ensure it works
-  // context.onerror = function(err, where, line) {
-  //   onErrorOffset = 3 - line;
-  //   cleanupEvalScriptNode(testScriptNode);
-  //   return true;
-  // };
-  // if (docHead) {
-  //   docHead.appendChild(testScriptNode);
-  // }
-  // context.onerror = initOldError;
-  // test script completion
+  try { docHead = document.getElementsByTagName('head')[0]; }
+  catch (e) { docHead = false; }
 
   /**
    * extract line numbers from an exception.
@@ -130,16 +110,16 @@ var Executor;
   function getLineNumberFromException(e) {
     var lines;
     var phrases;
-    if (typeof(e.lineNumber) !== "undefined" && e.lineNumber !== null) {
-      return e.lineNumber;
+    if (typeof(e.lineNumber) !== 'undefined' && e.lineNumber !== null) {
+      return e.lineNumber + onErrorOffset;
     }
-    if (typeof(e.line) !== "undefined" && e.line !== null) {
-      return e.line;
+    if (typeof(e.line) !== 'undefined' && e.line !== null) {
+      return e.line + onErrorOffset;
     }
     if (e.stack) {
-      lines = e.stack.split("\n");
-      phrases = lines[1].split(":");
-      return phrases[phrases.length - 2];
+      lines = e.stack.split('\n');
+      phrases = lines[1].split(':');
+      return phrases[phrases.length - 2] + onErrorOffset;
     }
   }
 
@@ -161,22 +141,22 @@ var Executor;
    */
   function executeJavaScriptModule(code, options) {
     var errorObject = null;
-    var sourceString = IS_IE ? "" : "//@ sourceURL=" + options.url;
+    var sourceString = IS_IE ? '' : '//@ sourceURL=' + options.url;
     var result;
 
     options = {
       moduleId: options.moduleId || null,
       functionId: options.functionId || null,
-      preamble: options.preamble || "",
-      preambleLength: options.preamble.split("\n").length + 1,
-      epilogue: options.epilogue || "",
-      epilogueLength: options.epilogue.split("\n").length + 1,
+      preamble: options.preamble || '',
+      preambleLength: options.preamble.split('\n').length + 1,
+      epilogue: options.epilogue || '',
+      epilogueLength: options.epilogue.split('\n').length + 1,
       originalCode: options.originalCode || code,
       url: options.url || null
     };
 
     // add source string in sourcemap compatible browsers
-    code = [code, sourceString].join("\n");
+    code = [code, sourceString].join('\n');
 
     /**
      * a temp error handler that lasts for the duration of this code
@@ -189,20 +169,19 @@ var Executor;
      * @param {int} line - the line number of the error
      * @param {string} type - the type of error (runtime, parse)
      */
-    var tempErrorHandler = function(err, where, line, type) {
+    var tempErrorHandler = function (err, where, line, type) {
       var actualErrorLine =  line - options.preambleLength;
-      var originalCodeLength = options.originalCode.split("\n").length;
-      var message = "";
+      var originalCodeLength = options.originalCode.split('\n').length;
+      var message = '';
 
-      switch(type) {
-        case "runtime":
-          message = "Runtime error in " + options.moduleId + " (" + options.url + ") on line " + actualErrorLine + ":\n  " + err;
-          break;
-        case "parse":
-        default:
-          // end of input test
-          actualErrorLine = (actualErrorLine > originalCodeLength) ? originalCodeLength : actualErrorLine;
-          message = "Parsing error in " + options.moduleId + " (" + options.url + ") on line " + actualErrorLine + ":\n  " + err;
+      if (type === 'runtime') {
+        message = 'Runtime error in ' + options.moduleId + ' (' + options.url + ') on line ' + actualErrorLine + ':\n  ' + err;
+      }
+      else {
+        // case: parse
+        // end of input test
+        actualErrorLine = (actualErrorLine > originalCodeLength) ? originalCodeLength : actualErrorLine;
+        message = 'Parsing error in ' + options.moduleId + ' (' + options.url + ') on line ' + actualErrorLine + ':\n  ' + err;
       }
 
       // set the error object global to the executor's run
@@ -235,33 +214,38 @@ var Executor;
         // eval. This means we are doing dual eval (one for parse, one for
         // runtime) when sourceMap is enabled. Some people really want their
         // debug.
-        var toExec = code.replace(/([\w\W]+?)=([\w\W]*})[\w\W]*?$/, "$1 = ($2)();");
+        var toExec = code.replace(/([\w\W]+?)=([\w\W]*\})[\w\W]*?$/, '$1 = ($2)();');
         var relativeE;
-        toExec = [toExec, sourceString].join("\n");
+        toExec = [toExec, sourceString].join('\n');
         if (!context.Inject.INTERNAL.execute[options.functionId]) {
           // there is nothing to run, so there must have been an uncaught
-          // syntax error (firefox). 
+          // syntax error (firefox).
           try {
-            try { eval("+\n//@ sourceURL=Inject-Executor-line.js"); } catch (ee) { relativeE = ee; }
+            try { eval('+\n//@ sourceURL=Inject-Executor-line.js'); } catch (ee) { relativeE = ee; }
             eval(toExec);
           }
-          catch(e) {
+          catch (e) {
             if (e.lineNumber && relativeE.lineNumber) {
               e.lineNumber = e.lineNumber - relativeE.lineNumber + 1;
             }
             else {
               e.lineNumber = getLineNumberFromException(e);
             }
-            tempErrorHandler(e.message, null, e.lineNumber, "parse")
+            tempErrorHandler(e.message, null, e.lineNumber, 'parse');
           }
         }
         else {
           // again, we are creating a "relativeE" to capture the eval line
           // this allows us to get accurate line numbers in firefox
-          try { eval("+\n//@ sourceURL=Inject-Executor-line.js"); } catch (ee) { relativeE = ee; }
+          try {
+            eval('+\n//@ sourceURL=Inject-Executor-line.js');
+          }
+          catch (ee) {
+            relativeE = ee;
+          }
           eval(toExec);
         }
-        
+
         if (context.Inject.INTERNAL.execute[options.functionId]) {
           result = context.Inject.INTERNAL.execute[options.functionId];
           // set the error object using our standard method
@@ -273,7 +257,7 @@ var Executor;
             else {
               result.error.lineNumber = getLineNumberFromException(result.error);
             }
-            tempErrorHandler(result.error.message, null, result.error.lineNumber, "runtime");
+            tempErrorHandler(result.error.message, null, result.error.lineNumber, 'runtime');
           }
         }
       }
@@ -282,7 +266,7 @@ var Executor;
         // into result.error for us from commonjs harness
         result = context.Inject.INTERNAL.execute[options.functionId]();
         if (result.error) {
-          tempErrorHandler(result.error.message, null, getLineNumberFromException(result.error), "runtime");
+          tempErrorHandler(result.error.message, null, getLineNumberFromException(result.error), 'runtime');
         }
       }
     }
@@ -301,7 +285,7 @@ var Executor;
     context.onerror = initOldError;
 
     // clean up the function or object we globally created if it exists
-    if(context.Inject.INTERNAL.execute[options.functionId]) {
+    if (context.Inject.INTERNAL.execute[options.functionId]) {
       delete context.Inject.INTERNAL.execute[options.functionId];
     }
 
@@ -309,14 +293,14 @@ var Executor;
     return result;
   }
 
-  var AsStatic = Class.extend(function() {
+  var AsStatic = Class.extend(function () {
     var functionCount = 0;
     return {
       /**
        * Create the executor and initialize its caches
        * @constructs Executor
        */
-      init: function() {
+      init: function () {
         this.clearCaches();
       },
 
@@ -325,7 +309,7 @@ var Executor;
        * @method Executor.clearCaches
        * @public
        */
-      clearCaches: function() {
+      clearCaches: function () {
         // cache of resolved exports
         this.cache = {};
 
@@ -355,7 +339,7 @@ var Executor;
        * @param {string} path - the path for the current module
        * @public
        */
-      defineExecutingModuleAs: function(moduleId, path) {
+      defineExecutingModuleAs: function (moduleId, path) {
         return this.anonymousAMDStack.push({
           id: moduleId,
           path: path
@@ -367,7 +351,7 @@ var Executor;
        * @method Executor.undefineExecutingModule
        * @public
        */
-      undefineExecutingModule: function() {
+      undefineExecutingModule: function () {
         return this.anonymousAMDStack.pop();
       },
 
@@ -377,7 +361,7 @@ var Executor;
        * @public
        * @returns {object} the id and path of the current module
        */
-      getCurrentExecutingAMD: function() {
+      getCurrentExecutingAMD: function () {
         return this.anonymousAMDStack[this.anonymousAMDStack.length - 1];
       },
 
@@ -389,10 +373,10 @@ var Executor;
        * @param {Function} callback - a callback to run when the tree is executed
        * @public
        */
-      runTree: function(root, files, callback) {
+      runTree: function (root, files, callback) {
         // do a post-order traverse of files for execution
         var returns = [];
-        root.postOrder(function(node) {
+        root.postOrder(function (node) {
           if (!node.getValue().name) {
             return; // root node
           }
@@ -424,7 +408,7 @@ var Executor;
        * @public
        * @returns {Object} - a module object representation
        */
-      createModule: function(moduleId, path) {
+      createModule: function (moduleId, path) {
         var module;
         if (!this.cache[moduleId]) {
           module = {};
@@ -432,23 +416,25 @@ var Executor;
           module.uri = path || null;
           module.exports = {};
           module.error = null;
-          module.setExports = function(xobj) {
+          module.setExports = function (xobj) {
             for (var name in module.exports) {
-              debugLog("cannot setExports when exports have already been set. setExports skipped");
+              debugLog('cannot setExports when exports have already been set. setExports skipped');
               return;
             }
-            switch(typeof(xobj)) {
-              case "object":
-                // objects are enumerated and added
-                for (var name in xobj) {
-                  module.exports[name] = xobj[name];
-                }
-                break;
-              case "function":
-              default:
-                // non objects are written directly, blowing away exports
-                module.exports = xobj;
-                break;
+            switch (typeof(xobj)) {
+            case 'object':
+              // objects are enumerated and added
+              for (var name in xobj) {
+                module.exports[name] = xobj[name];
+              }
+              break;
+            case 'function':
+              module.exports = xobj;
+              break;
+            default:
+              // non objects are written directly, blowing away exports
+              module.exports = xobj;
+              break;
             }
           };
 
@@ -472,7 +458,7 @@ var Executor;
        * @public
        * @returns {boolean} if the module is AMD defined
        */
-      isModuleDefined: function(moduleId) {
+      isModuleDefined: function (moduleId) {
         return this.defined[moduleId];
       },
 
@@ -482,7 +468,7 @@ var Executor;
        * @param {string} moduleId - the module ID
        * @public
        */
-      flagModuleAsDefined: function(moduleId) {
+      flagModuleAsDefined: function (moduleId) {
         this.defined[moduleId] = true;
       },
 
@@ -492,7 +478,7 @@ var Executor;
        * @param {string} moduleId - the module ID
        * @public
        */
-      flagModuleAsBroken: function(moduleId) {
+      flagModuleAsBroken: function (moduleId) {
         this.broken[moduleId] = true;
       },
 
@@ -502,7 +488,7 @@ var Executor;
        * @param {string} moduleId - the module ID
        * @public
        */
-      flagModuleAsCircular: function(moduleId) {
+      flagModuleAsCircular: function (moduleId) {
         this.circular[moduleId] = true;
       },
 
@@ -513,7 +499,7 @@ var Executor;
        * @public
        * @returns {boolean} true if the module is circular
        */
-      isModuleCircular: function(moduleId) {
+      isModuleCircular: function (moduleId) {
         return this.circular[moduleId];
       },
 
@@ -524,9 +510,9 @@ var Executor;
        * @public
        * @returns {object} the module at the identifier
        */
-      getModule: function(moduleId) {
+      getModule: function (moduleId) {
         if (this.broken[moduleId] && this.broken.hasOwnProperty(moduleId)) {
-          throw new Error("module "+moduleId+" failed to load successfully");
+          throw new Error('module ' + moduleId + ' failed to load successfully');
         }
         return this.cache[moduleId] || null;
       },
@@ -540,8 +526,8 @@ var Executor;
        * @param {object} pointcuts - the AOP pointcuts for the module
        * @public
        */
-      runModule: function(moduleId, code, path, pointcuts) {
-        debugLog("Executor", "executing " + path);
+      runModule: function (moduleId, code, path, pointcuts) {
+        debugLog('Executor', 'executing ' + path);
         // check cache
         if (this.cache[moduleId] && this.executed[moduleId]) {
           return this.cache[moduleId];
@@ -552,24 +538,21 @@ var Executor;
           return this.cache[moduleId];
         }
 
-        var functionId = "exec" + (functionCount++);
+        var functionId = 'exec' + (functionCount++);
 
-        function swap__VARS__(text) {
+        function swapUnderscoreVars(text) {
           return text.replace(/__MODULE_ID__/g, moduleId)
                                    .replace(/__MODULE_URI__/g, path)
                                    .replace(/__FUNCTION_ID__/g, functionId)
                                    .replace(/__INJECT_NS__/g, NAMESPACE)
-                                   .replace(/__POINTCUT_BEFORE__/g, pointcuts.before || "")
-                                   .replace(/__POINTCUT_AFTER__/g, pointcuts.after || "");
+                                   .replace(/__POINTCUT_BEFORE__/g, pointcuts.before || '')
+                                   .replace(/__POINTCUT_AFTER__/g, pointcuts.after || '');
         }
 
-        var header = swap__VARS__(commonJSHeader);
-        var footer = swap__VARS__(commonJSFooter);
-        var runCommand = ([header, ";", code, footer]).join("\n");
-        var errorObject;
+        var header = swapUnderscoreVars(commonJSHeader);
+        var footer = swapUnderscoreVars(commonJSFooter);
+        var runCommand = ([header, ';', code, footer]).join('\n');
         var result;
-        var actualErrorLine;
-        var message;
 
         result = executeJavaScriptModule(runCommand, {
           moduleId: moduleId,
@@ -578,11 +561,11 @@ var Executor;
           epilogue: footer,
           originalCode: code,
           url: path
-        });    
+        });
 
         // if a global error object was created
         if (result && result.error) {
-          Inject.clearCache();
+          context[NAMESPACE].clearCache();
           throw result.error;
         }
 
@@ -592,7 +575,7 @@ var Executor;
         }
 
         this.executed[moduleId] = true;
-        debugLog("Executor", "executed", moduleId, path, result);
+        debugLog('Executor', 'executed', moduleId, path, result);
 
         // return the result
         return result;

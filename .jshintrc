@@ -42,5 +42,53 @@
   "shadow"      : true,
   "sub"         : true,
   "supernew"    : false,
-  "validthis"   : false
+  "validthis"   : false,
+
+  "predef": [
+    "Class",
+    "easyXDM",
+    "lscache",
+    "LinkJS",
+
+    "Analyzer",
+    "Communicator",
+    "Executor",
+    "InjectCore",
+    "RequireContext",
+    "RulesEngine",
+    "TreeDownloader",
+    "TreeNode",
+
+    "ABSOLUTE_PATH_REGEX",
+    "BASIC_FILE_SUFFIX",
+    "BUILTINS",
+    "DEFINE_EXTRACTION_REGEX",
+    "FILE_STORAGE_TOKEN",
+    "FILE_SUFFIX_REGEX",
+    "FUNCTION_BODY_REGEX",
+    "HAS_LOCAL_STORAGE",
+    "HOST_PREFIX_REGEX",
+    "HOST_SUFFIX_REGEX",
+    "IS_IE",
+    "IS_GK",
+    "LOCAL_EASY_XDM",
+    "LSCACHE_APP_KEY_STRING",
+    "LSCACHE_SCHEMA_VERSION_STRING",
+    "LSCACHE_SCHEMA_VERSION",
+    "NAMESPACE",
+    "PROTOCOL_EXPANDED_REGEX",
+    "PROTOCOL_EXPANDED_STRING",
+    "PROTOCOL_REGEX",
+    "PROTOCOL_STRING",
+
+
+    "commonJSHeader",
+    "commonJSFooter",
+
+    "userConfig",
+    "each",
+    "proxy",
+    "debugLog",
+    "getXhr"
+  ]
 }
