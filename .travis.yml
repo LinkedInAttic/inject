@@ -5,6 +5,7 @@ before_install:
   - git submodule update --init --recursive
 before_script:
   - npm install
+  - ./node_modules/.bin/jshint .
   - node makefile.js build
   - node makefile.js docs
   - node makefile.js server &
