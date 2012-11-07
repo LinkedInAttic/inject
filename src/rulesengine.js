@@ -80,7 +80,6 @@ var RulesEngine;
        * @param {String} relativeTo - a base path for relative identifiers
        * @public
        * @returns {String} the resolved identifier
-       * @see RulesEngine.applyRules
        */
       resolveIdentifier: function (identifier, relativeTo) {
         if (!relativeTo) {
@@ -156,8 +155,13 @@ var RulesEngine;
         // exit early on resolved http URL
         if (ABSOLUTE_PATH_REGEX.test(path)) {
           // store pointcuts based on the resolved URL
-          this.pointcuts[resolvedUrl] = result.pointcuts;
+          this.pointcuts[path] = result.pointcuts;
           return path;
+        }
+
+        if (!path.length) {
+          this.pointcuts['__INJECT_no_path'] = result.pointcuts;
+          return '';
         }
 
         // take off the :// to replace later
@@ -174,7 +178,7 @@ var RulesEngine;
 
         resolvedUrl = resolvedUrl.replace(PROTOCOL_EXPANDED_REGEX, PROTOCOL_STRING);
 
-        if (userConfig.useSuffix && !FILE_SUFFIX_REGEX.test(resolvedUrl)) {
+        if (result.useSuffix && userConfig.useSuffix && !FILE_SUFFIX_REGEX.test(resolvedUrl)) {
           resolvedUrl = resolvedUrl + BASIC_FILE_SUFFIX;
         }
 
@@ -236,31 +240,34 @@ var RulesEngine;
        * @returns {Object} an object containing all pointcuts for the URL
        */
       getPointcuts: function (path, asString) {
+        // allow lookup for empty path
+        path = path || '__INJECT_no_path';
         var pointcuts = this.pointcuts[path] || {before: [], after: []};
-        var result = {
-          before: [],
-          after: []
-        };
+        var result = {};
         var pointcut;
+        var type;
 
         if (typeof(asString) === 'undefined') {
-          return {
-            before: pointcuts.before,
-            after: pointcuts.after
-          };
+          return pointcuts;
         }
 
-        for (var i = 0, len = pointcuts.before.length; i < len; i++) {
-          pointcut = pointcuts.before[i];
-          result.before.push(functionToPointcut(pointcut));
-        }
-        for (var i = 0, len = pointcuts.after.length; i < len; i++) {
-          pointcut = pointcuts.after[i];
-          result.after.push(functionToPointcut(pointcut));
+        for (type in pointcuts) {
+          if (pointcuts.hasOwnProperty(type)) {
+            for (var i = 0, len = pointcuts[type].length; i < len; i++) {
+              pointcut = pointcuts[type][i];
+              if (!result[type]) {
+                result[type] = [];
+              }
+              result[type].push(functionToPointcut(pointcut));
+            }
+          }
         }
 
-        result.before = result.before.join('\n');
-        result.after = result.after.join('\n');
+        for (type in result) {
+          if (result.hasOwnProperty(type)) {
+            result[type] = result[type].join('\n');
+          }
+        }
 
         return result;
 
@@ -284,8 +291,9 @@ var RulesEngine;
        * <li>ruleSet.path: a path to use instead of a derived path<br>
        *  you can also set ruleSet.path to a function, and that function will
        *  passed the current path for mutation</li>
-       * <li>ruleSet.pointcuts.before: a function to run before executing this module</li>
-       * <li>ruleSet.pointcuts.after: a function to run after executing this module</li>
+       * <li>ruleSet.pointcuts.afterFetch: a function to mutate the file after retrieval, but before analysis</li>
+       * <li>ruleSet.pointcuts.before (deprecated): a function to run before executing this module</li>
+       * <li>ruleSet.pointcuts.after (deprecated): a function to run after executing this module</li>
        * </ul>
        * @method RulesEngine.addRule
        * @param {RegExp|String} regexMatch - a stirng or regex to match on
@@ -320,14 +328,22 @@ var RulesEngine;
           };
         }
 
+        if (!ruleSet.pointcuts) {
+          ruleSet.pointcuts = {};
+        }
+
+        if (ruleSet.pointcuts.before || ruleSet.pointcuts.after) {
+          debugLog('RulesEngine', 'deprecated pointcuts in rule for ' + regexMatch.toString());
+        }
+
         rulesIsDirty = true;
         rules.push({
           matches: ruleSet.matches || regexMatch,
           weight: ruleSet.weight || weight,
+          useSuffix: (ruleSet.useSuffix === false) ? false : true,
           last: ruleSet.last || false,
           path: ruleSet.path,
-          pcAfter: (ruleSet.pointcuts && ruleSet.pointcuts.after) ? ruleSet.pointcuts.after : null,
-          pcBefore: (ruleSet.pointcuts && ruleSet.pointcuts.before) ? ruleSet.pointcuts.before : null
+          pointcuts: ruleSet.pointcuts || {}
         });
 
       },
@@ -367,8 +383,8 @@ var RulesEngine;
 
         var result = path;
         var payload;
-        var beforePointCuts = [];
-        var afterPointCuts = [];
+        var allPointcuts = {};
+        var useSuffix = true;
         var done = false;
         each(rules, function (rule) {
           if (done) {
@@ -392,12 +408,19 @@ var RulesEngine;
               result = rule.path(result);
             }
 
-            if (rule.pcBefore) {
-              beforePointCuts.push(rule.pcBefore);
+            if (rule.useSuffix === false) {
+              useSuffix = false;
             }
-            if (rule.pcAfter) {
-              afterPointCuts.push(rule.pcAfter);
+
+            for (var type in rule.pointcuts) {
+              if (rule.pointcuts.hasOwnProperty(type)) {
+                if (!allPointcuts[type]) {
+                  allPointcuts[type] = [];
+                }
+                allPointcuts[type].push(rule.pointcuts[type]);
+              }
             }
+
             if (rule.last) {
               done = true;
             }
@@ -407,10 +430,8 @@ var RulesEngine;
 
         payload = {
           resolved: result || '',
-          pointcuts: {
-            before: beforePointCuts,
-            after: afterPointCuts
-          }
+          useSuffix: useSuffix,
+          pointcuts: allPointcuts
         };
 
         return payload;

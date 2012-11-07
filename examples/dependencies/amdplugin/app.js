@@ -15,11 +15,6 @@ express or implied.   See the License for the specific language
 governing permissions and limitations under the License.
 */
 
-function run() {
-  var $ = require("jquery.ui.button");
-  require("bar");
-  
-  $("a.button").button();
-}
-
-exports.run = run;
+define(['text!the.txt'], function(txt) {
+  debugger;
+});

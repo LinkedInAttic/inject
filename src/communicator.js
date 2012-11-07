@@ -202,6 +202,18 @@ var Communicator;
       },
 
       /**
+      * A noop for just running the callback. Useful for a passthrough
+      * operation
+      * @param {string} moduleId - The id of the module to be fetched
+      * @param {string} url - The location of the script to be fetched
+      * @param {object} callback - The function callback to execute after the file is retrieved and loaded
+      * @public
+      */
+      noop: function (moduleId, url, callback) {
+        callback('');
+      },
+
+      /**
       * retrieve file via download or cache keyed by the given url
       * @method Communicator.get
       * @param {string} moduleId - The id of the module to be fetched

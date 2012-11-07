@@ -75,6 +75,19 @@ var InjectCore;
       },
 
       /**
+       * add a plugin to the Inject system
+       * @method InjectCore.plugin
+       * @param {string} plugin - the name of the plugin (comes before ! in require calls)
+       * @param {object} ruleSet - a ruleSet to be assigned to addRule
+       * @param {object} functions - a collection of functions to be made available under .plugins[plugin]
+       */
+      plugin: function (plugin, ruleSet, functions, scope) {
+        RulesEngine.addRule(new RegExp('^' + plugin + '!'), ruleSet);
+        scope.plugins = scope.plugins || {};
+        scope.plugins[plugin] = functions;
+      },
+
+      /**
        * set the base path for all module includes
        * @method InjectCore.setModuleRoot
        * @param {string} root - the fully qualified URL for modules to be included from

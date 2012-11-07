@@ -21,42 +21,30 @@
     <script src="/ie-localstorage-json-shim.js" type="text/javascript" id="ie-localstorage-shim"></script>
   <![endif]-->
   <script type="text/javascript" src="/inject.js"></script>
+  <script type="text/javascript" src="/inject-plugins.js"></script>
 </head>
 <body>
 
-<h2>Pointcuts</h2>
+<h2>addRule and Plugins</h2>
 
 <div class="about">
-  <p>Items that haven't been properly externalized can still be captured. In this example, jQuery is loaded using the pointcuts in "view source". The "after" cut captures the results of jQuery.noConflict() and stores it as the module.exports. This makes $ available just like a developer would expect within their modules.</p>
+  <p>Let's load some css. The plugin syntax "css!" loads up your CSS and returns an attachable object</p>
+
+  <p>The link below will turn red once the CSS has loaded</p>
 </div>
 
 <textarea id="code">
 sandbox([
-  '<p id="output-jq"></p>'
+  '<p><a href="#" class="button">I am a link</a></p>',
+  '<p id="output-foo"></p>'
 ]);
 
 Inject.reset();
-Inject.setModuleRoot("/examples/dependencies/pointcuts/");
+Inject.setModuleRoot("/examples/dependencies/addruleplugin/");
 
-Inject.manifest({
-  "jQuery": {
-    path: "jquery-1.6.4.min.js",
-    pointcuts: {
-      afterFetch: function(text) {
-        return [
-          text,
-          'module.exports = jQuery.noConflict();',
-        ''].join('\n');
-      }
-    }
-  }
-});
-
-require.ensure(["foo", "jQuery"], function(require) {
-  var foo = require("foo"),
-      $ = require("jQuery");
-
-  $("#output-jq").html(foo.sampleString);
+require.ensure(["app"], function() {
+  var app = require("app");
+  app.run();
 });
 </textarea>
 

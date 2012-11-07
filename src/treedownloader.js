@@ -134,6 +134,7 @@ var TreeDownloader = Class.extend(function () {
       var parentName =  (node.getParent() && node.getParent().getValue()) ?
                          node.getParent().getValue().name :
                          '';
+      var getFunction = null;
 
       // get the path and REAL identifier for this module (resolve relative references)
       var identifier = RulesEngine.resolveIdentifier(node.getValue().name, parentName);
@@ -153,8 +154,23 @@ var TreeDownloader = Class.extend(function () {
       }
 
       this.log('requesting file', node.getValue().path);
-      Communicator.get(node.getValue().name, node.getValue().path, proxy(function (contents) {
+      getFunction = (node.getValue().path) ? Communicator.get : Communicator.noop;
+      getFunction(node.getValue().name, node.getValue().path, proxy(function (contents) {
         this.log('download complete', node.getValue().path);
+
+        // afterFetch pointcut if available
+        // this.pointcuts[resolvedUrl] = result.pointcuts;
+        var pointcuts = RulesEngine.getPointcuts(node.getValue().path);
+        var pointcutsStr = RulesEngine.getPointcuts(node.getValue().path, true);
+        var afterFetch = pointcuts.afterFetch || [];
+        for (var i = 0, len = afterFetch.length; i < len; i++) {
+          contents = afterFetch[i](contents, node.getValue().name);
+        }
+        
+        var before = (pointcutsStr.before) ? [pointcutsStr.before, '\n'].join('') : '';
+        var after = (pointcutsStr.after) ? [pointcutsStr.after, '\n'].join('') : '';
+        contents = [before, contents, after].join('');
+
         var parent = node;
         var found = {};
         var value;

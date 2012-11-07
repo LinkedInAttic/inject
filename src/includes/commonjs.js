@@ -41,7 +41,6 @@ var commonJSHeader = (['',
   '          require = __INJECT_NS__.INTERNAL.createRequire(module.id, module.uri),',
   '          define = __INJECT_NS__.INTERNAL.createDefine(module.id, module.uri),',
   '          exports = module.exports;',
-  '      ;__POINTCUT_BEFORE__',
   '']).join('\n');
 
 /**
@@ -51,7 +50,6 @@ var commonJSHeader = (['',
     @global
 */
 var commonJSFooter = (['',
-  '      ;__POINTCUT_AFTER__;',
   '    __INJECT_NS__.INTERNAL.modules.__FUNCTION_ID__ = module;',
   '    };',
   '    __INJECT_NS__.INTERNAL.defineExecutingModuleAs("__MODULE_ID__", "__MODULE_URI__");',
