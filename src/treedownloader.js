@@ -134,9 +134,10 @@ var TreeDownloader = Class.extend(function() {
       var parentPath = (node.getParent() && node.getParent().getValue())
                         ? node.getParent().getValue().path
                         : userConfig.moduleRoot;
-      var parentName =  (node.getParent() && node.getParent().getValue())
+      var parentName = (node.getParent() && node.getParent().getValue())
                         ? node.getParent().getValue().name
                         : "";
+      var getFunction = null;
 
       // get the path and REAL identifier for this module (resolve relative references)
       var identifier = RulesEngine.resolveIdentifier(node.getValue().name, parentName);
@@ -156,7 +157,8 @@ var TreeDownloader = Class.extend(function() {
       }
 
       this.log("requesting file", node.getValue().path);
-      Communicator.get(node.getValue().name, node.getValue().path, proxy(function(contents) {
+      getFunction = (node.getValue().path) ? Communicator.get : Communicator.noop;
+      getFunction(node.getValue().name, node.getValue().path, proxy(function(contents) {
         this.log("download complete", node.getValue().path);
 
         // afterFetch pointcut if available
@@ -165,7 +167,7 @@ var TreeDownloader = Class.extend(function() {
         var pointcutsStr = RulesEngine.getPointcuts(node.getValue().path, true);
         var afterFetch = pointcuts.afterFetch || [];
         for (var i = 0, len = afterFetch.length; i < len; i++) {
-          contents = afterFetch[i](contents);
+          contents = afterFetch[i](contents, node.getValue().name);
         }
         
         var before = (pointcutsStr.before) ? [pointcutsStr.before, '\n'].join('') : '';

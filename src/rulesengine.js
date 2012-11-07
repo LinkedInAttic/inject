@@ -80,7 +80,6 @@ var RulesEngine;
        * @param {String} relativeTo - a base path for relative identifiers
        * @public
        * @returns {String} the resolved identifier
-       * @see RulesEngine.applyRules
        */
       resolveIdentifier: function(identifier, relativeTo) {
         if (!relativeTo) {
@@ -156,8 +155,13 @@ var RulesEngine;
         // exit early on resolved http URL
         if (ABSOLUTE_PATH_REGEX.test(path)) {
           // store pointcuts based on the resolved URL
-          this.pointcuts[resolvedUrl] = result.pointcuts;
+          this.pointcuts[path] = result.pointcuts;
           return path;
+        }
+
+        if (!path.length) {
+          this.pointcuts['__INJECT_no_path'] = result.pointcuts;
+          return '';
         }
 
         // take off the :// to replace later
@@ -235,6 +239,9 @@ var RulesEngine;
        * @returns {Object} an object containing all pointcuts for the URL
        */
       getPointcuts: function(path, asString) {
+        // allow lookup for empty path
+        path = path || '__INJECT_no_path';
+
         var pointcuts = this.pointcuts[path] || {before: [], after: []};
         var result = {};
         var pointcut;

@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <!--
+    Inject
+    Copyright 2011 LinkedIn
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing,
+    software distributed under the License is distributed on an "AS
+    IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+    express or implied.   See the License for the specific language
+    governing permissions and limitations under the License.
+  -->
+  <!--[if lte IE 7]>
+    <script src="/ie-localstorage-json-shim.js" type="text/javascript" id="ie-localstorage-shim"></script>
+  <![endif]-->
+  <script type="text/javascript" src="/inject.js"></script>
+</head>
+<body>
+
+<h2>AMD Loader Plugins</h2>
+
+<div class="about">
+  <p>This uses the AMD "Loader Plugins" framework via addRule. It's a great recipie to support AMD loaders when you need to just drop in a solution</p>
+
+  <p>The link below will turn red once the CSS has loaded</p>
+</div>
+
+<textarea id="code">
+sandbox([
+  '<p><a href="#" class="button">I am a link</a></p>',
+  '<p id="output-foo"></p>'
+]);
+
+Inject.reset();
+Inject.setModuleRoot("/examples/dependencies/amdplugin/");
+
+/*
+    A
+    |
+  B!foo
+
+becomes
+
+    A (modify to do require B and invoke B with "foo")
+    |
+    B
+*/
+
+Inject.addRule(/^.+?\!.+$/, {
+  last: true,
+  path: function(path) {
+    return ''; // no path, no fetch!
+  },
+  pointcuts: {
+    afterFetch: function(text, oldName) {
+      var pieces = oldName.split('!');
+      var plugin = pieces[0];
+      var identifier = pieces[1];
+      var result = ['',
+        'var plugin = require("__PLUGIN__");',
+        'var noNormalize = function(name, cb) { cb(name); };',
+        'var normalizeFn = (plugin.normalize) ? plugin.normalize : noNormalize;',
+        'normalizeFn(__IDENTIFIER__, function(normalName) {',
+        '  plugin.load(normalName, require, function(contents) {',
+        '    module.exports = contents;',
+        '  }, __CONFIG__) {',
+        '});',
+        ''].join('\n')
+        .replace(/__PLUGIN__/g, plugin)
+        .replace(/__IDENTIFIER__/g, 'decodeURIComponent("' + encodeURIComponent(identifier) + '")')
+        .replace(/__CONFIG__/g, 'JSON.parse(decodeURIComponent("' + encodeURIComponent('{}') + '"))');
+      debugger;
+      return result;
+    }
+  }
+});
+
+require.ensure(["app"], function() {
+  var app = require("app");
+  app.run();
+});
+</textarea>
+
+<script type="text/javascript" src="resources/layout.js"></script>
+
+</body>
+</html>
