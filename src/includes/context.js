@@ -96,11 +96,12 @@ context.Inject = {
         return ''; // no path, no fetch!
       },
       pointcuts: {
-        afterFetch: function(text, oldName) {
-          var pieces = oldName.split('!');
+        afterFetch: function(text, moduleName) {
+          var pieces = moduleName.split('!');
           var plugin = pieces[0];
           var result = ['',
             'module.frozen = true;',
+            'var fullName = __FULL_NAME__;',
             'var plugin = require("__PLUGIN__");',
             'var noNormalize = function(name, cb) { cb(name); };',
             'var normalizeFn = (plugin.normalize) ? plugin.normalize : noNormalize;',
@@ -111,7 +112,8 @@ context.Inject = {
             'pieces.shift();',
             'fragment = pieces.join("!");',
             'globalNormalize = function (path) {',
-            '  return Inject.INTERNAL.normalize(path, "__PLUGIN__");',
+            ' debugger;',
+            '  return Inject.INTERNAL.normalize(path, "__PARENT_MODULE_ID__");', // WHAT IS THIS AND HOW TO MAKE DYNAMIC
             '};',
             'normalized = (plugin.normalize) ? plugin.normalize(fragment, globalNormalize) : fragment;',
             'function cb(contents) {',
@@ -140,7 +142,7 @@ context.Inject = {
             'plugin.load(normalized, require, cb, __CONFIG__);',
             ''].join('\n')
             .replace(/__PLUGIN__/g, plugin)
-            .replace(/__FULL_NAME__/g, 'decodeURIComponent("' + encodeURIComponent(oldName) + '")')
+            .replace(/__FULL_NAME__/g, 'decodeURIComponent("' + encodeURIComponent(moduleName) + '")')
             .replace(/__CONFIG__/g, 'JSON.parse(decodeURIComponent("' + encodeURIComponent('{}') + '"))');
           return result;
         }

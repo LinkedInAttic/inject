@@ -256,7 +256,6 @@ var TreeDownloader = Class.extend(function () {
  * @method TreeDownloader.createNode
  * @param {string} name - the moduleId for the tree node
  * @param {string} path - the URL for the module
- * @param {boolean} isCircular - if true, this node is a circular reference
  * @public
  * @returns {TreeNode} the created TreeNode object
  */
