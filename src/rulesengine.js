@@ -219,7 +219,7 @@ var RulesEngine;
           else if (piece === '..') {
             // up one directory
             if (resolved.length === 0) {
-              throw new Error('could not traverse higher than highest path');
+              throw new Error('could not traverse higher than highest path: ' + id + ', ' + base);
             }
             resolved.pop();
           }
