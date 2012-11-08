@@ -110,16 +110,17 @@ var Executor;
   function getLineNumberFromException(e) {
     var lines;
     var phrases;
+    var offset = parseInt(onErrorOffset, 10);
     if (typeof(e.lineNumber) !== 'undefined' && e.lineNumber !== null) {
-      return e.lineNumber + onErrorOffset;
+      return parseInt(e.lineNumber, 10) + offset;
     }
     if (typeof(e.line) !== 'undefined' && e.line !== null) {
-      return e.line + onErrorOffset;
+      return parseInt(e.line, 10) + offset;
     }
     if (e.stack) {
       lines = e.stack.split('\n');
       phrases = lines[1].split(':');
-      return phrases[phrases.length - 2] + onErrorOffset;
+      return parseInt(phrases[phrases.length - 2], 10) + offset;
     }
   }
 
@@ -396,7 +397,7 @@ var Executor;
             // resovled name
             module = Executor.runModule(resolvedId, file, path);
             if (module.frozen) {
-              frozen[module.uri] = module;
+              frozen[module.id] = module;
             }
             returns.push(module);
           }
@@ -407,6 +408,7 @@ var Executor;
         // no longer "frozen". This forces a synchronous load. About
         // the only system on the planet that wants to do this is the
         // AMD PluginLoader system
+        var cycleScope = this;
         function checkFrozen() {
           for (var modPath in frozen) {
             if (!frozen.hasOwnProperty(modPath)) {
@@ -414,11 +416,20 @@ var Executor;
             }
             if (frozen[modPath].frozen) {
               // still frozen (synchronous mode)
-              context.setTimeout(checkFrozen, 10);
+              context.setTimeout(proxy(checkFrozen, cycleScope), 10);
               return;
             }
           }
-          // nothing frozen
+          // nothing frozen. Handle module aliases. WARNING: CJS violation here... AMD normalize() effects
+          for (var modPath in frozen) {
+            if (!frozen.hasOwnProperty(modPath)) {
+              continue;
+            }
+            if (frozen[modPath].alias) {
+              this.cache[frozen[modPath].alias] = frozen[modPath];
+              this.executed[frozen[modPath].alias] = true;
+            }
+          }
           callback(returns);
         }
         checkFrozen();

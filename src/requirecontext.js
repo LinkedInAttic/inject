@@ -242,6 +242,7 @@ var RequireContext = Class.extend(function () {
       var args = Array.prototype.slice.call(arguments, 0);
       var id = null;
       var dependencies = ['require', 'exports', 'module'];
+      var dependenciesDeclared = false;
       var executionFunctionOrLiteral = {};
       var remainingDependencies = [];
       var resolvedDependencyList = [];
@@ -285,6 +286,7 @@ var RequireContext = Class.extend(function () {
           break;
         case 'dependencies':
           dependencies = value;
+          dependenciesDeclared = true;
           break;
         case 'executionFunctionOrLiteral':
           executionFunctionOrLiteral = value;
@@ -324,11 +326,12 @@ var RequireContext = Class.extend(function () {
       }
       Executor.flagModuleAsDefined(id);
 
-      if (typeof(executionFunctionOrLiteral) === 'function') {
+      if (!dependenciesDeclared && typeof(executionFunctionOrLiteral) === 'function') {
         // with Link.JS, we need to convert from a function object to
         // a statement
         var fnBody = ['(', executionFunctionOrLiteral.toString().replace(/^\s+/, '').replace(/\s+$/, ''), ')'].join('');
-        dependencies.concat(Analyzer.extractRequires(fnBody));
+        var analyzedRequires = Analyzer.extractRequires(fnBody).requires;
+        dependencies.concat(analyzedRequires.requires);
       }
 
       this.log('AMD define(...) of ' + id + ' depends on: ' + dependencies.join(', '));

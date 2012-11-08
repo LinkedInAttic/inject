@@ -134,11 +134,17 @@ var TreeDownloader = Class.extend(function () {
       var parentName =  (node.getParent() && node.getParent().getValue()) ?
                          node.getParent().getValue().name :
                          '';
+      var parentPath =  (node.getParent() && node.getParent().getValue()) ?
+                         node.getParent().getValue().path :
+                         '';
       var getFunction = null;
 
       // get the path and REAL identifier for this module (resolve relative references)
       var identifier = RulesEngine.resolveIdentifier(node.getValue().name, parentName);
+
+      // modules are relative to identifiers, not to URLs
       node.getValue().path = RulesEngine.resolveUrl(identifier);
+
       node.getValue().resolvedId = identifier;
 
       // top level starts at 1
@@ -201,7 +207,8 @@ var TreeDownloader = Class.extend(function () {
           // store file contents for later
           this.files[node.getValue().name] = contents;
 
-          var tempRequires = Analyzer.extractRequires(contents);
+          var results = Analyzer.extractRequires(contents);
+          var tempRequires = results.requires;
           var requires = [];
           var childNode;
           var name;
@@ -225,8 +232,8 @@ var TreeDownloader = Class.extend(function () {
             this.increaseCallsRemaining(requires.length);
           }
           for (var i = 0, len = requires.length; i < len; i++) {
-            name = RulesEngine.resolveIdentifier(requires[i], node.getValue().name);
-            path = RulesEngine.resolveUrl(name, node.getValue().path);
+            name = (results.amd) ? RulesEngine.resolveIdentifier(requires[i], node.getValue().resolvedId): requires[i];
+            path = ''; // calculate path on recusion using parent
             childNode = TreeDownloader.createNode(name, path);
             node.addChild(childNode);
             this.downloadTree(childNode, callReduceCommand);
@@ -253,14 +260,11 @@ var TreeDownloader = Class.extend(function () {
  * @public
  * @returns {TreeNode} the created TreeNode object
  */
-TreeDownloader.createNode = function (name, path, isCircular) {
+TreeDownloader.createNode = function (name, path) {
   var tn = new TreeNode({
     name: name,
     path: path,
     failed: false
   });
-  if (isCircular) {
-    tn.flagCircular();
-  }
   return tn;
 };

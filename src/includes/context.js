@@ -86,6 +86,9 @@ context.Inject = {
     @public
   */
   enableAMDPlugins: function () {
+    if (!Inject.INTERNAL.normalize) {
+      Inject.INTERNAL.normalize = proxy(RulesEngine.resolveIdentifier, RulesEngine);
+    }
     RulesEngine.addRule(/^.+?\!.+$/, {
       last: true,
       useSuffix: false,
@@ -96,12 +99,21 @@ context.Inject = {
         afterFetch: function(text, oldName) {
           var pieces = oldName.split('!');
           var plugin = pieces[0];
-          var identifier = pieces[1];
           var result = ['',
             'module.frozen = true;',
             'var plugin = require("__PLUGIN__");',
             'var noNormalize = function(name, cb) { cb(name); };',
             'var normalizeFn = (plugin.normalize) ? plugin.normalize : noNormalize;',
+            'var pieces = module.id.split("!");',
+            'var normalized;',
+            'var fragment;',
+            'var globalNormalize;',
+            'pieces.shift();',
+            'fragment = pieces.join("!");',
+            'globalNormalize = function (path) {',
+            '  return Inject.INTERNAL.normalize(path, "__PLUGIN__");',
+            '};',
+            'normalized = (plugin.normalize) ? plugin.normalize(fragment, globalNormalize) : fragment;',
             'function cb(contents) {',
             '  if (contents) {',
             '    module.exports = contents;',
@@ -115,21 +127,20 @@ context.Inject = {
             '    modname = null;',
             '  }',
             '  if (!modname) {',
-            '    pieces = module.id.split("!");',
-            '    modname = pieces[1];',
+            '    modname = fragment',
             '  }',
             '  Inject.INTERNAL.defineExecutingModuleAs(modname, null)',
             '  eval(body);',
             '  Inject.INTERNAL.undefineExecutingModule();',
             '  cb();',
             '};',
-            'normalizeFn(__IDENTIFIER__, function(normalName) {',
-            '  plugin.load(normalName, require, cb, __CONFIG__);',
-            '});',
+            'if (normalized !== module.id) {',
+            '  module.alias = normalized;', // WARNING: AMD violates CJS spec, module is immutable
+            '}',
+            'plugin.load(normalized, require, cb, __CONFIG__);',
             ''].join('\n')
             .replace(/__PLUGIN__/g, plugin)
             .replace(/__FULL_NAME__/g, 'decodeURIComponent("' + encodeURIComponent(oldName) + '")')
-            .replace(/__IDENTIFIER__/g, 'decodeURIComponent("' + encodeURIComponent(identifier) + '")')
             .replace(/__CONFIG__/g, 'JSON.parse(decodeURIComponent("' + encodeURIComponent('{}') + '"))');
           return result;
         }
