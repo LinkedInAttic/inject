@@ -367,6 +367,8 @@ var Executor;
 
       /**
        * run all items within the tree, then run the provided callback
+       * If we encounter any modules that are paused, we BLOCK and wait
+       * for their resolution
        * @method Executor.runTree
        * @param {TreeNode} root - the root TreeNode to run execution on
        * @param {Object} files - a hash of filename / contents
@@ -376,6 +378,7 @@ var Executor;
       runTree: function (root, files, callback) {
         // do a post-order traverse of files for execution
         var returns = [];
+        var frozen = {};
         root.postOrder(function (node) {
           if (!node.getValue().name) {
             return; // root node
@@ -384,17 +387,41 @@ var Executor;
           var path = node.getValue().path;
           var file = files[name];
           var resolvedId = node.getValue().resolvedId;
+          var module;
 
           Executor.createModule(resolvedId, path);
           if (!node.isCircular()) {
             // note: we use "name" here, because of CommonJS Spec 1.0 Modules
             // the relative includes we find must be relative to "name", not the
             // resovled name
-            returns.push(Executor.runModule(resolvedId, file, path));
+            module = Executor.runModule(resolvedId, file, path);
+            if (module.frozen) {
+              frozen[module.uri] = module;
+            }
+            returns.push(module);
           }
         });
-        // all files are executed
-        callback(returns);
+
+        // test if all files are okay. If a module has its "frozen"
+        // property set, the callback will not be run until it is
+        // no longer "frozen". This forces a synchronous load. About
+        // the only system on the planet that wants to do this is the
+        // AMD PluginLoader system
+        function checkFrozen() {
+          for (var modPath in frozen) {
+            if (!frozen.hasOwnProperty(modPath)) {
+              continue;
+            }
+            if (frozen[modPath].frozen) {
+              // still frozen (synchronous mode)
+              context.setTimeout(checkFrozen, 10);
+              return;
+            }
+          }
+          // nothing frozen
+          callback(returns);
+        }
+        checkFrozen();
       },
 
       /**
@@ -520,6 +547,7 @@ var Executor;
        * @param {string} moduleId - the module ID
        * @param {string} code - the code to execute
        * @param {string} path - the URL for the module to run
+       * @returns {Object} a module object
        * @public
        */
       runModule: function (moduleId, code, path) {

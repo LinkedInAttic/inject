@@ -117,10 +117,11 @@ var RulesEngine;
        * @method RulesEngine.resolveUrl
        * @param {String} path - the path to resolve
        * @param {String} relativeTo - a base path for relative URLs
+       * @param {Boolean} noSuffix - do not use a suffix for this resolution
        * @public
        * @returns {String} a resolved URL
        */
-      resolveUrl: function (path, relativeTo) {
+      resolveUrl: function (path, relativeTo, noSuffix) {
         var resolvedUrl;
 
         // if no module root, freak out
@@ -178,7 +179,8 @@ var RulesEngine;
 
         resolvedUrl = resolvedUrl.replace(PROTOCOL_EXPANDED_REGEX, PROTOCOL_STRING);
 
-        if (result.useSuffix && userConfig.useSuffix && !FILE_SUFFIX_REGEX.test(resolvedUrl)) {
+        // for everyone else...
+        if (!noSuffix && result.useSuffix && userConfig.useSuffix && !FILE_SUFFIX_REGEX.test(resolvedUrl)) {
           resolvedUrl = resolvedUrl + BASIC_FILE_SUFFIX;
         }
 

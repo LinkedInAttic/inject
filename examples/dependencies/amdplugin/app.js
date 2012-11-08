@@ -16,5 +16,5 @@ governing permissions and limitations under the License.
 */
 
 define(['text!the.txt'], function(txt) {
-  debugger;
+  document.getElementById("output-foo").innerHTML = txt;
 });

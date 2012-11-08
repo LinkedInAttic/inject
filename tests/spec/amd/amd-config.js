@@ -11,6 +11,7 @@ function setModuleRoot() {
       base = url.substr(0, url.lastIndexOf("/")+1);
 
   Inject.setModuleRoot(base);
+  Inject.enableAMDPlugins();
 }
 
 Inject.reset();
@@ -28,8 +29,8 @@ var implemented = {
   anon: true,
   funcString: true,
   namedWrapped: true,
-  require: true
-  // plugins: true
+  require: true,
+  plugins: true
   // pluginDynamic: true
 };
 require = undefined;

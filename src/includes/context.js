@@ -80,12 +80,61 @@ context.Inject = {
     InjectCore.enableDebug.apply(this, arguments);
   },
   /**
-      @see RulesEngine.toUrl
-      @method
-      @public
-   */
-  toUrl: function () {
-    RulesEngine.toUrl.apply(this, arguments);
+    Enables AMD Plugins if that's your thing
+    Adds a special rule to make AMD plugins go round
+    @method
+    @public
+  */
+  enableAMDPlugins: function () {
+    RulesEngine.addRule(/^.+?\!.+$/, {
+      last: true,
+      useSuffix: false,
+      path: function(path) {
+        return ''; // no path, no fetch!
+      },
+      pointcuts: {
+        afterFetch: function(text, oldName) {
+          var pieces = oldName.split('!');
+          var plugin = pieces[0];
+          var identifier = pieces[1];
+          var result = ['',
+            'module.frozen = true;',
+            'var plugin = require("__PLUGIN__");',
+            'var noNormalize = function(name, cb) { cb(name); };',
+            'var normalizeFn = (plugin.normalize) ? plugin.normalize : noNormalize;',
+            'function cb(contents) {',
+            '  if (contents) {',
+            '    module.exports = contents;',
+            '  }',
+            '  delete module["frozen"];',
+            '}',
+            'cb.fromText = function (modname, body) {',
+            '  var pieces;',
+            '  if (!body) {',
+            '    body = modname;',
+            '    modname = null;',
+            '  }',
+            '  if (!modname) {',
+            '    pieces = module.id.split("!");',
+            '    modname = pieces[1];',
+            '  }',
+            '  Inject.INTERNAL.defineExecutingModuleAs(modname, null)',
+            '  eval(body);',
+            '  Inject.INTERNAL.undefineExecutingModule();',
+            '  cb();',
+            '};',
+            'normalizeFn(__IDENTIFIER__, function(normalName) {',
+            '  plugin.load(normalName, require, cb, __CONFIG__);',
+            '});',
+            ''].join('\n')
+            .replace(/__PLUGIN__/g, plugin)
+            .replace(/__FULL_NAME__/g, 'decodeURIComponent("' + encodeURIComponent(oldName) + '")')
+            .replace(/__IDENTIFIER__/g, 'decodeURIComponent("' + encodeURIComponent(identifier) + '")')
+            .replace(/__CONFIG__/g, 'JSON.parse(decodeURIComponent("' + encodeURIComponent('{}') + '"))');
+          return result;
+        }
+      }
+    });
   },
   /**
       Sets base path for all module includes.

@@ -34,13 +34,12 @@
 
 <textarea id="code">
 sandbox([
-  '<p><a href="#" class="button">I am a link</a></p>',
   '<p id="output-foo"></p>'
 ]);
 
 Inject.reset();
 Inject.setModuleRoot("/examples/dependencies/amdplugin/");
-
+Inject.enableAMDPlugins();
 /*
     A
     |
@@ -53,38 +52,8 @@ becomes
     B
 */
 
-Inject.addRule(/^.+?\!.+$/, {
-  last: true,
-  path: function(path) {
-    return ''; // no path, no fetch!
-  },
-  pointcuts: {
-    afterFetch: function(text, oldName) {
-      var pieces = oldName.split('!');
-      var plugin = pieces[0];
-      var identifier = pieces[1];
-      var result = ['',
-        'var plugin = require("__PLUGIN__");',
-        'var noNormalize = function(name, cb) { cb(name); };',
-        'var normalizeFn = (plugin.normalize) ? plugin.normalize : noNormalize;',
-        'normalizeFn(__IDENTIFIER__, function(normalName) {',
-        '  plugin.load(normalName, require, function(contents) {',
-        '    module.exports = contents;',
-        '  }, __CONFIG__) {',
-        '});',
-        ''].join('\n')
-        .replace(/__PLUGIN__/g, plugin)
-        .replace(/__IDENTIFIER__/g, 'decodeURIComponent("' + encodeURIComponent(identifier) + '")')
-        .replace(/__CONFIG__/g, 'JSON.parse(decodeURIComponent("' + encodeURIComponent('{}') + '"))');
-      debugger;
-      return result;
-    }
-  }
-});
-
 require.ensure(["app"], function() {
   var app = require("app");
-  app.run();
 });
 </textarea>
 
