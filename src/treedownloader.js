@@ -225,8 +225,8 @@ var TreeDownloader = Class.extend(function () {
             this.increaseCallsRemaining(requires.length);
           }
           for (var i = 0, len = requires.length; i < len; i++) {
-            name = requires[i];
-            path = RulesEngine.resolveUrl(RulesEngine.resolveIdentifier(name, node.getValue().name));
+            name = RulesEngine.resolveIdentifier(requires[i], node.getValue().name);
+            path = RulesEngine.resolveUrl(name, node.getValue().path);
             childNode = TreeDownloader.createNode(name, path);
             node.addChild(childNode);
             this.downloadTree(childNode, callReduceCommand);
