@@ -241,7 +241,7 @@ var TreeDownloader = Class.extend(function () {
             this.files[node.getValue().name] = contents;
 
             var results = Analyzer.extractRequires(contents);
-            var tempRequires = results.requires;
+            var tempRequires = results;
             var requires = [];
             var childNode;
             var name;

@@ -128,7 +128,7 @@ governing permissions and limitations under the License.
 
       equal(RulesEngine.resolveUrl("sample", root), baseDir+"/sample.js", "basic URL resolution");
       equal(RulesEngine.resolveUrl("http://absolutepath.com/absolute/path.js", root), "http://absolutepath.com/absolute/path.js", "absolute path resolution");
-      equal(RulesEngine.resolveUrl("../a/b", baseDir+"/one/two/foo.js", root), baseDir+"/one/a/b.js", "relative path resolution");
+      equal(RulesEngine.resolveUrl("../a/b", baseDir+"/one/two/foo.js"), baseDir+"/one/a/b.js", "relative path resolution");
     });
 
     test("#169 moduleRoot shouldn't force a slash", function() {

@@ -340,8 +340,8 @@ var RequireContext = Class.extend(function () {
         // with Link.JS, we need to convert from a function object to
         // a statement
         var fnBody = ['(', executionFunctionOrLiteral.toString().replace(/^\s+/, '').replace(/\s+$/, ''), ')'].join('');
-        var analyzedRequires = Analyzer.extractRequires(fnBody).requires;
-        dependencies.concat(analyzedRequires.requires);
+        var analyzedRequires = Analyzer.extractRequires(fnBody);
+        dependencies.concat(analyzedRequires);
       }
 
       this.log('AMD define(...) of ' + id + ' depends on: ' + dependencies.join(', '));

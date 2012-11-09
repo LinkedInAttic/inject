@@ -63,10 +63,7 @@ var Analyzer;
        */
       extractRequires: function (file) {
         var result = LinkJS.parse(file);
-        return {
-          amd: result.amd,
-          requires: result.requires
-        };
+        return result.requires;
       }
     };
   });
