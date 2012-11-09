@@ -327,7 +327,7 @@ var RequireContext = Class.extend(function () {
       if (typeof(executionFunctionOrLiteral) === 'function') {
         // with Link.JS, we need to convert from a function object to
         // a statement
-        var fnBody = ['(', executionFunctionOrLiteral.toString().replace(/^\s+/, '').replace(/\s+$/, ''), ')'].join('');
+        var fnBody = ['(', executionFunctionOrLiteral.toString(), ')'].join('');
         dependencies.concat(Analyzer.extractRequires(fnBody));
       }
 
