@@ -131,6 +131,7 @@ var RequireContext = Class.extend(function () {
     require: function (moduleIdOrList, callback) {
       var module;
       var identifier;
+      var assignedModule;
 
       if (typeof(moduleIdOrList) === 'string') {
         this.log('CommonJS require(string) of ' + moduleIdOrList);
@@ -138,14 +139,23 @@ var RequireContext = Class.extend(function () {
           throw new Error('require() must be a string containing a-z, slash(/), dash(-), and dots(.)');
         }
 
+        // try to get the module a couple different ways
         identifier = RulesEngine.resolveIdentifier(moduleIdOrList, this.getId());
         module = Executor.getModule(identifier);
+        assignedModule = Executor.getAssignedModule(this.getId(), identifier);
 
-        if (!module) {
+        // try the assignment identifier
+        if (assignedModule) {
+          return assignedModule.exports;
+        }
+        // then try the module
+        else if (module) {
+          return module.exports;
+        }
+        // or fail
+        else {
           throw new Error('module ' + moduleIdOrList + ' not found');
         }
-
-        return module.exports;
       }
 
       // AMD require

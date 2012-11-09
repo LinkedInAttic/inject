@@ -4,8 +4,17 @@
  * Copyright (c) 2011 LinkedIn
  * Apache Software License 2.0 (see below)
  *
- * lscache library (c) 2011 Pamela Fox
+ * lscache
+ * Copyright (c) 2011 Pamela Fox
  * Apache Software License 2.0 (see below)
+ *
+ * Link.js
+ * Copyright (c) 2012 Calyptus Life AB, Sweden
+ * MIT License (see below)
+ *
+ * GoWithTheFlow.js
+ * Copyright (c) 2011 Jerome Etienne
+ * MIT License (see below)
  *
  * easyXDM
  * Copyright (c) 2009-2011 Øyvind Sean Kinsey

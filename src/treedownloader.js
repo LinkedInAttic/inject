@@ -134,9 +134,6 @@ var TreeDownloader = Class.extend(function () {
       var parentName =  (node.getParent() && node.getParent().getValue()) ?
                          node.getParent().getValue().name :
                          '';
-      var parentPath =  (node.getParent() && node.getParent().getValue()) ?
-                         node.getParent().getValue().path :
-                         '';
       var getFunction = null;
 
       // get the path and REAL identifier for this module (resolve relative references)
@@ -164,89 +161,126 @@ var TreeDownloader = Class.extend(function () {
       getFunction(node.getValue().name, node.getValue().path, proxy(function (contents) {
         this.log('download complete', node.getValue().path);
 
+        /*
+        IMPORTANT
+        This next section uses a flow control library, as afterDownload is the "new" style
+        pointcut. It enables cool stuff like making external requests as part of the mutation,
+        direct assignment, and more. The flow library we use is intentionally very simple.
+        Please see https://github.com/jeromeetienne/gowiththeflow.js to learn more about the
+        really small library we opted to use.
+        */
+
         // afterFetch pointcut if available
         // this.pointcuts[resolvedUrl] = result.pointcuts;
         var pointcuts = RulesEngine.getPointcuts(node.getValue().path);
         var pointcutsStr = RulesEngine.getPointcuts(node.getValue().path, true);
         var afterFetch = pointcuts.afterFetch || [];
+        var parentName = (node.getParent()) ? node.getParent().getValue().name : '';
+
+        // create a new flow control object and prime it with our contents
+        var apFlow = new Flow();
+        apFlow.seq(function (next) {
+          next(null, contents);
+        });
+
+        // for every "after fetch" download, call it with contents, moduleName, and parentName
+        var makeFlow = function (i) {
+          apFlow.seq(function (next, error, contents) {
+            afterFetch[i](next, contents, node.getValue().name, parentName);
+          });
+        };
         for (var i = 0, len = afterFetch.length; i < len; i++) {
-          contents = afterFetch[i](contents, node.getValue().name);
+          makeFlow(i);
         }
-        
-        var before = (pointcutsStr.before) ? [pointcutsStr.before, '\n'].join('') : '';
-        var after = (pointcutsStr.after) ? [pointcutsStr.after, '\n'].join('') : '';
-        contents = [before, contents, after].join('');
 
-        var parent = node;
-        var found = {};
-        var value;
-
-        // seed found with the first item
-        found[node.getValue().name] = true;
-        parent = parent.getParent();
-        // test if you are a circular reference. check every parent back to root
-        while (parent) {
-          if (!parent.getValue()) {
-            // reached root
-            break;
+        // once all contents are resolved, see if we have an object (a neat assignment trick)
+        // or a string. If we get an object, assign it to a special exports that says it was
+        // invoked FROM a specific location. This helps require() find the module later
+        apFlow.seq(proxy(function (next, error, contents) {
+          if (typeof(contents) !== 'string' && typeof(contents) === 'object') {
+            Executor.assignModule(parentName, node.getValue().name, node.getValue().path, contents);
+            return this.reduceCallsRemaining(callback, node);
+          }
+          if (typeof(contents) === 'undefined') {
+            // no content was returned at all. This happens when there is explicitly nothing to eval
+            return this.reduceCallsRemaining(callback, node);
           }
 
-          value = parent.getValue().name;
-          if (found[value]) {
-            this.log('circular reference found', node.getValue().name);
-            // flag the node as circular (commonJS) and the module itself (AMD)
-            node.flagCircular();
-            Executor.flagModuleAsCircular(node.getValue().name);
-          }
-          found[value] = true;
+          var before = (pointcutsStr.before) ? [pointcutsStr.before, '\n'].join('') : '';
+          var after = (pointcutsStr.after) ? [pointcutsStr.after, '\n'].join('') : '';
+          contents = [before, contents, after].join('');
+
+          var parent = node;
+          var found = {};
+          var value;
+
+          // seed found with the first item
+          found[node.getValue().name] = true;
           parent = parent.getParent();
-        }
+          // test if you are a circular reference. check every parent back to root
+          while (parent) {
+            if (!parent.getValue()) {
+              // reached root
+              break;
+            }
 
-        // if it is not circular, and we have contents
-        if (!node.isCircular() && contents) {
-          // store file contents for later
-          this.files[node.getValue().name] = contents;
+            value = parent.getValue().name;
+            if (found[value]) {
+              this.log('circular reference found', node.getValue().name);
+              // flag the node as circular (commonJS) and the module itself (AMD)
+              node.flagCircular();
+              Executor.flagModuleAsCircular(node.getValue().name);
+            }
+            found[value] = true;
+            parent = parent.getParent();
+          }
 
-          var results = Analyzer.extractRequires(contents);
-          var tempRequires = results.requires;
-          var requires = [];
-          var childNode;
-          var name;
-          var path;
-          var callReduceCommand = proxy(function () {
-            this.reduceCallsRemaining(callback, node);
-          }, this);
+          // if it is not circular, and we have contents
+          if (!node.isCircular() && contents) {
+            // store file contents for later
+            this.files[node.getValue().name] = contents;
 
-          // remove already-defined AMD modules before we go further
-          for (var i = 0, len = tempRequires.length; i < len; i++) {
-            name = RulesEngine.resolveIdentifier(tempRequires[i], node.getValue().name);
-            if (!Executor.isModuleDefined(name) && !Executor.isModuleDefined(tempRequires[i])) {
-              requires.push(tempRequires[i]);
+            var results = Analyzer.extractRequires(contents);
+            var tempRequires = results.requires;
+            var requires = [];
+            var childNode;
+            var name;
+            var path;
+            var callReduceCommand = proxy(function () {
+              this.reduceCallsRemaining(callback, node);
+            }, this);
+
+            // remove already-defined AMD modules before we go further
+            for (var i = 0, len = tempRequires.length; i < len; i++) {
+              name = RulesEngine.resolveIdentifier(tempRequires[i], node.getValue().name);
+              if (!Executor.isModuleDefined(name) && !Executor.isModuleDefined(tempRequires[i])) {
+                requires.push(tempRequires[i]);
+              }
+            }
+
+            this.log('dependencies (' + requires.length + '):' + requires.join(', '));
+
+            // for each requires, create a child and spawn
+            if (requires.length) {
+              this.increaseCallsRemaining(requires.length);
+            }
+            for (var i = 0, len = requires.length; i < len; i++) {
+              name = (results.amd) ? RulesEngine.resolveIdentifier(requires[i], node.getValue().resolvedId): requires[i];
+              path = ''; // calculate path on recusion using parent
+              childNode = TreeDownloader.createNode(name, path);
+              node.addChild(childNode);
+              this.downloadTree(childNode, callReduceCommand);
             }
           }
 
-          this.log('dependencies (' + requires.length + '):' + requires.join(', '));
-
-          // for each requires, create a child and spawn
-          if (requires.length) {
-            this.increaseCallsRemaining(requires.length);
+          // if contents was a literal false, we had an error
+          if (contents === false) {
+            node.getValue().failed = true;
           }
-          for (var i = 0, len = requires.length; i < len; i++) {
-            name = (results.amd) ? RulesEngine.resolveIdentifier(requires[i], node.getValue().resolvedId): requires[i];
-            path = ''; // calculate path on recusion using parent
-            childNode = TreeDownloader.createNode(name, path);
-            node.addChild(childNode);
-            this.downloadTree(childNode, callReduceCommand);
-          }
-        }
 
-        // if contents was a literal false, we had an error
-        if (contents === false) {
-          node.getValue().failed = true;
-        }
-
-        // this module is processed
-        this.reduceCallsRemaining(callback, node);
+          // this module is processed
+          this.reduceCallsRemaining(callback, node);
+        }, this));
       }, this));
     }
   };

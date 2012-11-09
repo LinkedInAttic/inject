@@ -79,6 +79,7 @@ context.Inject = {
   enableDebug: function () {
     InjectCore.enableDebug.apply(this, arguments);
   },
+
   /**
     Enables AMD Plugins if that's your thing
     Adds a special rule to make AMD plugins go round
@@ -86,65 +87,42 @@ context.Inject = {
     @public
   */
   enableAMDPlugins: function () {
-    if (!Inject.INTERNAL.normalize) {
-      Inject.INTERNAL.normalize = proxy(RulesEngine.resolveIdentifier, RulesEngine);
-    }
     RulesEngine.addRule(/^.+?\!.+$/, {
       last: true,
       useSuffix: false,
-      path: function(path) {
+      path: function () {
         return ''; // no path, no fetch!
       },
       pointcuts: {
-        afterFetch: function(text, moduleName) {
+        afterFetch: function (next, text, moduleName, requestorName) {
           var pieces = moduleName.split('!');
-          var plugin = pieces[0];
-          var result = ['',
-            'module.frozen = true;',
-            'var fullName = __FULL_NAME__;',
-            'var plugin = require("__PLUGIN__");',
-            'var noNormalize = function(name, cb) { cb(name); };',
-            'var normalizeFn = (plugin.normalize) ? plugin.normalize : noNormalize;',
-            'var pieces = module.id.split("!");',
-            'var normalized;',
-            'var fragment;',
-            'var globalNormalize;',
-            'pieces.shift();',
-            'fragment = pieces.join("!");',
-            'globalNormalize = function (path) {',
-            ' debugger;',
-            '  return Inject.INTERNAL.normalize(path, "__PARENT_MODULE_ID__");', // WHAT IS THIS AND HOW TO MAKE DYNAMIC
-            '};',
-            'normalized = (plugin.normalize) ? plugin.normalize(fragment, globalNormalize) : fragment;',
-            'function cb(contents) {',
-            '  if (contents) {',
-            '    module.exports = contents;',
-            '  }',
-            '  delete module["frozen"];',
-            '}',
-            'cb.fromText = function (modname, body) {',
-            '  var pieces;',
-            '  if (!body) {',
-            '    body = modname;',
-            '    modname = null;',
-            '  }',
-            '  if (!modname) {',
-            '    modname = fragment',
-            '  }',
-            '  Inject.INTERNAL.defineExecutingModuleAs(modname, null)',
-            '  eval(body);',
-            '  Inject.INTERNAL.undefineExecutingModule();',
-            '  cb();',
-            '};',
-            'if (normalized !== module.id) {',
-            '  module.alias = normalized;', // WARNING: AMD violates CJS spec, module is immutable
-            '}',
-            'plugin.load(normalized, require, cb, __CONFIG__);',
-            ''].join('\n')
-            .replace(/__PLUGIN__/g, plugin)
-            .replace(/__FULL_NAME__/g, 'decodeURIComponent("' + encodeURIComponent(moduleName) + '")')
-            .replace(/__CONFIG__/g, 'JSON.parse(decodeURIComponent("' + encodeURIComponent('{}') + '"))');
-          return result;
+          var pluginId = pieces[0];
+          var identifier = pieces[1];
+          var rq = new RequireContext(moduleName, '');
+          rq.ensure([pluginId], function (localReq) {
+            var plugin = localReq(pluginId);
+            var resolveIdentifier = function (name) {
+              return RulesEngine.resolveIdentifier(name, requestorName);
+            };
+            var normalized = (plugin.normalize) ? plugin.normalize(identifier, resolveIdentifier) : resolveIdentifier(identifier);
+            var complete = function (contents) {
+              if (typeof(contents) === 'string') {
+                contents = ['module.exports = decodeURIComponent("', encodeURIComponent(contents), '");'].join('');
+              }
+              next(null, contents);
+            };
+            complete.fromText = function (ftModname, body) {
+              if (!body) {
+                body = ftModname;
+                ftModname = null;
+              }
+              if (!ftModname) {
+                ftModname = pluginId;
+              }
+              next(null, body);
+            };
+            plugin.load(normalized, localReq, complete, {});
+          });
         }
       }
     });

@@ -367,6 +367,37 @@ var Executor;
       },
 
       /**
+       * Assigning a module puts it into a special scope. Since we cannot
+       * predict what was going to be put here, we have to assume the calling
+       * context knows what the intent was. This is primarily used in AMD
+       * flows, but is made generic should someone else want to force assign
+       * exports through an addRule mechanism
+       * @method Executor.assignModule
+       * @param {String} parentName - the name of the parent module
+       * @param {String} moduleName - the name of the module that was invoked
+       * @param {String} path - a path for module completeness (module.uri) sake
+       * @param {Object} exports - the item to assign to module.exports
+       */
+      assignModule: function (parentName, moduleName, path, exports) {
+        var module = Executor.createModule(parentName + '^^^' + moduleName, path);
+        module.exports = exports;
+      },
+
+      /**
+       * Retrieves a module from an assignment location
+       * Modules are placed in a special namespace when assigned.
+       * This allows them to be retrieved without polluting the main
+       * namespaces
+       * @method Executor.getAssignedModule
+       * @param {String} parentName - the name of the parent module
+       * @param {String} moduleName - the name of the module to retrieve
+       * @returns {Object} the module object
+       */
+      getAssignedModule: function (parentName, moduleName) {
+        return this.getModule(parentName + '^^^' + moduleName);
+      },
+
+      /**
        * run all items within the tree, then run the provided callback
        * If we encounter any modules that are paused, we BLOCK and wait
        * for their resolution
@@ -379,7 +410,6 @@ var Executor;
       runTree: function (root, files, callback) {
         // do a post-order traverse of files for execution
         var returns = [];
-        var frozen = {};
         root.postOrder(function (node) {
           if (!node.getValue().name) {
             return; // root node
@@ -396,43 +426,11 @@ var Executor;
             // the relative includes we find must be relative to "name", not the
             // resovled name
             module = Executor.runModule(resolvedId, file, path);
-            if (module.frozen) {
-              frozen[module.id] = module;
-            }
             returns.push(module);
           }
         });
 
-        // test if all files are okay. If a module has its "frozen"
-        // property set, the callback will not be run until it is
-        // no longer "frozen". This forces a synchronous load. About
-        // the only system on the planet that wants to do this is the
-        // AMD PluginLoader system
-        var cycleScope = this;
-        function checkFrozen() {
-          for (var modPath in frozen) {
-            if (!frozen.hasOwnProperty(modPath)) {
-              continue;
-            }
-            if (frozen[modPath].frozen) {
-              // still frozen (synchronous mode)
-              context.setTimeout(proxy(checkFrozen, cycleScope), 10);
-              return;
-            }
-          }
-          // nothing frozen. Handle module aliases. WARNING: CJS violation here... AMD normalize() effects
-          for (var modPath in frozen) {
-            if (!frozen.hasOwnProperty(modPath)) {
-              continue;
-            }
-            if (frozen[modPath].alias) {
-              this.cache[frozen[modPath].alias] = frozen[modPath];
-              this.executed[frozen[modPath].alias] = true;
-            }
-          }
-          callback(returns);
-        }
-        checkFrozen();
+        callback(returns);
       },
 
       /**
