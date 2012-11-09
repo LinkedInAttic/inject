@@ -70,9 +70,8 @@ exports.task = function() {
 
   util.log("Inject server running on ports 4000 and 4001");
   util.log("-----")
-  util.log("access docs:     http://localhost:4000/docs/index.html");
-  util.log("access examples: http://localhost:4000/examples/index.html");
-  util.log("access tests:    http://localhost:4000/tests/index.html");
+  util.log("access examples: http://localhost:4000/examples/");
+  util.log("access tests:    http://localhost:4000/tests/");
   util.log('-----')
   util.log("standalone AMD:  http://localhost:4010/start.html");
 };
