@@ -31,10 +31,10 @@ governing permissions and limitations under the License.
   <script type="text/javascript">
     var EXPECTED_TESTS = 26;
 
-    // window.console = {
-    //   log: function() {},
-    //   error: function() {}
-    // };
+    window.console = {
+      log: function() {},
+      error: function() {}
+    };
 
     module("AMD External Tests");
     asyncTest("All External AMD Tests", EXPECTED_TESTS, function() {
@@ -48,7 +48,7 @@ governing permissions and limitations under the License.
         // treat the entire AMD structure as a single async test
         var dohWindow = document.getElementById("amdTests").contentWindow;
 
-        // dohWindow.console = window.console;
+        dohWindow.console = window.console;
 
         var existingDohMethods = {
           _onEnd: dohWindow.doh._onEnd,
