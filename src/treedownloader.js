@@ -198,7 +198,7 @@ var TreeDownloader = Class.extend(function () {
         // invoked FROM a specific location. This helps require() find the module later
         apFlow.seq(proxy(function (next, error, contents) {
           if (typeof(contents) !== 'string' && typeof(contents) === 'object') {
-            Executor.assignModule(parentName, node.getValue().name, node.getValue().path, contents);
+            Executor.assignModule(parentName, identifier, node.getValue().path, contents);
             return this.reduceCallsRemaining(callback, node);
           }
           if (typeof(contents) === 'undefined') {

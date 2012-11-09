@@ -96,7 +96,7 @@ context.Inject = {
       pointcuts: {
         afterFetch: function (next, text, moduleName, requestorName) {
           var pieces = moduleName.split('!');
-          var pluginId = pieces[0];
+          var pluginId = RulesEngine.resolveIdentifier(pieces[0], requestorName);
           var identifier = pieces[1];
           var rq = new RequireContext(moduleName, '');
           rq.ensure([pluginId], function (localReq) {
@@ -115,9 +115,6 @@ context.Inject = {
               if (!body) {
                 body = ftModname;
                 ftModname = null;
-              }
-              if (!ftModname) {
-                ftModname = pluginId;
               }
               next(null, body);
             };
