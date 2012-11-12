@@ -56,7 +56,7 @@ To use inject, place the following script tags into the `<head>` of your documen
 ```html
 <script type="text/javascript" src="inject.js"></script>
 <script type="text/javascript">
-  Inject.setModuleRoot("http://example.com/js/modules");
+  Inject.setModuleRoot("/js/modules");
   require.run("program");
 </script>
 ```
@@ -70,6 +70,7 @@ Here's some common configuration options you're going to want for Inject
 
 ```js
 // Set the "root" where all your modules can be found
+// you can use an http:// path or just /path/to/modules like above
 Inject.setModuleRoot("path");
 
 // Specify how long files should be in localStorage (in minutes)
