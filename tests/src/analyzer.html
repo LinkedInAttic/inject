@@ -48,6 +48,13 @@ governing permissions and limitations under the License.
     ' require(ignoreF);',
     '']).join("\n");
 
+    var requireSampleCode_177 = ([
+    'define("player", ["one", "two", "three", "exports"], function(one, two, three, exports) {',
+    '    var colors = ["#ff0000", "#0000ff"];',
+    '    exports.colors = colors;',
+    '});',
+    '']).join("\n");
+
     var sampleFunction = "function foo(one, two, three) {};";
 
     test("Scaffolding", function() {
@@ -76,6 +83,11 @@ governing permissions and limitations under the License.
           ok(true, "found expected regex: "+item);
         }
       }
+    });
+
+    test("#177 define syntax messes up with arrays", function() {
+      var result = Analyzer.extractRequires(requireSampleCode_177);
+      equal(result.length, 3, "only three modules identified");
     });
   </script>
 </body>
