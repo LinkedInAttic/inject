@@ -42,8 +42,11 @@ Inject.manifest({
   "jQuery": {
     path: "jquery-1.6.4.min.js",
     pointcuts: {
-      after: function() {
-        module.exports = jQuery.noConflict();
+      afterFetch: function(text) {
+        return [
+          text,
+          'module.exports = jQuery.noConflict();',
+        ''].join('\n');
       }
     }
   }

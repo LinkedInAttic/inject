@@ -63,6 +63,7 @@ exports.task = function() {
   Seq()
   .par(require("./build/main").task(options))
   .par(require("./build/ie7").task(options))
+  .par(require("./build/plugins").task(options))
   .par(require("./build/crossdomain").task(options))
   .seq(function() {
     require("util").log("Build Successful");

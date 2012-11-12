@@ -1,3 +1,4 @@
+/*global context:true */
 /*
 Inject
 Copyright 2011 LinkedIn
@@ -22,7 +23,7 @@ governing permissions and limitations under the License.
  * run (require.run), and define.
  * @file
 **/
-var RequireContext = Class.extend(function() {
+var RequireContext = Class.extend(function () {
   return {
     /**
      * Creates a new RequireContext
@@ -31,7 +32,7 @@ var RequireContext = Class.extend(function() {
      * @param {String} path - the current module URL for this context
      * @public
      */
-    init: function(id, path) {
+    init: function (id, path) {
       this.id = id || null;
       this.path = path || null;
     },
@@ -42,8 +43,8 @@ var RequireContext = Class.extend(function() {
      * @param {String} message - the message to log
      * @protected
      */
-    log: function(message) {
-      debugLog("RequireContext for "+this.path, message);
+    log: function (message) {
+      debugLog('RequireContext for ' + this.path, message);
     },
 
     /**
@@ -52,9 +53,9 @@ var RequireContext = Class.extend(function() {
      * @public
      * @returns {String} the path for the current context
      */
-    getPath: function() {
+    getPath: function () {
       if (!userConfig.moduleRoot) {
-        throw new Error("moduleRoot must be defined. Please use Inject.setModuleRoot()");
+        throw new Error('moduleRoot must be defined. Please use Inject.setModuleRoot()');
       }
       return this.path || userConfig.moduleRoot;
     },
@@ -65,8 +66,8 @@ var RequireContext = Class.extend(function() {
      * @public
      * @returns {String} the id of the current context
      */
-    getId: function() {
-      return this.id || "";
+    getId: function () {
+      return this.id || '';
     },
 
     /**
@@ -77,7 +78,7 @@ var RequireContext = Class.extend(function() {
      * @protected
      * @see Executor.getModule
      */
-    getModule: function(moduleId) {
+    getModule: function (moduleId) {
       return Executor.getModule(moduleId).exports;
     },
 
@@ -92,24 +93,24 @@ var RequireContext = Class.extend(function() {
      * @protected
      * @returns {Array} an array of modules matching moduleIdOrList
      */
-    getAllModules: function(moduleIdOrList, require, module) {
+    getAllModules: function (moduleIdOrList, require, module) {
       var args = [];
       var mId = null;
       for (var i = 0, len = moduleIdOrList.length; i < len; i++) {
         mId = moduleIdOrList[i];
-        switch(mId) {
-          case "require":
-            args.push(require);
-            break;
-          case "module":
-            args.push(module);
-            break;
-          case "exports":
-            args.push(module.exports);
-            break;
-          default:
-            // push the resolved item onto the stack direct from executor
-            args.push(this.getModule(mId));
+        switch (mId) {
+        case 'require':
+          args.push(require);
+          break;
+        case 'module':
+          args.push(module);
+          break;
+        case 'exports':
+          args.push(module.exports);
+          break;
+        default:
+          // push the resolved item onto the stack direct from executor
+          args.push(this.getModule(mId));
         }
       }
       return args;
@@ -127,31 +128,40 @@ var RequireContext = Class.extend(function() {
      * @see <a href="http://wiki.commonjs.org/wiki/Modules/1.0">http://wiki.commonjs.org/wiki/Modules/1.0</a>
      * @see <a href="https://github.com/amdjs/amdjs-api/wiki/require">https://github.com/amdjs/amdjs-api/wiki/require</a>
      */
-    require: function(moduleIdOrList, callback) {
-      var path;
+    require: function (moduleIdOrList, callback) {
       var module;
       var identifier;
+      var assignedModule;
 
-      if (typeof(moduleIdOrList) === "string") {
-        this.log("CommonJS require(string) of "+moduleIdOrList);
+      if (typeof(moduleIdOrList) === 'string') {
+        this.log('CommonJS require(string) of ' + moduleIdOrList);
         if (/^[\d]+$/.test(moduleIdOrList)) {
-          throw new Error("require() must be a string containing a-z, slash(/), dash(-), and dots(.)");
+          throw new Error('require() must be a string containing a-z, slash(/), dash(-), and dots(.)');
         }
 
+        // try to get the module a couple different ways
         identifier = RulesEngine.resolveIdentifier(moduleIdOrList, this.getId());
         module = Executor.getModule(identifier);
+        assignedModule = Executor.getAssignedModule(this.getId(), identifier);
 
-        if (!module) {
-          throw new Error("module "+moduleIdOrList+" not found");
+        // try the assignment identifier
+        if (assignedModule) {
+          return assignedModule.exports;
         }
-
-        return module.exports;
+        // then try the module
+        else if (module) {
+          return module.exports;
+        }
+        // or fail
+        else {
+          throw new Error('module ' + moduleIdOrList + ' not found');
+        }
       }
 
       // AMD require
-      this.log("AMD require(Array) of "+moduleIdOrList.join(", "));
+      this.log('AMD require(Array) of ' + moduleIdOrList.join(', '));
       var strippedModules = Analyzer.stripBuiltins(moduleIdOrList);
-      this.ensure(strippedModules, proxy(function(localRequire) {
+      this.ensure(strippedModules, proxy(function (localRequire) {
         var module = Executor.createModule();
         var modules = this.getAllModules(moduleIdOrList, localRequire, module);
         callback.apply(context, modules);
@@ -166,12 +176,12 @@ var RequireContext = Class.extend(function() {
      * @public
      * @see <a href="http://wiki.commonjs.org/wiki/Modules/Async/A">http://wiki.commonjs.org/wiki/Modules/Async/A</a>
      */
-    ensure: function(moduleList, callback) {
+    ensure: function (moduleList, callback) {
       if (Object.prototype.toString.call(moduleList) !== '[object Array]') {
-        throw new Error("require.ensure() must take an Array as the first argument");
+        throw new Error('require.ensure() must take an Array as the first argument');
       }
 
-      this.log("CommonJS require.ensure(array) of "+moduleList.join(", "));
+      this.log('CommonJS require.ensure(array) of ' + moduleList.join(', '));
 
       // strip builtins (CommonJS doesn't download or make these available)
       moduleList = Analyzer.stripBuiltins(moduleList);
@@ -180,6 +190,16 @@ var RequireContext = Class.extend(function() {
       var td;
       var callsRemaining = moduleList.length;
       var thisPath = (this.getPath()) ? this.getPath() : userConfig.moduleRoot;
+      var downloadCommand = proxy(function (root, files) {
+        Executor.runTree(root, files, proxy(function () {
+          // test if all modules are done
+          if (--callsRemaining === 0) {
+            if (callback) {
+              callback(InjectCore.createRequire(this.getId(), this.getPath()));
+            }
+          }
+        }, this));
+      }, this);
 
       // exit early when we have no builtins left
       if (!callsRemaining) {
@@ -197,16 +217,7 @@ var RequireContext = Class.extend(function() {
         td = new TreeDownloader(tn);
         // get the tree, then run the tree, then --count
         // if count is 0, callback
-        td.get(proxy(function(root, files) {
-          Executor.runTree(root, files, proxy(function() {
-            // test if all modules are done
-            if (--callsRemaining === 0) {
-              if (callback) {
-                callback(InjectCore.createRequire(this.getId(), this.getPath()));
-              }
-            }
-          }, this));
-        }, this));
+        td.get(downloadCommand);
       }
     },
 
@@ -217,8 +228,8 @@ var RequireContext = Class.extend(function() {
      * @param {String} moduleId - the module ID to run
      * @public
      */
-    run: function(moduleId) {
-      this.log("AMD require.run(string) of "+moduleId);
+    run: function (moduleId) {
+      this.log('AMD require.run(string) of ' + moduleId);
       this.ensure([moduleId]);
     },
 
@@ -237,63 +248,63 @@ var RequireContext = Class.extend(function() {
      * @public
      * @see <a href="https://github.com/amdjs/amdjs-api/wiki/AMD">https://github.com/amdjs/amdjs-api/wiki/AMD</a>
      */
-    define: function() {
+    define: function () {
       var args = Array.prototype.slice.call(arguments, 0);
       var id = null;
-      var dependencies = ["require", "exports", "module"];
+      var dependencies = ['require', 'exports', 'module'];
+      var dependenciesDeclared = false;
       var executionFunctionOrLiteral = {};
       var remainingDependencies = [];
       var resolvedDependencyList = [];
-      var tempModule = null;
       var tempModuleId = null;
-      var thisModulePath;
 
       // these are the various AMD interfaces and what they map to
       // we loop through the args by type and map them down into values
       // while not efficient, it makes this overloaed interface easier to
       // maintain
       var interfaces = {
-        "string array object": ["id", "dependencies", "executionFunctionOrLiteral"],
-        "string object":       ["id", "executionFunctionOrLiteral"],
-        "array object":        ["dependencies", "executionFunctionOrLiteral"],
-        "object":              ["executionFunctionOrLiteral"]
+        'string array object': ['id', 'dependencies', 'executionFunctionOrLiteral'],
+        'string object':       ['id', 'executionFunctionOrLiteral'],
+        'array object':        ['dependencies', 'executionFunctionOrLiteral'],
+        'object':              ['executionFunctionOrLiteral']
       };
       var key = [];
       var value;
       for (var i = 0, len = args.length; i < len; i++) {
         if (Object.prototype.toString.apply(args[i]) === '[object Array]') {
-          key.push("array");
+          key.push('array');
         }
-        else if (typeof(args[i]) === "object" || typeof(args[i]) === "function") {
-          key.push("object");
+        else if (typeof(args[i]) === 'object' || typeof(args[i]) === 'function') {
+          key.push('object');
         }
         else {
           key.push(typeof(args[i]));
         }
       }
-      key = key.join(" ");
+      key = key.join(' ');
 
       if (!interfaces[key]) {
-        throw new Error("You did not use an AMD compliant interface. Please check your define() calls");
+        throw new Error('You did not use an AMD compliant interface. Please check your define() calls');
       }
 
       key = interfaces[key];
       for (var i = 0, len = key.length; i < len; i++) {
         value = args[i];
-        switch(key[i]) {
-          case "id":
-            id = value;
-            break;
-          case "dependencies":
-            dependencies = value;
-            break;
-          case "executionFunctionOrLiteral":
-            executionFunctionOrLiteral = value;
-            break;
+        switch (key[i]) {
+        case 'id':
+          id = value;
+          break;
+        case 'dependencies':
+          dependencies = value;
+          dependenciesDeclared = true;
+          break;
+        case 'executionFunctionOrLiteral':
+          executionFunctionOrLiteral = value;
+          break;
         }
       }
 
-      this.log("AMD define(...) of "+ ((id) ? id : "anonymous"));
+      this.log('AMD define(...) of ' + ((id) ? id : 'anonymous'));
 
       // strip any circular dependencies that exist
       // this will prematurely create modules
@@ -316,26 +327,30 @@ var RequireContext = Class.extend(function() {
       // handle anonymous modules
       if (!id) {
         id = Executor.getCurrentExecutingAMD().id;
-        this.log("AMD identified anonymous module as "+id);
+        this.log('AMD identified anonymous module as ' + id);
       }
 
       if (Executor.isModuleDefined(id)) {
-        this.log("AMD module "+id+" has already ran once");
+        this.log('AMD module ' + id + ' has already ran once');
         return;
       }
       Executor.flagModuleAsDefined(id);
 
-      if (typeof(executionFunctionOrLiteral) === "function") {
-        dependencies.concat(Analyzer.extractRequires(executionFunctionOrLiteral.toString()));
+      if (!dependenciesDeclared && typeof(executionFunctionOrLiteral) === 'function') {
+        // with Link.JS, we need to convert from a function object to
+        // a statement
+        var fnBody = ['(', executionFunctionOrLiteral.toString(), ')'].join('');
+        var analyzedRequires = Analyzer.extractRequires(fnBody);
+        dependencies.concat(analyzedRequires);
       }
 
-      this.log("AMD define(...) of "+id+" depends on: "+dependencies.join(", "));
-      this.log("AMD define(...) of "+id+" will retrieve: "+remainingDependencies.join(", "));
+      this.log('AMD define(...) of ' + id + ' depends on: ' + dependencies.join(', '));
+      this.log('AMD define(...) of ' + id + ' will retrieve: ' + remainingDependencies.join(', '));
 
       // ask only for the missed items + a require
-      remainingDependencies.unshift("require");
-      this.require(remainingDependencies, proxy(function(require) {
-        this.log("AMD define(...) of "+id+" all downloads required");
+      remainingDependencies.unshift('require');
+      this.require(remainingDependencies, proxy(function (require) {
+        this.log('AMD define(...) of ' + id + ' all downloads required');
 
         // use require as our first arg
         var module = Executor.getModule(id);
@@ -350,15 +365,15 @@ var RequireContext = Class.extend(function() {
 
         // if the executor is a function, run it
         // if it is an object literal, walk it.
-        if (typeof(executionFunctionOrLiteral) === "function") {
+        if (typeof(executionFunctionOrLiteral) === 'function') {
           results = executionFunctionOrLiteral.apply(null, resolvedDependencies);
           if (results) {
             module.setExports(results);
           }
         }
         else {
-          for (name in executionFunctionOrLiteral) {
-            module.exports[name] = executionFunctionOrLiteral[name];
+          for (var modName in executionFunctionOrLiteral) {
+            module.exports[modName] = executionFunctionOrLiteral[modName];
           }
         }
 
@@ -366,3 +381,6 @@ var RequireContext = Class.extend(function() {
     }
   };
 });
+
+// jshint
+RequireContext = RequireContext;

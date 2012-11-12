@@ -1,0 +1,6 @@
+[submodule "tests/spec/amd/amdjs-tests"]
+	path = tests/spec/amd/amdjs-tests
+	url = git://github.com/amdjs/amdjs-tests.git
+[submodule "tests/spec/cjs/interoperablejs"]
+	path = tests/spec/cjs/interoperablejs
+	url = git://github.com/ashb/interoperablejs.git

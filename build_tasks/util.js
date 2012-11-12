@@ -109,28 +109,6 @@ exports.tagVersion = function(contents, template, cb) {
   });
 };
 
-// JSDoc a directory
-// compile coffeescript
-exports.JSDoc = function(src, dest, cb) {
-  src = path.normalize(src);
-  dest = path.normalize(dest);
-  var JSDocBinary = path.resolve(".", "node_modules/JSDoc/jsdoc"),
-      cmd = ([
-        JSDocBinary,
-        "-r",
-        "-d "+dest,
-        src,
-      ]).join(" ");
-
-  Seq()
-  .seq(function() {
-    exec(cmd, this);
-  })
-  .seq(function(output) {
-    cb(null, true);
-  });
-};
-
 // write a file to the fs
 exports.write = function(dest, file, cb) {
   dest = path.normalize(dest);
@@ -229,12 +207,30 @@ exports.buildChain = Futures.chainify({
     .seq(function(contents) {
       next(contents);
     });
-  }
+  },
+  header: function(next, file) {
+    Seq()
+    .seq(function() {
+      exports.grab(file, this);
+    })
+    .seq(function(contents) {
+      next(contents.toString());
+    });
+  },
 }, {
   // modifiers: data changing
   tagVersion: function(next, data, template) {
     exports.tagVersion(data, template, function(err, result) {
       next(result);
+    });
+  },
+  header: function(next, data, file) {
+    Seq()
+    .seq(function() {
+      exports.grab(file, this);
+    })
+    .seq(function(contents) {
+      next([contents.toString(), data].join("\n"));
     });
   },
   anonymize: function(next, data, signature, invoke) {

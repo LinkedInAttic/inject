@@ -1,3 +1,5 @@
+/*jshint unused:false */
+/*global window:true, XMLHttpRequest:true, ActiveXObject:true, console:true */
 /*
 Inject
 Copyright 2011 LinkedIn
@@ -79,11 +81,11 @@ var easyXdm = false;
     @function
     @global
  */
-var isHostMethod = function(object, property) {
+var isHostMethod = function (object, property) {
   // Return if typeof is 'function', 'object' or 'unknown' (can occur for IE)
   // See http://stackoverflow.com/questions/10982739/typeof-returning-unknown-in-ie
   var t = typeof object[property];
-  return t == 'function' || (!!(t == 'object' && object[property])) || t == 'unknown';
+  return t === 'function' || (!!(t === 'object' && object[property])) || t === 'unknown';
 };
 
 /**
@@ -92,25 +94,25 @@ var isHostMethod = function(object, property) {
     @function
     @global
  */
-var getXhr = (function(){
-  if (isHostMethod(window, "XMLHttpRequest")) {
-    return function(){
-        return new XMLHttpRequest();
+var getXhr = (function () {
+  if (isHostMethod(window, 'XMLHttpRequest')) {
+    return function () {
+      return new XMLHttpRequest();
     };
   }
   else {
-    var item = (function(){
-      var list = ["Microsoft", "Msxml2", "Msxml3"], i = list.length;
+    var item = (function () {
+      var list = ['Microsoft', 'Msxml2', 'Msxml3'], i = list.length;
       while (i--) {
         try {
-          item = list[i] + ".XMLHTTP";
+          item = list[i] + '.XMLHTTP';
           var obj = new ActiveXObject(item);
           return item;
-        } 
+        }
         catch (e) {}
       }
     }());
-    return function(){
+    return function () {
       return new ActiveXObject(item);
     };
   }
@@ -126,14 +128,14 @@ var getXhr = (function(){
  */
 function proxy(fn, scope) {
   if (!scope) {
-    throw new Error("proxying requires a scope");
+    throw new Error('proxying requires a scope');
   }
   if (!fn) {
-    throw new Error("proxying requires a function");
+    throw new Error('proxying requires a function');
   }
-  return function() {
+  return function () {
     return fn.apply(scope, arguments);
-  }
+  };
 }
 
 /**
@@ -155,16 +157,16 @@ function each(collection, fn) {
     @type {Function}
     @global
  */
-var debugLog = function() {};
+var debugLog = function () {};
 // TODO: more robust logging solution
-(function() {
+(function () {
   var logs = [];
-  var canLog = (typeof(console) !=="undefined" && console.log  && typeof(console.log) === "function");
-  var doLog = function(origin, message) {
+  var canLog = (typeof(console) !== 'undefined' && console.log  && typeof(console.log) === 'function');
+  var doLog = function (origin, message) {
     if (userConfig.debug && userConfig.debug.logging) {
-      console.log("## "+ origin +" ##" + "\n" + message);
-    };
-  }
+      console.log('## ' + origin + ' ##' + '\n' + message);
+    }
+  };
   if (canLog) {
     debugLog = doLog;
   }

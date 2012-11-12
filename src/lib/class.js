@@ -203,7 +203,7 @@ governing permissions and limitations under the License.
   }
 
    //Export to Common JS Loader
-  if( typeof module !== 'undefined' ){
+  if( typeof module !== 'undefined' && typeof module !== 'function' ){
     if( typeof module.setExports === 'function' ){
       module.setExports( Class );
     } else if( module.exports ){
