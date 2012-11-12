@@ -92,7 +92,7 @@ When you're ready to write your own modules, have a look at the [CommonJS Module
 
 Building From Source
 ===
-We have a whole section on building from source. [[Building From Source|0.4.x Building Inject From Source]] has all the juicy details.
+We have a whole section on building from source. [Building From Source](https://github.com/linkedin/inject/wiki/0.4.x-Building-Inject-From-Source) has all the juicy details.
 
 Next Steps
 ===
