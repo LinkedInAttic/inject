@@ -99,15 +99,15 @@ Next Steps
 From here, you can...
 
 * learn advanced syntax such as Inject.addRule() for custom module routing  
-  [[addRule and Routing|0.4.x addRule and Your Favorite Library]]
+  [addRule and Routing](https://github.com/linkedin/inject/wiki/0.4.x-addRule-and-Your-Favorite-Library)
 * make asynchronous includes using require.ensure() or go cross-domain  
-  [[Advanced Usage API Guide|0.4.x Advanced Usage]]
+  [Advanced Usage API Guide](https://github.com/linkedin/inject/wiki/0.4.x-Advanced-Usage)
 * use AMD-compliant modules with define()  
-  [[Advanced Usage API Guide|0.4.x Advanced Usage]]
-* use existing libraries that you never thought had CommonJS Support
-  [[Recipies for Inject and Your Favorite Library|0.4.x addRule and Your Favorite Library]]
-* learn how to protect your code from JS minifiers
-  [[Common Minification Problems]]
+  [Advanced Usage API Guide](https://github.com/linkedin/inject/wiki/0.4.x-Advanced-Usage)
+* use existing libraries that you never thought had CommonJS Support  
+  [Recipies for Inject and Your Favorite Library](https://github.com/linkedin/inject/wiki/0.4.x-addRule-and-Your-Favorite-Library)
+* learn how to protect your code from JS minifiers  
+  [Common Minification Problems](https://github.com/linkedin/inject/wiki/Common-Minification-Problems)
 
 On The Shoulders of Giants
 ===
