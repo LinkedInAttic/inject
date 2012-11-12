@@ -23,15 +23,15 @@ governing permissions and limitations under the License.
  * @file
 **/
 var InjectCore;
-(function() {
-  var AsStatic = Class.extend(function() {
+(function () {
+  var AsStatic = Class.extend(function () {
     return {
       /**
        * The InjectCore object is meant to be instantiated once, and have its
        * reference assigned to a location outside of the closure.
        * @constructs InjectCore
        */
-      init: function() {},
+      init: function () {},
 
       /**
        * create a require() method within a given context path
@@ -43,15 +43,15 @@ var InjectCore;
        * @public
        * @returns a function adhearing to CommonJS and AMD require()
        */
-      createRequire: function(id, path) {
+      createRequire: function (id, path) {
         var req = new RequireContext(id, path);
         var require = proxy(req.require, req);
         require.ensure = proxy(req.ensure, req);
         require.run = proxy(req.run, req);
-        // resolve an identifier to a URL
-        require.toUrl = function(identifier) {
+        // resolve an identifier to a URL (AMD compatibility)
+        require.toUrl = function (identifier) {
           var resolvedId = RulesEngine.resolveIdentifier(identifier, id);
-          var resolvedPath = RulesEngine.resolveUrl(resolvedId);
+          var resolvedPath = RulesEngine.resolveUrl(resolvedId, path, true);
           return resolvedPath;
         };
         return require;
@@ -67,11 +67,24 @@ var InjectCore;
        * @public
        * @returns a function adhearing to the AMD define() method
        */
-      createDefine: function(id, path) {
+      createDefine: function (id, path) {
         var req = new RequireContext(id, path);
         var define = proxy(req.define, req);
         define.amd = {};
         return define;
+      },
+
+      /**
+       * add a plugin to the Inject system
+       * @method InjectCore.plugin
+       * @param {string} plugin - the name of the plugin (comes before ! in require calls)
+       * @param {object} ruleSet - a ruleSet to be assigned to addRule
+       * @param {object} functions - a collection of functions to be made available under .plugins[plugin]
+       */
+      plugin: function (plugin, ruleSet, functions, scope) {
+        RulesEngine.addRule(new RegExp('^' + plugin + '!'), ruleSet);
+        scope.plugins = scope.plugins || {};
+        scope.plugins[plugin] = functions;
       },
 
       /**
@@ -80,7 +93,7 @@ var InjectCore;
        * @param {string} root - the fully qualified URL for modules to be included from
        * @public
        */
-      setModuleRoot: function(root) {
+      setModuleRoot: function (root) {
         userConfig.moduleRoot = root;
       },
 
@@ -93,7 +106,7 @@ var InjectCore;
        * @param {object} crossDomainConfig - the confuiguration object
        * @public
        */
-      setCrossDomain: function(crossDomainConfig) {
+      setCrossDomain: function (crossDomainConfig) {
         userConfig.xd.relayFile = crossDomainConfig.relayFile || null;
         userConfig.xd.relaySwf = crossDomainConfig.relaySwf || null;
       },
@@ -105,7 +118,7 @@ var InjectCore;
        * @param {Boolean} useSuffix - should a suffix be used
        * @public
        */
-      setUseSuffix: function(useSuffix) {
+      setUseSuffix: function (useSuffix) {
         userConfig.useSuffix = useSuffix;
       },
 
@@ -114,7 +127,7 @@ var InjectCore;
        * @method InjectCore.clearCache
        * @public
        */
-      clearCache: function() {
+      clearCache: function () {
         if (HAS_LOCAL_STORAGE && lscache) {
           lscache.flush();
         }
@@ -128,7 +141,7 @@ var InjectCore;
        * @public
        * @see userConfig.fileExpires
        */
-      setExpires: function(seconds) {
+      setExpires: function (seconds) {
         userConfig.fileExpires = seconds || 0;
       },
 
@@ -140,9 +153,8 @@ var InjectCore;
        * @param {string} cacheKey - the identifier to reference this cache version
        * @public
        */
-      setCacheKey: function(cacheKey) {
+      setCacheKey: function (cacheKey) {
         var lscacheAppCacheKey;
-        var flush = false;
 
         if (!HAS_LOCAL_STORAGE || !lscache) {
           return false;
@@ -150,9 +162,9 @@ var InjectCore;
 
         lscacheAppCacheKey = lscache.get(LSCACHE_APP_KEY_STRING);
 
-        if ( (!cacheKey && lscacheAppCacheKey) ||
-             (lscacheAppCacheKey !== null && lscacheAppCacheKey != cacheKey) ||
-             (lscacheAppCacheKey === null && cacheKey) ) {
+        if ((!cacheKey && lscacheAppCacheKey) ||
+             (lscacheAppCacheKey !== null && lscacheAppCacheKey !== cacheKey) ||
+             (lscacheAppCacheKey === null && cacheKey)) {
           lscache.flush();
           lscache.set(LSCACHE_APP_KEY_STRING, cacheKey);
         }
@@ -164,7 +176,7 @@ var InjectCore;
        * @method InjectCore.reset
        * @public
        */
-      reset: function() {
+      reset: function () {
         this.clearCache();
         Executor.clearCaches();
         Communicator.clearCaches();
@@ -179,7 +191,7 @@ var InjectCore;
        * @param {boolean} value - the value to assign for the key, defaults to true
        * @public
        */
-      enableDebug: function(key, value) {
+      enableDebug: function (key, value) {
         userConfig.debug[key] = value || true;
       }
     };

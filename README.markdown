@@ -142,4 +142,5 @@ Libraries Used By This Project
 ===
 * easyXDM: Cross Domain Communication
 * lscache: LocalStorage Cache Provider 
+* link.js: dependency extraction (from their src/Library/link.js)
 * (and a whole lot of npm related things for development)

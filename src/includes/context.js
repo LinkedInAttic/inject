@@ -1,3 +1,4 @@
+/*global context:true */
 /*
 Inject
 Copyright 2011 LinkedIn
@@ -38,10 +39,16 @@ context.Inject = {
     defineExecutingModuleAs: proxy(Executor.defineExecutingModuleAs, Executor),
     undefineExecutingModule: proxy(Executor.undefineExecutingModule, Executor),
     createModule: proxy(Executor.createModule, Executor),
-    setModuleExports: function() {},
+    setModuleExports: function () {},
 
     // a hash of publicly reachable module sandboxes ie exec0, exec1...
     execute: {},
+
+    // a hash of publicly reachable module objects ie exec0's modules, exec1's modules...
+    modules: {},
+
+    // a hash of publicly reachable executor scopes ie exec0's __exe function
+    execs: {},
 
     // a globally available require() call for the window and base page
     globalRequire: globalRequire,
@@ -69,16 +76,53 @@ context.Inject = {
       @method
       @public
    */
-  enableDebug: function() {
+  enableDebug: function () {
     InjectCore.enableDebug.apply(this, arguments);
   },
+
   /**
-      @see RulesEngine.toUrl
-      @method
-      @public
-   */
-  toUrl: function() {
-    RulesEngine.toUrl.apply(this, arguments);
+    Enables AMD Plugins if that's your thing
+    Adds a special rule to make AMD plugins go round
+    @method
+    @public
+  */
+  enableAMDPlugins: function () {
+    RulesEngine.addRule(/^.+?\!.+$/, {
+      last: true,
+      useSuffix: false,
+      path: function () {
+        return ''; // no path, no fetch!
+      },
+      pointcuts: {
+        afterFetch: function (next, text, moduleName, requestorName) {
+          var pieces = moduleName.split('!');
+          var pluginId = RulesEngine.resolveIdentifier(pieces[0], requestorName);
+          var identifier = pieces[1];
+          var rq = new RequireContext(moduleName, '');
+          rq.ensure([pluginId], function (localReq) {
+            var plugin = localReq(pluginId);
+            var resolveIdentifier = function (name) {
+              return RulesEngine.resolveIdentifier(name, requestorName);
+            };
+            var normalized = (plugin.normalize) ? plugin.normalize(identifier, resolveIdentifier) : resolveIdentifier(identifier);
+            var complete = function (contents) {
+              if (typeof(contents) === 'string') {
+                contents = ['module.exports = decodeURIComponent("', encodeURIComponent(contents), '");'].join('');
+              }
+              next(null, contents);
+            };
+            complete.fromText = function (ftModname, body) {
+              if (!body) {
+                body = ftModname;
+                ftModname = null;
+              }
+              next(null, body);
+            };
+            plugin.load(normalized, localReq, complete, {});
+          });
+        }
+      }
+    });
   },
   /**
       Sets base path for all module includes.
@@ -86,7 +130,7 @@ context.Inject = {
       @method
       @public
    */
-  setModuleRoot: function() {
+  setModuleRoot: function () {
     InjectCore.setModuleRoot.apply(this, arguments);
   },
   /**
@@ -96,7 +140,7 @@ context.Inject = {
       @method
       @public
    */
-  setExpires: function() {
+  setExpires: function () {
     InjectCore.setExpires.apply(this, arguments);
   },
   /**
@@ -106,7 +150,7 @@ context.Inject = {
       @method
       @public
    */
-  setCacheKey: function() {
+  setCacheKey: function () {
     InjectCore.setCacheKey.apply(this, arguments);
   },
   /**
@@ -118,7 +162,7 @@ context.Inject = {
       @method
       @public
    */
-  setCrossDomain: function() {
+  setCrossDomain: function () {
     InjectCore.setCrossDomain.apply(this, arguments);
   },
 
@@ -127,7 +171,7 @@ context.Inject = {
       not to auto-append a .js extension. This is highly helpful in concatenated
       environments or environments with JS being generated programatically.
   */
-  setUseSuffix: function(val) {
+  setUseSuffix: function (val) {
     InjectCore.setUseSuffix(val);
   },
 
@@ -143,7 +187,7 @@ context.Inject = {
       @method
       @public
    */
-  manifest: function() {
+  manifest: function () {
     RulesEngine.manifest.apply(RulesEngine, arguments);
   },
   /**
@@ -151,8 +195,20 @@ context.Inject = {
       @method
       @public
    */
-  addRule: function() {
+  addRule: function () {
     RulesEngine.addRule.apply(RulesEngine, arguments);
+  },
+
+  /**
+   * Add a plugin to Inject, registering a rule and global functions
+   * @see InjectCore.plugin
+   * @method
+   * @public
+   */
+  plugin: function () {
+    var args = [].slice.call(arguments, 0);
+    args.push(context.Inject);
+    InjectCore.plugin.apply(InjectCore, args);
   },
   /**
       CommonJS and AMD require()
@@ -176,7 +232,7 @@ context.Inject = {
       @type {String}
       @public
    */
-  version: "undefined"
+  version: 'undefined'
 };
 
 /**

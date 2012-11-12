@@ -1,5 +1,7 @@
 var Seq = require("seq");
 var bu = require("../util");
+var path = require("path");
+
 exports.task = function(options) {
   return function () {
     require("util").log("Building inject");
@@ -24,6 +26,8 @@ exports.task = function(options) {
         "includes/globals.js",
         "includes/commonjs.js",
         "lib/class.js",
+        "lib/link.js",
+        "lib/flow.js",
         (options.noxd) ? null : "lib/easyxdm-closure.js",
         (options.noxd) ? null : "lib/easyxdm.js",
         "lib/lscache.js",
@@ -40,8 +44,10 @@ exports.task = function(options) {
       ])
       .tagVersion("context.Inject.version = \"__INJECT_VERSION__\";")
       .anonymize("context, undefined", "this")
+      .header(path.join(options.src, "includes/copyright-lic-min.js"))
       .write(options.dest, "inject.js")
       .minify()
+      .header(path.join(options.src, "includes/copyright-lic-min.js"))
       .write(options.dest, "inject.min.js")
       .end(next.ok);
     });

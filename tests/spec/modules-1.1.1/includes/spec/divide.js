@@ -1,1 +1,0 @@
-exports.divide = function(val) { return val/2; };

@@ -1,0 +1,16 @@
+/*
+This file can contain any characters and is reduced down
+to javascript. Here's a smattering of characters to prove
+a point:
+!@#$%^&*()_+-=[]{}\|;':",./<>?
+*/
+
+.button:link {
+  font-size: 24px;
+  color: red;
+  font-family: "Comic Sans", "Marker Felt";
+}
+
+.button:after {
+  content: '. And I\'m epic Comic Sans, OH YEAH';
+};
