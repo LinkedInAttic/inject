@@ -38,21 +38,30 @@ Inject.setModuleRoot("/examples/dependencies/concatexample/");
 
 var CONCAT_GLOBAL = {};
 
-require.ensure(["concat"], function(require){
-  var CONCAT_GLOBAL = require('concat'),
-      moduleNames = [],
-      concat_a = new CONCAT_GLOBAL.concat_a(),
-      concat_b = new CONCAT_GLOBAL.concat_b(),
-      concat_c = new CONCAT_GLOBAL.concat_c();
 
-  moduleNames.push("loaded: "+concat_a.getModuleName());
-  moduleNames.push("loaded: "+concat_b.getModuleName());
-  moduleNames.push("loaded: "+concat_c.getModuleName());
-  console.log(moduleNames);
+Inject.addRule(/concat/, {
+  path: '/concat.js'
+});
+
+require.ensure(['concat_a', 'concat_b', 'concat_c'], function(require) {
+  var a = require('concat_a'),
+      b = require('concat_b'),
+      c = require('concat_c'),
+      moduleNames = [],
+      aMod = new a.concat_a(),
+      bMod = new b.concat_b(),
+      cMod = new c.concat_c();
+
+  moduleNames.push("loaded: "+aMod.getModuleName());
+  moduleNames.push("loaded: "+bMod.getModuleName());
+  moduleNames.push("loaded: "+cMod.getModuleName());
   
 
   document.getElementById("output-concat").innerHTML = moduleNames.join("</br>");
+
+
 });
+
 </textarea>
 
 <script type="text/javascript" src="resources/layout.js"></script>

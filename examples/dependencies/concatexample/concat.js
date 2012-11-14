@@ -1,5 +1,38 @@
-define('concat', ['exports'], function(exports) {
-  exports.concat_a = require('concat_a').concat_a;
-  exports.concat_b = require('concat_b').concat_b;
-  exports.concat_c = require('concat_c').concat_c;
+define('concat_a', ["exports"], function(exports) {
+  var concat_a = function() {
+    var module = "concat_a";
+  
+    return {
+      getModuleName: function() {
+        return module;
+      }
+    }
+  }
+  exports.concat_a = concat_a;
+});
+
+define('concat_b', ["exports"], function(exports) {
+  var concat_b = function() {
+    var module = "concat_a";
+  
+    return {
+      getModuleName: function() {
+        return module;
+      }
+    }
+  }
+  exports.concat_b = concat_b;
+});
+
+define('concat_c', ["exports"], function(exports) {
+  var concat_c = function() {
+    var module = "concat_c";
+  
+    return {
+      getModuleName: function() {
+        return module;
+      }
+    }
+  }
+  exports.concat_c = concat_c;
 });
