@@ -57,7 +57,7 @@ require.ensure(['concat_a', 'concat_b', 'concat_c'], function(require) {
   moduleNames.push("loaded: "+cMod.getModuleName());
   
 
-  document.getElementById("output-concat").innerHTML = moduleNames.join("</br>");
+  document.getElementById("output-concat").innerHTML = moduleNames.join("<br/>");
 
 
 });
