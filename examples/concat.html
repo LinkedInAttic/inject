@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <!--
+    Inject
+    Copyright 2011 LinkedIn
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing,
+    software distributed under the License is distributed on an "AS
+    IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+    express or implied.   See the License for the specific language
+    governing permissions and limitations under the License.
+  -->
+  <!--[if lte IE 7]>
+    <script src="/ie-localstorage-json-shim.js" type="text/javascript" id="ie-localstorage-shim"></script>
+  <![endif]-->
+  <script type="text/javascript" src="/inject.js"></script>
+</head>
+<body>
+
+<h2>Concat file creation</h2>
+
+<textarea id="code">
+sandbox([
+  '<p id="output-sampleString"></p>',
+  '<p id="output-concat"></p>'
+]);
+
+Inject.reset();
+Inject.enableDebug("logging")
+Inject.setModuleRoot("/examples/dependencies/concatexample/");
+
+var CONCAT_GLOBAL = {};
+
+
+Inject.addRule(/concat/, {
+  path: '/concat.js'
+});
+
+require.ensure(['concat_a', 'concat_b', 'concat_c'], function(require) {
+  var a = require('concat_a'),
+      b = require('concat_b'),
+      c = require('concat_c'),
+      moduleNames = [],
+      aMod = new a.concat_a(),
+      bMod = new b.concat_b(),
+      cMod = new c.concat_c();
+
+  moduleNames.push("loaded: "+aMod.getModuleName());
+  moduleNames.push("loaded: "+bMod.getModuleName());
+  moduleNames.push("loaded: "+cMod.getModuleName());
+  
+
+  document.getElementById("output-concat").innerHTML = moduleNames.join("<br/>");
+
+
+});
+
+</textarea>
+
+<script type="text/javascript" src="resources/layout.js"></script>
+
+</body>
+</html>
