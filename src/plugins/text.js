@@ -32,13 +32,14 @@ governing permissions and limitations under the License.
       return path.replace(/^text!\s*/, '');
     },
     pointcuts: {
-      afterFetch: function (text) {
-        return ['',
+      afterFetch: function (next, text) {
+        next(['',
           'var text = "',
           encodeURIComponent(text),
           '";',
           'module.setExports(decodeURIComponent(text));',
-          ''].join('');
+          ''].join('')
+        );
       }
     }
   },
