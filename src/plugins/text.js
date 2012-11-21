@@ -33,7 +33,7 @@ governing permissions and limitations under the License.
     },
     pointcuts: {
       afterFetch: function (next, text) {
-        next(['',
+        next(null, ['',
           'var text = "',
           encodeURIComponent(text),
           '";',
