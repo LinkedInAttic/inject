@@ -31,13 +31,14 @@ governing permissions and limitations under the License.
       return path.replace(/^json!\s*/, '');
     },
     pointcuts: {
-      afterFetch: function (text) {
-        return ['',
+      afterFetch: function (next, text) {
+        next(null, ['',
           'var json = "',
           encodeURIComponent(text),
           '";',
           'module.setExports(JSON.parse(decodeURIComponent(json)));',
-          ''].join('');
+          ''].join('')
+        );
       }
     }
   },

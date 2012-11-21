@@ -42,11 +42,12 @@ governing permissions and limitations under the License.
       return path.replace(/^css!\s*/, '');
     },
     pointcuts: {
-      afterFetch: function (text) {
-        return ['',
+      afterFetch: function (next, text) {
+        next(null, ['',
           ['var cssText = decodeURIComponent("', encodeURIComponent(text), '");'].join(''),
           'module.setExports(Inject.plugins.css.create(cssText))',
-          ''].join('\n');
+          ''].join('\n')
+        );
       }
     }
   },
