@@ -1,5 +1,5 @@
 ---
-layout: default
+layout: api
 permalink: /docs/0.4.x/api/Inject.plugin
 version: 0.4.x
 asOf: 0.4.1

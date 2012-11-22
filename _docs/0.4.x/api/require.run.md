@@ -1,5 +1,5 @@
 ---
-layout: default
+layout: api
 permalink: /docs/0.4.x/api/require.run
 version: 0.4.x
 title: require.run

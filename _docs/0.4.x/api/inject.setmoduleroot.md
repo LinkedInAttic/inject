@@ -1,5 +1,5 @@
 ---
-layout: default
+layout: api
 permalink: /docs/0.4.x/api/Inject.setModuleRoot
 version: 0.4.x
 title: Inject.setModuleRoot
