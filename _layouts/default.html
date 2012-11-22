@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>
+      {% if page.title %}
+        {{page.title}} | Inject
+      {% else %}
+        Inject: Dependency Management Got Awesome
+      {% endif %}
+    </title>
+
+    {% for css in page.css %}
+      <link rel="stylesheet" href="{{ css }}" type="text/css" />
+    {% endfor %}
+
+    {% if page.title %}
+    <meta property="og:title" content="{{page.title}} | Inject"/>
+    <meta name="title" content="{{page.title}} | Inject" />
+    {% else %}
+    <meta property="og:title" content="Inject: Dependency Management Got Awesome"/>
+    <meta name="title" content="Inject: Dependency Management Got Awesome" />
+    {% endif %}
+
+    {% if page.summary %}
+    <meta property="og:description" content="{{ page.summary }}"/>
+    <meta name="description" content="{{ page.summary }}">
+    {% else %}
+    <meta property="og:description" content="CommonJS and AMD dependency management designed for the browser."/>
+    <meta name="description" content="CommonJS and AMD dependency management designed for the browser." />
+    {% endif %}
+
+    {% if page.keywords %}
+    <meta name="keywords" content="{{ page.keywords }}">
+    {% endif %}
+
+    <!-- tracking -->
+    <!-- todo: use LinkedIn GA Tracking -->
+  </head>
+  <body>
+    {{ content }}
+
+    {% for js in page.javascript %}
+    <script type="text/javascript" src="{{ js }}"></script>
+    {% endfor %}
+  </body>
+</html>
