@@ -398,7 +398,7 @@ var RulesEngine;
           if (typeof(rule.matches) === 'string' && rule.matches === result) {
             match = true;
           }
-          else if (typeof(rule.matches) === 'object' && rule.matches.test(result)) {
+          else if (rule.matches instanceof RegExp && rule.matches.test(result)) {
             match = true;
           }
           // if we have a match, do a replace
