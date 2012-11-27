@@ -1,7 +1,7 @@
 name: Inject
 description: Dependency Management with CommonJS and AMD Support
 future: true
-permalink: /article/:title/
+permalink: /blog/:year/:month/:day/:title/
 markdown: kramdown
 kramdown:
   entity_output: symbolic

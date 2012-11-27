@@ -1,6 +1,5 @@
 ---
 layout: api
-permalink: /docs/0.4.x/api/define
 version: 0.4.x
 title: define
 spec: AMD
@@ -14,7 +13,7 @@ define(dependencies, factory)
 define(id, dependencies, factory)
 {% endhighlight %}
 
-The define method is the main AMD entry point when using the [Asynchronous Module Definition](/docs/0.4.x/howto/amd) format.
+The define method is the main AMD entry point when using the [Asynchronous Module Definition](/docs/0.4.x/howto/amd.html) format.
 
 With or Without an id
 =====================
@@ -28,7 +27,7 @@ will receive an implicit module ID of "foo/bar" based on the **module id** (not 
 
 Dependencies
 ============
-The `dependencies` parameter is an optional array of module dependencies that are required for the currently executing define function to resolve properly. Dependencies will be downloaded and ran before `factory` is looked at. Any modules passed into the array will be resolved to URLs based on the [resolution rules for modules](/docs/0.4.x/howto/resolving_modules)
+The `dependencies` parameter is an optional array of module dependencies that are required for the currently executing define function to resolve properly. Dependencies will be downloaded and ran before `factory` is looked at. Any modules passed into the array will be resolved to URLs based on the [resolution rules for modules](/docs/0.4.x/howto/resolving_modules.html)
 
 The Factory (aka the Exports)
 =============================

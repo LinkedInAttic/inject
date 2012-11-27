@@ -1,6 +1,5 @@
 ---
 layout: default
-permalink: /docs/0.4.x/howto/cross_domain
 version: 0.4.x
 title: Using Inject on Multiple Domains
 ---
@@ -28,7 +27,7 @@ What's important is that you can put the URL to your CDN into your browser and r
 
 Configuring Inject
 ==================
-Given the CDN location, we will need to use both [Inject.setModuleRoot](/docs/0.4.x/api/Inject.setModuleRoot) and [Inject.setCrossDomain](/docs/0.4.x/api/Inject.setCrossDomain) to configure this installation of Inject. `setModuleRoot` tells Inject your files are on another server, while `setCrossDomain` tells inject where the two helper files are that it will need for cross-domain downloading.
+Given the CDN location, we will need to use both [Inject.setModuleRoot](/docs/0.4.x/api/inject.setmoduleroot.html) and [Inject.setCrossDomain](/docs/0.4.x/api/inject.setcrossdomain.html) to configure this installation of Inject. `setModuleRoot` tells Inject your files are on another server, while `setCrossDomain` tells inject where the two helper files are that it will need for cross-domain downloading.
 
 {% highlight js %}
 Inject.setModuleRoot('http://cdniscool.com/js/modules');

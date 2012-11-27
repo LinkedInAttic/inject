@@ -1,6 +1,5 @@
 ---
 layout: api
-permalink: /docs/0.4.x/api/Inject.reset
 version: 0.4.x
 title: Inject.reset
 injectOnly: true

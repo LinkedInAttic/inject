@@ -1,6 +1,5 @@
 ---
 layout: api
-permalink: /docs/0.4.x/api/Inject.plugin
 version: 0.4.x
 asOf: 0.4.1
 title: Inject.plugin
@@ -19,7 +18,7 @@ The plugin interface is the primary way to add custom [transpiler](http://en.wik
 
 Defining a Plugin
 =================
-Plugins are defined using `Inject.plugin` and are given at the very least a name and a ruleSet. The ruleSet is identical to an [Inject.addRule](/docs/0.4.x/api/Inject.addRule) rule, except the `options.matches` is inferred by the `name` parameter. All plugins match the syntax:
+Plugins are defined using `Inject.plugin` and are given at the very least a name and a ruleSet. The ruleSet is identical to an [Inject.addrule](/docs/0.4.x/api/inject.addrule.html) rule, except the `options.matches` is inferred by the `name` parameter. All plugins match the syntax:
 
 {% highlight js %}
 /^name!.+$/

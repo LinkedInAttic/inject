@@ -1,6 +1,5 @@
 ---
 layout: api
-permalink: /docs/0.4.x/api/Inject.addRule
 version: 0.4.x
 title: Inject.addRule
 injectOnly: true
@@ -81,11 +80,11 @@ The `options.last` tells Inject that no more rules should run after this. Couple
 
 Controlling Automated Adjustment: options.useSuffix
 ===================================================
-Unless disabled as part of [Inject.setUseSuffix](/docs/0.4.x/api/Inject.setUseSuffix), `options.useSuffix` allows a specific rule to disable the automatic suffix injection. If set to `false` explicitly, a ".js" suffix will be omitted.
+Unless disabled as part of [Inject.setUseSuffix](/docs/0.4.x/api/inject.setusesuffix.html), `options.useSuffix` allows a specific rule to disable the automatic suffix injection. If set to `false` explicitly, a ".js" suffix will be omitted.
 
 Altering the File: options.pointcuts
 ====================================
-`options.pointcuts` provides a way to modify the file after its download, but before execution. **This enables you to alter a file to add require statements, assign module exports, and more without altering the original file**. This "shimming" process is one of Inject's biggest uses. There's a [list of receipies](/docs/0.4.x/howto/addule_shim) that demonstrate how to use pointcuts.
+`options.pointcuts` provides a way to modify the file after its download, but before execution. **This enables you to alter a file to add require statements, assign module exports, and more without altering the original file**. This "shimming" process is one of Inject's biggest uses. There's a [list of receipies](/docs/0.4.x/howto/inject_and_libraries.html) that demonstrate how to use pointcuts.
 
 The before pointcut `options.pointcuts.before` (deprecated 0.4.1) and after pointcut `options.pointcuts.after` (deprecated 0.4.1) can be used to add function code before and after the file
 

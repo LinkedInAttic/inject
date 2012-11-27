@@ -1,6 +1,5 @@
 ---
 layout: api
-permalink: /docs/0.4.x/api/require
 version: 0.4.x
 title: require
 spec: CommonJS AMD
@@ -18,4 +17,4 @@ AMD Interface
 require(['one', 'two', 'three'], function (one, two, three) {});
 {% endhighlight %}
 
-AMD specifies an alternate syntax for require, which takes an array of dependencies, followed by a callback function which receives the list of paramters in the order they were listed. Key builtins of `require`, `module`, and `exports` won't resolve to modules, but instead will resolve to their matching module counterparts. It's behavior is very similar in design to [require.ensure](/docs/0.4.x/api/require.ensure).
+AMD specifies an alternate syntax for require, which takes an array of dependencies, followed by a callback function which receives the list of paramters in the order they were listed. Key builtins of `require`, `module`, and `exports` won't resolve to modules, but instead will resolve to their matching module counterparts. It's behavior is very similar in design to [require.ensure](/docs/0.4.x/api/require.ensure.html).
