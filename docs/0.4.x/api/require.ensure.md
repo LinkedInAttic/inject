@@ -17,8 +17,8 @@ function (require) {}
 
 The only parameter passed to the callback, `require`, is a local function that can retrieve any of the dependent modules by the name specified in `[dependencies]`.
 
-Ensure Async Dependencies
-=========================
+### Ensure Async Dependencies
+
 The primary use of `require.ensure` is to demand an unknown number of dependencies, and upon completion, map them back into a local scope.
 
 {% highlight js %}

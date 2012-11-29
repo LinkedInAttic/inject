@@ -27,8 +27,8 @@ The define function takes three parts
 
 Full details on writing AMD compliant modules are available in the [AMD Wiki](https://github.com/amdjs/amdjs-api/wiki/AMD)
 
-AMD Plugins (0.4.1)
-===================
+### AMD Plugins (0.4.1)
+
 As of Inject 0.4.1, it's possible to enable AMD plugin support using the following config:
 
 {% highlight js %}

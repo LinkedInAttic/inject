@@ -11,8 +11,8 @@ require('moduleName');
 
 The default interface for CommonJS, `require()` takes a single parameter as a string. Rarely (if ever) will require be used from the global namespace, but instead from within the context of a module. If the module has not been defined by the time `require()` is called, an Exception is thrown.
 
-AMD Interface
-=============
+### AMD Interface
+
 {% highlight js %}
 require(['one', 'two', 'three'], function (one, two, three) {});
 {% endhighlight %}

@@ -27,12 +27,12 @@ Inject.addRule('module/path', {
 
 Full details on the options are below.
 
-Rule Matching: options.matches
-==============================
+### Rule Matching: options.matches
+
 Either the first paramter to `addRule` can be a string or regex, or this can be assigned to the ruleSet's `options.matches` value. When the match condition is met, the rule is applied. Strings match a literal 1:1 while regexes match based on standard JavaScript regex objects. The rest of the options only take effect if the match resolves to `true`.
 
-Path Mapping: options.path
-==========================
+### Path Mapping: options.path
+
 The `options.path` parameter is either a string or a function. When path is a string, a 1:1 replacement is made when the match is satisfied. When path is a function, it is invoked, receiving the current working path as a parameter for modification. For example, you can mount jQuery to a specific URL
 
 {% highlight js %}
@@ -59,8 +59,8 @@ Inject.addRule(/^jquery\.ui\..+$/, {
 
 Whatever string is returned from the `path` function will become the new path.
 
-Controlling Order: options.weight and options.last
-==================================================
+### Controlling Order: options.weight and options.last
+
 The `options.weight` is an Integer value used to increase the priority of a rule. By default, rules are applied in a LIFO (last-in-first-out) manner. If you want a rule to "stick", you can assign it a higher weight. Consider the contrived example
 
 {% highlight js %}
@@ -78,12 +78,12 @@ The above will result in a resolution to "bar". The default order would have bee
 
 The `options.last` tells Inject that no more rules should run after this. Coupled with `options.weight`, it's a very effective way to stop a rules queue if required. An alternative syntax lets you specify weight in the method signature itself.
 
-Controlling Automated Adjustment: options.useSuffix
-===================================================
+### Controlling Automated Adjustment: options.useSuffix
+
 Unless disabled as part of [Inject.setUseSuffix](/docs/0.4.x/api/inject.setusesuffix.html), `options.useSuffix` allows a specific rule to disable the automatic suffix injection. If set to `false` explicitly, a ".js" suffix will be omitted.
 
-Altering the File: options.pointcuts
-====================================
+### Altering the File: options.pointcuts
+
 `options.pointcuts` provides a way to modify the file after its download, but before execution. **This enables you to alter a file to add require statements, assign module exports, and more without altering the original file**. This "shimming" process is one of Inject's biggest uses. There's a [list of receipies](/docs/0.4.x/howto/inject_and_libraries.html) that demonstrate how to use pointcuts.
 
 The before pointcut `options.pointcuts.before` (deprecated 0.4.1) and after pointcut `options.pointcuts.after` (deprecated 0.4.1) can be used to add function code before and after the file

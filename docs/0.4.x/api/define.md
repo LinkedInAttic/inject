@@ -15,8 +15,8 @@ define(id, dependencies, factory)
 
 The define method is the main AMD entry point when using the [Asynchronous Module Definition](/docs/0.4.x/howto/amd.html) format.
 
-With or Without an id
-=====================
+### With or Without an id
+
 The `id` parameter is used to indicate the id of a module which maps back to a dependency. For every module you "require", there must be a matching "id" in a define statement. When no `id` is provided, the id is inferred from the module's path. For example, a define that requests the dependency `foo/bar` and downoads the file `/foo/bar.js` continaing
 
 {% highlight js %}
@@ -25,18 +25,18 @@ define(dependencies, factory)
 
 will receive an implicit module ID of "foo/bar" based on the **module id** (not the URL path). Many optimizers will auto-insert the module ID during a compilation process, however it is not required for a module to be defined and work.
 
-Dependencies
-============
+### Dependencies
+
 The `dependencies` parameter is an optional array of module dependencies that are required for the currently executing define function to resolve properly. Dependencies will be downloaded and ran before `factory` is looked at. Any modules passed into the array will be resolved to URLs based on the [resolution rules for modules](/docs/0.4.x/howto/resolving_modules.html)
 
-The Factory (aka the Exports)
-=============================
+### The Factory (aka the Exports)
+
 The one required parameter in a define call, `factory` is either an object or a function. When `factory` is an object, the object is assigned straight to the results of the module: its exports. When `factory` is a function, the function is ran. The signature of the function maps 1:1 with each array item from the `dependencies` array. If no `dependencies` array was used, the function will receive in order `require`, `module`, and `exports`.
 
 Any value returned from the function will be assigned to the module's exports.
 
-Example
-=======
+### Example
+
 {% highlight js %}
 // file: foo/bar.js
 define('foo/bar', ['foo/baz'], function (baz) {

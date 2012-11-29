@@ -16,8 +16,8 @@ The plugin interface is the primary way to add custom [transpiler](http://en.wik
 * converting Dust templates into their executable JS equivalent
 * loading JSON into a local variable
 
-Defining a Plugin
-=================
+### Defining a Plugin
+
 Plugins are defined using `Inject.plugin` and are given at the very least a name and a ruleSet. The ruleSet is identical to an [Inject.addrule](/docs/0.4.x/api/inject.addrule.html) rule, except the `options.matches` is inferred by the `name` parameter. All plugins match the syntax:
 
 {% highlight js %}
@@ -26,6 +26,6 @@ Plugins are defined using `Inject.plugin` and are given at the very least a name
 
 The `name!` is the plugin keyword, where "name" matches the name parameter from the plugin call. In fact, you can accomplish 99% of the plugin command using addRule. However, using `plugin` is a clear indicator to other developers that you intend for your code to be modular and used in multiple scenarios.
 
-The 3rd Param: Functions
-========================
+### The 3rd Param: Functions
+
 The third parameter `functions` is an object literal. All items found in this object are copied over to `Inject.plugins[name]`. This allows custom functionality from within a pointcut to access global functionality. The [CSS Plugin](https://github.com/linkedin/inject/blob/master/src/plugins/css.js) is a great example of making global functions available in order to create CSS "objects" which can then be returned as exports.

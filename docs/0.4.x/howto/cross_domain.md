@@ -11,8 +11,8 @@ We're going to assume you have two servers:
 * http://example.com is your website
 * http://cdniscool.com is your CDN location (and the scripts are under /js/modules)
 
-What to Upload Remotely
-=======================
+### What to Upload Remotely
+
 On the remote server, you'll need to upload two files, the `relay.swf` and the `relay.html` file onto your CDN. For simplicity sake, we're going to put these in your module's root directory.
 
 {% highlight sh %}
@@ -25,8 +25,8 @@ relay.html
 
 What's important is that you can put the URL to your CDN into your browser and reach the two files. In the above case, you should be able to reach `http://cdniscool.com/relay.html` and `http://cdniscool.com/relay.swf` via a normal web browser.
 
-Configuring Inject
-==================
+### Configuring Inject
+
 Given the CDN location, we will need to use both [Inject.setModuleRoot](/docs/0.4.x/api/inject.setmoduleroot.html) and [Inject.setCrossDomain](/docs/0.4.x/api/inject.setcrossdomain.html) to configure this installation of Inject. `setModuleRoot` tells Inject your files are on another server, while `setCrossDomain` tells inject where the two helper files are that it will need for cross-domain downloading.
 
 {% highlight js %}
