@@ -15,7 +15,7 @@ express or implied.   See the License for the specific language
 governing permissions and limitations under the License.
 */
 
-var tasks = ["all", "build", "server", "docs"],
+var tasks = ["all", "build", "server"],
     optimist = require("optimist")
     .usage("Inject command line tool.\nUsage: $0 [task]\ntasks are: "+tasks.join(", "))
     .boolean("help")
@@ -27,13 +27,9 @@ var tasks = ["all", "build", "server", "docs"],
 switch (task) {
   case "all":
     require("./build_tasks/build.js").task();
-    require("./build_tasks/docs.js").task();
     break;
   case "build":
     require("./build_tasks/build.js").task();
-    break;
-  case "docs":
-    require("./build_tasks/docs.js").task();
     break;
   case "server":
   	require("./build_tasks/server.js").task();

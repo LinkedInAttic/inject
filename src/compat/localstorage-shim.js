@@ -1,3 +1,4 @@
+/*global document:true, window:true */
 /*
 Inject
 Copyright 2011 LinkedIn
@@ -25,32 +26,16 @@ governing permissions and limitations under the License.
  * we wrap everything in a self executing closure and expose
  * window.localstorage
  */
-(function() {
+(function () {
   var DEBUG = false,
-      DONT_ENUMERATE = ['getItem', 'setItem', 'removeItem', 'key', 'clear'],
       iframe = document.createElement('iframe'),
       src = document.getElementById('ie-localstorage-shim'),
       localStorageShim = {},
       CustomError;
 
   //custom error. used to rethrow QUOTA_EXCEEDED_ERR errors
-  CustomError = function(name, msg) { this.name = name; this.message = msg;};
-  CustomError.prototype = new Error;
-
-  //reference the tiniest gif ever via mhtml (http://probablyprogramming.com/2009/03/15/the-tiniest-gif-ever)
-  iframe.src = src ? 'mhtml:' + src.getAttribute('src', -1) + '!storetwo' : '/favicon.ico';
-  iframe.style.display = 'none';
-
-  iframe.attachEvent('onload', createLocalStorageObject);
-  src.parentNode.insertBefore(iframe,src);
-
-  function cleanStorageKey(key) {
-    return key ? 'ie' + key.replace(/[^-._0-9A-Za-z\xb7\xc0-\xd6\xd8-\xf6\xf8-\u037d-\u1fff\u200c-\u200d\u203f\u2040\u2070-\u218f]/g, '-' ) : key ;
-  }
-  function uncleanStorageKey(key) {
-    //for the moment we can only get ride of the 'ie' prefix
-    return key ? key.replace(/^ie/,'') : key;
-  }
+  CustomError = function (name, msg) { this.name = name; this.message = msg; };
+  CustomError.prototype = new Error();
 
   /**
    * Creates a localStorage shim object
@@ -73,14 +58,17 @@ governing permissions and limitations under the License.
     function syncStoredKeys() {
       var storageAttr;
       _storedKeys = [];
-      try{
+      try {
         storageAttr = storageElement.XMLDocument.documentElement.attributes;
-        for (var x = 0, l = storageAttr.length; x<l; x++) {
+        for (var x = 0, l = storageAttr.length; x < l; x++) {
           _storedKeys.push(storageAttr[x].nodeName);
         }
-      }catch(e) {
+      }
+      catch (e) {
         //unable to pre-populate _storedKeys. This may be the first time userData is used or it may not be ready yet.
-        if (DEBUG) throw e;
+        if (DEBUG) {
+          throw e;
+        }
       }
       localStorageShim.length = _storedKeys.length;
     }
@@ -98,14 +86,17 @@ governing permissions and limitations under the License.
        * @public
        * @returns {*} result of query
        */
-      'getItem': function(key) {
+      getItem: function (key) {
         var val = null;
         key = cleanStorageKey(key);
-        try{
+        try {
           storageElement.load(id);
           val =  storageElement.getAttribute(key);
-        }catch(e) {
-          if (DEBUG) throw e;
+        }
+        catch (e) {
+          if (DEBUG) {
+            throw e;
+          }
         }
 
         return val;
@@ -119,13 +110,14 @@ governing permissions and limitations under the License.
        * @param {*} value - the value to store
        * @public
        */
-      'setItem': function(key, value) {
+      setItem: function (key, value) {
         key = cleanStorageKey(key);
-        try{
+        try {
           storageElement.setAttribute(key, value.toString());//.toString() per https://developer.mozilla.org/en/DOM/Storage
           syncStoredKeys();
           storageElement.save(id);
-        }catch(e) {
+        }
+        catch (e) {
           throw new CustomError('QUOTA_EXCEEDED_ERR', 'userData quota exceeded.');//-2147217407
         }
         syncStoredKeys();//adds to internal cache and updates length
@@ -137,14 +129,17 @@ governing permissions and limitations under the License.
        * @param {string} key - the name of the key to remove
        * @public
        */
-      'removeItem': function(key) {
+      removeItem: function (key) {
         key = cleanStorageKey(key);
         try {
           storageElement.removeAttribute(key);
           syncStoredKeys();//updates internal store and localStorage.length
           storageElement.save(id);
-        }catch(e) {
-          if (DEBUG) throw e;
+        }
+        catch (e) {
+          if (DEBUG) {
+            throw e;
+          }
         }
       },
 
@@ -155,7 +150,7 @@ governing permissions and limitations under the License.
        * @public
        * @returns {string} the key at the given index
        */
-      'key': function(index) {
+      key: function (index) {
         syncStoredKeys();
         return uncleanStorageKey(_storedKeys[index]);
       },
@@ -165,11 +160,13 @@ governing permissions and limitations under the License.
        * @method localStorageShim.clear
        * @public
        */
-      'clear': function() {
+      clear: function () {
         syncStoredKeys();//updates internal store and localStorage.length
-        for (var x = _storedKeys.length-1, key; x >= 0; x--) {
+        for (var x = _storedKeys.length - 1, key; x >= 0; x--) {
           key = localStorageShim.key(x);
-          key && localStorageShim.removeItem(key);
+          if (key) {
+            localStorageShim.removeItem(key);
+          }
         }
       },
 
@@ -179,7 +176,7 @@ governing permissions and limitations under the License.
        * @type {int}
        * @public
        */
-      'length': _storedKeys.length
+      length: _storedKeys.length
     };
 
     /**
@@ -192,4 +189,20 @@ governing permissions and limitations under the License.
     window['localStorage'] = window['localStorage'] || localStorageShim;
     syncStoredKeys();
   }
+
+  //reference the tiniest gif ever via mhtml (http://probablyprogramming.com/2009/03/15/the-tiniest-gif-ever)
+  iframe.src = src ? 'mhtml:' + src.getAttribute('src', -1) + '!storetwo' : '/favicon.ico';
+  iframe.style.display = 'none';
+
+  iframe.attachEvent('onload', createLocalStorageObject);
+  src.parentNode.insertBefore(iframe, src);
+
+  function cleanStorageKey(key) {
+    return key ? 'ie' + key.replace(/[^\-._0-9A-Za-z\xb7\xc0-\xd6\xd8-\xf6\xf8-\u037d-\u1fff\u200c-\u200d\u203f\u2040\u2070-\u218f]/g, '-') : key;
+  }
+  function uncleanStorageKey(key) {
+    //for the moment we can only get ride of the 'ie' prefix
+    return key ? key.replace(/^ie/, '') : key;
+  }
+
 }());

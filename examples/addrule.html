@@ -46,27 +46,52 @@ sandbox([
 Inject.reset();
 Inject.setModuleRoot("/examples/dependencies/addrule/");
 
-// note: weighting is important here because of replacements
+// note: weighting is important
+
 Inject.addRule(/jquery\.ui/, {
   path: function(module) {
     return "jqueryui/"+module+".min.js"
   },
   last: true,
+  weight: 300,
   pointcuts: {
-    before: function() {
-      var jQuery = require("jquery");
-    },
-    after: function() {
-      module.setExports(jQuery);
+    afterFetch: function(text) {
+      return [
+        'var jQuery = require("jquery");',
+        text,
+        'module.setExports(jQuery);',
+      ''].join('\n');
     }
   }
 });
-Inject.addRule(/jquery/, {
-  path: "jquery-1.7.js",
+
+Inject.addRule(/jquery\.ui\.button/, {
+  weight: 500,
   pointcuts: {
-    after: function() {
-      module.setExports(jQuery.noConflict());
-      delete window["jQuery"];
+    afterFetch: function(text) {
+      return [
+        "if (!jQuery) var $ = jQuery = require('jquery');",
+        "require('jquery.ui.core');",
+        "require('jquery.ui.widget');",
+        text,
+      ''].join('\n');
+    }
+  }
+});
+
+Inject.addRule(/^jquery$/, {
+  path: "jquery-1.7.js",
+  last: true,
+  weight: 999,
+  pointcuts: {
+    afterFetch: function(text) {
+      return [
+        'var oldJQ = window.jQuery;',
+        text,
+        'module.setExports(jQuery.noConflict());',
+        'delete window["jQuery"];',
+        'window.jQuery = oldJQ;',
+      ''].join('\n');
     }
   }
 });

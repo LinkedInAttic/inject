@@ -21,14 +21,14 @@ governing permissions and limitations under the License.
  * via various traversal methods.
  * @file
 **/
-var TreeNode = Class.extend(function() {
+var TreeNode = Class.extend(function () {
   return {
     /**
      * Create a TreeNode with a defined value
      * @constructs TreeNode
      * @param {TreeNode} value - the value of this node
      */
-    init: function(value) {
+    init: function (value) {
       this.value = value;
       this.children = [];
       this.left = null;
@@ -43,7 +43,7 @@ var TreeNode = Class.extend(function() {
      * @public
      * @returns {variable} the value of the node
      */
-    getValue: function() {
+    getValue: function () {
       return this.value;
     },
 
@@ -52,7 +52,7 @@ var TreeNode = Class.extend(function() {
      * @method TreeNode#flagCircular
      * @public
      */
-    flagCircular: function() {
+    flagCircular: function () {
       this.isCircularNode = true;
     },
 
@@ -62,7 +62,7 @@ var TreeNode = Class.extend(function() {
      * @public
      * @returns {boolean} true if this is a circular reference
      */
-    isCircular: function() {
+    isCircular: function () {
       return this.isCircularNode;
     },
 
@@ -73,7 +73,7 @@ var TreeNode = Class.extend(function() {
      * @param {TreeNode} node - the TreeNode to add
      * @public
      */
-    addChild: function(node) {
+    addChild: function (node) {
       var rightChild;
       if (this.children.length > 0) {
         rightChild = this.children[this.children.length - 1];
@@ -90,7 +90,7 @@ var TreeNode = Class.extend(function() {
      * @public
      * @returns {Array} an array of child TreeNode objects
      */
-    getChildren: function() {
+    getChildren: function () {
       return this.children;
     },
 
@@ -101,7 +101,7 @@ var TreeNode = Class.extend(function() {
      * @public
      * @returns {TreeNode}
      */
-    setLeft: function(node) {
+    setLeft: function (node) {
       return this.left = node;
     },
 
@@ -111,7 +111,7 @@ var TreeNode = Class.extend(function() {
      * @public
      * @returns {TreeNode}
      */
-    getLeft: function() {
+    getLeft: function () {
       return this.left;
     },
 
@@ -122,7 +122,7 @@ var TreeNode = Class.extend(function() {
      * @public
      * @returns {TreeNode}
      */
-    setRight: function(node) {
+    setRight: function (node) {
       return this.right = node;
     },
 
@@ -132,7 +132,7 @@ var TreeNode = Class.extend(function() {
      * @public
      * @returns {TreeNode}
      */
-    getRight: function() {
+    getRight: function () {
       return this.right;
     },
 
@@ -143,7 +143,7 @@ var TreeNode = Class.extend(function() {
      * @public
      * @returns {TreeNode}
      */
-    setParent: function(node) {
+    setParent: function (node) {
       return this.parent = node;
     },
 
@@ -153,7 +153,7 @@ var TreeNode = Class.extend(function() {
      * @public
      * @returns {TreeNode}
      */
-    getParent: function() {
+    getParent: function () {
       return this.parent;
     },
 
@@ -165,18 +165,17 @@ var TreeNode = Class.extend(function() {
      * @public
      * @returns {Array} the nodes of the tree, ordered by post-order
      */
-    postOrder: function(callback) {
+    postOrder: function (callback) {
       // post order traversal to an array
       // left, right, parent
       var currentNode = this,
           direction = null,
-          output = [],
-          i = 0;
-      
+          output = [];
+
       while (currentNode) {
-        
-        if (currentNode.getChildren().length > 0 && direction !== "up") {
-          direction = "down";
+
+        if (currentNode.getChildren().length > 0 && direction !== 'up') {
+          direction = 'down';
           currentNode = currentNode.getChildren()[0];
           continue;
         }
@@ -189,13 +188,13 @@ var TreeNode = Class.extend(function() {
         // end node correct
 
         if (currentNode.getRight()) {
-          direction = "right";
+          direction = 'right';
           currentNode = currentNode.getRight();
           continue;
         }
 
         if (currentNode.getParent()) {
-          direction = "up";
+          direction = 'up';
           currentNode = currentNode.getParent();
           continue;
         }
@@ -205,3 +204,6 @@ var TreeNode = Class.extend(function() {
     }
   };
 });
+
+// jshint
+TreeNode = TreeNode;

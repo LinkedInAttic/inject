@@ -1,5 +1,3 @@
-You are viewing the README for the current branch of Inject. This is 0.4.x
-
 <table>
   <tr>
     <th colspan="2">Healthchecks</th>
@@ -18,8 +16,6 @@ You are viewing the README for the current branch of Inject. This is 0.4.x
   </tr>
 </table>
 
-Inject: Dependency Management Got Awesome
-===
 **Inject** (Apache Software License 2.0) is a revolutionary way to manage your dependencies in a *Library Agnostic* way. Some of its major features include:
 
 * CommonJS Compliance in the Browser (exports.*)
@@ -28,118 +24,97 @@ Inject: Dependency Management Got Awesome
 * localStorage (load a module once)
 * Frustratingly Simple
 
-Some of the awesome roadmap things coming soon(ish)
-
-* versioning (once we re-expose modules.* interface most likely)
-
-Let's Start With Examples!
+Getting Started With Inject
 ===
-We have a nodejs test server for both the examples and development. Install node and npm, then:
+This page is designed to get you up and running with the latest version of Inject. For greater detail, there is an Advanced Usage section, and a guide to the API.
 
-```
-cd inject
-npm install
-node makefile.js build
-node makefile.js server
-```
-
-You can visit http://localhost:4000/examples/ for viewing some sample code, or http://localhost:4000/tests for running our unit test suite. We use alternate ports to create the cross domain environment instead of a CDN.
-
-If you have PhantomJS (http://phantomjs.org/download.html) in your binary path, you can start the node server from above and kick off a PhantomJS version.
-
-```sh
-phantomjs tests/run-qunit.js http://localhost:4000/tests/tests.html
-
-# or the travisCI version w/ granularity
-
-phantomjs tests/run-qunit.js http://localhost:4000/tests/tests.html?filter=src%20%3A%3A &&
-phantomjs tests/run-qunit.js http://localhost:4000/tests/tests.html?filter=spec%20%3A%3A%20CommonJS &&
-phantomjs tests/run-qunit.js http://localhost:4000/tests/tests.html?filter=spec%20%3A%3A%20AMD &&
-phantomjs tests/run-qunit.js http://localhost:4000/tests/tests.html?filter=integration%20%3A%3A
-```
-
-Getting Started
+Download Inject
 ===
-In case you're looking: [Building Inject From Source](https://github.com/linkedin/inject/wiki/0.4.x-Building-Inject-From-Source)
+The latest version of inject is always available via the source repository at https://github.com/linkedin/inject/downloads. The most recent version is usually at the top, and inside is the required JS and optional HTML files. Copy them to your own server.
 
-We've put together a [Getting Started With inject Guide](https://github.com/linkedin/inject/wiki/0.4.x-Getting-Started) which is a launching point to all to functionality inject has to offer. If you're already familiar with CommonJS-style modules, than you can probably start right there.
-
-Writing CommonJS Compliant Modules
+Adding Inject to Your Page
 ===
-While not a requirement, the natural encapsulation CommonJS provides allows you to make only specific parts of your file available to the function that requested its injection. The local variable `exports` is made available as an object literal. At the terminus of your file, anything assigned to `exports` will be available as part of the module's package. If you want something private, simply don't export it.
-
-A very simple module could be the following
+This walkthrough is assuming you're using a directory called `js` which contains all of your javascript, possibly even this file. It also assumes inside of the `js` directory is a `modules` directory which will contain all of your modules. Your directory layout might look like the following:
 
 ```
-var waterfowl = function() {};
-waterfowl.prototype.quack = function() {
-  alert("Quack!");
-};
-
-exports.duck = waterfowl
+|-index.html
+|-relay.html (optional)
+|-js
+    |-inject.js
+    |-modules
+      |-math.js
+      |-increment.js
+      |-program.js
 ```
 
-If you injected this file, you could then say `var duck = new moduleName.duck()` and instantiate your object.
+The location of the modules directory does not need to be under the `inject.js` file, but it's common practice to group files of similar types together such as JavaScript.
 
-Modifying your Library to Work with Inject
+Starting Your JavaScript
 ===
-Sometimes, you have a library (jQuery, or Modernizr for example) which isn't CommonJS compliant. We've put together a [page of recipes](https://github.com/linkedin/inject/wiki/0.4.x-addRule-and-Your-Favorite-Library) for using the addRule() API with your favorite library.
+To use inject, place the following script tags into the `<head>` of your document
 
-JavaScript Minifiers
+```html
+<script type="text/javascript" src="inject.js"></script>
+<script type="text/javascript">
+  Inject.setModuleRoot("/js/modules");
+  require.run("program");
+</script>
+```
+
+* **Inject.setModuleRoot** is the location of ALL your JS modules. Based on the directory structure above, they are located in the `js/modules` directory.
+* **require.run** executes your main entry point, whatever it may be. Given the above directory structure, it will run the `program.js` file in your module root (from require.setModuleRoot). The `.js` is added automatically.
+
+Some Quick Configs
 ===
-If you're using a JS Minifier for your module files (and you probably should), there are some important compilation options you need. Many minifiers obfuscate and optimize variables inside of functions, which will affect the ability of inject to identify your dependencies before runtime. For the greatest in-browser optimization, we recommend using [UglifyJS](https://github.com/mishoo/UglifyJS) since it allows you to protect specific reserved names while still mazimixing the amount of compression you can do. If running node isn't an option, YUI and Google compressors can also be used with the following options:
-
-* UglifyJS: `--reserved-names “require,exports,module"`
-* YUI Compressor: `--nomunge`
-* Google Closure: `--compilation_level WHITESPACE_ONLY`
-
-If your compression engine of choice isn't on the list, and has the ability to protect/preserve certain names, send us a bug with the settings and we'll add it to the list. As a last ditch effort, you can often put an `eval();` after your return statement. For most optimizers, the addition of an eval will prevent variable munging within the current scope chain.
-
-API Notes
-===
-Path Resolution
----
-By default, inject tries to do the best it can, but in complex environments, that's not enough. The following behaviors can change / simplify the injection of modules.
-
-* **call Inject.setModuleRoot with a function** if config.path resolves to a function, the function will be called instead of standard path evaluation
-* **use Inject.addRule(match, rules)** the addRule() syntax allows you to match regex statements against a module path, and resolve items dynamically
-
-Expiring Content
----
-By default, inject() will cache things for one day (1440 minutes). You can change the default behavior through the config object:
-
-```
-Inject.setExpires(10080);
-// files now last for one week
-```
-
-Setting an expiry value of "0" means that client side caching will not be used. There will need to be a balance between caching items in the browser, and letting localStorage also do caching for you. At any time, you can always clear the cache with the below code, for example if a user has not been to your site since your last major code push.
-
-```
-Inject.clearCache()
-```
-
-Cross Domain
----
-In CDN-like environments, the data you need to include may be on a separate domain. If that's the case, you'll need to do 3 extra steps to get inject up and running.
-
-1. **edit relay.html** from the artifacts directory if you want additional security.
-2. **edit your code** Inject.setCrossDomain needs an object literal with two items: `relayFile` and `relaySwf`. Set these to the location of your remote `relay.swf` and `relay.html` files appropriately.
-3. **upload both relay.html and relay.swf files** to your servers
-
-Your config looks something like...
+Here's some common configuration options you're going to want for Inject
 
 ```js
+// Set the "root" where all your modules can be found
+// you can use an http:// path or just /path/to/modules like above
+Inject.setModuleRoot("path");
+
+// Specify how long files should be in localStorage (in minutes)
+// or 0 for never, which is great for development
+Inject.setExpires(integerValue);
+
+// configure "cross domain" support. You need to put "relay.swf" and "relay.html"
+// on your remote server for this to work
+Inject.setModuleRoot("http://example-cdn.com/modules");
 Inject.setCrossDomain({
-  relayFile: "http://cdn.example.com/relay.html",
-  relaySwf: "http://cdn.example.com/relay.swf"
+  relayHtml: "http://example-cdn.com/relay.html",
+  relaySwf: "http://example-cdn.com/relay.swf"
 });
 ```
 
-You can then carry on with your injecting. To support the cross domain, we use `window.postMessage` in the browsers that support it, and fall back to fragment transports with window.resize monitoring. To make that happen, we use [easyXDM](https://github.com/oyvindkinsey/easyXDM) by the awesome @oyvindkinsey (MIT License).
-
-Libraries Used By This Project
+Writing Some Modules
 ===
+When you're ready to write your own modules, have a look at the [CommonJS Module Examples](https://github.com/linkedin/inject/wiki/CommonJS-Module-Examples) to get started.
+
+Building From Source
+===
+We have a whole section on building from source. [Building From Source](https://github.com/linkedin/inject/wiki/0.4.x-Building-Inject-From-Source) has all the juicy details.
+
+Next Steps
+===
+From here, you can...
+
+* learn advanced syntax such as Inject.addRule() for custom module routing  
+  [addRule and Routing](https://github.com/linkedin/inject/wiki/0.4.x-addRule-and-Your-Favorite-Library)
+* make asynchronous includes using require.ensure() or go cross-domain  
+  [Advanced Usage API Guide](https://github.com/linkedin/inject/wiki/0.4.x-Advanced-Usage)
+* use AMD-compliant modules with define()  
+  [Advanced Usage API Guide](https://github.com/linkedin/inject/wiki/0.4.x-Advanced-Usage)
+* use existing libraries that you never thought had CommonJS Support  
+  [Recipies for Inject and Your Favorite Library](https://github.com/linkedin/inject/wiki/0.4.x-addRule-and-Your-Favorite-Library)
+* learn how to protect your code from JS minifiers  
+  [Common Minification Problems](https://github.com/linkedin/inject/wiki/Common-Minification-Problems)
+
+On The Shoulders of Giants
+===
+Inject couldn't be as great as it is without these other rockstar libraries:
+
 * easyXDM: Cross Domain Communication
 * lscache: LocalStorage Cache Provider 
+* link.js: dependency extraction (from their src/Library/link.js)
+* GoWithTheFlow.js: simple flow control
 * (and a whole lot of npm related things for development)
