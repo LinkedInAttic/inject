@@ -99,8 +99,42 @@ Once `eval()` runs over the newly sandboxed code, the module (and its exports) c
 
 ### Rules and the RulesEngine
 
+The `RulesEngine` is the storage location for rules, and contains methods for applying those rules to either a Module Identifier or a URL. It currently contains:
+
+* A method that lets you add more rules to the engine
+* The ability to sort the rules based on weight
+* Functionality to convert a Module Identifier into a Resolved Module Identifier (with relative paths solved)
+* The ability to convert a Resolved Module Identifier into a URL
+
+It doesn't depend on any additional modules.
+
 ### The Analyzer
+
+The `Analyzer` serves as an adaptor for the [Link.JS](https://github.com/calyptus/link.js) library. It can extract a set of dependencies from a given text string (a file). It is also able to remove "builtin" globals such as `require`, `module`, and `exports` from a list of dependencies.
+
+Originally, `Analyzer` contained the regexes needed to parse out the dependencies. Given the brittle nature of these regexes, they were replaced with Link.JS in 0.4.1 and the object exists for organizational purposes.
 
 ### The Communicator
 
+The `Communicator` is responsible for the retrival and (possible) downloading of files. It is asynchronous in nature. It makes use of two libraries:
+
+* [easyXDM](http://easyxdm.net/) for cross-domain communication
+* [lscache](https://github.com/pamelafox/lscache) to provide a simple LRU on top of localStorage
+
+The `Communicator` is the authority on a file's content. When asked to retrieve a URL, it will first check within localStorage. If there is no file in localStorage, it will then check if the request is cross-domain. If the request is **not** cross-domain, it will make a local xmlHttpRequest for the file's contents and return that. Otherwise, it will use easyXDM to establish a cross-domain channel to the remote server for downloading the file.
+
+easyXDM requires two pieces: an html file on the remote server and a SWF file on the remote server in a known location. Both of these dependencies are solved by using the [Inject.setCrossDomain](/docs/0.4.x/api/inject.setcrossdomain.html) method.
+
 ### InjectCore's Purpose
+
+The `InjectCore` object is primarily used for configuration. Most global methods under the `Inject.*` namespace reference methods in `InjectCore`. It may also reach in to configure specific libraries such as easyXDM and lscache.
+
+### Other Files
+
+There are other files that play in to inject. This serves as a partial reference to those files:
+
+* **compat/___**: Contains the IE7 compatibility layer files. A localStorage emulator using UserData, a set of shimmable content for IE, and "the smallest image resource ever". Also includes a copy of JSON for browsers that don't have the support.
+* **includes/___**: Contains constants, global variables, configuration for libraries, and licenses
+* **lib/___**: Our libraries
+* **plugins/__**: Sample plugins we ship with
+* **xd/__**: The files needed by the `Communicator` if you are using the cross-domain functionality
