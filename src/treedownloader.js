@@ -132,7 +132,7 @@ var TreeDownloader = Class.extend(function () {
     downloadTree: function (node, callback) {
       // Normalize Module Path. Download. Analyze.
       var parentName =  (node.getParent() && node.getParent().getValue()) ?
-                         node.getParent().getValue().name :
+                         node.getParent().getValue().resolvedId :
                          '';
       var getFunction = null;
 
@@ -252,7 +252,7 @@ var TreeDownloader = Class.extend(function () {
 
             // remove already-defined AMD modules before we go further
             for (var i = 0, len = tempRequires.length; i < len; i++) {
-              name = RulesEngine.resolveIdentifier(tempRequires[i], node.getValue().name);
+              name = RulesEngine.resolveIdentifier(tempRequires[i], node.getValue().resolvedId);
               if (!Executor.isModuleDefined(name) && !Executor.isModuleDefined(tempRequires[i])) {
                 requires.push(tempRequires[i]);
               }
