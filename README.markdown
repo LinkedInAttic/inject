@@ -30,7 +30,7 @@ This page is designed to get you up and running with the latest version of Injec
 
 Download Inject
 ===
-The latest version of inject is always available via the source repository at https://github.com/linkedin/inject/downloads. The most recent version is usually at the top, and inside is the required JS and optional HTML files. Copy them to your own server.
+The latest version of inject is always available via the source repository at [http://www.injectjs.com/releases](http://www.injectjs.com/releases). The most recent version is usually at the top, and inside is the required JS and optional HTML files. Copy them to your own server.
 
 Adding Inject to Your Page
 ===
