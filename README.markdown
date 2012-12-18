@@ -1,20 +1,8 @@
-<table>
-  <tr>
-    <th colspan="2">Healthchecks</th>
-  </tr>
-  <tr>
-    <td>master</td>
-    <td><a href="http://travis-ci.org/#!/linkedin/inject/branch_summary"><img src="https://secure.travis-ci.org/linkedin/inject.png?branch=master"/></td>
-  </tr>
-  <tr>
-    <td>v0.4.x</td>
-    <td><a href="http://travis-ci.org/#!/linkedin/inject/branch_summary"><img src="https://secure.travis-ci.org/linkedin/inject.png?branch=v0.4.x"/></td>
-  </tr>
-  <tr>
-    <td>v0.3.x</td>
-    <td><a href="http://travis-ci.org/#!/linkedin/inject/branch_summary"><img src="https://secure.travis-ci.org/linkedin/inject.png?branch=v0.3.x"/></td>
-  </tr>
-</table>
+* InjectJS Mailing List: https://groups.google.com/forum/#!forum/injectjs
+* 0.4.x: [![View Summary](https://secure.travis-ci.org/linkedin/inject.png?branch=v0.4.x)](http://travis-ci.org/#!/linkedin/inject/branch_summary)
+* master: [![View Summary](https://secure.travis-ci.org/linkedin/inject.png?branch=master)](http://travis-ci.org/#!/linkedin/inject/branch_summary)
+
+# Welcome
 
 **Inject** (Apache Software License 2.0) is a revolutionary way to manage your dependencies in a *Library Agnostic* way. Some of its major features include:
 
@@ -24,16 +12,13 @@
 * localStorage (load a module once)
 * Frustratingly Simple
 
-Getting Started With Inject
-===
+# Getting Started With Inject
 This page is designed to get you up and running with the latest version of Inject. For greater detail, there is an Advanced Usage section, and a guide to the API.
 
-Download Inject
-===
+# Download Inject
 The latest version of inject is always available via the source repository at [http://www.injectjs.com/releases](http://www.injectjs.com/releases). The most recent version is usually at the top, and inside is the required JS and optional HTML files. Copy them to your own server.
 
-Adding Inject to Your Page
-===
+# Adding Inject to Your Page
 This walkthrough is assuming you're using a directory called `js` which contains all of your javascript, possibly even this file. It also assumes inside of the `js` directory is a `modules` directory which will contain all of your modules. Your directory layout might look like the following:
 
 ```
@@ -49,8 +34,7 @@ This walkthrough is assuming you're using a directory called `js` which contains
 
 The location of the modules directory does not need to be under the `inject.js` file, but it's common practice to group files of similar types together such as JavaScript.
 
-Starting Your JavaScript
-===
+# Starting Your JavaScript
 To use inject, place the following script tags into the `<head>` of your document
 
 ```html
@@ -64,8 +48,7 @@ To use inject, place the following script tags into the `<head>` of your documen
 * **Inject.setModuleRoot** is the location of ALL your JS modules. Based on the directory structure above, they are located in the `js/modules` directory.
 * **require.run** executes your main entry point, whatever it may be. Given the above directory structure, it will run the `program.js` file in your module root (from require.setModuleRoot). The `.js` is added automatically.
 
-Some Quick Configs
-===
+# Some Quick Configs
 Here's some common configuration options you're going to want for Inject
 
 ```js
@@ -86,16 +69,13 @@ Inject.setCrossDomain({
 });
 ```
 
-Writing Some Modules
-===
+# Writing Some Modules
 When you're ready to write your own modules, have a look at the [CommonJS Module Examples](https://github.com/linkedin/inject/wiki/CommonJS-Module-Examples) to get started.
 
-Building From Source
-===
+# Building From Source
 We have a whole section on building from source. [Building From Source](https://github.com/linkedin/inject/wiki/0.4.x-Building-Inject-From-Source) has all the juicy details.
 
-Next Steps
-===
+# Next Steps
 From here, you can...
 
 * learn advanced syntax such as Inject.addRule() for custom module routing  
@@ -109,8 +89,7 @@ From here, you can...
 * learn how to protect your code from JS minifiers  
   [Common Minification Problems](https://github.com/linkedin/inject/wiki/Common-Minification-Problems)
 
-On The Shoulders of Giants
-===
+# On The Shoulders of Giants
 Inject couldn't be as great as it is without these other rockstar libraries:
 
 * easyXDM: Cross Domain Communication
