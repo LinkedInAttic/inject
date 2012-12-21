@@ -1,0 +1,29 @@
+// ==========
+// NAVIGATION
+// ==========
+$STYLEGUIDE_NAVIGATION_ID: navigation !default;
+$STYLEGUIDE_NAVIGATION: () !default;
+
+$a-blackhole: styleguide-add-component($STYLEGUIDE_NAVIGATION_ID, $STYLEGUIDE_NAVIGATION, (
+  (default, (
+    position        fixed,
+    width           100%,
+    top             0,
+    left            0,
+    z-index         (1 navigation),
+    background      nth($CONFIG_TEXTURE_NAV, 1),
+    border-bottom   (5px solid nth-cyclic($CONFIG_COLOR_BRAND_NAV, 2)),
+    nil
+  )),
+  nil
+), $CONFIG_THEME);
+
+$a-blackhole: styleguide-extend-component($STYLEGUIDE_LINKS_ID, (
+  (in-navigation, (
+    font-family       narrow,
+    font-size         nth($CONFIG_FONT_NAV, 1),
+    color             nth($CONFIG_COLOR_BRAND_NAV, 1),
+    nil
+  )),
+  nil
+), $CONFIG_THEME);

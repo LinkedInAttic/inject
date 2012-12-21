@@ -1,0 +1,15 @@
+// ==========
+// HORIZONTAL RULE
+// ==========
+$STYLEGUIDE_HORIZONTAL_RULE_ID: horizontal-rule !default;
+$STYLEGUIDE_HORIZONTAL_RULE: () !default;
+
+$a-blackhole: styleguide-add-component($STYLEGUIDE_HORIZONTAL_RULE_ID, $STYLEGUIDE_HORIZONTAL_RULE, (
+  (default, (
+    border          0,
+    border-bottom   (1px solid #fcfcfc),
+    border-top      (1px solid #e3e3e3),
+    nil
+  )),
+  nil
+), $CONFIG_THEME);

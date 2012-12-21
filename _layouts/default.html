@@ -9,6 +9,7 @@
       {% endif %}
     </title>
 
+    <link rel="stylesheet" href="assets/css/main.css" type="text/css" />
     {% for css in page.css %}
       <link rel="stylesheet" href="{{ css }}" type="text/css" />
     {% endfor %}
@@ -37,8 +38,46 @@
     <!-- todo: use LinkedIn GA Tracking -->
   </head>
   <body>
-    {{ content }}
+      <div class="global-header">
+          <div class="top-nav">
+              <div class="wrapper">
+                  <h2 class="logo">
+                      <a title="Home" href="{{ site.production_url }}">&nbsp;</a>
+                  </h2>
+                  <h2 class="head-title">
+                      {{ site.name }}
+                </h2>
+              </div>
+          </div>
+          <div class="bottom-nav">
+              <div class="wrapper">
+                  <ul class="nav" role="navigation">
+                      <li class="tab selected">
+                          <a href="#" class="tab-name"><span>Home</span></a>
+                      </li>
+                      <li class="tab">
+                          <a href="#" class="tab-name"><span>Download</span></a>
+                      </li>
+                      <li class="tab">
+                          <a href="#" class="tab-name"><span>Documentation</span></a>
+                      </li>
+                      <li class="tab">
+                          <a href="#" class="tab-name"><span>Blog</span></a>
+                      </li>
+                  </ul>
+              </div>
+          </div>
+      </div>
 
+      <div class="content">
+          {{ content }}
+      </div>
+      
+      <div class="global-footer">
+          <!-- footer shit goes here -->
+      </div>
+
+    <script type="text/javascript" src="assets/scripts/main.js"></script>
     {% for js in page.javascript %}
     <script type="text/javascript" src="{{ js }}"></script>
     {% endfor %}

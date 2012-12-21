@@ -1,9 +1,49 @@
-name: Inject
-description: Dependency Management with CommonJS and AMD Support
-future: true
-permalink: /blog/:year/:month/:day/:title.html
-markdown: kramdown
+# general configs
+auto      : true
+pygments  : true
+future    : true
+safe      : true
+markdown  : kramdown
 kramdown:
   entity_output: symbolic
-safe: true
-pygments: true
+# site info
+name      : Inject
+version   : 0.4.0
+description :
+    short : Dependency Management got Awesome
+    long  : CommonJS and AMD Compliant dependency loader for modern web apps
+# permalinks
+permalink : /blog/:year/:month/:day/:title.html
+# author
+author :
+  name    : LinkedIn
+  github  : linkedin
+  twitter : linkedin
+# The production_url is only used when full-domain names are needed such as sitemap.txt 
+production_url : http://www.injectjs.com
+
+## custom configs
+# copyright notice
+copyright :
+  holder  : LinkedIn Corporation
+  year    : 2012
+  
+# asset management
+assets :
+  cacheBurst : true
+  stylesheets :
+    - main
+  vendor :
+    scripts :
+      jQuery :
+        version : 1.8.2
+        
+lang      : en
+
+# Settings for analytics helper
+# Set 'provider' to the analytics provider you want to use.
+# Set 'provider' to false to turn analytics off globally.
+analytics :
+  provider : google 
+  google : 
+    tracking_id : 'UA-1545927-5'

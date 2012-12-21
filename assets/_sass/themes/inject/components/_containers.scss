@@ -1,0 +1,12 @@
+// ==========
+// CONTAINERS
+// ==========
+
+$a-blackhole: styleguide-extend-component($STYLEGUIDE_CONTAINERS_ID, (
+  (default, (
+    border-radius     5px,
+    nil
+  )),
+  nil
+), $CONFIG_THEME);
+
