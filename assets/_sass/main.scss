@@ -1,4 +1,15 @@
 $CONFIG_RESET_AUTO: true;
+
+// Buttons
+$CONFIG_COLOR_BUTTON_SPOTLIGHT:                         #333;
+$CONFIG_COLOR_BG_BUTTON_SPOTLIGHT:                      #f6e312;
+$CONFIG_COLOR_BORDER_BUTTON_SPOTLIGHT:                  #e9ac1a;
+$CONFIG_GRADIENT_BUTTON_SPOTLIGHT:                      linear-gradient(top, #f6e312 0%, #f9c80d 100%);
+$CONFIG_GRADIENT_BUTTON_SPOTLIGHT_IE:                   (#f6e312, #f9c80d, vertical);
+$CONFIG_COLOR_BG_BUTTON_SPOTLIGHT_HOVER:                #eddb11;
+$CONFIG_GRADIENT_BUTTON_SPOTLIGHT_HOVER:                linear-gradient(top, #eddb11 0%, #efcf14 35%, #f1bf18 65%, #f2b21b 100%);
+$CONFIG_GRADIENT_BUTTON_SPOTLIGHT_HOVER_IE:             (#eddb11, #f2b21b, vertical);
+
 @import "themes/inject";
 
 $main-logo: 'logos/linkedin.png';
