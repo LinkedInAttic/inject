@@ -1,5 +1,7 @@
 # Reference : https://github.com/mojombo/jekyll/wiki/Configuration
 
+BASE_PATH : /inject
+
 # site info
 name      : Inject
 version   : 0.4.0
