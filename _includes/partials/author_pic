@@ -1,0 +1,7 @@
+{% if AUTHOR %}
+<div class="author_pic">
+  <a href="http://github.com/{{AUTHOR.github}}" title="See {{AUTHOR.name}} on Github">
+    <img src="{{AUTHOR.li_pic_url}}">
+  </a>
+</div>
+{% endif %}

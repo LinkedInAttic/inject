@@ -1,0 +1,1 @@
+{{ markup | replace : '/index.html', '/' }}{% assign markup = nil %}

@@ -1,0 +1,21 @@
+{% if articles_list %}
+{% if max_weight == null %}
+  {% assign max_weight = articles_list.size %}
+{% endif %}
+<ul class="articles-list">
+{% for weight in (1..max_weight) %}{% for node in articles_list %}{% if node.weight == weight %}<li>
+    <a href="{{ BASE_PATH }}{{ node.url }}"{% if node.url == page.url %} class="page-current"{% endif %}>
+      {% if minimal != true %}<h3>{% endif %}{{ node.title }}{% if node.date and minimal != true %} <small>{{ node.date | date_to_string }}</small>{% endif %}{% if minimal != true %}</h3>{% endif %}
+      {% if node.summary and minimal != true %}<p class="summary">{{ node.summary }}</p>{% endif %}
+    </a>
+  </li>{% endif %}{% endfor %}{% endfor %}{% for node in articles_list %}{% if node.weight == null %}<li>
+      <a href="{{ BASE_PATH }}{{ node.url }}"{% if node.url == page.url %} class="page-current"{% endif %}>
+        {% if minimal != true %}<h3>{% endif %}{{ node.title }}{% if node.date and minimal != true %} <small>{{ node.date | date_to_string }}</small>{% endif %}{% if minimal != true %}</h3>{% endif %}
+        {% if node.summary and minimal != true %}<p class="summary">{{ node.summary }}</p>{% endif %}
+      </a>
+    </li>{% endif %}{% endfor %}
+</ul>
+{% else %}
+<p>There currently aren't any articles in this section. Stay tuned for some awesomeness!</p>
+{% endif %}
+{% assign articles_list = nil %}{% assign articles_list_detailed = nil %}{% assign max_weight = nil %}

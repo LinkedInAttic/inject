@@ -8,7 +8,7 @@ fonts_dir         = "fonts"
 output_style      = :compressed
 http_images_path  = "../images"
 http_fonts_path   = "../fonts"
-line_comments     = false
+line_comments     = true
 environment       = :development
 
 disable_warnings = true

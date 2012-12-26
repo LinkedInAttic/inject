@@ -1,0 +1,15 @@
+---
+layout    : news
+no_format : true
+---
+{% for page in site.categories['news'] limit:1 %}
+
+{% include config %}
+<div class="markdown-body {% if AUTHOR %}author{% endif %}">
+  {% include partials/author_pic %}
+  {% assign no_hr = true %}
+  {% include partials/headline %}
+  {{ page.content }}
+</div>
+
+{% endfor %}

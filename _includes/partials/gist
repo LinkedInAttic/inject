@@ -1,0 +1,5 @@
+<script src="https://gist.github.com/{{ gist_id }}.js{% if gist_file %}?file={{ gist_file }}{% endif %}"></script>
+<noscript>
+  <p class="highlight"><code>You have JavaScript disabled. Please view the code example <a href="https://gist.github.com/{{ gist_id }}{% if gist_file %}?file={{ gist_file }}{% endif %}" target="_blank">Gist on GitHub</a>.</code></p>
+</noscript>
+{% assign gist_id = nil %}{% assign gist_file = nil %}

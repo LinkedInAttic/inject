@@ -1,0 +1,23 @@
+{% unless page.sidebar == false %}
+{% assign articles_list = site.categories[page.category] %}
+{% assign minimal = true %}
+<aside>
+{% if page.category == 'documentation' %}
+  <h3>Documentation</h3>
+{% elsif page.category == 'tutorials' %}
+  <h3>Tutorials</h3>
+{% elsif page.category == 'components' %}
+  <h3>Components</h3>
+{% elsif page.category == 'addons' %}
+  <h3>Add-ons</h3>
+{% elsif page.category == 'blog' %}
+  <h3>Blog Posts</h3>
+{% endif %}
+{% include partials/lists/reverse_articles_list %}
+{% if page.category == 'documentation' %}
+  <h4>API Documentation</h4>
+  {% assign articles_list = site.api_docs %}
+  {% include partials/lists/articles_list %}
+{% endif %}
+</aside>
+{% endunless %}

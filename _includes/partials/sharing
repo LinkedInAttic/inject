@@ -1,0 +1,8 @@
+{% if site.safe and site.sharing.provider and page.sharing != false %}
+
+{% case site.sharing.provider %}
+{% when "custom" %}
+  {% include partials/custom/sharing %}
+{% endcase %}
+
+{% endif %}
