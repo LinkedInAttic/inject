@@ -1,0 +1,40 @@
+{% capture tmpcache %}
+// permalink
+{% capture PERMALINK %}{{site.production_url}}{{ page.url }}{% endcapture %}
+
+// cache burst
+{% capture CACHE_BURST %}{% if site.assets.cacheBurst %}?{{ site.time | date_to_xmlschema | replace : '-', '' | replace : ':', '' | cgi_escape }}{% endif %}{% endcapture %}
+
+// base
+{% if site.safe and site.BASE_PATH and site.BASE_PATH != '' %}
+  {% assign BASE_PATH = site.BASE_PATH %}
+  {% assign HOME_PATH = site.BASE_PATH %}
+{% else %}
+  {% assign BASE_PATH = nil %}
+  {% assign HOME_PATH = "/" %}
+{% endif %}
+
+// assets
+{% if site.ASSET_PATH %}
+  {% assign ASSET_PATH = site.ASSET_PATH %}
+{% else %}
+  {% capture ASSET_PATH %}{{ BASE_PATH }}/assets{% endcapture %}
+{% endif %}
+
+// github
+{% if site.GIT_PATH %}
+  {% assign GIT_PATH = site.GIT_PATH %}
+{% else %}
+  {% capture GIT_PATH %}https://github.com/{{ site.git.account }}/{{ site.git.repo }}{% endcapture %}
+{% endif %}
+
+// author
+{% assign AUTHOR = site.author %}
+{% if page.author %}
+  {%if site.authors[page.author] %}
+    {% assign AUTHOR = site.authors[page.author] %}
+  {% else %}
+    {% assign AUTHOR = page.author %}
+  {% endif %}
+{% endif %}
+{% endcapture %}{% assign tmpcache = nil %}

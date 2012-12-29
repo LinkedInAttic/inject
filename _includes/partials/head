@@ -1,0 +1,20 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width">
+<title>{{ page.title }} {% if page.tagline %}({{ page.tagline }}) {% endif %}| {{ site.title }}</title>
+{% if AUTHOR.name %}<meta name="author" content="{{ AUTHOR.name }}"/>{% endif %}
+{% include partials/stylesheets %}
+<link rel="icon" type="image/x-icon" href="{{ BASE_PATH }}/favicon.ico" />
+<link rel="canonical" href="{{ PERMALINK }}" />
+<meta property="og:site_name" content="{{ site.title }}"/>
+<meta property="og:title" content="{{ page.title }}"/>
+<meta property="og:type" content="{% if page.meta.type %}{{ page.meta.type }}{% else %}article{% endif %}"/>
+<meta property="og:url" content="{{ PERMALINK }}"/>
+{% if site.meta.image or page.meta.image %}
+<meta property="og:image" content="{% if page.meta.image %}{{ page.meta.image | replace : 'PREVIEW', page.preview | replace : 'ASSET_PATH', ASSET_PATH }}{% else %}{{ site.meta.image | replace : 'ASSET_PATH', ASSET_PATH }}{% endif %}"/>
+{% endif %}
+{% if page.description or site.description %}
+<meta property="og:description" content="{% if page.description %}{{ page.description | replace : 'SUMMARY', page.summary }}{% else %}{{ site.description }}{% endif %}"/>
+<meta name="description" content="{% if page.description %}{{ page.description | replace : 'SUMMARY', page.summary }}{% else %}{{ site.description }}{% endif %}" />
+{% endif %}
+{% include partials/scripts/html5shim %}
+{% include partials/scripts/head %}

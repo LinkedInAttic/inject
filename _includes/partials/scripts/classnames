@@ -1,0 +1,10 @@
+<script>{% comment %}  {% endcomment %}
+(function() {var p = {
+  'linux'   : /(x11|linux)/i,
+  'android' : /android/i,
+  'ipad'    : /ipad/i,
+  'iphone'  : /iphone/i,
+  'mac'     : /mac/i,
+  'win'     : /win/i
+}, os = 'os-other', ua = navigator.appVersion, c = ['js'], d = document.documentElement;for(var i in p) { if(p.hasOwnProperty(i) && p[i].test(ua)) c.push('os-' + i); }d.className = d.className.replace(/(^|\s)no-js(\s|$)/, '$1'+c.join(' ')+'$2'); })();
+</script>

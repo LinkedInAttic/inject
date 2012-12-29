@@ -1,0 +1,5 @@
+{% if page.header or page.title %}
+<h1>{% if page.header %}{{ page.header }}{% else %}{{ page.title }}{% endif %} {% if page.tagline %}<small>{{ page.tagline }}</small>{% endif %}</h1>
+{% if no_hr != true %}<hr>{% endif %}
+{% endif %}
+{% include partials/post_details %}

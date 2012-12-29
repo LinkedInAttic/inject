@@ -1,0 +1,34 @@
+---
+layout: default
+type  : page
+nav   : news
+---
+{% include config %}
+
+<div class="row">
+  <div id="content-main" class="grid16 first news">
+    <div class="pad">
+      {% if page.no_format == true %}
+        {{ content }}
+      {% else %}
+        <div class="markdown-body {% if AUTHOR %}author{% endif %}">
+          {% include partials/author_pic %}
+          {% assign no_hr = true %}
+          {% include partials/headline %}
+          {{ content }}
+        </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <div id="content-sidebar" class="grid8">
+    <div class="pad">
+      <h3>Recent Posts</h3>
+      <p>
+        {% assign articles_list = site.categories['news'] %}
+        {% assign minimal = true %}
+        {% include partials/lists/recent_articles_list %}
+      </p>
+    </div>
+  </div>
+</div>

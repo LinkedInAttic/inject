@@ -1,0 +1,53 @@
+---
+layout: default
+type  : page
+nav   : docs
+---
+{% include config %}
+
+<div class="row">
+  <div id="content-main" class="grid16 first">
+    <div class="pad">
+      {% if page.no_format == true %}
+        {{ content }}
+      {% else %}
+        <div class="markdown-body">
+          <h1>{{ page.title }}</h1>
+          {% if page.version %}
+            <div class="doc_version">v{{page.version}}</div>
+          {% endif %}
+          <hr>
+          {{ content }}
+        </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <div id="content-sidebar" class="grid8">
+    <div class="pad">
+      <ul>
+        {% for d in site.documentation %}
+          <li><b>{{d.version}}</b>
+            <ul>
+              {% for cat in d.categories %}
+                <li><b>{{cat.name}}</b>
+                  <ul>
+                    {% for p in site.categories[cat.cat] reversed %}
+                      {% if p.version == d.version %}
+                        {% if p.title == page.title and p.version == page.version %}
+                          <li class="current"><a href="{{p.url}}">{{p.title}}</a></li>
+                        {% else %}
+                          <li><a href="{{p.url}}">{{p.title}}</a></li>
+                        {% endif %}
+                      {% endif %}
+                    {% endfor %}
+                  </ul>
+                </li>
+              {% endfor %}
+            </ul>
+          </li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+</div>

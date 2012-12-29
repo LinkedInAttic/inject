@@ -1,0 +1,10 @@
+// ==========
+// TEXTURES
+// ==========
+
+$CONFIG_TEXTURE_CONTAINER:        (#fff #000) !default;
+$CONFIG_TEXTURE_MODULE:           (#f6f6f6) !default;
+$CONFIG_TEXTURE_BRISTOL:          (nth($CONFIG_COLOR_BRAND, 1)) !default;
+$CONFIG_TEXTURE_PUNCHCUT:         (nth($CONFIG_COLOR_BRAND, 1)) !default;
+$CONFIG_TEXTURE_CANVAS:           ("#e6e6e8 #{image-url('textures/canvas.jpg')} repeat fixed") !default;
+$CONFIG_TEXTURE_NAV:              (#fff);

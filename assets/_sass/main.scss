@@ -1,0 +1,618 @@
+$CONFIG_RESET_AUTO: true;
+
+// Buttons
+$CONFIG_COLOR_BUTTON_SPOTLIGHT:                         #333;
+$CONFIG_COLOR_BG_BUTTON_SPOTLIGHT:                      #f6e312;
+$CONFIG_COLOR_BORDER_BUTTON_SPOTLIGHT:                  #e9ac1a;
+$CONFIG_GRADIENT_BUTTON_SPOTLIGHT:                      linear-gradient(top, #f6e312 0%, #f9c80d 100%);
+$CONFIG_GRADIENT_BUTTON_SPOTLIGHT_IE:                   (#f6e312, #f9c80d, vertical);
+$CONFIG_COLOR_BG_BUTTON_SPOTLIGHT_HOVER:                #eddb11;
+$CONFIG_GRADIENT_BUTTON_SPOTLIGHT_HOVER:                linear-gradient(top, #eddb11 0%, #efcf14 35%, #f1bf18 65%, #f2b21b 100%);
+$CONFIG_GRADIENT_BUTTON_SPOTLIGHT_HOVER_IE:             (#eddb11, #f2b21b, vertical);
+
+@import "themes/inject";
+
+$main-logo: 'logos/linkedin.png';
+$main-header: 'logos/header.png';
+$main-header-height: image-height($main-header);
+
+// GENERAL BODY SETUP
+body, button, input, textarea {
+  // make sure everyone is using the sans-serif stack by default
+  @include font-family(sans-serif);
+}
+
+body {
+  @include styleguide(canvas, copy);
+}
+
+a {
+  @include styleguide(link);
+}
+
+hr {
+  @include styleguide(horizontal-rule);
+}
+
+#main,
+.row { @include grid-row(); }
+.full { @include grid(24, $first: true); }
+.first { margin-left: 0px; }
+.grid16 { @include grid(16, $first: true); }
+.grid8 { @include grid(8); }
+
+// Local Defaults
+$chrome-site-width:                     974px;
+$chrome-default-border-radius:          4px;
+$chrome-z-index-start:                  10001;
+
+// Colors, Gradients, Borders, and Shadows
+$chrome-text-color:                     #fff;
+$chrome-link-color:                     #71c5ef;
+$chrome-highlight-color:                #b0d66d;
+$chrome-ghost-color:                    #BBB;
+$chrome-primary-gradient-color:         #252525;
+$chrome-primary-gradient:               linear-gradient(top, #696969 0%,#363636 95%,#313131 97%,#252525 100%);
+$chrome-secondary-gradient-color:       #303030;
+$chrome-secondary-gradient:             linear-gradient(top, #121212 0%,#303030 100%);
+$chrome-default-shadow:                 0 0 10px #303030;
+$chrome-menu-border:                    10px solid rgba(0,0,0,0.65);
+$chrome-IE-top-menu-border:             10px solid #252525;
+$chrome-IE-bottom-menu-border:          10px solid #303030;
+// Premium Colors
+$chrome-premium-text-color:             #999999;
+$chrome-premium-link-color:             #ffbf00;
+$chrome-premium-highlight-color:        #ffbf00;
+
+// Typography
+$chrome-extra-small-text:               11px;
+$chrome-small-text:                     12px;
+$chrome-medium-text:                    13px;
+$chrome-large-text:                     16px;
+$chrome-extra-large-text:               18px;
+//-- Local Defaults
+
+@mixin zero-padding-margin() {
+  margin:                               0;
+  padding:                              0;
+}
+
+.global-header {
+  font-size:                          $chrome-medium-text;
+  margin-bottom:                      15px;
+  @include font-family(sans-serif);
+  @include box-shadow($chrome-default-shadow);
+
+  p,
+  li {
+    margin-bottom:                    0;
+  }
+
+  a:hover {
+    text-decoration:                  none;
+  }
+
+  strong {
+    font-weight:                      normal;
+  }
+
+  // Nav sections
+  .top-nav {
+    height:                           38px;
+    margin:                           0;
+    @include filter-gradient(#696969, #252525, vertical);
+    background: $chrome-primary-gradient-color;
+    @include background-image($chrome-primary-gradient);
+  }
+
+  .bottom-nav {
+    height:                           39px;
+    margin:                           0;
+    @include filter-gradient(#121212, #303030, vertical);
+    background: $chrome-secondary-gradient-color;
+    @include background-image($chrome-secondary-gradient);
+    @include has-layout();
+  }
+
+  .wrapper {
+    margin:                           0 auto;
+    width:                            $chrome-site-width;
+    z-index:                          ($chrome-z-index-start+3);
+    @include legacy-pie-clearfix();
+  }
+  //-- Nav sections
+
+  // Logo
+  .logo {
+    float:                            left;
+    margin:                           8px 10px 0 3px;
+
+    a {
+      background:                     image-url($main-logo) 0 0 no-repeat;
+      display:                        block;
+      height:                         image-height($main-logo);
+      text-indent:                    -12345px;
+      width:                          image-width($main-logo);
+    }
+    
+  }
+  
+  .head-title {
+      line-height: 43px;
+      color: #ffffff;
+      font-size: 17px;
+      font-weight: normal;
+  }
+  //-- Logo
+
+  // Tabs: used by both .nav and .util
+  .tab {
+    float:                            left;
+    @include target-browser(ie 6,border,none);
+    @include target-browser(ie 6,clear,none);
+    @include target-browser(ie 6,padding,0);
+    position:                       relative;
+    z-index:                        ($chrome-z-index-start+9);
+
+    .tab-name {
+      color:                          $chrome-link-color;
+      display:                        block;
+      padding:                        0 10px;
+
+      span {
+        position:                     relative;
+        z-index:                      ($chrome-z-index-start+10);
+      }
+    }
+
+    &:hover,
+    &.hover {
+      background:                     #000;
+    }
+
+    &:hover .tab-name,
+    &.hover .tab-name,
+    &.selected .tab-name {
+      color:                          $chrome-text-color;
+    }
+  }
+  //-- Tabs
+
+  // Dropdown menus: used by both .nav and .util
+  .menu {
+    background:                       #fff;
+    border:                           $chrome-IE-bottom-menu-border;
+    border:                           $chrome-menu-border;
+    border-top:                       none;
+    display:                          none;
+    left:                             0;
+    padding:                          5px;
+    position:                         absolute;
+    z-index:                          ($chrome-z-index-start+4);
+    @include background-clip();
+    @include border-bottom-radius($chrome-default-border-radius);
+    @include box-shadow($chrome-default-shadow);
+
+    li {
+      line-height:                    $chrome-medium-text;
+      white-space:                    nowrap;
+      @include target-browser(ie 6,width,175px);
+
+      &.separator {
+        margin-top:                   10px;
+        padding-top:                  10px;
+        border-top:                   1px solid #ccc;
+      }
+
+      a {
+        display:                      block;
+        padding:                      5px;
+        @include target-browser(ie 6,width,100%);
+        @include target-browser(ie 6,overflow,hidden);
+        @include target-browser(ie 6,text-overflow,ellipsis);
+
+        &:hover {
+          background-color:           #016799;
+          color:                      #fff;
+        }
+      }
+
+      .title {
+        color:                        #666;
+        display:                      block;
+        padding:                      5px 0;
+      }
+
+      ul {
+        padding:                       0;
+      }
+    }
+  }
+
+  li:hover .menu,
+  .qh-container.show .menu, {
+    display:                          block;
+  }
+  //-- Dropdown menus
+
+  // Navigation
+  .nav {
+    float:                            left;
+    margin-left:                      -9px;
+    @include pie-clearfix();
+
+    .tab {
+      margin:                         2px 0 0;
+      line-height:                    37px;
+    }
+
+    .count {
+      color:                          #fff;
+      font-size:                      $chrome-extra-small-text;
+      line-height:                    $chrome-medium-text;
+      padding:                        2px 3px 3px;
+      @include border-radius(2px);
+      background: #da000f;
+      @include background-image(linear-gradient(top, #da000f 0%, #6e0002 100%));
+      @include text-shadow( rgba(255,255,255,.2) 0 -1px 0 );
+    }
+
+    .menu {
+      top:                            100%;
+    }
+  }
+  //-- Navigation
+}
+
+.content {
+  margin-left:auto;
+  margin-right:auto;
+  width: 974px;
+  .row {
+    margin-top: 10px;
+    margin-bottom: 10px;
+    > div {
+      background: #fff;
+      @include box-shadow(0px 1px 3px -1px #000);
+      .pad {
+        padding: 10px;
+      }
+    }
+  }
+}
+
+.global-footer{
+  .footer {
+    margin-top: 30px;
+    margin-bottom: 20px;
+    float: right;
+    color: #888;
+  }
+  
+  .wrapper {
+    margin:                           0 auto;
+    width:                            $chrome-site-width;
+    z-index:                          ($chrome-z-index-start+3);
+    @include legacy-pie-clearfix();
+  }
+}
+
+// CONTENT HEADER ( blue box on index.html )
+#content-header {
+  background: image-url($main-header) no-repeat;
+  width: image-width($main-header);
+  height: $main-header-height;
+  position: relative;
+  
+  .desc {
+    position: absolute;
+    top: 32px;
+    right: 0;
+    height: 45px;
+    width: 720px;
+    padding: 20px;
+    color: #FFFFFF;
+    @include text-shadow(1px 1px 1px #000);
+
+    .source {
+      float:right;
+      text-align: center;
+
+      .button {
+        @include styleguide(medium spotlight button in a punchcut);
+        margin-bottom: 3px;
+      }
+
+      a {
+        color: #FFFFFF;
+      }
+
+    }
+
+    .short {
+      font-size: 14px;
+      font-weight: bold;
+      display: block;
+      margin-bottom: 3px;
+    }
+
+    .long {
+      font-size: 12px;
+    }
+
+  }
+
+}
+
+#content-main {
+  background: #fff;
+  position: relative;
+  
+  .doc_version{
+    position: absolute;
+    right: 20px;
+    top: 15px;
+    background: #DEDEDE;
+    color: #000000;
+    padding: 0px 10px;
+    font-size: 22px;
+  }
+  
+  &.news{
+    
+    .author_pic img{
+      position: absolute;
+      left: 0px;
+    }
+    
+    .markdown-body{
+      
+      &.author{
+        margin-left: 60px
+      }
+      
+      h1 { 
+        margin-bottom: 0px;
+      }
+      
+      .post-details{
+        margin-top: 5px;
+      }
+      
+      hr{
+        margin: 0px;
+      }
+    }
+  }
+}
+
+#content-sidebar {
+  background: #fff;
+  
+  h3 {
+    font-size: 20px;
+    border-bottom: 1px solid #aaa;
+    padding-bottom: 5px;
+  }
+  
+  p{
+    margin-top: 10px;
+    margin-bottom: 20px;
+    
+    &:last-child{
+      margin-bottom: 0px;
+    }
+  }
+  
+  ul{ 
+    font-weight: bold;
+    
+    ul{
+      margin-left: 10px;
+    
+      ul li{
+        list-style-type: circle;
+        list-style-position: inside;
+        font-weight: normal;
+      }
+    }
+  }
+}
+
+@import "pygment";
+@import "markdown";
+
+/* Everything after this is reference */
+
+#global-header,
+#global-footer {
+  div {
+    @include grid-canvas();
+  }
+}
+
+#global-header {
+  @include vertical-spacing($top: 2);
+  @include styleguide(navigation);
+  div {
+    position: relative;
+    height: $main-header-height;
+  }
+  .brand {
+    display: block;
+    @include hide-text();
+  }
+  nav {
+    ul {
+      position: absolute;
+      bottom: 0;
+      @include right(0);
+      @include inline-block();
+    }
+    li {
+      @include inline-block();
+      @include uppercase();
+      @include horizontal-spacing(2);
+      height: vertical-spacing(4);
+      border-#{rtl(right)}: 1px solid nth-cyclic($CONFIG_COLOR_BRAND_NAV, 2);
+      &:last-child {
+        padding-#{rtl(right)}: 0;
+        border: 0;
+      }
+      a {
+        @include styleguide(link without an underline in navigation);
+      }
+    }
+  }
+}
+
+// MAIN BODY
+#main {
+  @include grid-canvas();
+  padding-top: $main-header-height + vertical-spacing(2) + 5px;
+  // IE6 treats position:fixed differently, so we need to NOT offset the main content
+  @include target-browser(ie 6, padding-top, vertical-spacing(2));
+  article {
+    @include grid($center: true, $indent: grid-indent(1));
+    .note {
+      @include styleguide(small muted copy);
+    }
+  }
+  // side-by-side layout
+  .has-aside & {
+    article {
+      @include grid(17, $first: true, $indent: grid-indent(1));
+    }
+    aside {
+      @include grid(7, $indent: grid-indent(1));
+    }
+  }
+  article,
+  aside {
+    @include vertical-spacing(4);
+    @include vertical-spacing(2, $method: margin);
+    @include styleguide(container);
+  }
+  h1 {
+    @include styleguide(xxlarge headline);
+  }
+  h2 {
+    @include styleguide(xlarge headline);
+  }
+  h3 {
+    @include styleguide(large headline);
+  }
+  h4 {
+    @include styleguide(medium muted headline);
+  }
+  p {
+    @include vertical-spacing(2, $method: margin);
+  }
+
+  // article list
+  .articles-list {
+    a {
+      @include styleguide(article-list);
+    }
+  }
+
+  // gallery list
+  .gallery-list {
+    @include styleguide(gallery-list);
+  }
+  aside {
+    .articles-list a.page-current {
+      font-weight: bold;
+      @include styleguide(module);
+    }
+  }
+  em {
+    @include font-style(italic);
+  }
+  strong {
+    font-weight: bold;
+  }
+  blockquote {
+    @include styleguide(pullquote);
+  }
+}
+
+// post details
+.post-details {
+  @include styleguide(small muted copy);
+}
+
+// some simple pagination
+.pagination {
+  ul {
+    @include grid-row();
+  }
+  .prev,
+  .next {
+    &.disabled {
+      visibility: hidden;
+    }
+  }
+  .prev {
+    @include grid(5, $first: true, $indent: grid-indent($left: 1), $outdent: grid-outdent($left: 1));
+    @include text-align(left);
+  }
+  .next {
+    @include grid(5, $indent: grid-indent($right: 1), $outdent: grid-outdent($right: 1));
+    @include text-align(right);
+  }
+  .archive {
+    @include grid(7);
+    @include text-align(center);
+  }
+}
+
+// components
+.semantics-notice {
+  @include styleguide(notice alert);
+  @include vertical-spacing($top: 2, $method: margin);
+  a {
+    @include styleguide(link in a notice alert);
+  }
+  .dismiss {
+    @include styleguide(close in a notice alert);
+    .no-js & {
+      display: none;
+    }
+  }
+}
+
+
+// FOOTER
+#global-footer {
+  @include styleguide(copy in a punchcut, punchcut);
+  @include vertical-spacing($top: 2, $method: margin);
+  @include vertical-spacing(4);
+  a {
+    @include styleguide(link in a punchcut);
+  }
+  ul {
+    display: inline;
+    @include float(right);
+  }
+  .copyright,
+  li {
+    display: inline;
+  }
+  li {
+    @include horizontal-spacing(2, $abuse: true);
+    border-#{rtl(right)}: 1px solid nth-cyclic($CONFIG_COLOR_BRAND, 2);
+    &:last-child {
+      padding-#{rtl(right)}: 0;
+      border: 0;
+    }
+  }
+  .notice {
+    @include styleguide(small muted copy in a punchcut);
+    float: right;
+    @include vertical-spacing($top: -4, $method: margin);
+    a {
+      @include styleguide(small muted copy in a punchcut, muted link in a punchcut);
+    }
+  }
+}

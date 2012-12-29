@@ -1,0 +1,9 @@
+{% for stylesheet in site.assets.stylesheets %}
+  <link href="{{ ASSET_PATH }}/css/{% if stylesheet.name %}{{ stylesheet.name }}{% else %}{{ stylesheet }}{% endif %}.css{{ CACHE_BURST }}" rel="stylesheet" type="text/css" media="{% if stylesheet.media %}{{ stylesheet.media }}{% else %}all{% endif %}"/>
+{% endfor %}
+{% for stylesheet in page.generic.assets.stylesheets %}
+  <link href="{{ ASSET_PATH }}/css/{% if stylesheet.name %}{{ stylesheet.name }}{% else %}{{ stylesheet }}{% endif %}.css{{ CACHE_BURST }}" rel="stylesheet" type="text/css" media="{% if stylesheet.media %}{{ stylesheet.media }}{% else %}all{% endif %}"/>
+{% endfor %}
+{% for stylesheet in page.assets.stylesheets %}
+  <link href="{{ ASSET_PATH }}/css/{% if stylesheet.name %}{{ stylesheet.name }}{% else %}{{ stylesheet }}{% endif %}.css{{ CACHE_BURST }}" rel="stylesheet" type="text/css" media="{% if stylesheet.media %}{{ stylesheet.media }}{% else %}all{% endif %}"/>
+{% endfor %}
