@@ -73,7 +73,7 @@ Invoking an entry point starts the creation of a Tree, expressed by our `TreeDow
 
 The ultimate artifact that comes out of `TreeDownloader` is a complete Tree:
 
-![A Dependency Tree](/assets/images/docs/howto/how_inject_works/tree.png "A Dependency Tree")
+![A Dependency Tree](/docs/0.4.x/howto/how_inject_works/tree.png "A Dependency Tree")
 
 In the above tree, we've built out all our dependencies and downloaded all the code. When `TreeDownloader` encountered "B" for the second time, it traversed parents and found that it was "Circular". Circular nodes won't execute their first time through (or else you'd be caught in a perpetual execution loop), and they are automatically assigned zero dependencies (or else you'd be downloading forever).
 
