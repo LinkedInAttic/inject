@@ -85,4 +85,4 @@ analytics :
 # Set 'developer' to 0 in production, 1 in development to view proper comments
 disqus :
   shortname : injectjs
-  developer : 1
+  developer : 0
