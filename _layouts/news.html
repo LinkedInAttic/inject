@@ -25,12 +25,12 @@ nav   : news
 
   <div id="content-sidebar" class="grid8">
     <div class="pad">
-      <h3>Recent Posts</h3>
-      <p>
+      <div class="block">
+        <h3>Recent Posts</h3>
         {% assign articles_list = site.categories['news'] %}
         {% assign minimal = true %}
         {% include partials/lists/recent_articles_list %}
-      </p>
+      </div>
     </div>
   </div>
 </div>
