@@ -9,9 +9,9 @@ description :
     long  : CommonJS and AMD Compliant dependency loader for modern web apps
 
 # documentation structure
-documentation: 
+documentation:
   - version: 0.4.x
-    categories: 
+    categories:
       - cat: api
         name: API
       - cat: howto
@@ -43,7 +43,7 @@ authors :
 # publish posts with a future date
 future    : true
 
-# The production_url is only used when full-domain names are needed such as sitemap.txt 
+# The production_url is only used when full-domain names are needed such as sitemap.txt
 production_url : http://www.injectjs.com
 
 # build config
@@ -68,13 +68,21 @@ assets :
     scripts :
       jQuery :
         version : 1.8.2
-        
+
+# language
 lang      : en
 
 # Settings for analytics helper
 # Set 'provider' to the analytics provider you want to use.
 # Set 'provider' to false to turn analytics off globally.
 analytics :
-  provider : google 
-  google : 
+  provider : google
+  google :
     tracking_id : 'UA-1545927-5'
+
+# Settings for Disqus
+# Set 'shortname' to the disqus shortname
+# Set 'developer' to 0 in production, 1 in development to view proper comments
+disqus :
+  shortname : injectjs
+  developer : 1
