@@ -393,11 +393,16 @@ $chrome-extra-large-text:               18px;
     font-size: 20px;
     border-bottom: 1px solid #aaa;
     padding-bottom: 5px;
+    margin-bottom: 10px;
   }
   
-  p{
+  div.block {
     margin-top: 10px;
     margin-bottom: 20px;
+
+    &:first-child{
+      margin-top: 0px;
+    }
     
     &:last-child{
       margin-bottom: 0px;
