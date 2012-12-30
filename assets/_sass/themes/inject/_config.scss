@@ -1,0 +1,27 @@
+// just to get things working for now...
+$CONFIG_DISABLE_STYLEGUIDE_SPRITES: true;
+$CONFIG_ICON_HOVERCARD_TIP:         ("sprites/hovercard_tip.png") !default;
+$CONFIG_THEME:                      archetype-aspirational !default;
+
+$CONFIG_GLYPHS_EOT:               "fontawesome-webfont.eot" !default;
+$CONFIG_GLYPHS_FILES:             font-files("fontawesome-webfont.ttf", "fontawesome-webfont.woff", "fontawesome-webfont.svg") !default;
+
+$CONFIG_SAFE_FONTS: (
+  // custom narrow font stack
+  (narrow, (
+    (default, (
+      (default          (Arial Narrow, sans-serif)),
+      (CJK,             nil),
+      nil
+    )),
+    nil
+  )),
+  // custom monospace font stack
+  (monospace, (
+    (default, (
+      (default,         (Monaco, "Courier New", monospace)),
+      nil
+    )),
+    nil
+  ))
+) !default;

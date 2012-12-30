@@ -1,0 +1,3 @@
+{% if page.details != false and (page.date or AUTHOR) %}
+<p class="post-details">{% if page.date and page.meta.date != false %}<span class="dtstart"><span class="value-title" title="{{ page.date | date_to_xmlschema }}"></span>{{ page.date | date_to_long_string }}</span>{% endif %} {% if AUTHOR.name and (AUTHOR.href or AUTHOR.gplus) %} &bull; By <a href="{% if AUTHOR.gplus %}{{ AUTHOR.gplus }}?rel=author{% else %}{{ AUTHOR.href }}{% endif %}">{{ AUTHOR.name }}</a>{% elsif AUTHOR.name %} &bull; By: {{ AUTHOR.name }}{% endif %}</p>
+{% endif %}

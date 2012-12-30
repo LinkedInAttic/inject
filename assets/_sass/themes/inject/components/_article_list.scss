@@ -1,0 +1,37 @@
+// ==========
+// ARTICLE LIST
+// ==========
+$STYLEGUIDE_ARTICLE_LIST_ID: article-list !default;
+$STYLEGUIDE_ARTICLE_LIST: () !default;
+
+$a-blackhole: styleguide-add-component($STYLEGUIDE_ARTICLE_LIST_ID, $STYLEGUIDE_ARTICLE_LIST, (
+  (default, (
+    display         block,
+    padding         (vertical-spacing(2) horizontal-spacing(4)),
+    styleguide      (muted link without an underline),
+    (states, (
+      (hover, (
+        styleguide  module,
+        nil
+      )),
+      nil
+    )),
+    (selectors, (
+      ('h3', (
+        styleguide  (large headline),
+        styleguide  (link without an underline),
+        nil
+      )),
+      ('small', (
+        styleguide  (muted copy),
+        font-weight normal  // because were nested in a headline
+      )),
+      ('.summary', (
+        styleguide  (muted copy),
+        margin-bottom 0
+      ))
+    )),
+    nil
+  )),
+  nil
+), $CONFIG_THEME);

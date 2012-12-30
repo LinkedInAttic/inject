@@ -1,0 +1,9 @@
+{% for script in site.assets.head.scripts %}
+  <script src="{{ ASSET_PATH }}/scripts/{{ script }}.js{{ CACHE_BURST }}"></script>
+{% endfor %}
+{% for script in page.generic.head.assets.scripts %}
+  <script src="{{ ASSET_PATH }}/scripts/{{ script }}.js{{ CACHE_BURST }}"></script>
+{% endfor %}
+{% for script in page.assets.head.scripts %}
+  <script src="{{ ASSET_PATH }}/scripts/{{ script }}.js{{ CACHE_BURST }}"></script>
+{% endfor %}

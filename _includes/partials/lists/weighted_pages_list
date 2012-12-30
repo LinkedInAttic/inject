@@ -1,0 +1,26 @@
+{% if max_weight == null %}
+  {% assign max_weight = pages_list.size %}
+{% endif %}
+{% for weight in (1..max_weight) %}
+  {% for node in pages_list %}
+    {% if node.title != null and node.weight == weight and (group == null or group == node.group) and node.published != false %}
+      {% if page.url == node.url %}
+      	<li class="active"><a href="{{ BASE_PATH }}{{node.url}}" class="active">{{node.title}}</a></li>
+      {% else %}
+      	<li><a href="{{ BASE_PATH }}{{node.url}}">{{node.title}}</a></li>
+      {% endif %}
+    {% endif %}
+  {% endfor %}
+{% endfor %}
+{% for node in pages_list %}
+  {% if node.title != null and node.weight == null and (group == null or group == node.group) and node.published != false %}
+    {% if page.url == node.url %}
+    	<li class="active"><a href="{{ BASE_PATH }}{{node.url}}" class="active">{{node.title}}</a></li>
+    {% else %}
+    	<li><a href="{{ BASE_PATH }}{{node.url}}">{{node.title}}</a></li>
+    {% endif %}
+  {% endif %}
+{% endfor %}
+{% assign pages_list = nil %}
+{% assign group = nil %}
+{% assign max_weight = nil %}

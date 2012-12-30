@@ -1,0 +1,26 @@
+{% if gallery_list %}
+{% if max_weight == null %}
+  {% assign max_weight = gallery_list.size %}
+{% endif %}
+<ul class="gallery-list">
+{% for weight in (1..max_weight) %}{% for node in gallery_list %}{% if node.weight == weight %}<li>
+    <a href="{{ BASE_PATH }}{{ node.url }}"{% if node.url == page.url %} class="page-current"{% endif %}>
+      <h3>{{ node.title }}</h3>
+      {% if node.preview %}
+        <figure class="preview">
+          <img src="{{ node.preview | replace : 'ASSET_PATH', ASSET_PATH }}{{ CACHE_BURST }}" alt="{{ node.title }}" />
+          {% if node.summary and minimal != true %}<figcaption>{{ node.summary }}</figcaption>{% endif %}
+        </figure>
+      {% elsif node.summary and minimal != true %}
+        <summary>{{ node.summary }}</summary>
+      {% endif %}
+    </a>
+  </li>{% endif %}{% endfor %}{% endfor %}{% for node in gallery_list %}{% if node.weight == null %}<li>
+      <a href="{{ BASE_PATH }}{{ node.url }}"{% if node.url == page.url %} class="page-current"{% endif %}>
+        {% if minimal != true %}<h3>{% endif %}{{ node.title }}{% if node.date and minimal != true %} <small>{{ node.date | date_to_string }}</small>{% endif %}{% if minimal != true %}</h3>{% endif %}
+        {% if node.summary and minimal != true %}<p class="summary">{{ node.summary }}</p>{% endif %}
+      </a>
+    </li>{% endif %}{% endfor %}
+</ul>
+{% endif %}
+{% assign gallery_list = nil %}{% assign minimal = nil %}{% assign max_weight = nil %}

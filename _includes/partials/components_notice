@@ -1,0 +1,5 @@
+<div class="semantics-notice" role="alert">
+  The markup and selectors used in these examples are just for demonstration.
+  We encourage you to use semantic markup and class names.
+  <a href="/tutorials/good-scaffolding/">Learn more about balancing semantics and scaffolding to scale your front-end.</a>
+</div>
