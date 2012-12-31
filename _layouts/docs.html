@@ -48,29 +48,31 @@ nav   : docs
 
   <div id="content-sidebar" class="grid8">
     <div class="pad">
-      <ul>
-        {% for d in site.documentation %}
-          <li><b>{{d.version}}</b>
-            <ul>
-              {% for cat in d.categories %}
-                <li><b>{{cat.name}}</b>
-                  <ul>
-                    {% for p in site.categories[cat.cat] reversed %}
-                      {% if p.version == d.version %}
-                        {% if p.title == page.title and p.version == page.version %}
-                          <li class="current"><a href="{{p.url}}">{{p.title}}</a></li>
-                        {% else %}
-                          <li><a href="{{p.url}}">{{p.title}}</a></li>
+      <div class="block">
+        <ul>
+          {% for d in site.documentation %}
+            <li><b>{{d.version}}</b>
+              <ul>
+                {% for cat in d.categories %}
+                  <li><b>{{cat.name}}</b>
+                    <ul>
+                      {% for p in site.categories[cat.cat] reversed %}
+                        {% if p.version == d.version %}
+                          {% if p.title == page.title and p.version == page.version %}
+                            <li class="current"><a href="{{p.url}}">{{p.title}}</a></li>
+                          {% else %}
+                            <li><a href="{{p.url}}">{{p.title}}</a></li>
+                          {% endif %}
                         {% endif %}
-                      {% endif %}
-                    {% endfor %}
-                  </ul>
-                </li>
-              {% endfor %}
-            </ul>
-          </li>
-        {% endfor %}
-      </ul>
+                      {% endfor %}
+                    </ul>
+                  </li>
+                {% endfor %}
+              </ul>
+            </li>
+          {% endfor %}
+        </ul>
+      </div>
     </div>
   </div>
 </div>
