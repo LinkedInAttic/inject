@@ -3,7 +3,7 @@
 # site info
 name      : Inject
 version   : 0.4.0
-stable_dl : releases/v0.4.x/inject-v0.4.0.zip
+stable_dl : download/v0.4.x/inject-v0.4.0.zip
 description :
     short : Dependency Management got Awesome
     long  : CommonJS and AMD Compliant dependency loader for modern web apps
