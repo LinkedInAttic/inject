@@ -64,9 +64,14 @@ SOFTWARE.
 
 var LinkJS = {};
 
+// BEGIN LINKJS LIBRARY
+
+// version: 0.12;
+
 (function(){
 "use strict";
 
+// if (typeof exports !== 'undefined') exports.parse = parse;
 LinkJS.parse = parse;
 
 var hop = {}.hasOwnProperty;
@@ -185,7 +190,7 @@ function ModuleDefinition(source){
 
     this.tokens = [];
     this.lexicalEnvironment = {};
-}
+};
 
 ModuleDefinition.prototype = {
 
@@ -223,7 +228,7 @@ ModuleDefinition.prototype = {
 
                 // Import module
                 output.push(
-                    i === 0 ? 'var ' : ', ',
+                    i == 0 ? 'var ' : ', ',
                     name, ' = require("', id, '")'
                 );
             }
@@ -231,7 +236,7 @@ ModuleDefinition.prototype = {
 
         // Redeclare variables at the top
         for (var i = 0, l = this.declaredVariables.length; i < l; i++){
-            output.push(i === 0 ? 'var ' : ', ');
+            output.push(i == 0 ? 'var ' : ', ');
             output.push(this.declaredVariables[i]);
         }
         if (l) output.push(';', newLine);
@@ -293,7 +298,7 @@ ModuleDefinition.prototype = {
             for (var i = 0, l = exports.length; i < l; i++){
                 var e = exports[i], v = e == 'v' ? 'b' : 'v';
                 output.push(
-                    i === 0 ? '({}.constructor.defineProperties(this, {' : ',',
+                    i == 0 ? '({}.constructor.defineProperties(this, {' : ',',
                     e, ':{get:function(){return ', e, '},set:function(', v, '){', e, '=', v,'},enumerable:true}'
                 );
             }
@@ -396,16 +401,16 @@ var errorMessages = {
 
 function formatMessage(args){
     return errorMessages[args[0]]
-           .replace(/\$(\d)/g, function(s, i){ return args[i]; });
+           .replace(/\$(\d)/g, function(s, i){ return args[i]; })
 }
 
 function warn(){
     console.warn(formatMessage(arguments));
-}
+};
 
 function error(){
     throw new Error(formatMessage(arguments));
-}
+};
 
 // Tokenizer
 
@@ -445,7 +450,7 @@ function couldBeRegExp(){
     // TODO: Proper regexp handling, when I find a case for it
     var token = previousToken;
     return typeof token === 'undefined' ||
-        (token.type === Punctuator && '!(=:,[{++--;'.indexOf(token.value) >= 0) ||
+        (token.type === Punctuator && '!(=:,[{++--;&&||^'.indexOf(token.value) >= 0) ||
         (token.type === Keyword && isKeyword(token.value));
 }
 
@@ -742,7 +747,7 @@ function lookahead(){
 function expect(value){
     var token = lex();
     if (token.type !== Punctuator || token.value !== value) {
-        throw new Error('Unexpected token: ' + token.value);
+        throw new Error('Unexpected token: ' + token.value + ' at line ' + lineNumber);
     }
 }
 
@@ -765,9 +770,19 @@ function matchKeyword(keyword){
 
 function matchBlockStart(){
     var token = lookahead();
-    if (token.type == Keyword)
+    if (token.type == Keyword){
+        if (token.value == 'case'){
+            lex();
+            lex();
+            return true;
+        }
+        if (token.value == 'default'){
+            lex();
+            return true;
+        }
         return token.value == 'do' || token.value == 'else' ||
                token.value == 'finally' || token.value == 'try';
+    }
     return false;
 }
 
@@ -820,7 +835,7 @@ function scanParenthesis(){
      while(match(',') || match(';')){
         lex();
         scanExpression();
-    }
+    };
     expect(')');
 }
 
