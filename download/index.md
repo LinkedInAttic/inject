@@ -3,6 +3,8 @@ layout: download
 title : Downloads
 ---
 
+View the [Changelog](/download/changelog) to see what changed between versions.
+
 # 0.4.x
 
 * 0.4.1 final - [rc3](v0.4.x/inject-v0.4.1rc3.zip), [rc2](v0.4.x/inject-v0.4.1rc2.zip), [rc1](v0.4.x/inject-v0.4.1rc1.zip)
