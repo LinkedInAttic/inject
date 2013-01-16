@@ -16,7 +16,7 @@
 This page is designed to get you up and running with the latest version of Inject. For greater detail, there is an Advanced Usage section, and a guide to the API.
 
 # Download Inject
-The latest version of inject is always available via the source repository at [http://www.injectjs.com/releases](http://www.injectjs.com/releases). The most recent version is usually at the top, and inside is the required JS and optional HTML files. Copy them to your own server.
+The latest version of inject is always available via the source repository at [http://www.injectjs.com/download/](http://www.injectjs.com/download/). The most recent version is usually at the top, and inside is the required JS and optional HTML files. Copy them to your own server.
 
 # Adding Inject to Your Page
 This walkthrough is assuming you're using a directory called `js` which contains all of your javascript, possibly even this file. It also assumes inside of the `js` directory is a `modules` directory which will contain all of your modules. Your directory layout might look like the following:
