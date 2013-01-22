@@ -31,6 +31,7 @@
     "https://github.com/amdjs/amdjs-api/wiki/AMD"
   ],
   "devDependencies": {
+    "venus":          "1.0.0",
     "jshint":         "0.9.1",
     "futures":        "2.1.0",
     "uglify-js":      "1.3.1",
