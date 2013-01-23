@@ -63,7 +63,7 @@ var RulesEngine;
     return fn.toString().replace(FUNCTION_BODY_REGEX, '$1');
   }
 
-  var AsStatic = Class.extend(function () {
+  var AsStatic = Fiber.extend(function () {
     return {
       /**
        * Create a RulesEngine Object

@@ -24,7 +24,7 @@ governing permissions and limitations under the License.
 **/
 var InjectCore;
 (function () {
-  var AsStatic = Class.extend(function () {
+  var AsStatic = Fiber.extend(function () {
     return {
       /**
        * The InjectCore object is meant to be instantiated once, and have its

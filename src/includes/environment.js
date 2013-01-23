@@ -48,8 +48,8 @@ Test the schema version inside of lscache, and if it has changed, flush the cach
 })();
 
 /**
-    Class.js instance
+    Fiber.js instance
     @type {object}
     @global
  */
-var Class = this.Class.noConflict();
+var Fiber = this.Fiber.noConflict();

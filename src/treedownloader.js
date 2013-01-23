@@ -23,7 +23,7 @@ governing permissions and limitations under the License.
  * as downloaded.
  * @file
 **/
-var TreeDownloader = Class.extend(function () {
+var TreeDownloader = Fiber.extend(function () {
   return {
     /**
      * Create a TreeDownloader with a root node. From this node,
