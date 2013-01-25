@@ -24,7 +24,7 @@ governing permissions and limitations under the License.
 **/
 var Communicator;
 (function () {
-  var AsStatic = Class.extend(function () {
+  var AsStatic = Fiber.extend(function () {
     var pauseRequired = false;
 
     var socketConnectionQueue;

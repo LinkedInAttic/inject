@@ -25,7 +25,7 @@ exports.task = function(options) {
         "includes/constants.js",
         "includes/globals.js",
         "includes/commonjs.js",
-        "lib/class.js",
+        "lib/fiber.js",
         "lib/link.js",
         "lib/flow.js",
         (options.noxd) ? null : "lib/easyxdm-closure.js",
