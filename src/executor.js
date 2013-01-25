@@ -294,7 +294,7 @@ var Executor;
     return result;
   }
 
-  var AsStatic = Class.extend(function () {
+  var AsStatic = Fiber.extend(function () {
     var functionCount = 0;
     return {
       /**
