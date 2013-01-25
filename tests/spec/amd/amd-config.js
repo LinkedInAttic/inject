@@ -41,4 +41,4 @@ window.setTimeout(function() {
   if (window.parent && window.parent.BeginListening) {
     window.parent.BeginListening();
   }
-}, 1000);
+}, 3000);
