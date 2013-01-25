@@ -32,8 +32,22 @@ governing permissions and limitations under the License.
     var EXPECTED_TESTS = 26;
 
     window.console = {
-      log: function() {},
-      error: function() {}
+      log: function() {
+        if (window.top && window.top.console && window.top.console.log) {
+          try {
+            window.top.console.log.apply(arguments);
+          }
+          catch(e) {}
+        }
+      },
+      error: function() {
+        if (window.top && window.top.console && window.top.console.error) {
+          try {
+            window.top.console.error.apply(arguments);
+          }
+          catch(e) {}
+        }
+      }
     };
 
     module("AMD External Tests");
@@ -73,6 +87,7 @@ governing permissions and limitations under the License.
         });
 
         change('_testFinished', function(finishedName, finishedFixture, resultOfTest) {
+          window.top.console.log('AMD Callback on '+finishedName+': '+resultOfTest);
           if (testsWaiting[finishedName]) {
             ok(resultOfTest, finishedName);
           }
