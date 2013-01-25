@@ -23,7 +23,7 @@ governing permissions and limitations under the License.
  * run (require.run), and define.
  * @file
 **/
-var RequireContext = Class.extend(function () {
+var RequireContext = Fiber.extend(function () {
   return {
     /**
      * Creates a new RequireContext

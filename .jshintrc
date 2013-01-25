@@ -45,7 +45,7 @@
   "validthis"   : false,
 
   "predef": [
-    "Class",
+    "Fiber",
     "easyXDM",
     "lscache",
     "LinkJS",

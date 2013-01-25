@@ -23,7 +23,7 @@ governing permissions and limitations under the License.
 **/
 var Analyzer;
 (function () {
-  var AsStatic = Class.extend(function () {
+  var AsStatic = Fiber.extend(function () {
     return {
       /**
        * analyzer initialization
