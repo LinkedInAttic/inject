@@ -37,8 +37,10 @@ require = undefined;
 
 // nothing here should be so network laggy as to cause pain
 // not applicable in the final config we submit to the AMD tests
-window.setTimeout(function() {
+var readyWait;
+readyWait = window.setInterval(function() {
   if (window.parent && window.parent.BeginListening) {
+    window.clearInterval(readyWait);
     window.parent.BeginListening();
   }
-}, 1000);
+}, 100);
