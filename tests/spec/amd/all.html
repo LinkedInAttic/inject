@@ -31,59 +31,88 @@ governing permissions and limitations under the License.
   <script type="text/javascript">
     var EXPECTED_TESTS = 26;
 
+    var ready = false;
+
+    var counter = EXPECTED_TESTS;
+    var testsWaiting = {};
+    var testsRan = [];
+    var dohWindow;
+    function done() { --counter || start(); }
+
     window.console = {
-      log: function() {},
-      error: function() {}
+      log: function() {
+        if (window.top && window.top.console && window.top.console.log) {
+          try {
+            window.top.console.log.apply(arguments);
+          }
+          catch(e) {}
+        }
+      },
+      error: function() {
+        if (window.top && window.top.console && window.top.console.error) {
+          try {
+            window.top.console.error.apply(arguments);
+          }
+          catch(e) {}
+        }
+      }
+    };
+
+    window.BeginListening = function() {
+      // treat the entire AMD structure as a single async test
+      dohWindow = document.getElementById("amdTests").contentWindow;
+
+      dohWindow.console = window.console;
+
+      var existingDohMethods = {
+        _onEnd: dohWindow.doh._onEnd,
+        _groupFinished: dohWindow.doh._groupFinished,
+        _groupStarted: dohWindow.doh._groupStarted,
+        _handleFailure: dohWindow.doh._handleFailure,
+        _testFinished: dohWindow.doh._testFinished,
+        _testStarted: dohWindow.doh._testStarted
+      };
+
+      function change(name, fn) {
+        var oldMethod = existingDohMethods[name];
+        dohWindow.doh[name] = function() {
+          var args = [].slice.call(arguments, 0);
+          oldMethod.apply(dohWindow.doh, args);
+          fn.apply(this, args);
+        };
+      }
+
+      change('_testStarted', function(startName, startFixture) {
+          testsWaiting[startName] = true;
+      });
+
+      change('_testFinished', function(finishedName, finishedFixture, resultOfTest) {
+        window.top.console.log('AMD Callback on '+finishedName+': '+resultOfTest);
+        if (testsWaiting[finishedName]) {
+          ok(resultOfTest, finishedName);
+        }
+        else {
+          ok(false, "unrecognised test: "+finishedName);
+        }
+        done();
+      });
+
+      ready = true;
     };
 
     module("AMD External Tests");
     asyncTest("All External AMD Tests", EXPECTED_TESTS, function() {
-
-      var counter = EXPECTED_TESTS;
-      var testsWaiting = {};
-      var testsRan = [];
-      function done() { --counter || start(); }
-
-      window.BeginListening = function() {
-        // treat the entire AMD structure as a single async test
-        var dohWindow = document.getElementById("amdTests").contentWindow;
-
-        dohWindow.console = window.console;
-
-        var existingDohMethods = {
-          _onEnd: dohWindow.doh._onEnd,
-          _groupFinished: dohWindow.doh._groupFinished,
-          _groupStarted: dohWindow.doh._groupStarted,
-          _handleFailure: dohWindow.doh._handleFailure,
-          _testFinished: dohWindow.doh._testFinished,
-          _testStarted: dohWindow.doh._testStarted
+      var interval = setInterval(function() {
+        if (ready) {
+          window.top.console.log("AMD test harness ready");
+          clearInterval(interval);
+          interval = null;
+          dohWindow.doh.run();
         }
-
-        function change(name, fn) {
-          var oldMethod = existingDohMethods[name];
-          dohWindow.doh[name] = function() {
-            var args = [].slice.call(arguments, 0);
-            oldMethod.apply(dohWindow.doh, args);
-            fn.apply(this, args);
-          };
+        else {
+          window.top.console.log("waiting on AMD test harness...");
         }
-
-        change('_testStarted', function(startName, startFixture) {
-            testsWaiting[startName] = true;
-        });
-
-        change('_testFinished', function(finishedName, finishedFixture, resultOfTest) {
-          if (testsWaiting[finishedName]) {
-            ok(resultOfTest, finishedName);
-          }
-          else {
-            ok(false, "unrecognised test: "+finishedName);
-          }
-          done();
-        });
-
-        dohWindow.doh.run();
-      };
+      }, 200);
     });
   </script>
 </body>
