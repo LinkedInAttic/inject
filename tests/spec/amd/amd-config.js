@@ -38,7 +38,7 @@ require = undefined;
 // nothing here should be so network laggy as to cause pain
 // not applicable in the final config we submit to the AMD tests
 window.setTimeout(function() {
-  window.top.console.log('HALP');
+  window.top.console.log(typeof(window.parent.BeginListening));
   if (window.parent && window.parent.BeginListening) {
     window.parent.BeginListening();
   }
