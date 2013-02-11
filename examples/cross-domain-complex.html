@@ -43,8 +43,13 @@ Inject.setCrossDomain({
 
 require.ensure(["one"], function(require) {
   var one = require("one"),
-      oneObj = new one.One();
-  document.getElementById("output-tree").innerHTML = oneObj.printNode();
+      oneObj = new one.One(),
+      example = document.createElement("div");
+      
+  example.innerHTML = oneObj.printNode();
+  document.getElementById("output-tree").appendChild(example);
+
+
   
 });
 </textarea>

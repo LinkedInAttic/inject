@@ -17,15 +17,15 @@ governing permissions and limitations under the License.
 
 // added multiple requires on the same line
 var six = require("six"),
-    four = require("four"),
+    two = require("two"),
     sixObj = new six.Six(),
-    fourObj = new four.Four();
+    twoObj = new two.Two();
 
 
 var Three = function() {};
 Three.prototype.printNode = function() {
   return  '<div class="node"><div class="row">Three</div>' + 
-          	'<div class="row">' + sixObj.printNode() + fourObj.printNode() + 
+          	'<div class="row">' + sixObj.printNode() + twoObj.printNode() + 
           '</div></div>';
 };
 
