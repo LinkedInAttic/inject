@@ -1,0 +1,27 @@
+#run-tests, .or {
+  display: none;
+}
+.has-tests #run-tests, .has-tests .or {
+  display: inline;
+}
+li {
+  clear: both;
+  list-style-type: none;
+}
+iframe {
+  width: 1em;
+  height: 1em;
+  display: block;
+  float: left;
+  margin-right: 10px;
+  border: 0;
+}
+.skipped {
+  width: 1em;
+  height: 1em;
+  background: #ccc;
+  display: block;
+  float: left;
+  margin-right: 10px;
+  border: 0;
+}
