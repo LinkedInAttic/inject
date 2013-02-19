@@ -17,9 +17,9 @@ governing permissions and limitations under the License.
 
 /**
  * @venus-library qunit
- * @venus-include ./_amdjs_bridge.js
- * @venus-include ../../../../artifacts/inject-dev/inject.js
- * @venus-include ./amdjs-tests/tests/anon_circular/_test.js
+ * @venus-include ../../../artifacts/inject-dev/inject.js
+ * @venus-include ../../resources/amdjs_bridge.js
+ * @venus-include ../amd_new/amdjs-tests/tests/anon_circular/_test.js
  */
 
 // bridge code for the AMD-JS test library
