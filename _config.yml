@@ -2,8 +2,8 @@
 
 # site info
 name      : Inject
-version   : 0.4.0
-stable_dl : /download/v0.4.x/inject-v0.4.0.zip
+version   : 0.4.1
+stable_dl : /download/v0.4.x/inject-v0.4.1.zip
 description :
     short : Dependency Management got Awesome
     long  : CommonJS and AMD Compliant dependency loader for modern web apps
@@ -39,6 +39,12 @@ authors :
     li_pic_url : https://m1-s.licdn.com/mpr/mpr/shrink_60_60/p/1/000/094/13f/3e7fa8b.jpg
     github : jhoff
     twitter : jhoff484
+  mpowell :
+    name : Matt Powell
+    li_pub_profile: mttpwll
+    li_pic_url: https://m1-s.licdn.com/mpr/mpr/shrink_60_60/p/3/000/095/332/3c93849.jpg
+    github: mattpowell
+    twitter: mattpowell
 
 # publish posts with a future date
 future    : true
