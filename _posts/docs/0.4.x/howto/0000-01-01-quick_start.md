@@ -49,6 +49,13 @@ To use inject, place the following script tags into the `<head>` of your documen
 * **Inject.setModuleRoot** is the location of ALL your JS modules. Based on the directory structure above, they are located in the `js/modules` directory.
 * **require.run** executes your main entry point, whatever it may be. Given the above directory structure, it will run the `program.js` file in your module root (from require.setModuleRoot). The `.js` is added automatically.
 
+### Enabling Cross-Domain Support
+
+To access files on a different domain (such as the case when using a CDN):
+
+1. Upload `relay.swf` and `relay.html` to the server you wish to access and verify these two files are publicly accessible.
+2. Enable support using `Inject.setCrossDomain` (see an example in the [Quick Configs](#some-quick-configs) section below).
+
 ### Some Quick Configs
 
 Here's some common configuration options you're going to want for Inject
