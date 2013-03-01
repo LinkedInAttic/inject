@@ -9,6 +9,10 @@
       "name": "Jakob Heuser",
       "email": "jheuser@linkedin.com, jakob@felocity.com",
       "web": "http://www.felocity.com"
+    },
+    {
+      "name": "Matt Powell",
+      "email": "mpowell@linkedin.com"
     }
   ],
   "licenses": [
@@ -38,9 +42,8 @@
     "grunt-contrib-jshint": "~0.2.0",
     "grunt-contrib-uglify": "~0.1.2",
     "grunt-contrib-clean": "~0.4.0",
-    "grunt-shell": "~0.2.1",
     "grunt-contrib-qunit": "~0.2.0",
-    "grunt-express-server": "~0.1.0",
+    "grunt-shell": "~0.2.1",
     "grunt-express": "~0.2.0"
   },
   "dependencies": {},
