@@ -288,6 +288,21 @@ module.exports = function (grunt) {
           delay: 3
         }
       }
+    },
+    log: {
+      server: {
+        options: {
+          message: [
+            '',
+            'SERVER RUNNING:',
+            'examples: http://localhost:4000/examples',
+            'tests: http://localhost:4000/tests',
+            '',
+            'an identical server is running on port 4001 for cross-domain',
+            'simulation in examples'
+          ].join('\n')
+        }
+      }
     }
   });
 
@@ -339,8 +354,8 @@ module.exports = function (grunt) {
     if (delay) { setTimeout(done, delay * 1000); }
   });
 
-  grunt.registerTask('log', 'Print some messages', function() {
-    grunt.log.write('\n\n' + this.args.join(':') + '\n\n');
+  grunt.registerMultiTask('log', 'Print some messages', function() {
+    grunt.log.writeln(this.data.options.message);
   });
 
   // set up grunt task options
@@ -379,7 +394,7 @@ module.exports = function (grunt) {
     'express:generic',
     'express:alternate',
     'wait:server_start',
-    'log:server running, please access http\://localhost\:4000/examples',
+    'log:server',
     'express-keepalive'
   ]);
 
