@@ -246,12 +246,13 @@ var TreeDownloader = Fiber.extend(function () {
             var childNode;
             var name;
             var path;
+            var i;
             var callReduceCommand = proxy(function () {
               this.reduceCallsRemaining(callback, node);
             }, this);
 
             // remove already-defined AMD modules before we go further
-            for (var i = 0, len = tempRequires.length; i < len; i++) {
+            for (i = 0, len = tempRequires.length; i < len; i++) {
               name = RulesEngine.resolveIdentifier(tempRequires[i], node.getValue().resolvedId);
               if (!Executor.isModuleDefined(name) && !Executor.isModuleDefined(tempRequires[i])) {
                 requires.push(tempRequires[i]);
@@ -264,7 +265,7 @@ var TreeDownloader = Fiber.extend(function () {
             if (requires.length) {
               this.increaseCallsRemaining(requires.length);
             }
-            for (var i = 0, len = requires.length; i < len; i++) {
+            for (i = 0, len = requires.length; i < len; i++) {
               name = (results.amd) ? RulesEngine.resolveIdentifier(requires[i], node.getValue().resolvedId): requires[i];
               path = ''; // calculate path on recusion using parent
               childNode = TreeDownloader.createNode(name, path);
