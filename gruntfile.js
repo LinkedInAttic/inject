@@ -339,6 +339,10 @@ module.exports = function (grunt) {
     if (delay) { setTimeout(done, delay * 1000); }
   });
 
+  grunt.registerTask('log', 'Print some messages', function() {
+    grunt.log.write('\n\n' + this.args.join(':') + '\n\n');
+  });
+
   // set up grunt task options
   grunt.registerTask('build', ['default']);
   grunt.registerTask('default', [
@@ -375,6 +379,7 @@ module.exports = function (grunt) {
     'express:generic',
     'express:alternate',
     'wait:server_start',
+    'log:server running, please access http\://localhost\:4000/examples',
     'express-keepalive'
   ]);
 
