@@ -6,7 +6,7 @@ category: howto
 permalink: /docs/0.4.x/howto/cross_domain.html
 ---
 
-In large site deployments, it may be necessary to run Inject using a Content Delivery Network (or cdn). Many times, the use of a CDN puts resources on a server and domain different than the main page. This howto is all about how you set up Inject to work in a CDN environment.
+In large site deployments, it may be necessary to run Inject using a Content Delivery Network (or "CDN"). Many times, the use of a CDN puts resources on a server and domain different than the main page. This howto is all about how you set up Inject to work in a CDN environment.
 
 We're going to assume you have two servers:
 
