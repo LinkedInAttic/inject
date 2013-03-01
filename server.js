@@ -18,8 +18,8 @@ governing permissions and limitations under the License.
 var path = require("path");
 var util = require("util");
 var express = require("express");
+var exec = require('child_process').exec;
 var app = express();
-var amdApp = express();
 
 /**
  * ========== Inject Integrated Test Server
@@ -52,26 +52,11 @@ app.use('/examples/dependencies/addrule/jqueryui/jquery.ui.widget.min.js', delay
 app.use('/tests/spec/modules-1.1.1/includes/bugs/bug_56_a.js', delay(300));
 app.use('/tests/spec/amd/includes/bugs/bug_56_a.js', delay(300));
 
-app.use('/docs', express.static(path.normalize(path.join(__dirname, '../', 'artifacts', 'inject-docs'))));
-app.use(express.static(path.normalize(path.join(__dirname, '../'))));
-app.use(express.static(path.normalize(path.join(__dirname, '../', 'artifacts', 'inject-dev'))));
+exec('git describe HEAD', function(err, version) {
+  injectVersion = version.replace(/[\s]/g, '');
 
+  app.use(express.static(path.normalize(__dirname)));
+  app.use(express.static(path.normalize(path.join(__dirname, './', 'artifacts', 'inject-' + injectVersion))));
+});
 
-/**
- * ========== AMD Standalone Test Server
- */
-amdApp.use(express.static(path.normalize(path.join(__dirname, '../', 'tests', 'spec', 'amd', 'amdjs-tests'))));
-
-exports.task = function() {
-  app.listen(4000);
-  app.listen(4001);
-
-  amdApp.listen(4010);
-
-  util.log("Inject server running on ports 4000 and 4001");
-  util.log("-----")
-  util.log("access examples: http://localhost:4000/examples/");
-  util.log("access tests:    http://localhost:4000/tests/");
-  util.log('-----')
-  util.log("standalone AMD:  http://localhost:4010/start.html");
-};
+module.exports = app;

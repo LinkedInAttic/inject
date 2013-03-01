@@ -1,4 +1,5 @@
 // gruntfile
+var path = require('path');
 
 module.exports = function (grunt) {
 
@@ -17,8 +18,8 @@ module.exports = function (grunt) {
 
     // we use a special header/footer instead of the normal
     // grunt anonymize
-    anonymous_header: '!(function(context, undefined){',
-    anonymous_footer: 'context.Inject.version = "__INJECT__VERSION__";\n})(this);',
+    anonymous_header: '!(function(context, undefined){\n',
+    anonymous_footer: '\n;context.Inject.version = "__INJECT__VERSION__";\n})(this);',
 
     // these are the possible output files when done
     output_files: {
@@ -98,6 +99,12 @@ module.exports = function (grunt) {
           {src: [genFileName('uglify', 'ie7')], dest: '<%= output_files.ie7_min %>', filter: 'isFile'}
         ]
       },
+      plugins: {
+        files: [
+          {src: [genFileName('concat', 'plugins')], dest: '<%= output_files.plugins %>', filter: 'isFile'},
+          {src: [genFileName('uglify', 'plugins')], dest: '<%= output_files.plugins_min %>', filter: 'isFile'}
+        ]
+      },
       legalish: {
         files: [
           {src: ['./LICENSE'], dest: '<%= output_files.license %>', filter: 'isFile'},
@@ -145,10 +152,13 @@ module.exports = function (grunt) {
       noxd: {
         files: {} // placeholder
       },
+      plugins: {
+        files: {} // placeholder
+      },
       ie7: {
         files: {}, // placeholder
         options: {
-          banner: grunt.file.read('./src/compat/localstorage-assets.txt')
+          banner: grunt.file.read('./src/compat/localstorage-assets.txt') + '\n'
         }
       }
     },
@@ -225,6 +235,58 @@ module.exports = function (grunt) {
           './src/compat/localstorage-shim.js',
           './src/compat/json.js'
         ]
+      },
+      plugins: {
+        dest: '', // placeholder
+        options: {
+          separator: ';',
+          banner: '',
+          footer: ''
+        },
+        src: [
+          './src/plugins/css.js',
+          './src/plugins/text.js',
+          './src/plugins/json.js'
+        ]
+      }
+    },
+
+    /**
+     * qunit: runs our test suite via phantomjs
+     */
+    qunit: {
+      all: {
+        options: {
+          timeout: 20000,
+          urls: [
+            'http://localhost:4000/tests/index.html'
+          ]
+        }
+      }
+    },
+
+    /**
+     * express: run our express server for handling tests and examples
+     */
+    express: {
+      generic: {
+        options: {
+          port: 4000,
+          server: path.resolve('./server.js')
+        }
+      },
+      alternate: {
+        options: {
+          port: 4001,
+          server: path.resolve('./server.js')
+        }
+      }
+    },
+    wait: {
+      server_start: {
+        options: {
+          delay: 3
+        }
       }
     }
   });
@@ -242,9 +304,14 @@ module.exports = function (grunt) {
   cfg[genFileName('uglify', 'ie7')] = genFileName('concat', 'ie7');
   grunt.config.set('uglify.ie7.files', cfg);
 
+  cfg = {};
+  cfg[genFileName('uglify', 'plugins')] = genFileName('concat', 'plugins');
+  grunt.config.set('uglify.plugins.files', cfg);
+
   grunt.config.set('concat.main.dest', genFileName('concat', 'main'));
   grunt.config.set('concat.noxd.dest', genFileName('concat', 'noxd'));
   grunt.config.set('concat.ie7.dest', genFileName('concat', 'ie7'));
+  grunt.config.set('concat.plugins.dest', genFileName('concat', 'plugins'));
 
   // load NPM tasks
   grunt.loadNpmTasks('grunt-contrib-jshint');
@@ -253,27 +320,82 @@ module.exports = function (grunt) {
   grunt.loadNpmTasks('grunt-contrib-copy');
   grunt.loadNpmTasks('grunt-contrib-uglify');
   grunt.loadNpmTasks('grunt-contrib-clean');
+  grunt.loadNpmTasks('grunt-contrib-qunit');
   grunt.loadNpmTasks('grunt-shell');
+  grunt.loadNpmTasks('grunt-express');
+
+  // from https://github.com/gruntjs/grunt/issues/236
+  grunt.registerMultiTask('wait', 'Wait for a set amount of time.', function () {
+    var delay = this.data.options.delay;
+    var d = delay ? delay + ' second' + (delay === '1' ? '' : 's') : 'forever';
+
+    grunt.log.write('Waiting ' + d + '...');
+    
+    // Make this task asynchronous. Grunt will not continue processing
+    // subsequent tasks until done() is called.
+    var done = this.async();
+    
+    // If a delay was specified, call done() after that many seconds.
+    if (delay) { setTimeout(done, delay * 1000); }
+  });
 
   // set up grunt task options
+  grunt.registerTask('build', ['default']);
   grunt.registerTask('default', [
     'jshint',
     'shell:tag',
+
     'concat:main',
     'uglify:main',
+    'copy:main',
+
+    'concat:plugins',
+    'uglify:plugins',
+    'copy:plugins',
+
+    'concat:ie7',
+    'uglify:ie7',
+    'copy:ie7',
+
     'copy:legalish',
     'copy:xd',
-    'copy:main',
+    
     'clean:tmp'
+  ]);
+
+  grunt.registerTask('test', [
+    'express:generic',
+    'express:alternate',
+    'wait:server_start',
+    'qunit',
+    'express-stop'
+  ]);
+
+  grunt.registerTask('server', [
+    'express:generic',
+    'express:alternate',
+    'wait:server_start',
+    'express-keepalive'
   ]);
 
   grunt.registerTask('noxd', [
     'jshint',
     'shell:tag',
+
     'concat:noxd',
     'uglify:noxd',
-    'copy:legalish',
     'copy:noxd',
+
+    'concat:plugins',
+    'uglify:plugins',
+    'copy:plugins',
+
+    'concat:ie7',
+    'uglify:ie7',
+    'copy:ie7',
+
+    'copy:legalish',
+
     'clean:tmp'
   ]);
 
