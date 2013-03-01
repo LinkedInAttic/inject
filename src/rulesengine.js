@@ -161,7 +161,7 @@ var RulesEngine;
         }
 
         if (!path.length) {
-          this.pointcuts['__INJECT_no_path'] = result.pointcuts;
+          this.pointcuts.__INJECT_no_path = result.pointcuts;
           return '';
         }
 

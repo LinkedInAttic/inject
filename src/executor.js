@@ -450,14 +450,15 @@ var Executor;
           module.exports = {};
           module.error = null;
           module.setExports = function (xobj) {
-            for (var name in module.exports) {
+            var name;
+            for (name in module.exports) {
               debugLog('cannot setExports when exports have already been set. setExports skipped');
               return;
             }
             switch (typeof(xobj)) {
             case 'object':
               // objects are enumerated and added
-              for (var name in xobj) {
+              for (name in xobj) {
                 module.exports[name] = xobj[name];
               }
               break;

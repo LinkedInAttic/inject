@@ -270,7 +270,8 @@ var RequireContext = Fiber.extend(function () {
       };
       var key = [];
       var value;
-      for (var i = 0, len = args.length; i < len; i++) {
+      var i;
+      for (i = 0, len = args.length; i < len; i++) {
         if (Object.prototype.toString.apply(args[i]) === '[object Array]') {
           key.push('array');
         }
@@ -288,7 +289,7 @@ var RequireContext = Fiber.extend(function () {
       }
 
       key = interfaces[key];
-      for (var i = 0, len = key.length; i < len; i++) {
+      for (i = 0, len = key.length; i < len; i++) {
         value = args[i];
         switch (key[i]) {
         case 'id':
@@ -308,7 +309,7 @@ var RequireContext = Fiber.extend(function () {
 
       // strip any circular dependencies that exist
       // this will prematurely create modules
-      for (var i = 0, len = dependencies.length; i < len; i++) {
+      for (i = 0, len = dependencies.length; i < len; i++) {
         if (BUILTINS[dependencies[i]]) {
           // was a builtin, skip
           resolvedDependencyList.push(dependencies[i]);
@@ -382,5 +383,4 @@ var RequireContext = Fiber.extend(function () {
   };
 });
 
-// jshint
 RequireContext = RequireContext;

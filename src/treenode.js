@@ -102,7 +102,8 @@ var TreeNode = Fiber.extend(function () {
      * @returns {TreeNode}
      */
     setLeft: function (node) {
-      return this.left = node;
+      this.left = node;
+      return this.left;
     },
 
     /**
@@ -123,7 +124,8 @@ var TreeNode = Fiber.extend(function () {
      * @returns {TreeNode}
      */
     setRight: function (node) {
-      return this.right = node;
+      this.right = node;
+      return this.right;
     },
 
     /**
@@ -144,7 +146,8 @@ var TreeNode = Fiber.extend(function () {
      * @returns {TreeNode}
      */
     setParent: function (node) {
-      return this.parent = node;
+      this.parent = node;
+      return this.parent;
     },
 
     /**
@@ -205,5 +208,4 @@ var TreeNode = Fiber.extend(function () {
   };
 });
 
-// jshint
 TreeNode = TreeNode;
