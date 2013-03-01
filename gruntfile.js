@@ -1,15 +1,22 @@
 // gruntfile
 
 module.exports = function (grunt) {
+
+  // a generic config object used for dynamic filename assignment
+  var cfg = {};
+
+  // generates a filename based on target and task
+  function genFileName(target, task) {
+    return './tmp/' + target + '_' + task + '_out.js';
+  }
+
   grunt.initConfig({
     // inject specific variables
-    concat_main_tempfile: './tmp/concat_main_out.js',
-    uglify_main_tempfile: './tmp/uglify_main_out.js',
     inject_header: grunt.file.read('./src/includes/copyright-lic-min.js'),
-    anonymous_header: '!(function(){',
-    anonymous_footer: '})();',
+    anonymous_header: '!(function(context, undefined){',
+    anonymous_footer: '})(this);',
 
-    // normal grunt
+    // normal grunt reading
     pkg: grunt.file.readJSON('package.json'),
 
     /**
@@ -42,16 +49,16 @@ module.exports = function (grunt) {
      */
     uglify: {
       options: {
+        banner: '<%= inject_header %>\n',
         mangle: {
           except: ['require', 'define', 'easyxdm', 'localstorage']
         }
       },
       main: {
-        banner: '<%= inject_header %>',
-        files: {
-          src: '<%= concat_main_tempfile %>',
-          dest: '<%= uglify_main_tempfile %>'
-        }
+        files: {} // placeholder
+      },
+      noxd: {
+        files: {} // placeholder
       }
     },
 
@@ -59,8 +66,11 @@ module.exports = function (grunt) {
      * concat: build a payload, putting together source files
      */
     concat: {
+      options: {
+        separator: ';'
+      },
       main: {
-        separator: ';',
+        dest: '', // placeholder
         src: [
           './src/includes/constants.js',
           './src/includes/globals.js',
@@ -81,11 +91,44 @@ module.exports = function (grunt) {
           './src/treedownloader.js',
           './src/treenode.js',
           './src/includes/context.js'
-        ],
-        dest: '<%= concat_main_tempfile %>'
+        ]
+      },
+      noxd: {
+        dest: '', // placeholder
+        src: [
+          './src/includes/constants.js',
+          './src/includes/globals.js',
+          './src/includes/commonjs.js',
+          './src/lib/fiber.js',
+          './src/lib/link.js',
+          './src/lib/flow.js',
+          './src/lib/lscache.js',
+          './src/includes/environment.js',
+          './src/analyzer.js',
+          './src/communicator.js',
+          './src/executor.js',
+          './src/injectcore.js',
+          './src/requirecontext.js',
+          './src/rulesengine.js',
+          './src/treedownloader.js',
+          './src/treenode.js',
+          './src/includes/context.js'
+        ]
       }
     }
   });
+
+  // dynamic assignments
+  cfg = {};
+  cfg[genFileName('uglify', 'main')] = genFileName('concat', 'main');
+  grunt.config.set('uglify.main.files', cfg);
+
+  cfg = {};
+  cfg[genFileName('uglify', 'noxd')] = genFileName('concat', 'noxd');
+  grunt.config.set('uglify.noxd.files', cfg);
+
+  grunt.config.set('concat.main.dest', genFileName('concat', 'main'));
+  grunt.config.set('concat.noxd.dest', genFileName('concat', 'noxd'));
 
   // load NPM tasks
   grunt.loadNpmTasks('grunt-contrib-jshint');
@@ -98,9 +141,14 @@ module.exports = function (grunt) {
   // set up grunt task options
   grunt.registerTask('default', [
     'jshint',
-    'concat',
-    'uglify'
+    'concat:main',
+    'uglify:main'
   ]);
 
-  grunt.log.write(grunt.config.get('concat_main_tempfile'));
+  grunt.registerTask('noxd', [
+    'jshint',
+    'concat:noxd',
+    'uglify:noxd'
+  ]);
+
 };
