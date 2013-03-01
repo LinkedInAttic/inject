@@ -44,7 +44,8 @@
     "grunt-contrib-clean": "~0.4.0",
     "grunt-contrib-qunit": "~0.2.0",
     "grunt-shell": "~0.2.1",
-    "grunt-express": "~0.2.0"
+    "grunt-express": "~0.2.0",
+    "express": "3.0.0"
   },
   "dependencies": {},
   "engine": "node >= 0.8.10"
