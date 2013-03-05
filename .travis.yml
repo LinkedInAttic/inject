@@ -4,9 +4,6 @@ node_js:
 before_install:
   - git submodule update --init --recursive
 before_script:
+  - npm install -g grunt-cli
   - npm install
-  - ./node_modules/.bin/jshint .
-  - node makefile.js build
-  - node makefile.js server &
-  - sleep 5
-script: phantomjs tests/resources/phantom-run-qunit.js http://localhost:4000/tests/index.html
+script: grunt build test
