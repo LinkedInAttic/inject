@@ -94,13 +94,19 @@ context.Inject = {
         return ''; // no path, no fetch!
       },
       pointcuts: {
-        afterFetch: function (next, text, moduleName, requestorName) {
+        afterFetch: function (next, text, moduleName, requestorName, requestorUrl) {
           var pieces = moduleName.split('!');
           var pluginId = RulesEngine.resolveIdentifier(pieces[0], requestorName);
+          var pluginUrl = RulesEngine.resolveUrl(pluginId, requestorUrl);
           var identifier = pieces[1];
-          var rq = new RequireContext(moduleName, '');
-          rq.ensure([pluginId], function (localReq) {
-            var plugin = localReq(pluginId);
+
+          var rq = InjectCore.createRequire(moduleName, requestorUrl);
+          rq.ensure([pluginId], function (pluginRequire) {
+            // the plugin must come from the contextual require
+            // any subsequent fetching depends on the resolved plugin's location
+            var plugin = pluginRequire(pluginId);
+            var remappedRequire = InjectCore.createRequire(pluginId, pluginUrl);
+
             var resolveIdentifier = function (name) {
               return RulesEngine.resolveIdentifier(name, requestorName);
             };
@@ -116,9 +122,13 @@ context.Inject = {
                 body = ftModname;
                 ftModname = null;
               }
+
+              // use the executor
+              Executor.runModule(ftModname, body, pluginUrl);
+
               next(null, body);
             };
-            plugin.load(normalized, localReq, complete, {});
+            plugin.load(normalized, remappedRequire, complete, {});
           });
         }
       }

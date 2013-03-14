@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+<head>
+<!--
+/*
+Inject
+Copyright 2011 LinkedIn
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing,
+software distributed under the License is distributed on an "AS
+IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+express or implied.   See the License for the specific language
+governing permissions and limitations under the License.
+*/
+-->
+  <meta charset="UTF-8" />
+  <title>CommonJS Test Suite - Generic Test Harness</title>
+  <link rel="stylesheet" href="../../../resources/qunit.css" type="text/css" media="screen">
+  <script type="text/javascript" src="../../../resources/qunit.js"></script>
+  <script type="text/javascript" src="../../../resources/config.js"></script>
+</head>
+<body>
+  <div id="qunit"></div>
+  <script type="text/javascript" src="/inject.js"></script>
+  <script type="text/javascript" src="config.js"></script>
+  <script type="text/javascript">
+    function getQueryVariables() {
+      var query = window.location.search.substring(1);
+      var vars = query.split('&');
+      var ret = {};
+      for (var i = 0; i < vars.length; i++) {
+        var pair = vars[i].split('=');
+        ret[pair[0]] = pair[1];
+      }
+      return ret;
+    }
+
+    var q = getQueryVariables();
+    var testName = q.test;
+
+    /*
+    It's possible to run the AMD-JS tests as part of your
+    existing CI system. You need to provide bridges between
+    the AMD-JS suite and your unit testing framework of
+    choice. You can do this by either implementing a global
+    amdJSPrint object or defining/implementing a global
+    system object on which a print() method resides.
+    */
+
+    function amdPrinter(message, passFail) {
+      passFail = passFail.toLowerCase();
+      switch (passFail) {
+        case 'pass':
+          ok(true, message);
+          break;
+        case 'fail':
+          ok(false, message);
+          break;
+        case 'info':
+          break;
+        case 'done':
+          start(); // resume async testing
+          break;
+      }
+    }
+
+    Inject.reset();
+    Inject.enableAMDPlugins();
+    Inject.setModuleRoot('/tests/spec/amd/amdjs-tests/tests/'+q.test);
+    define('system', {
+      stdout: {
+        print: amdPrinter
+      }
+    });
+
+    // this ensures there is no globally available print function
+    window.amdJSPrint = amdPrinter;
+
+    module(q.test);
+    asyncTest(q.test + '_test', function() {
+      // start from the Inject entry point (global require is unavailable)
+      go(['_test'], function() {});
+    });
+
+  </script>
+</body>
+</html>

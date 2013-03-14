@@ -20,100 +20,42 @@ governing permissions and limitations under the License.
 */
 -->
   <meta charset="UTF-8" />
-  <title>Inject Test Suite - AMD Compliance Tests</title>
+  <title>Inject Test Suite - CommonJS Compliance Tests</title>
   <link rel="stylesheet" href="../../resources/qunit.css" type="text/css" media="screen">
+  <link rel="stylesheet" href="../../resources/qunit-composite.css" type="text/css" media="screen">
   <script type="text/javascript" src="../../resources/qunit.js"></script>
-  <script type="text/javascript" src="../../resources/config.js"></script>
+  <script type="text/javascript" src="../../resources/qunit-composite.js"></script>
 </head>
 <body>
-  <div id="qunit"></div>
-  <iframe id="amdTests" src="amdjs-tests/tests/doh/runner.html?config=inject/config.js&amp;impl=inject/inject.js"></iframe>
+  <h1 id="qunit-header">Inject Test Suite</h1>
+  <h2 id="qunit-banner"></h2>
+  <div id="qunit-testrunner-toolbar"></div>
+  <h2 id="qunit-userAgent"></h2>
+  <ol id="qunit-tests"></ol>
+  <div id="qunit-fixture">test markup</div>
   <script type="text/javascript">
-    var EXPECTED_TESTS = 26;
-
-    var ready = false;
-
-    var counter = EXPECTED_TESTS;
-    var testsWaiting = {};
-    var testsRan = [];
-    var dohWindow;
-    function done() { --counter || start(); }
-
-    window.console = {
-      log: function() {
-        if (window.top && window.top.console && window.top.console.log) {
-          try {
-            window.top.console.log.apply(arguments);
-          }
-          catch(e) {}
-        }
-      },
-      error: function() {
-        if (window.top && window.top.console && window.top.console.error) {
-          try {
-            window.top.console.error.apply(arguments);
-          }
-          catch(e) {}
-        }
-      }
-    };
-
-    window.BeginListening = function() {
-      // treat the entire AMD structure as a single async test
-      dohWindow = document.getElementById("amdTests").contentWindow;
-
-      dohWindow.console = window.console;
-
-      var existingDohMethods = {
-        _onEnd: dohWindow.doh._onEnd,
-        _groupFinished: dohWindow.doh._groupFinished,
-        _groupStarted: dohWindow.doh._groupStarted,
-        _handleFailure: dohWindow.doh._handleFailure,
-        _testFinished: dohWindow.doh._testFinished,
-        _testStarted: dohWindow.doh._testStarted
-      };
-
-      function change(name, fn) {
-        var oldMethod = existingDohMethods[name];
-        dohWindow.doh[name] = function() {
-          var args = [].slice.call(arguments, 0);
-          oldMethod.apply(dohWindow.doh, args);
-          fn.apply(this, args);
-        };
-      }
-
-      change('_testStarted', function(startName, startFixture) {
-          testsWaiting[startName] = true;
-      });
-
-      change('_testFinished', function(finishedName, finishedFixture, resultOfTest) {
-        window.top.console.log('AMD Callback on '+finishedName+': '+resultOfTest);
-        if (testsWaiting[finishedName]) {
-          ok(resultOfTest, finishedName);
-        }
-        else {
-          ok(false, "unrecognised test: "+finishedName);
-        }
-        done();
-      });
-
-      ready = true;
-    };
-
-    module("AMD External Tests");
-    asyncTest("All External AMD Tests", EXPECTED_TESTS, function() {
-      var interval = setInterval(function() {
-        if (ready) {
-          window.top.console.log("AMD test harness ready");
-          clearInterval(interval);
-          interval = null;
-          dohWindow.doh.run();
-        }
-        else {
-          window.top.console.log("waiting on AMD test harness...");
-        }
-      }, 200);
-    });
+    QUnit.testSuites([
+      "./amdjs-tests-impl/generic.html?test=anon_circular",
+      "./amdjs-tests-impl/generic.html?test=anon_relative",
+      "./amdjs-tests-impl/generic.html?test=anon_simple",
+      "./amdjs-tests-impl/generic.html?test=basic_circular",
+      "./amdjs-tests-impl/generic.html?test=basic_define",
+      "./amdjs-tests-impl/generic.html?test=basic_require",
+      "./amdjs-tests-impl/generic.html?test=basic_simple",
+      "./amdjs-tests-impl/generic.html?test=cjs_define",
+      "./amdjs-tests-impl/generic.html?test=cjs_named",
+      // "./amdjs-tests-impl/generic.html?test=config_map",
+      // "./amdjs-tests-impl/generic.html?test=config_map_star",
+      // "./amdjs-tests-impl/generic.html?test=config_map_star_adapter",
+      // "./amdjs-tests-impl/generic.html?test=config_module",
+      // "./amdjs-tests-impl/generic.html?test=config_packages",
+      // "./amdjs-tests-impl/generic.html?test=config_paths",
+      // "./amdjs-tests-impl/generic.html?test=config_shim",
+      "./amdjs-tests-impl/generic.html?test=plugin_double",
+      // "./amdjs-tests-impl/generic.html?test=plugin_dynamic",
+      "./amdjs-tests-impl/generic.html?test=plugin_fromtext",
+      "./amdjs-tests-impl/generic.html?test=plugin_normalize"
+    ]);
   </script>
 </body>
 </html>
