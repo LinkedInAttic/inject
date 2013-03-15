@@ -282,6 +282,7 @@ module.exports = function (grunt) {
         }
       }
     },
+
     wait: {
       server_start: {
         options: {
@@ -289,6 +290,7 @@ module.exports = function (grunt) {
         }
       }
     },
+    
     log: {
       server: {
         options: {

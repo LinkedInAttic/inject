@@ -46,6 +46,7 @@ var InjectCore;
       createRequire: function (id, path) {
         var req = new RequireContext(id, path);
         var require = proxy(req.require, req);
+
         require.ensure = proxy(req.ensure, req);
         require.run = proxy(req.run, req);
         // resolve an identifier to a URL (AMD compatibility)
