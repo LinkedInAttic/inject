@@ -257,6 +257,7 @@ var RequireContext = Fiber.extend(function () {
       var remainingDependencies = [];
       var resolvedDependencyList = [];
       var tempModuleId = null;
+      var currentExecutingAMD = null;
 
       // these are the various AMD interfaces and what they map to
       // we loop through the args by type and map them down into values
@@ -327,7 +328,10 @@ var RequireContext = Fiber.extend(function () {
 
       // handle anonymous modules
       if (!id) {
-        id = Executor.getCurrentExecutingAMD().id;
+        currentExecutingAMD = Executor.getCurrentExecutingAMD();
+        if (currentExecutingAMD) {
+          id = currentExecutingAMD.id;
+        }
         this.log('AMD identified anonymous module as ' + id);
       }
 
