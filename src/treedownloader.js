@@ -176,6 +176,7 @@ var TreeDownloader = Fiber.extend(function () {
         var pointcutsStr = RulesEngine.getPointcuts(node.getValue().path, true);
         var afterFetch = pointcuts.afterFetch || [];
         var parentName = (node.getParent()) ? node.getParent().getValue().name : '';
+        var parentUrl = (node.getParent()) ? node.getParent().getValue().path : '';
 
         // create a new flow control object and prime it with our contents
         var apFlow = new Flow();
@@ -186,7 +187,7 @@ var TreeDownloader = Fiber.extend(function () {
         // for every "after fetch" download, call it with contents, moduleName, and parentName
         var makeFlow = function (i) {
           apFlow.seq(function (next, error, contents) {
-            afterFetch[i](next, contents, node.getValue().name, parentName);
+            afterFetch[i](next, contents, node.getValue().name, parentName, parentUrl);
           });
         };
         for (var i = 0, len = afterFetch.length; i < len; i++) {
