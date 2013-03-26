@@ -1,3 +1,7 @@
+NOTE: This branch reflects v0.4.x Up to 0.4.1. It is considered a "DEAD" branch.
+
+Please use v0.4.1 for reference.
+
 * InjectJS Mailing List: https://groups.google.com/forum/#!forum/injectjs
 * 0.4.x: [![View Summary](https://secure.travis-ci.org/linkedin/inject.png?branch=v0.4.x)](http://travis-ci.org/#!/linkedin/inject/branch_summary)
 * master: [![View Summary](https://secure.travis-ci.org/linkedin/inject.png?branch=master)](http://travis-ci.org/#!/linkedin/inject/branch_summary)
