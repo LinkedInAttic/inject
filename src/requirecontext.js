@@ -327,7 +327,13 @@ var RequireContext = Fiber.extend(function () {
 
       // handle anonymous modules
       if (!id) {
-        id = Executor.getCurrentExecutingAMD().id;
+        currentExecutingAMD = Executor.getCurrentExecutingAMD();
+        if (currentExecutingAMD) {
+          id = currentExecutingAMD.id;
+        }
+        else {
+          throw new Error('Anonymous AMD module used, but it was not included as a dependency. This is most often caused by an anonymous define() from a script tag.');
+        }
         this.log('AMD identified anonymous module as ' + id);
       }
 
