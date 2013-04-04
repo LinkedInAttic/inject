@@ -1,14 +1,12 @@
 ---
 layout: docs
-version: 0.4.x
+version: 0.4.0, 0.4.1
 title: Building Inject From Source
 category: howto
-permalink: /docs/0.4.x/howto/build_from_source.html
+permalink: /docs/0.4.1_0.4.2/howto/build_from_source.html
 ---
 
 Want to build your very own copy of Inject? Perhaps you'd like to contribute to the project or maybe just tinker around under the hood. Whatever the reason, these steps will get you started quickly.
-
-Looking to build 0.4.0 or 0.4.1 versions of Inject? Since moving to grunt, the old instructions are [still available](/docs/0.4.1_0.4.2/howto/build_from_source.html)
 
 
 ### 1. Grab a Copy of the Source
@@ -25,14 +23,13 @@ You'll need to gather a few npm packages and submodules to build and test succes
 * [Node.js](http://nodejs.org/)
 * [npm](http://npmjs.org/)
 
-Now you can install the required dependencies. Navigate to the root directory and issue this command to install the necessary npm packages. Depending on your environment, you may need `sudo` for your npm installations.
+Now you can install the required dependencies. Navigate to the root directory and issue this command to install the necessary npm packages:
 
 {% highlight sh %}
 npm install
-npm install -g grunt-cli
 {% endhighlight %}
 
-To properly test your Inject build, you'll need to install a few submodules. While still in the root directory, run these commands to pull in the currently supported AMD and CommonJS test suites.
+To properly test your Inject build, you'll need to install a few submodules. While still in the root directory:
 
 {% highlight sh %}
 git submodule init
@@ -45,18 +42,20 @@ git submodule update
 After all the dependencies have been successfully installed, you're ready to build Inject. Simply run this command:
 
 {% highlight sh %}
-grunt build
+node makefile.js build
 {% endhighlight %}
 
 To customize your build, these options are available:
 
 {% highlight sh %}
-# Create a build with no cross domain support
-grunt noxd
+--noxd
+Disables cross domain support (default is false)
 
-# Use a headless PhantomJS server to
-# quickly run the unit tests
-grunt test
+--nolegacy
+Disables ie7 support (default is false)
+
+--output
+Set an output directory (default is ./artifacts)
 {% endhighlight %}
 
 
@@ -65,14 +64,10 @@ grunt test
 The Inject source package includes a collection of usage examples and a suit of tests that cover Inject-specific integration, the CommonJS specification, and the AMD tests. These can be accessed by starting the server:
 
 {% highlight sh %}
-# always build before using the server so you
-# have the latest "release" to test against
-grunt build server
+node makefile.js server
 {% endhighlight %}
 
 Hit http://localhost:4000/tests/ to run the test suite. It's a good idea to run the tests after building to verify your copy is in working order.
-
-Examples are available on the test server at http://localhost:4000/examples/
 
 
 ### 5. Integrating with Travis CI
