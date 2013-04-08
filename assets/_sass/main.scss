@@ -262,6 +262,37 @@ $chrome-extra-large-text:               18px;
     }
   }
   //-- Navigation
+  
+  .global-search {
+    float:                            right;
+    margin:                           4px 0 0;
+    padding:                          0;
+
+    .gcse {
+        width: 300px;
+        margin-top: 2px;
+        .gsib_a {
+            padding: 2px 6px 0;
+            input {
+                font-size: 15px;
+            }
+        }
+        .gsst_a {
+            padding-top: 7px;
+        }
+        .gsc-input {
+            padding-right: 5px;
+            .gsc-input-box {
+                @include border-radius(4px);
+            }
+        }
+        input.gsc-search-button-v2 {
+            @include styleguide(small primary button in a punchcut);
+            padding: 5px 13px;
+            height: 27px;
+        }
+    }
+  }
 }
 
 .content {

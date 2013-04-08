@@ -38,6 +38,19 @@
 
     <!-- tracking -->
     <!-- todo: use LinkedIn GA Tracking -->
+    
+    <!-- google custom search engine -->
+    <script>
+      (function() {
+        var cx = '007454891895213570750:rm0mkbrbrmi';
+        var gcse = document.createElement('script'); gcse.type = 'text/javascript'; gcse.async = true;
+        gcse.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') +
+            '//www.google.com/cse/cse.js?cx=' + cx;
+        var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(gcse, s);
+      })();
+    </script>
+    <!-- end google custom search engine -->
+    
   </head>
   <body>
     <div class="global-header">
@@ -70,6 +83,11 @@
               <a href="http://github.com/linkedin/inject" class="tab-name"><span>GitHub</span></a>
             </li>
           </ul>
+      <div class="global-search">
+        <div class="gcse">
+          <gcse:searchbox-only></gcse:searchbox-only>
+        </div>
+      </div>
         </div>
       </div>
     </div>
