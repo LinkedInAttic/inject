@@ -36,8 +36,8 @@ module.exports = function (grunt) {
     },
 
     zip_locations: {
-      archive:      './artifacts/inject-__INJECT__VERSION__.zip',
-      path:         './inject-__INJECT__VERSION__/**'
+      archive:      'inject-__INJECT__VERSION__.tgz',
+      path:         'inject-__INJECT__VERSION__'
     },
 
     // normal grunt reading
@@ -320,14 +320,15 @@ module.exports = function (grunt) {
     compress: {
       release: {
         options: {
-          archive: '<%= zip_locations.archive %>',
+          archive: './artifacts/<%= zip_locations.archive %>',
           pretty: true
         },
         files: [
           {
-            cwd: './artifacts',
-            src: ['<%= zip_locations.path %>'],
-            dest: '/'
+            src: './artifacts/<%= zip_locations.path %>/**',
+            dest: './'
+            // dest: './',
+            // cwd: './'
           }
         ]
       }
