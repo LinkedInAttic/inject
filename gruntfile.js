@@ -325,10 +325,11 @@ module.exports = function (grunt) {
         },
         files: [
           {
-            src: './artifacts/<%= zip_locations.path %>/**',
-            dest: './'
-            // dest: './',
-            // cwd: './'
+            src: '**',
+            dest: '/',
+            expand: true,
+            filter: 'isFile',
+            cwd: 'artifacts/<%= zip_locations.path %>/'
           }
         ]
       }
