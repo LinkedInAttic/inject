@@ -35,6 +35,11 @@ module.exports = function (grunt) {
       relaySwf:     './artifacts/inject-__INJECT__VERSION__/relay.swf'
     },
 
+    zip_locations: {
+      archive:      'inject-__INJECT__VERSION__.tgz',
+      path:         'inject-__INJECT__VERSION__'
+    },
+
     // normal grunt reading
     pkg: grunt.file.readJSON('package.json'),
 
@@ -56,6 +61,7 @@ module.exports = function (grunt) {
           callback: function (err, stdout, stderr, next) {
             var foot = grunt.config.get('anonymous_footer');
             var output_files = grunt.config.get('output_files');
+            var zip_locations = grunt.config.get('zip_locations');
             var version = stdout.replace(/[\s]/g, '');
             var file;
             var type;
@@ -69,6 +75,10 @@ module.exports = function (grunt) {
             for (type in output_files) {
               file = grunt.config.get('output_files.'+type);
               grunt.config.set('output_files.'+type, addVersion(file));
+            }
+            for (type in zip_locations) {
+              file = grunt.config.get('zip_locations.'+type);
+              grunt.config.set('zip_locations.'+type, addVersion(file));
             }
 
             next();
@@ -290,7 +300,7 @@ module.exports = function (grunt) {
         }
       }
     },
-    
+
     log: {
       server: {
         options: {
@@ -304,6 +314,24 @@ module.exports = function (grunt) {
             'simulation in examples'
           ].join('\n')
         }
+      }
+    },
+
+    compress: {
+      release: {
+        options: {
+          archive: './artifacts/<%= zip_locations.archive %>',
+          pretty: true
+        },
+        files: [
+          {
+            src: '**',
+            dest: '/',
+            expand: true,
+            filter: 'isFile',
+            cwd: 'artifacts/<%= zip_locations.path %>/'
+          }
+        ]
       }
     }
   });
@@ -338,6 +366,7 @@ module.exports = function (grunt) {
   grunt.loadNpmTasks('grunt-contrib-uglify');
   grunt.loadNpmTasks('grunt-contrib-clean');
   grunt.loadNpmTasks('grunt-contrib-qunit');
+  grunt.loadNpmTasks('grunt-contrib-compress');
   grunt.loadNpmTasks('grunt-shell');
   grunt.loadNpmTasks('grunt-express');
 
@@ -347,11 +376,11 @@ module.exports = function (grunt) {
     var d = delay ? delay + ' second' + (delay === '1' ? '' : 's') : 'forever';
 
     grunt.log.write('Waiting ' + d + '...');
-    
+
     // Make this task asynchronous. Grunt will not continue processing
     // subsequent tasks until done() is called.
     var done = this.async();
-    
+
     // If a delay was specified, call done() after that many seconds.
     if (delay) { setTimeout(done, delay * 1000); }
   });
@@ -380,7 +409,7 @@ module.exports = function (grunt) {
 
     'copy:legalish',
     'copy:xd',
-    
+
     'clean:tmp'
   ]);
 
@@ -419,6 +448,11 @@ module.exports = function (grunt) {
     'copy:legalish',
 
     'clean:tmp'
+  ]);
+
+  grunt.registerTask('release', [
+    'build',
+    'compress:release'
   ]);
 
 };
