@@ -3,7 +3,6 @@ layout: news
 title: Accouncing Inject 0.4.2
 category: news
 author: mpowell
-published: false
 ---
 
 Get this release over at the [downloads](/download) page
