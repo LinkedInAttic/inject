@@ -207,10 +207,6 @@ var TreeDownloader = Fiber.extend(function () {
             return this.reduceCallsRemaining(callback, node);
           }
 
-          var before = (pointcutsStr.before) ? [pointcutsStr.before, '\n'].join('') : '';
-          var after = (pointcutsStr.after) ? [pointcutsStr.after, '\n'].join('') : '';
-          contents = [before, contents, after].join('');
-
           var parent = node;
           var found = {};
           var value;

@@ -294,8 +294,6 @@ var RulesEngine;
        *  you can also set ruleSet.path to a function, and that function will
        *  passed the current path for mutation</li>
        * <li>ruleSet.pointcuts.afterFetch: a function to mutate the file after retrieval, but before analysis</li>
-       * <li>ruleSet.pointcuts.before (deprecated): a function to run before executing this module</li>
-       * <li>ruleSet.pointcuts.after (deprecated): a function to run after executing this module</li>
        * </ul>
        * @method RulesEngine.addRule
        * @param {RegExp|String} regexMatch - a stirng or regex to match on
@@ -332,10 +330,6 @@ var RulesEngine;
 
         if (!ruleSet.pointcuts) {
           ruleSet.pointcuts = {};
-        }
-
-        if (ruleSet.pointcuts.before || ruleSet.pointcuts.after) {
-          debugLog('RulesEngine', 'deprecated pointcuts in rule for ' + regexMatch.toString());
         }
 
         rulesIsDirty = true;
