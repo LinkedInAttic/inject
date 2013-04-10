@@ -65,13 +65,14 @@ var InjectCore;
        * @method InjectCore.createDefine
        * @param {string} id - the module identifier for relative module IDs
        * @param {string} path - the module path for relative path operations
+       * @param {boolean} disableAMD - if provided, define.amd will be false, disabling AMD detection
        * @public
        * @returns a function adhearing to the AMD define() method
        */
-      createDefine: function (id, path) {
+      createDefine: function (id, path, disableAMD) {
         var req = new RequireContext(id, path);
         var define = proxy(req.define, req);
-        define.amd = {};
+        define.amd = (disableAMD) ? false : {};
         return define;
       },
 
