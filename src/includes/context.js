@@ -186,6 +186,20 @@ context.Inject = {
   },
 
   /**
+   * Set the global AMD property. Setting this to "true" can disable
+   * the global AMD detection. This is really useful in scenarios where
+   * you anticipate mixing script tags with your loader framework
+   */
+  disableGlobalAMD: function (disable) {
+    if (disable) {
+      context.define = Inject.INTERNAL.createDefine(null, null, true);
+    }
+    else {
+      context.define = Inject.INTERNAL.createDefine();
+    }
+  },
+
+  /**
       Clears the local storage caches.
       @see InjectCore.clearCache
       @method
