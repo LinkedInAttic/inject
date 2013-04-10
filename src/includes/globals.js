@@ -40,7 +40,7 @@ governing permissions and limitations under the License.
  */
 var userConfig = {
   moduleRoot: null,
-  fileExpires: 300,
+  fileExpires: 0,
   useSuffix: true,
   xd: {
     relayFile: null,
