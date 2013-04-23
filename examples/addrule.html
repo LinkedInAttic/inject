@@ -55,12 +55,12 @@ Inject.addRule(/jquery\.ui/, {
   last: true,
   weight: 300,
   pointcuts: {
-    afterFetch: function(text) {
-      return [
+    afterFetch: function(next, text) {
+      next(null, [
         'var jQuery = require("jquery");',
         text,
         'module.setExports(jQuery);',
-      ''].join('\n');
+      ''].join('\n'));
     }
   }
 });
@@ -68,13 +68,13 @@ Inject.addRule(/jquery\.ui/, {
 Inject.addRule(/jquery\.ui\.button/, {
   weight: 500,
   pointcuts: {
-    afterFetch: function(text) {
-      return [
+    afterFetch: function(next, text) {
+      next(null, [
         "if (!jQuery) var $ = jQuery = require('jquery');",
         "require('jquery.ui.core');",
         "require('jquery.ui.widget');",
         text,
-      ''].join('\n');
+      ''].join('\n'));
     }
   }
 });
@@ -84,14 +84,14 @@ Inject.addRule(/^jquery$/, {
   last: true,
   weight: 999,
   pointcuts: {
-    afterFetch: function(text) {
-      return [
+    afterFetch: function(next, text) {
+      next(null, [
         'var oldJQ = window.jQuery;',
         text,
         'module.setExports(jQuery.noConflict());',
         'delete window["jQuery"];',
         'window.jQuery = oldJQ;',
-      ''].join('\n');
+      ''].join('\n'));
     }
   }
 });
@@ -99,10 +99,7 @@ require.ensure(["sampleapp"], function() {
   var app = require("sampleapp");
   app.run();
 });
-require.ensure(["foo"], function() {
-  var foo = require("foo")
-  document.getElementById("output-foo").innerHTML = foo.baz;
-});
+
 </textarea>
 
 <script type="text/javascript" src="resources/layout.js"></script>

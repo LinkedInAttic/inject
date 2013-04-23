@@ -137,10 +137,10 @@ var TreeDownloader = Fiber.extend(function () {
       var getFunction = null;
 
       // get the path and REAL identifier for this module (resolve relative references)
-      var identifier = RulesEngine.resolveIdentifier(node.getValue().name, parentName);
+      var identifier = RulesEngine.resolveModule(node.getValue().name, parentName);
 
       // modules are relative to identifiers, not to URLs
-      node.getValue().path = RulesEngine.resolveUrl(identifier);
+      node.getValue().path = RulesEngine.resolveFile(identifier);
 
       node.getValue().resolvedId = identifier;
 
@@ -158,7 +158,7 @@ var TreeDownloader = Fiber.extend(function () {
 
       this.log('requesting file', node.getValue().path);
       getFunction = (node.getValue().path) ? Communicator.get : Communicator.noop;
-      getFunction(node.getValue().name, node.getValue().path, proxy(function (contents) {
+      getFunction(node.getValue().name, node.getValue().path, proxy(function (downloadedContent) {
         this.log('download complete', node.getValue().path);
 
         /*
@@ -169,29 +169,22 @@ var TreeDownloader = Fiber.extend(function () {
         Please see https://github.com/jeromeetienne/gowiththeflow.js to learn more about the
         really small library we opted to use.
         */
-
-        // afterFetch pointcut if available
-        // this.pointcuts[resolvedUrl] = result.pointcuts;
-        var pointcuts = RulesEngine.getPointcuts(node.getValue().path);
-        var pointcutsStr = RulesEngine.getPointcuts(node.getValue().path, true);
-        var afterFetch = pointcuts.afterFetch || [];
+        var pointcuts = RulesEngine.getContentRules(node.getValue().path);
         var parentName = (node.getParent()) ? node.getParent().getValue().name : '';
         var parentUrl = (node.getParent()) ? node.getParent().getValue().path : '';
-
-        // create a new flow control object and prime it with our contents
+        var i, j, len, jLen, found;
         var apFlow = new Flow();
-        apFlow.seq(function (next) {
-          next(null, contents);
-        });
 
-        // for every "after fetch" download, call it with contents, moduleName, and parentName
-        var makeFlow = function (i) {
+        apFlow.seq(function (next) {
+          next(null, downloadedContent);
+        });
+        var makeFlow = function (fn) {
           apFlow.seq(function (next, error, contents) {
-            afterFetch[i](next, contents, node.getValue().name, parentName, parentUrl);
+            fn(next, contents, node.getValue().name, parentName, parentUrl);
           });
         };
-        for (var i = 0, len = afterFetch.length; i < len; i++) {
-          makeFlow(i);
+        for (i = 0, len = pointcuts.length; i < len; i++) {
+          makeFlow(pointcuts[i]);
         }
 
         // once all contents are resolved, see if we have an object (a neat assignment trick)
@@ -206,10 +199,6 @@ var TreeDownloader = Fiber.extend(function () {
             // no content was returned at all. This happens when there is explicitly nothing to eval
             return this.reduceCallsRemaining(callback, node);
           }
-
-          var before = (pointcutsStr.before) ? [pointcutsStr.before, '\n'].join('') : '';
-          var after = (pointcutsStr.after) ? [pointcutsStr.after, '\n'].join('') : '';
-          contents = [before, contents, after].join('');
 
           var parent = node;
           var found = {};
@@ -254,7 +243,7 @@ var TreeDownloader = Fiber.extend(function () {
 
             // remove already-defined AMD modules before we go further
             for (i = 0, len = tempRequires.length; i < len; i++) {
-              name = RulesEngine.resolveIdentifier(tempRequires[i], node.getValue().resolvedId);
+              name = RulesEngine.resolveModule(tempRequires[i], node.getValue().resolvedId);
               if (!Executor.isModuleDefined(name) && !Executor.isModuleDefined(tempRequires[i])) {
                 requires.push(tempRequires[i]);
               }
@@ -267,7 +256,7 @@ var TreeDownloader = Fiber.extend(function () {
               this.increaseCallsRemaining(requires.length);
             }
             for (i = 0, len = requires.length; i < len; i++) {
-              name = (results.amd) ? RulesEngine.resolveIdentifier(requires[i], node.getValue().resolvedId): requires[i];
+              name = (results.amd) ? RulesEngine.resolveModule(requires[i], node.getValue().resolvedId): requires[i];
               path = ''; // calculate path on recusion using parent
               childNode = TreeDownloader.createNode(name, path);
               node.addChild(childNode);

@@ -96,7 +96,7 @@ context.Inject = {
       pointcuts: {
         afterFetch: function (next, text, moduleName, requestorName, requestorUrl) {
           var pieces = moduleName.split('!');
-          var pluginId = RulesEngine.resolveIdentifier(pieces[0], requestorName);
+          var pluginId = RulesEngine.resolveModule(pieces[0], requestorName);
           var pluginUrl = RulesEngine.resolveUrl(pluginId, requestorUrl);
           var identifier = pieces[1];
 
@@ -108,7 +108,7 @@ context.Inject = {
             var remappedRequire = InjectCore.createRequire(pluginId, pluginUrl);
 
             var resolveIdentifier = function (name) {
-              return RulesEngine.resolveIdentifier(name, requestorName);
+              return RulesEngine.resolveModule(name, requestorName);
             };
             var normalized = (plugin.normalize) ? plugin.normalize(identifier, resolveIdentifier) : resolveIdentifier(identifier);
             var complete = function (contents) {
@@ -206,14 +206,7 @@ context.Inject = {
       @public
    */
   clearCache: proxy(InjectCore.clearCache, InjectCore),
-  /**
-      @see RulesEngine.manifest
-      @method
-      @public
-   */
-  manifest: function () {
-    RulesEngine.manifest.apply(RulesEngine, arguments);
-  },
+
   /**
       @see RulesEngine.addRule
       @method

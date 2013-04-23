@@ -26,42 +26,14 @@ governing permissions and limitations under the License.
 var RulesEngine;
 (function () {
 
-  /**
-   * the collection of rules
-   * @private
-   * @type {Array}
-   */
-  var rules = [];
+  var LEADING_SLASHES_REGEX = /^\/+/g;
 
-  /**
-   * have the rules been added to since last sorted
-   * @private
-   * @type {boolean}
-   */
-  var rulesIsDirty = false;
-
-  /**
-   * sort the rules table based on their "weight" property
-   * @method RulesEngine.sortRulesTable
-   * @private
-   */
-  function sortRulesTable() {
-    rules.sort(function (a, b) {
-      return b.weight - a.weight;
-    });
-    rulesIsDirty = false;
-  }
-
-  /**
-   * convert a function to a pointcut string
-   * @method RulesEngine.functionToPointcut
-   * @param {Function} fn - the function to convert
-   * @private
-   * @returns {String} the internal body of the function
-   */
-  function functionToPointcut(fn) {
-    return fn.toString().replace(FUNCTION_BODY_REGEX, '$1');
-  }
+  var basedir = function(dir) {
+    dir = dir.split('/');
+    dir.pop();
+    dir = dir.join('/');
+    return dir;
+  };
 
   var AsStatic = Fiber.extend(function () {
     return {
@@ -70,65 +42,225 @@ var RulesEngine;
        * @constructs RulesEngine
        */
       init: function () {
-        this.pointcuts = {};
+        this.moduleRules = [];
+        this.fileRules = [];
+        this.contentRules = [];
+        this.aliasRules = {};
+        this.dirty = {
+          moduleRules: true,
+          fileRules: true,
+          contentRules: true,
+          aliasRules: true
+        };
+        this.caches = {
+          moduleRules: {},
+          fileRules: {},
+          contentRules: {},
+          aliasRules: {}
+        };
+        this.addRuleCounter = 0;
+        this.addRulePointcuts = {};
+      },
+
+      add: function (type, matches, rule, options) {
+        this.dirty[type] = true;
+        options = options || {};
+        var weight = options.weight || this[type].length;
+        var last = options.last || false;
+        this[type].push({
+          matches: matches,
+          fn: (typeof rule === 'function') ? rule : function() { return rule; },
+          weight: weight,
+          last: last,
+          all: options
+        });
+      },
+
+      clearCache: function(type) {
+        this.caches[type] = {};
+      },
+
+      sort: function (type) {
+        if (!this.dirty[type]) {
+          return;
+        }
+        this.clearCache(type);
+        this[type].sort(function (a, b) {
+          return b.weight - a.weight;
+        });
+        this.dirty[type] = false;
+      },
+
+      /**
+       * @deprecated
+       */
+      getDeprecatedPointcuts: function(moduleId) {
+        return this.addRulePointcuts[moduleId] || [];
+      },
+
+      /**
+       * @deprecated
+       */
+      addRule: function (matches, weight, rule) {
+        if (!rule) {
+          rule = weight;
+          weight = this.addRuleCounter++;
+        }
+        if (!rule) {
+          rule = {};
+        }
+
+        if (rule.path) {
+          this.addFileRule(matches, rule.path, {
+            weight: weight,
+            last: rule.last,
+            useSuffix: rule.useSuffix,
+            afterFetch: (rule.pointcuts && rule.pointcuts.afterFetch) ? rule.pointcuts.afterFetch : null
+          });
+        }
+        else if (rule.pointcuts && rule.pointcuts.afterFetch) {
+          this.addContentRule(matches, rule.pointcuts.afterFetch, {
+            weight: rule.weight
+          });
+        }
+      },
+
+      addModuleRule: function (matchesId, rule, options) {
+        return this.add('moduleRules', matchesId, rule, options);
+      },
+      addFileRule: function (matchesPath, rule, options) {
+        return this.add('fileRules', matchesPath, rule, options);
+      },
+      addContentRule: function (matchesPath, rule, options) {
+        return this.add('contentRules', matchesPath, rule, options);
+      },
+      addPackage: function (matchesResolvedId, rule) {
+        return this.add('aliasRules', matchesResolvedId, rule);
       },
 
       /**
        * Resolve an identifier after applying all rules
-       * @method RulesEngine.resolveIdentifier
-       * @param {String} identifier - the identifier to resolve
+       * @method RulesEngine.resolveModule
+       * @param {String} moduleId - the identifier to resolve
        * @param {String} relativeTo - a base path for relative identifiers
        * @public
        * @returns {String} the resolved identifier
        */
-      resolveIdentifier: function (identifier, relativeTo) {
-        if (!relativeTo) {
-          relativeTo = '';
+      resolveModule: function (moduleId, relativeTo) {
+        if (!this.dirty.moduleRules && this.caches.moduleRules[moduleId]) {
+          return this.caches.moduleRules[moduleId];
         }
 
-        if (identifier.indexOf('.') !== 0) {
-          relativeTo = '';
+        this.sort('moduleRules');
+        var lastId = moduleId;
+        var i = 0;
+        var rules = this.moduleRules;
+        var len = rules.length;
+        var isMatch = false;
+        var matches;
+        var fn;
+        for (i; i < len; i++) {
+          matches = rules[i].matches;
+          fn = rules[i].fn;
+
+          isMatch = false;
+          if (typeof matches === 'string') {
+            if (matches === moduleId) {
+              isMatch = true;
+            }
+          }
+          else if (typeof matches.test === 'function') {
+            isMatch = matches.test(moduleId);
+          }
+
+          if (isMatch) {
+            lastId = fn(lastId);
+            if (matches.last) {
+              break;
+            }
+          }
         }
 
-        // basedir
+        // shear off all leading slashes
+        lastId = lastId.replace(LEADING_SLASHES_REGEX, '');
+
+        // we don't need/want relativeTo if there's no leading .
+        if (lastId.indexOf('.') !== 0) {
+          relativeTo = null;
+        }
+
+        // adjust relativeTo to a basedir if provided
         if (relativeTo) {
-          relativeTo = relativeTo.split('/');
-          relativeTo.pop();
-          relativeTo = relativeTo.join('/');
+          relativeTo = basedir(relativeTo);
         }
 
-        if (identifier.indexOf('/') === 0) {
-          return identifier;
-        }
+        // compute the relative path
+        lastId = this.getRelative(lastId, relativeTo);
 
-        identifier = this.computeRelativePath(identifier, relativeTo);
+        // strip leading / as it is not needed
+        lastId = lastId.replace(LEADING_SLASHES_REGEX, '');
 
-        if (identifier.indexOf('/') === 0) {
-          identifier = identifier.split('/');
-          identifier.shift();
-          identifier = identifier.join('/');
-        }
-
-        return identifier;
+        // cache and return
+        this.caches.moduleRules[moduleId] = lastId;
+        return lastId;
       },
 
       /**
        * resolve a URL relative to a base path
-       * @method RulesEngine.resolveUrl
+       * @method RulesEngine.resolveFile
        * @param {String} path - the path to resolve
        * @param {String} relativeTo - a base path for relative URLs
        * @param {Boolean} noSuffix - do not use a suffix for this resolution
        * @public
        * @returns {String} a resolved URL
        */
-      resolveUrl: function (path, relativeTo, noSuffix) {
-        var resolvedUrl;
+      resolveFile: function (path, relativeTo, noSuffix) {
+        if (!this.dirty.fileRules && this.caches.fileRules[path]) {
+          return this.caches.fileRules[path];
+        }
+
+        this.sort('fileRules');
+        var lastPath = path;
+        var i = 0;
+        var rules = this.fileRules;
+        var len = rules.length;
+        var isMatch = false;
+        var matches;
+        var fn;
+        var deprecatedPointcuts = [];
+        for (i; i < len; i++) {
+          matches = rules[i].matches;
+          fn = rules[i].fn;
+
+          isMatch = false;
+          if (typeof matches === 'string') {
+            if (matches === path) {
+              isMatch = true;
+            }
+          }
+          else if (typeof matches.test === 'function') {
+            isMatch = matches.test(path);
+          }
+
+          if (isMatch) {
+            lastPath = fn(lastPath);
+            if (rules[i].all && rules[i].all.afterFetch) {
+              deprecatedPointcuts.push(rules[i].all.afterFetch);
+            }
+            if (rules[i].last) {
+              break;
+            }
+          }
+        }
 
         // if no module root, freak out
         if (!userConfig.moduleRoot) {
           throw new Error('module root needs to be defined for resolving URLs');
         }
 
+        // if there is no basedir function from the user, we need to slice off the last segment of relativeTo
+        // otherwise, we can use the baseDir() function
+        // otherwise (no relativeTo) it is relative to the moduleRoot
         if (relativeTo && !userConfig.baseDir) {
           relativeTo = relativeTo.replace(PROTOCOL_REGEX, PROTOCOL_EXPANDED_STRING).split('/');
           if (relativeTo[relativeTo.length - 1] && relativeTo.length !== 1) {
@@ -145,63 +277,140 @@ var RulesEngine;
         }
 
         // exit early on resolved http URL
-        if (ABSOLUTE_PATH_REGEX.test(path)) {
-          return path;
-        }
-
-        // Apply our rules to the path in progress
-        var result = this.applyRules(path);
-        path = result.resolved;
-
-        // exit early on resolved http URL
-        if (ABSOLUTE_PATH_REGEX.test(path)) {
-          // store pointcuts based on the resolved URL
-          this.pointcuts[path] = result.pointcuts;
-          return path;
-        }
-
-        if (!path.length) {
-          this.pointcuts.__INJECT_no_path = result.pointcuts;
-          return '';
+        if (ABSOLUTE_PATH_REGEX.test(lastPath)) {
+          this.caches.fileRules[path] = lastPath;
+          return lastPath;
         }
 
         // take off the :// to replace later
         relativeTo = relativeTo.replace(PROTOCOL_REGEX, PROTOCOL_EXPANDED_STRING);
-        path = path.replace(PROTOCOL_REGEX, PROTOCOL_EXPANDED_STRING);
+        lastPath = lastPath.replace(PROTOCOL_REGEX, PROTOCOL_EXPANDED_STRING);
 
         // #169: query strings in base
         if (/\?/.test(relativeTo)) {
-          resolvedUrl = relativeTo + path;
+          lastPath = relativeTo + lastPath;
         }
         else {
-          resolvedUrl = this.computeRelativePath(path, relativeTo);
+          lastPath = this.getRelative(lastPath, relativeTo);
         }
 
-        resolvedUrl = resolvedUrl.replace(PROTOCOL_EXPANDED_REGEX, PROTOCOL_STRING);
+        // restore the ://
+        lastPath = lastPath.replace(PROTOCOL_EXPANDED_REGEX, PROTOCOL_STRING);
 
-        // for everyone else...
-        if (!noSuffix && result.useSuffix && userConfig.useSuffix && !FILE_SUFFIX_REGEX.test(resolvedUrl)) {
-          resolvedUrl = resolvedUrl + BASIC_FILE_SUFFIX;
+        // add a suffix if required
+        if (!noSuffix && userConfig.useSuffix && !FILE_SUFFIX_REGEX.test(lastPath)) {
+          lastPath = lastPath + BASIC_FILE_SUFFIX;
         }
 
-        // store pointcuts based on the resolved URL
-        this.pointcuts[resolvedUrl] = result.pointcuts;
+        // store deprecated pointcuts
+        this.addRulePointcuts[lastPath] = deprecatedPointcuts;
 
-        return resolvedUrl;
+        // store and return
+        this.caches.fileRules[path] = lastPath;
+        return lastPath;
+      },
+
+      getPackages: function (resolvedId) {
+        if (!this.dirty.aliasRules && this.caches.aliasRules[resolvedId]) {
+          return this.caches.aliasRules[resolvedId];
+        }
+
+        this.sort('aliasRules');
+        var i = 0;
+        var rules = this.aliasRules;
+        var len = rules.length;
+        var isMatch = false;
+        var matches;
+        var fn;
+        var aliases = [];
+        for (i; i < len; i++) {
+          matches = rules[i].matches;
+          fn = rules[i].fn;
+
+          isMatch = false;
+          if (typeof matches === 'string') {
+            if (matches === resolvedId) {
+              isMatch = true;
+            }
+          }
+          else if (typeof matches.test === 'function') {
+            isMatch = matches.test(resolvedId);
+          }
+
+          if (isMatch) {
+            aliases.push(fn(resolvedId));
+          }
+        }
+
+        this.caches.aliasRules[resolvedId] = aliases;
+        return aliases;
+      },
+
+      getContentRules: function (path) {
+        if (!this.dirty.contentRules && this.caches.contentRules[path]) {
+          return this.caches.contentRules[path];
+        }
+        this.sort('contentRules');
+
+        var i = 0;
+        var rules = this.contentRules;
+        var len = rules.length;
+        var isMatch = false;
+        var matches;
+        var fn;
+        var matchingRules = [];
+        var found = false;
+        var deprecatedPointcuts = this.addRulePointcuts[path];
+        for (i; i < len; i++) {
+          matches = rules[i].matches;
+          fn = rules[i].fn;
+
+          isMatch = false;
+          if (typeof matches === 'string') {
+            if (matches === path) {
+              isMatch = true;
+            }
+          }
+          else if (typeof matches.test === 'function') {
+            isMatch = matches.test(path);
+          }
+
+          if (isMatch) {
+            matchingRules.push(fn);
+          }
+        }
+
+        // add any matching deprecated pointcuts
+        each(deprecatedPointcuts, function (depPC) {
+          found = false;
+          each(matchingRules, function (normalPC) {
+            if (normalPC === depPC) {
+              found = true;
+            }
+          });
+          if (!found) {
+            matchingRules.push(depPC);
+          }
+        });
+
+        this.caches.contentRules[path] = matchingRules;
+        return matchingRules;
       },
 
       /**
        * Dismantles and reassembles a relative path by exploding on slashes
-       * @method RulesEngine.computeRelativePath
+       * @method RulesEngine.getRelative
        * @param {String} id - the initial identifier
        * @param {String} base - the base path for relative declarations
        * @private
        * @returns {String} a resolved path with no relative references
        */
-      computeRelativePath: function (id, base) {
+      getRelative: function (id, base) {
         var blownApartURL;
         var resolved = [];
         var piece;
+
+        base = base || '';
 
         // exit early on resolved :// in a URL
         if (ABSOLUTE_PATH_REGEX.test(id)) {
@@ -231,213 +440,6 @@ var RulesEngine;
 
         resolved = resolved.join('/');
         return resolved;
-      },
-
-      /**
-       * Get the pointcuts associated with a given URL path
-       * @method RulesEngine.getPointcuts
-       * @param {String} path - the url path to get pointcuts for
-       * @param {Boolean} asString - if TRUE, return the pointcuts bodies as a string
-       * @public
-       * @returns {Object} an object containing all pointcuts for the URL
-       */
-      getPointcuts: function (path, asString) {
-        // allow lookup for empty path
-        path = path || '__INJECT_no_path';
-        var pointcuts = this.pointcuts[path] || {before: [], after: []};
-        var result = {};
-        var pointcut;
-        var type;
-
-        if (typeof(asString) === 'undefined') {
-          return pointcuts;
-        }
-
-        for (type in pointcuts) {
-          if (pointcuts.hasOwnProperty(type)) {
-            for (var i = 0, len = pointcuts[type].length; i < len; i++) {
-              pointcut = pointcuts[type][i];
-              if (!result[type]) {
-                result[type] = [];
-              }
-              result[type].push(functionToPointcut(pointcut));
-            }
-          }
-        }
-
-        for (type in result) {
-          if (result.hasOwnProperty(type)) {
-            result[type] = result[type].join('\n');
-          }
-        }
-
-        return result;
-
-      },
-
-      clearRules: function () {
-        rules = [];
-        rulesIsDirty = false;
-      },
-
-      /**
-       * Add a rule to the database. It can be called as:<br>
-       * addRule(regexMatch, weight, ruleSet)<br>
-       * addRule(regexMatch, ruleSet)<br>
-       * addRule(ruleSet)<br>
-       * The ruleSet object to apply contains a set of options.
-       * <ul>
-       * <li>ruleSet.matches: replaces regexMatch if found</li>
-       * <li>ruleSet.weight: replaces weight if found</li>
-       * <li>ruleSet.last: if true, no further rules are ran</li>
-       * <li>ruleSet.path: a path to use instead of a derived path<br>
-       *  you can also set ruleSet.path to a function, and that function will
-       *  passed the current path for mutation</li>
-       * <li>ruleSet.pointcuts.afterFetch: a function to mutate the file after retrieval, but before analysis</li>
-       * <li>ruleSet.pointcuts.before (deprecated): a function to run before executing this module</li>
-       * <li>ruleSet.pointcuts.after (deprecated): a function to run after executing this module</li>
-       * </ul>
-       * @method RulesEngine.addRule
-       * @param {RegExp|String} regexMatch - a stirng or regex to match on
-       * @param {int} weight - a weight for the rule. Larger values run later
-       * @param {Object} ruleSet - an object containing the rules to apply
-       * @public
-       */
-      addRule: function (regexMatch, weight, ruleSet) {
-        // regexMatch, ruleSet
-        // regexMatch, weight, ruleSet
-        if (typeof(ruleSet) === 'undefined') {
-          if (typeof(weight) === 'undefined') {
-            // one param
-            ruleSet = regexMatch;
-            weight = null;
-            regexMatch = null;
-          }
-
-          // two params
-          ruleSet = weight;
-          weight = null;
-        }
-
-        // if weight was not set, create it
-        if (!weight) {
-          weight = rules.length;
-        }
-
-        if (typeof(ruleSet) === 'string') {
-          ruleSet = {
-            path: ruleSet
-          };
-        }
-
-        if (!ruleSet.pointcuts) {
-          ruleSet.pointcuts = {};
-        }
-
-        if (ruleSet.pointcuts.before || ruleSet.pointcuts.after) {
-          debugLog('RulesEngine', 'deprecated pointcuts in rule for ' + regexMatch.toString());
-        }
-
-        rulesIsDirty = true;
-        rules.push({
-          matches: ruleSet.matches || regexMatch,
-          weight: ruleSet.weight || weight,
-          useSuffix: (ruleSet.useSuffix === false) ? false : true,
-          last: ruleSet.last || false,
-          path: ruleSet.path,
-          pointcuts: ruleSet.pointcuts || {}
-        });
-
-      },
-
-      /**
-       * a shortcut method for multiple addRule calls
-       * @method RulesEngine.manifest
-       * @param {Object} manifestObj - a "matchString":ruleSet object
-       * @public
-       * @see RulesEngine.addRule
-       */
-      manifest: function (manifestObj) {
-        var key;
-        var rule;
-
-        for (key in manifestObj) {
-          rule = manifestObj[key];
-          // update the key to a "matches" if included in manifest
-          if (rule.matches) {
-            key = rule.matches;
-          }
-          this.addRule(key, rule);
-        }
-      },
-
-      /**
-       * Apply a set of rules to a given path
-       * @method RulesEngine.applyRules
-       * @param {String} path - the path to apply rules to
-       * @private
-       * @returns {Object} an object containing the resolved path and pointcuts
-       */
-      applyRules: function (path) {
-        if (rulesIsDirty) {
-          sortRulesTable();
-        }
-
-        var result = path;
-        var payload;
-        var allPointcuts = {};
-        var useSuffix = true;
-        var done = false;
-        each(rules, function (rule) {
-          if (done) {
-            return;
-          }
-
-          var match = false;
-          // rule matching
-          if (typeof(rule.matches) === 'string' && rule.matches === result) {
-            match = true;
-          }
-          else if (rule.matches instanceof RegExp && rule.matches.test(result)) {
-            match = true;
-          }
-          // if we have a match, do a replace
-          if (match) {
-            if (typeof(rule.path) === 'string') {
-              result = rule.path;
-            }
-            else if (typeof(rule.path) === 'function') {
-              result = rule.path(result);
-            }
-
-            if (rule.useSuffix === false) {
-              useSuffix = false;
-            }
-
-            for (var type in rule.pointcuts) {
-              if (rule.pointcuts.hasOwnProperty(type)) {
-                if (!allPointcuts[type]) {
-                  allPointcuts[type] = [];
-                }
-                allPointcuts[type].push(rule.pointcuts[type]);
-              }
-            }
-
-            if (rule.last) {
-              done = true;
-            }
-          }
-
-        });
-
-        payload = {
-          resolved: result || '',
-          useSuffix: useSuffix,
-          pointcuts: allPointcuts
-        };
-
-        return payload;
-
       }
     };
   });

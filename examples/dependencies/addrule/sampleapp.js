@@ -18,7 +18,6 @@ governing permissions and limitations under the License.
 function run() {
   var $ = require("jquery.ui.button");
   require("bar");
-  
   $("a.button").button();
 }
 
