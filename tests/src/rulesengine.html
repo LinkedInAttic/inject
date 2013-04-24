@@ -56,7 +56,7 @@ governing permissions and limitations under the License.
 
     });
 
-    test("URL Resolution", function() {
+    test("URL Resolution using addRule", function() {
       var rootUrl   = "http://example.com/";
       var baseUrl   = "http://example.com/a/b/c/d/e";
       var baseUL    = "http://example.com/a/b/c/d/";
@@ -149,6 +149,71 @@ governing permissions and limitations under the License.
           order.shift(); // three
           return "example";
         }
+      });
+
+      RulesEngine.resolveFile("example");
+      equal(order.join(', '), "four, three", "rules were ran in weight order: 100, 67, 23");
+    });
+
+    test("URL Resolution using addFileRule", function() {
+      var rootUrl   = "http://example.com/";
+      var baseUrl   = "http://example.com/a/b/c/d/e";
+      var baseUL    = "http://example.com/a/b/c/d/";
+      var baseUUL   = "http://example.com/a/b/c/";
+      var baseSlash = "http://example.com/a/b/c/d/e/";
+
+      RulesEngine.addFileRule("one", "ONE");
+      RulesEngine.addFileRule(/two/, "TWO");
+      RulesEngine.addFileRule(/three/, "THREE");
+      RulesEngine.addFileRule(/four/, function(path) {
+        return path.toUpperCase();
+      });
+      RulesEngine.addFileRule(/match/, function(path) {
+        return path.replace(/match/g, "MATCH");
+      });
+
+      equal(RulesEngine.resolveFile("one"), rootUrl+"ONE.js");
+      equal(RulesEngine.resolveFile("two"), rootUrl+"TWO.js");
+      equal(RulesEngine.resolveFile("three"), rootUrl+"THREE.js");
+      equal(RulesEngine.resolveFile("four"), rootUrl+"FOUR.js");
+
+      equal(RulesEngine.resolveFile("http://absolute.com"), "http://absolute.com");
+
+      equal(RulesEngine.resolveFile("./match", baseUrl), baseUL+"MATCH.js");
+      equal(RulesEngine.resolveFile("../match", baseUrl), baseUUL+"MATCH.js");
+
+      // tests two rules at once
+      equal(RulesEngine.resolveFile("./match", baseSlash), baseSlash+"MATCH.js", 'base with a slash');
+
+      // disable the auto-extension
+      userConfig.useSuffix = false;
+      equal(RulesEngine.resolveFile("one"), rootUrl+"ONE");
+    });
+
+
+    test("weights respected in addFileRule", function() {
+      var order = ["one", "two", "three"];
+
+      RulesEngine.addFileRule("example", function() {
+        order.shift(); // two, three
+        return "example";
+      }, {
+        weight: 100
+      });
+
+      RulesEngine.addFileRule("example", function() {
+        // if right: four, three
+        // if wrong: four, two, three
+        order.unshift("four");
+      }, {
+        weight: 23
+      });
+
+      RulesEngine.addFileRule("example", function() {
+        order.shift(); // three
+        return "example";
+      }, {
+        weight: 67
       });
 
       RulesEngine.resolveFile("example");

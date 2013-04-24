@@ -78,9 +78,11 @@ var RulesEngine;
           aliasRules: {}
         };
 
+        // deprecated
         // deprecated legacy pointcuts from addRule
         this.addRuleCounter = 0;
         this.addRulePointcuts = {};
+        // end deprecated
       },
 
       /**
@@ -159,8 +161,6 @@ var RulesEngine;
        *  you can also set ruleSet.path to a function, and that function will
        *  passed the current path for mutation</li>
        * <li>ruleSet.pointcuts.afterFetch: a function to mutate the file after retrieval, but before analysis</li>
-       * <li>ruleSet.pointcuts.before (deprecated): a function to run before executing this module</li>
-       * <li>ruleSet.pointcuts.after (deprecated): a function to run after executing this module</li>
        * </ul>
        * @method RulesEngine.addRule
        * @param {RegExp|String} matches - a stirng or regex to match on
@@ -373,7 +373,11 @@ var RulesEngine;
         var isMatch = false;
         var matches;
         var fn;
+
+        // deprecated
         var deprecatedPointcuts = [];
+        // end deprecated
+
         for (i; i < len; i++) {
           matches = rules[i].matches;
           fn = rules[i].fn;
@@ -390,9 +394,13 @@ var RulesEngine;
 
           if (isMatch) {
             lastPath = fn(lastPath);
+
+            // deprecated
             if (rules[i].all && rules[i].all.afterFetch) {
               deprecatedPointcuts.push(rules[i].all.afterFetch);
             }
+            // end deprecated
+
             if (rules[i].last) {
               break;
             }
@@ -406,7 +414,9 @@ var RulesEngine;
 
         if (!lastPath) {
           // store deprecated pointcuts
+          // deprecated
           this.addRulePointcuts[lastPath] = deprecatedPointcuts;
+          // end deprecated
 
           // store and return
           this.caches.fileRules[path] = lastPath;
@@ -458,7 +468,9 @@ var RulesEngine;
         }
 
         // store deprecated pointcuts
+        // deprecated
         this.addRulePointcuts[lastPath] = deprecatedPointcuts;
+        // end deprecated
 
         // store and return
         this.caches.fileRules[path] = lastPath;
@@ -551,7 +563,11 @@ var RulesEngine;
         var fn;
         var matchingRules = [];
         var found = false;
+
+        // deprecated
         var deprecatedPointcuts = this.addRulePointcuts[path] || [];
+        // end deprecated
+
         for (i; i < len; i++) {
           matches = rules[i].matches;
           fn = rules[i].fn;
@@ -572,6 +588,7 @@ var RulesEngine;
         }
 
         // add any matching deprecated pointcuts
+        // deprecated
         each(deprecatedPointcuts, function (depPC) {
           found = false;
           each(matchingRules, function (normalPC) {
@@ -583,6 +600,7 @@ var RulesEngine;
             matchingRules.push(depPC);
           }
         });
+        // end deprecated
 
         this.caches.contentRules[path] = matchingRules;
         return matchingRules;
