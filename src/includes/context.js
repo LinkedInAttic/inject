@@ -87,51 +87,47 @@ context.Inject = {
     @public
   */
   enableAMDPlugins: function () {
-    RulesEngine.addRule(/^.+?\!.+$/, {
-      last: true,
-      useSuffix: false,
-      path: function () {
-        return ''; // no path, no fetch!
-      },
-      pointcuts: {
-        afterFetch: function (next, text, moduleName, requestorName, requestorUrl) {
-          var pieces = moduleName.split('!');
-          var pluginId = RulesEngine.resolveModule(pieces[0], requestorName);
-          var pluginUrl = RulesEngine.resolveFile(pluginId, requestorUrl);
-          var identifier = pieces[1];
+    // modules matching pattern
+    RulesEngine.addFetchRule(/^.+?\!.+$/, function (next, content, resolver, options) {
+      var moduleName = options.moduleId;
+      var requestorName = options.parentId;
+      var requestorUrl = options.parentUrl;
 
-          var rq = InjectCore.createRequire(moduleName, requestorUrl);
-          rq.ensure([pluginId], function (pluginRequire) {
-            // the plugin must come from the contextual require
-            // any subsequent fetching depends on the resolved plugin's location
-            var plugin = pluginRequire(pluginId);
-            var remappedRequire = InjectCore.createRequire(pluginId, pluginUrl);
+      var pieces = moduleName.split('!');
+      var pluginId = resolver.module(pieces[0], requestorName);
+      var pluginUrl = resolver.url(pluginId, requestorUrl);
+      var identifier = pieces[1];
 
-            var resolveIdentifier = function (name) {
-              return RulesEngine.resolveModule(name, requestorName);
-            };
-            var normalized = (plugin.normalize) ? plugin.normalize(identifier, resolveIdentifier) : resolveIdentifier(identifier);
-            var complete = function (contents) {
-              if (typeof(contents) === 'string') {
-                contents = ['module.exports = decodeURIComponent("', encodeURIComponent(contents), '");'].join('');
-              }
-              next(null, contents);
-            };
-            complete.fromText = function (ftModname, body) {
-              if (!body) {
-                body = ftModname;
-                ftModname = null;
-              }
+      var rq = Inject.createRequire(moduleName, requestorUrl);
+      rq.ensure([pluginId], function (pluginRequire) {
+        // the plugin must come from the contextual require
+        // any subsequent fetching depends on the resolved plugin's location
+        var plugin = pluginRequire(pluginId);
+        var remappedRequire = Inject.createRequire(pluginId, pluginUrl);
 
-              // use the executor
-              Executor.runModule(ftModname, body, pluginUrl);
+        var resolveIdentifier = function (name) {
+          return resolver.module(name, requestorName);
+        };
+        var normalized = (plugin.normalize) ? plugin.normalize(identifier, resolveIdentifier) : resolveIdentifier(identifier);
+        var complete = function (contents) {
+          if (typeof(contents) === 'string') {
+            contents = ['module.exports = decodeURIComponent("', encodeURIComponent(contents), '");'].join('');
+          }
+          next(null, contents);
+        };
+        complete.fromText = function (ftModname, body) {
+          if (!body) {
+            body = ftModname;
+            ftModname = null;
+          }
 
-              next(null, body);
-            };
-            plugin.load(normalized, remappedRequire, complete, {});
-          });
-        }
-      }
+          // use the executor
+          Executor.runModule(ftModname, body, pluginUrl);
+
+          next(null, body);
+        };
+        plugin.load(normalized, remappedRequire, complete, {});
+      });
     });
   },
   /**
@@ -227,6 +223,15 @@ context.Inject = {
     args.push(context.Inject);
     InjectCore.plugin.apply(InjectCore, args);
   },
+
+  createRequire: function() {
+    return InjectCore.createRequire.apply(InjectCore, arguments);
+  },
+
+  createDefine: function() {
+    return InjectCore.createDefine.apply(InjectCore, arguments);
+  },
+
   /**
       CommonJS and AMD require()
       @see InjectCore.createRequire

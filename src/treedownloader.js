@@ -156,9 +156,49 @@ var TreeDownloader = Fiber.extend(function () {
         return;
       }
 
-      this.log('requesting file', node.getValue().path);
-      getFunction = (node.getValue().path) ? Communicator.get : Communicator.noop;
-      getFunction(node.getValue().name, node.getValue().path, proxy(function (downloadedContent) {
+      var commParentName = (node.getParent()) ? node.getParent().getValue().name : '';
+      var parentUrl = (node.getParent()) ? node.getParent().getValue().path : '';
+      var fetchRules = RulesEngine.getFetchRules(identifier);
+      var communicatorFn = Communicator.noop;
+      var commFlow = new Flow();
+      var commFlowResolver = {
+        module: function() {
+          return RulesEngine.resolveModule.apply(RulesEngine, arguments);
+        },
+        url: function() {
+          return RulesEngine.resolveFile.apply(RulesEngine, arguments);
+        }
+      };
+      var addToCommFlow = function(fn) {
+        // (next, content, moduleId, resolver, options)
+        commFlow.seq(function (next, error, contents) {
+          fn(next, contents, commFlowResolver, {
+            moduleId: node.getValue().name,
+            parentId: commParentName,
+            parentUrl: parentUrl
+          });
+        });
+      };
+      if (fetchRules.length > 0) {
+        // build an async flow chaining fetch calls together
+        communicatorFn = function(name, path, cb) {
+          commFlow.seq(function(next) {
+            next(null, '');
+          });
+          for (var i = 0, len = fetchRules.length; i < len; i++) {
+            addToCommFlow(fetchRules[i]);
+          }
+          commFlow.seq(function (next, error, contents) {
+            cb(contents);
+          });
+        };
+      }
+      else if (node.getValue().path) {
+        communicatorFn = Communicator.get;
+      }
+
+      this.log('requesting file', node.getValue().name + ' @ ' + node.getValue().path);
+      communicatorFn(node.getValue().name, node.getValue().path, proxy(function (downloadedContent) {
         this.log('download complete', node.getValue().path);
 
         /*
@@ -170,8 +210,6 @@ var TreeDownloader = Fiber.extend(function () {
         really small library we opted to use.
         */
         var pointcuts = RulesEngine.getContentRules(node.getValue().path);
-        var parentName = (node.getParent()) ? node.getParent().getValue().name : '';
-        var parentUrl = (node.getParent()) ? node.getParent().getValue().path : '';
         var i, j, len, jLen, found;
         var apFlow = new Flow();
 

@@ -49,17 +49,20 @@ var RulesEngine;
         this.moduleRules = [];
         this.fileRules = [];
         this.contentRules = [];
+        this.fetchRules = [];
         this.aliasRules = {};
         this.dirty = {
           moduleRules: true,
           fileRules: true,
           contentRules: true,
+          fetchRules: true,
           aliasRules: true
         };
         this.caches = {
           moduleRules: {},
           fileRules: {},
           contentRules: {},
+          fetchRules: {},
           aliasRules: {}
         };
         this.addRuleCounter = 0;
@@ -145,6 +148,9 @@ var RulesEngine;
       },
       addContentRule: function (matchesPath, rule, options) {
         return this.add('contentRules', matchesPath, rule, options);
+      },
+      addFetchRule: function (matchesId, rule, options) {
+        return this.add('fetchRules', matchesId, rule, options);
       },
       addPackage: function (matchesResolvedId, rule) {
         return this.add('aliasRules', matchesResolvedId, rule);
@@ -270,6 +276,15 @@ var RulesEngine;
           throw new Error('module root needs to be defined for resolving URLs');
         }
 
+        if (!lastPath) {
+          // store deprecated pointcuts
+          this.addRulePointcuts[lastPath] = deprecatedPointcuts;
+
+          // store and return
+          this.caches.fileRules[path] = lastPath;
+          return lastPath;
+        }
+
         // if there is no basedir function from the user, we need to slice off the last segment of relativeTo
         // otherwise, we can use the baseDir() function
         // otherwise (no relativeTo) it is relative to the moduleRoot
@@ -356,6 +371,42 @@ var RulesEngine;
 
         this.caches.aliasRules[resolvedId] = aliases;
         return aliases;
+      },
+
+      getFetchRules: function (moduleId) {
+        // if (!this.dirty.fetchRules && this.caches.fetchRules[moduleId]) {
+        //   return this.caches.fetchRules[moduleId];
+        // }
+        this.sort('fetchRules');
+
+        var i = 0;
+        var rules = this.fetchRules;
+        var len = rules.length;
+        var isMatch = false;
+        var matches;
+        var fn;
+        var matchingRules = [];
+        for (i; i < len; i++) {
+          matches = rules[i].matches;
+          fn = rules[i].fn;
+
+          isMatch = false;
+          if (typeof matches === 'string') {
+            if (matches === moduleId) {
+              isMatch = true;
+            }
+          }
+          else if (typeof matches.test === 'function') {
+            isMatch = matches.test(moduleId);
+          }
+
+          if (isMatch) {
+            matchingRules.push(fn);
+          }
+        }
+
+        this.caches.contentRules[moduleId] = matchingRules;
+        return matchingRules;
       },
 
       getContentRules: function (path) {
