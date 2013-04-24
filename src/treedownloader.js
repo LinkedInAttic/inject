@@ -223,7 +223,7 @@ var TreeDownloader = Fiber.extend(function () {
         });
         var makeFlow = function (fn) {
           apFlow.seq(function (next, error, contents) {
-            fn(next, contents, node.getValue().name, parentName, parentUrl);
+            fn(next, contents);
           });
         };
         for (i = 0, len = pointcuts.length; i < len; i++) {

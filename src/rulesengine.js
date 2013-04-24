@@ -26,8 +26,15 @@ governing permissions and limitations under the License.
 var RulesEngine;
 (function () {
 
+  // this regex is used to strip leading slashes
   var LEADING_SLASHES_REGEX = /^\/+/g;
 
+  /**
+   * Return the "base" directory of a given path
+   * @method RulesEngine.basedir
+   * @private
+   * @param {String} dir - the directory or path to get the basedir of
+   */
   var basedir = function(dir) {
     dir = dir.split('/');
     dir.pop();
@@ -45,6 +52,11 @@ var RulesEngine;
         this.clearRules();
       },
 
+      /**
+       * Clear all the rules (and thus all the caches)
+       * Used to reset the rules engine
+       * @method RulesEngine.clearRules
+       */
       clearRules: function() {
         this.moduleRules = [];
         this.fileRules = [];
@@ -65,10 +77,21 @@ var RulesEngine;
           fetchRules: {},
           aliasRules: {}
         };
+
+        // deprecated legacy pointcuts from addRule
         this.addRuleCounter = 0;
         this.addRulePointcuts = {};
       },
 
+      /**
+       * Add a rule to the collection
+       * @method RulesEngine.add
+       * @private
+       * @param {String} type - the type of rule to add
+       * @param {Regex|String} matches - what does this match against
+       * @param {Function} rule - the rule to apply
+       * @param {Object} options - the options for this rule
+       */
       add: function (type, matches, rule, options) {
         this.dirty[type] = true;
         options = options || {};
@@ -83,10 +106,22 @@ var RulesEngine;
         });
       },
 
+      /**
+       * Clear a specific cache
+       * @method RulesEngine.clearCache
+       * @private
+       * @param {String} type - the type of cache to clear
+       */
       clearCache: function(type) {
         this.caches[type] = {};
       },
 
+      /**
+       * Sort a collection of rules by weight
+       * @method RulesEngine.sort
+       * @private
+       * @param {String} type - the type of rules to sort
+       */
       sort: function (type) {
         if (!this.dirty[type]) {
           return;
@@ -99,13 +134,39 @@ var RulesEngine;
       },
 
       /**
+       * Get the deprecated pointcuts. This method exists
+       * while the addRule structure is deprecated
        * @deprecated
+       * @method RulesEngine.getDeprecatedPointcuts
+       * @param {String} moduleId - the module id to get pointcuts for
+       * @returns {Array}
        */
       getDeprecatedPointcuts: function(moduleId) {
         return this.addRulePointcuts[moduleId] || [];
       },
 
       /**
+       * Add a rule to the database. It can be called as:<br>
+       * addRule(regexMatch, weight, ruleSet)<br>
+       * addRule(regexMatch, ruleSet)<br>
+       * addRule(ruleSet)<br>
+       * The ruleSet object to apply contains a set of options.
+       * <ul>
+       * <li>ruleSet.matches: replaces regexMatch if found</li>
+       * <li>ruleSet.weight: replaces weight if found</li>
+       * <li>ruleSet.last: if true, no further rules are ran</li>
+       * <li>ruleSet.path: a path to use instead of a derived path<br>
+       *  you can also set ruleSet.path to a function, and that function will
+       *  passed the current path for mutation</li>
+       * <li>ruleSet.pointcuts.afterFetch: a function to mutate the file after retrieval, but before analysis</li>
+       * <li>ruleSet.pointcuts.before (deprecated): a function to run before executing this module</li>
+       * <li>ruleSet.pointcuts.after (deprecated): a function to run after executing this module</li>
+       * </ul>
+       * @method RulesEngine.addRule
+       * @param {RegExp|String} matches - a stirng or regex to match on
+       * @param {int} weight - a weight for the rule. Larger values run later
+       * @param {Object} rule - an object containing the rules to apply
+       * @public
        * @deprecated
        */
       addRule: function (matches, weight, rule) {
@@ -140,18 +201,85 @@ var RulesEngine;
         }
       },
 
+      /**
+       * Add a module ID rule to the system
+       * A module rule can convert one module ID to another. This is
+       * useful for maintaining module ID's even when you move modules
+       * around in a backwards incompatible way
+       * @method RulesEngine.addModuleRule
+       * @param {String|Regex} matchesId - if the module matches this pattern, then rule will be used
+       * @param {String|Function} rule - a string or function that describes how to transform the module id
+       * @param {Object} options - the additional options for this rule such as "last" (last rule to run), "weight" (change the ordering)
+       */
       addModuleRule: function (matchesId, rule, options) {
         return this.add('moduleRules', matchesId, rule, options);
       },
+
+      /**
+       * Add a file path rule to the system
+       * A file rule can convert one file path to another. This is useful
+       * for redirecting one link to another. For example, a base path of "jquery"
+       * can be redirected to a specific jQuery version.
+       * @method RulesEngine.addFileRule
+       * @param {String|Regex} matchesPath - if the path matches this pattern, then rule will be used
+       * @param {String|Function} rule - a string or function that describes how to transform the path
+       * @param {Object} options - the additional options for this rule such as "last" (last rule to run), "weight" (change the ordering)
+       */
       addFileRule: function (matchesPath, rule, options) {
         return this.add('fileRules', matchesPath, rule, options);
       },
+
+      /**
+       * Add a content transformation rule
+       * Content transformations allow you to change the file's contents itself,
+       * without altering the original file. This allows you to do things like
+       * <ul>
+       *   <li>Shim "jQuery" and store it in module.exports</li>
+       *   <li>Download a non-js file and convert it to a JS object (like our plugins)</li>
+       *   <li>Replace the file with an altered version</li>
+       * </ul>
+       * @method RulesEngine.addFileRule
+       * @param {String|Regex} matchesPath - if the path matches this pattern, then rule will be used
+       * @param {RulesEngine~contentRuleCallback} rule - a function that describes how to transform the content
+       * @param {Object} options - the additional options for this rule
+       */
+      /**
+       * The content rule function allows you to asychronously change a file
+       * @callback RulesEngine~contentRuleCallback
+       * @param {Function} next - a function to call on completion, takes "error" and "result"
+       * @param {String} content - the current content
+       */
       addContentRule: function (matchesPath, rule, options) {
         return this.add('contentRules', matchesPath, rule, options);
       },
+
+      /**
+       * Add a path retrieval rule
+       * Path retrieval rules allow us to change how we get our content. This allows
+       * specific modules to bypass the default communicator fetch process.
+       * @method RulesEngine.addFetchRule
+       * @param {String|Regex} matchesId - if the id matches this pattern, then rule will be used
+       * @param {RulesEngine~fetchRuleCallback} rule - a function that describes how to transform the path
+       * @param {Object} options - the additional options for this rule
+       */
+      /**
+       * The fetch rule function allows you to asychronously download the file
+       * @callback RulesEngine~fetchRuleCallback
+       * @param {Function} next - a function to call on completion, takes "error" and "result"
+       * @param {String} content - the current content
+       * @param {Object} resolver - a resolver with two methods: module() for module resolution, and url()
+       * @param {Communicator} communicator - a partial Communicator object, with a get() function
+       */
       addFetchRule: function (matchesId, rule, options) {
         return this.add('fetchRules', matchesId, rule, options);
       },
+
+      /**
+       * Add a package alias. Useful for installing a module into a global location
+       * @method RulesEngine.addPackage
+       * @param {String|Regex} matchesResolvedId - the resolved ID to match against
+       * @param {String|Function} rule - the transformation rule for this matching string
+       */
       addPackage: function (matchesResolvedId, rule) {
         return this.add('aliasRules', matchesResolvedId, rule);
       },
