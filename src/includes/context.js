@@ -97,7 +97,7 @@ context.Inject = {
         afterFetch: function (next, text, moduleName, requestorName, requestorUrl) {
           var pieces = moduleName.split('!');
           var pluginId = RulesEngine.resolveModule(pieces[0], requestorName);
-          var pluginUrl = RulesEngine.resolveUrl(pluginId, requestorUrl);
+          var pluginUrl = RulesEngine.resolveFile(pluginId, requestorUrl);
           var identifier = pieces[1];
 
           var rq = InjectCore.createRequire(moduleName, requestorUrl);
