@@ -169,10 +169,15 @@ var TreeDownloader = Fiber.extend(function () {
           return RulesEngine.resolveFile.apply(RulesEngine, arguments);
         }
       };
+      var commFlowCommunicator = {
+        get: function() {
+          return Communicator.get.apply(Communicator, arguments);
+        }
+      };
       var addToCommFlow = function(fn) {
         // (next, content, moduleId, resolver, options)
         commFlow.seq(function (next, error, contents) {
-          fn(next, contents, commFlowResolver, {
+          fn(next, contents, commFlowResolver, commFlowCommunicator, {
             moduleId: node.getValue().name,
             parentId: commParentName,
             parentUrl: parentUrl

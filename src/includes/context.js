@@ -88,7 +88,7 @@ context.Inject = {
   */
   enableAMDPlugins: function () {
     // modules matching pattern
-    RulesEngine.addFetchRule(/^.+?\!.+$/, function (next, content, resolver, options) {
+    RulesEngine.addFetchRule(/^.+?\!.+$/, function (next, content, resolver, communicator, options) {
       var moduleName = options.moduleId;
       var requestorName = options.parentId;
       var requestorUrl = options.parentUrl;
