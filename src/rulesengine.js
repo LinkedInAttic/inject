@@ -42,6 +42,10 @@ var RulesEngine;
        * @constructs RulesEngine
        */
       init: function () {
+        this.clearRules();
+      },
+
+      clearRules: function() {
         this.moduleRules = [];
         this.fileRules = [];
         this.contentRules = [];
@@ -104,15 +108,23 @@ var RulesEngine;
       addRule: function (matches, weight, rule) {
         if (!rule) {
           rule = weight;
-          weight = this.addRuleCounter++;
+          weight = null;
         }
         if (!rule) {
           rule = {};
         }
+        if (typeof rule === 'string') {
+          rule = {
+            path: rule
+          };
+        }
+        if (!rule.weight) {
+          rule.weight = this.addRuleCounter++;
+        }
 
         if (rule.path) {
           this.addFileRule(matches, rule.path, {
-            weight: weight,
+            weight: rule.weight,
             last: rule.last,
             useSuffix: rule.useSuffix,
             afterFetch: (rule.pointcuts && rule.pointcuts.afterFetch) ? rule.pointcuts.afterFetch : null
@@ -147,9 +159,9 @@ var RulesEngine;
        * @returns {String} the resolved identifier
        */
       resolveModule: function (moduleId, relativeTo) {
-        if (!this.dirty.moduleRules && this.caches.moduleRules[moduleId]) {
-          return this.caches.moduleRules[moduleId];
-        }
+        // if (!this.dirty.moduleRules && this.caches.moduleRules[moduleId]) {
+        //   return this.caches.moduleRules[moduleId];
+        // }
 
         this.sort('moduleRules');
         var lastId = moduleId;
@@ -215,9 +227,9 @@ var RulesEngine;
        * @returns {String} a resolved URL
        */
       resolveFile: function (path, relativeTo, noSuffix) {
-        if (!this.dirty.fileRules && this.caches.fileRules[path]) {
-          return this.caches.fileRules[path];
-        }
+        // if (!this.dirty.fileRules && this.caches.fileRules[path]) {
+        //   return this.caches.fileRules[path];
+        // }
 
         this.sort('fileRules');
         var lastPath = path;
@@ -311,9 +323,9 @@ var RulesEngine;
       },
 
       getPackages: function (resolvedId) {
-        if (!this.dirty.aliasRules && this.caches.aliasRules[resolvedId]) {
-          return this.caches.aliasRules[resolvedId];
-        }
+        // if (!this.dirty.aliasRules && this.caches.aliasRules[resolvedId]) {
+        //   return this.caches.aliasRules[resolvedId];
+        // }
 
         this.sort('aliasRules');
         var i = 0;
@@ -347,9 +359,9 @@ var RulesEngine;
       },
 
       getContentRules: function (path) {
-        if (!this.dirty.contentRules && this.caches.contentRules[path]) {
-          return this.caches.contentRules[path];
-        }
+        // if (!this.dirty.contentRules && this.caches.contentRules[path]) {
+        //   return this.caches.contentRules[path];
+        // }
         this.sort('contentRules');
 
         var i = 0;
@@ -360,7 +372,7 @@ var RulesEngine;
         var fn;
         var matchingRules = [];
         var found = false;
-        var deprecatedPointcuts = this.addRulePointcuts[path];
+        var deprecatedPointcuts = this.addRulePointcuts[path] || [];
         for (i; i < len; i++) {
           matches = rules[i].matches;
           fn = rules[i].fn;
