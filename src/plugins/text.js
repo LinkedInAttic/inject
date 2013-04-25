@@ -24,24 +24,19 @@ governing permissions and limitations under the License.
  * @file
 **/
 (function () {
-  Inject.plugin('text',
-  // ruleset
-  {
-    useSuffix: false,
-    path: function (path) {
-      return path.replace(/^text!\s*/, '');
-    },
-    pointcuts: {
-      afterFetch: function (next, text) {
-        next(null, ['',
-          'var text = "',
-          encodeURIComponent(text),
-          '";',
-          'module.setExports(decodeURIComponent(text));',
-          ''].join('')
-        );
-      }
-    }
-  },
-  {});
+  Inject.addFetchRule(/^text\!.+$/, function(next, content, resolver, comm, options) {
+    var moduleId = options.moduleId.replace(/^text!\s*/, '');
+    var resolvedMid = resolver.module(moduleId, options.parentId);
+    var path = resolver.url(resolvedMid, options.parentUrl, true);
+
+    comm.get(resolvedMid, path, function(text) {
+      next(null, ['',
+        'var text = "',
+        encodeURIComponent(text),
+        '";',
+        'module.setExports(decodeURIComponent(text));',
+        ''].join('')
+      );
+    });
+  });
 })();

@@ -39,9 +39,9 @@ governing permissions and limitations under the License.
     var resolvedMid = resolver.module(moduleId, options.parentId);
     var path = resolver.url(resolvedMid, options.parentUrl, true);
 
-    comm.get(resolvedMid, path, function(content) {
+    comm.get(resolvedMid, path, function(text) {
       next(null, ['',
-        ['var cssText = decodeURIComponent("', encodeURIComponent(content), '");'].join(''),
+        ['var cssText = decodeURIComponent("', encodeURIComponent(text), '");'].join(''),
         'module.setExports(Inject.plugins.css.create(cssText))',
         ''].join('\n')
       );

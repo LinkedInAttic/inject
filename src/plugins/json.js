@@ -23,24 +23,19 @@ governing permissions and limitations under the License.
  * @file
 **/
 (function () {
-  Inject.plugin('json',
-  // ruleset
-  {
-    useSuffix: false,
-    path: function (path) {
-      return path.replace(/^json!\s*/, '');
-    },
-    pointcuts: {
-      afterFetch: function (next, text) {
-        next(null, ['',
-          'var json = "',
-          encodeURIComponent(text),
-          '";',
-          'module.setExports(JSON.parse(decodeURIComponent(json)));',
-          ''].join('')
-        );
-      }
-    }
-  },
-  {});
+  Inject.addFetchRule(/^json\!.+$/, function(next, content, resolver, comm, options) {
+    var moduleId = options.moduleId.replace(/^json!\s*/, '');
+    var resolvedMid = resolver.module(moduleId, options.parentId);
+    var path = resolver.url(resolvedMid, options.parentUrl, true);
+
+    comm.get(resolvedMid, path, function(text) {
+      next(null, ['',
+        'var json = "',
+        encodeURIComponent(text),
+        '";',
+        'module.setExports(JSON.parse(decodeURIComponent(json)));',
+        ''].join('')
+      );
+    });
+  });
 })();
