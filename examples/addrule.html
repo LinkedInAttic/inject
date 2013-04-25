@@ -47,54 +47,44 @@ Inject.reset();
 Inject.setModuleRoot("/examples/dependencies/addrule/");
 
 // note: weighting is important
-
-Inject.addRule(/jquery\.ui/, {
-  path: function(module) {
-    return "jqueryui/"+module+".min.js"
-  },
-  last: true,
-  weight: 300,
-  pointcuts: {
-    afterFetch: function(next, text) {
-      next(null, [
-        'var jQuery = require("jquery");',
-        text,
-        'module.setExports(jQuery);',
-      ''].join('\n'));
-    }
-  }
+Inject.addFileRule(/jquery\.ui/, function(path) {
+  return 'jqueryui/' + path + '.min.js';
 });
 
-Inject.addRule(/jquery\.ui\.button/, {
-  weight: 500,
-  pointcuts: {
-    afterFetch: function(next, text) {
-      next(null, [
-        "if (!jQuery) var $ = jQuery = require('jquery');",
-        "require('jquery.ui.core');",
-        "require('jquery.ui.widget');",
-        text,
-      ''].join('\n'));
-    }
-  }
+// this generally adjusts all jquery ui files
+Inject.addContentRule(/jqueryui\//, function(next, text) {
+  next(null, [
+    'if (!jQuery) var $ = jQuery = require(\'jquery\');',
+    text,
+    'module.setExports(jQuery);',
+  ''].join('\n'));
+}, { weight: 300 });
+
+// this specifically sets up button's dependencies
+Inject.addContentRule(/jqueryui\/.*?button/, function(next, text) {
+  next(null, [
+    'if (!jQuery) var $ = jQuery = require(\'jquery\');',
+    'require(\'jquery.ui.core\');',
+    'require(\'jquery.ui.widget\');',
+    text,
+  ''].join('\n'));
+}, { weight: 500 });
+
+// jQuery shim
+Inject.addFileRule(/^jquery$/, function() {
+  return 'jquery-1.7.js';
+});
+Inject.addContentRule(/jquery-1\.7\.js/, function(next, text) {
+  next(null, [
+    'var oldJQ = window.jQuery;',
+    text,
+    'module.setExports(jQuery.noConflict());',
+    'delete window["jQuery"];',
+    'window.jQuery = oldJQ;',
+  ''].join('\n'));
 });
 
-Inject.addRule(/^jquery$/, {
-  path: "jquery-1.7.js",
-  last: true,
-  weight: 999,
-  pointcuts: {
-    afterFetch: function(next, text) {
-      next(null, [
-        'var oldJQ = window.jQuery;',
-        text,
-        'module.setExports(jQuery.noConflict());',
-        'delete window["jQuery"];',
-        'window.jQuery = oldJQ;',
-      ''].join('\n'));
-    }
-  }
-});
+
 require.ensure(["sampleapp"], function() {
   var app = require("sampleapp");
   app.run();

@@ -269,6 +269,7 @@ var RulesEngine;
        * @param {String} content - the current content
        * @param {Object} resolver - a resolver with two methods: module() for module resolution, and url()
        * @param {Communicator} communicator - a partial Communicator object, with a get() function
+       * @param {Object} options - additional options such as a parent reference
        */
       addFetchRule: function (matchesId, rule, options) {
         return this.add('fetchRules', matchesId, rule, options);

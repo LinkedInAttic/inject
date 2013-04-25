@@ -34,26 +34,22 @@ governing permissions and limitations under the License.
     Inject.plugins.css.addStyles(this.txt);
   };
 
-  Inject.plugin('css',
-  // ruleset
-  {
-    useSuffix: false,
-    path: function (path) {
-      return path.replace(/^css!\s*/, '');
-    },
-    pointcuts: {
-      afterFetch: function (next, text) {
-        next(null, ['',
-          ['var cssText = decodeURIComponent("', encodeURIComponent(text), '");'].join(''),
-          'module.setExports(Inject.plugins.css.create(cssText))',
-          ''].join('\n')
-        );
-      }
-    }
-  },
-  // functions
-  {
-    create: function (text) {
+  Inject.addFetchRule(/^css\!.+$/, function(next, content, resolver, comm, options) {
+    var moduleId = options.moduleId.replace(/^css!\s*/, '');
+    var resolvedMid = resolver.module(moduleId, options.parentId);
+    var path = resolver.url(resolvedMid, options.parentUrl, true);
+
+    comm.get(resolvedMid, path, function(content) {
+      next(null, ['',
+        ['var cssText = decodeURIComponent("', encodeURIComponent(content), '");'].join(''),
+        'module.setExports(Inject.plugins.css.create(cssText))',
+        ''].join('\n')
+      );
+    });
+  });
+
+  Inject.plugins.css = {
+    create: function(text) {
       return new CSS(text);
     },
     addStyles: function (text) {
@@ -68,5 +64,5 @@ governing permissions and limitations under the License.
         document.getElementsByTagName('head')[0].appendChild(style);
       }
     }
-  });
+  };
 })();

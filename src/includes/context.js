@@ -57,6 +57,9 @@ context.Inject = {
     createRequire: proxy(InjectCore.createRequire, InjectCore),
     createDefine: proxy(InjectCore.createDefine, InjectCore)
   },
+
+  plugins: {},
+  
   /**
       Exposes easyXDM API for doing cross-domain messaging.
       @see <a href="http://www.easyxdm.net">easyXDM</a>
@@ -206,10 +209,56 @@ context.Inject = {
   /**
       @see RulesEngine.addRule
       @method
+      @deprecated
       @public
    */
   addRule: function () {
     RulesEngine.addRule.apply(RulesEngine, arguments);
+  },
+
+  /**
+      @see RulesEngine.addModuleRule
+      @method
+      @public
+   */
+  addModuleRule: function () {
+    RulesEngine.addModuleRule.apply(RulesEngine, arguments);
+  },
+
+  /**
+      @see RulesEngine.addFileRule
+      @method
+      @public
+   */
+  addFileRule: function () {
+    RulesEngine.addFileRule.apply(RulesEngine, arguments);
+  },
+
+  /**
+      @see RulesEngine.addContentRule
+      @method
+      @public
+   */
+  addContentRule: function () {
+    RulesEngine.addContentRule.apply(RulesEngine, arguments);
+  },
+
+  /**
+      @see RulesEngine.addFetchRule
+      @method
+      @public
+   */
+  addFetchRule: function () {
+    RulesEngine.addFetchRule.apply(RulesEngine, arguments);
+  },
+
+  /**
+      @see RulesEngine.addPackage
+      @method
+      @public
+   */
+  addPackage: function () {
+    RulesEngine.addPackage.apply(RulesEngine, arguments);
   },
 
   /**
