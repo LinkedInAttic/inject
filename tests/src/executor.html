@@ -75,13 +75,34 @@ governing permissions and limitations under the License.
         clearCache: function() {}
       };
 
+      RulesEngine = {
+        getPackages: function() { return null; }
+      };
+
       var testScript = "exports.foo = \"bar\";";
-      var module = Executor.runModule("testId", testScript, "http://example.com/testid.js", {});
-      var moduleB = Executor.runModule("testId", testScript, "http://example.com/testid.js", {});
+      Executor.runModule("testId", testScript, "http://example.com/testid.js", {});
+      var module = Executor.getModule('testId');
+
+      Executor.runModule("testId", testScript, "http://example.com/testid.js", {});
+      var moduleB = Executor.getModule('testId');
 
       equal(module.exports.foo, "bar", "module sandboxed and set exports");
       ok(!eval.called, "eval not called when sourcemap is off");
       equal(module, moduleB, "same execution yields same module result");
+    });
+
+    test('using module aliases', function() {
+      RulesEngine = {
+        getPackages: function(path, byAlias) {
+          return (byAlias) ? 'foo/bar/baz' : 'foo';
+        }
+      };
+
+      var testScript = "exports.foo = \"bar\";";
+      Executor.runModule("foo/bar/baz", testScript, "http://example.com/testid.js", {});
+
+      equal(Executor.getModule('foo/bar/baz'), Executor.getModule('foo'), 'able to retrieve a module via its alias name');
+
     });
   </script>
 </body>

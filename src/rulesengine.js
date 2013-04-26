@@ -63,19 +63,22 @@ var RulesEngine;
         this.contentRules = [];
         this.fetchRules = [];
         this.aliasRules = {};
+        this.revAliasRules = {};
         this.dirty = {
           moduleRules: true,
           fileRules: true,
           contentRules: true,
           fetchRules: true,
-          aliasRules: true
+          aliasRules: true,
+          revAliasRules: true
         };
         this.caches = {
           moduleRules: {},
           fileRules: {},
           contentRules: {},
           fetchRules: {},
-          aliasRules: {}
+          aliasRules: {},
+          revAliasRules: {}
         };
 
         // deprecated
@@ -278,11 +281,17 @@ var RulesEngine;
       /**
        * Add a package alias. Useful for installing a module into a global location
        * @method RulesEngine.addPackage
-       * @param {String|Regex} matchesResolvedId - the resolved ID to match against
-       * @param {String|Function} rule - the transformation rule for this matching string
+       * @param {String} resolvedId - the resolved ID to match against
+       * @param {String} alsoKnownAs - the alternate ID for this matching string
        */
-      addPackage: function (matchesResolvedId, rule) {
-        return this.add('aliasRules', matchesResolvedId, rule);
+       // jquery-1.7 aka jquery
+      addPackage: function (resolvedId, alsoKnownAs) {
+        this.dirty.aliasRules = true;
+        if (this.aliasRules[resolvedId] || this.revAliasRules[alsoKnownAs]) {
+          throw new Error('addPackage is a 1:1 relationship');
+        }
+        this.aliasRules[resolvedId] = alsoKnownAs;
+        this.revAliasRules[alsoKnownAs] = resolvedId;
       },
 
       /**
@@ -478,39 +487,12 @@ var RulesEngine;
         return lastPath;
       },
 
-      getPackages: function (resolvedId) {
+      getPackages: function (id, searchByAlias) {
         // if (!this.dirty.aliasRules && this.caches.aliasRules[resolvedId]) {
         //   return this.caches.aliasRules[resolvedId];
         // }
-
-        this.sort('aliasRules');
-        var i = 0;
-        var rules = this.aliasRules;
-        var len = rules.length;
-        var isMatch = false;
-        var matches;
-        var fn;
-        var aliases = [];
-        for (i; i < len; i++) {
-          matches = rules[i].matches;
-          fn = rules[i].fn;
-
-          isMatch = false;
-          if (typeof matches === 'string') {
-            if (matches === resolvedId) {
-              isMatch = true;
-            }
-          }
-          else if (typeof matches.test === 'function') {
-            isMatch = matches.test(resolvedId);
-          }
-
-          if (isMatch) {
-            aliases.push(fn(resolvedId));
-          }
-        }
-
-        this.caches.aliasRules[resolvedId] = aliases;
+        var aliases = (searchByAlias) ? this.revAliasRules[id] : this.aliasRules[id];
+        // this.caches.aliasRules[resolvedId] = aliases || [];
         return aliases;
       },
 

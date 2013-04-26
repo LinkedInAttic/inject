@@ -19,8 +19,7 @@ governing permissions and limitations under the License.
 /**
  * The text plugin enables the loading of plain text.
  * This can also serve as a template for more complex text
- * transformations such as markdown syntax (just mutate in
- * the "after" pointcut)
+ * transformations such as markdown syntax
  * @file
 **/
 (function () {

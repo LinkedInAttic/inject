@@ -443,6 +443,13 @@ var Executor;
        */
       createModule: function (moduleId, path) {
         var module;
+        
+        // is this somewhere else in the system? If so, copy it over
+        var alias = RulesEngine.getPackages(moduleId, true);
+        if (alias && this.cache[alias]) {
+          this.cache[moduleId] = this.cache[alias];
+        }
+
         if (!this.cache[moduleId]) {
           module = {};
           module.id = moduleId || null;
@@ -452,8 +459,10 @@ var Executor;
           module.setExports = function (xobj) {
             var name;
             for (name in module.exports) {
-              debugLog('cannot setExports when exports have already been set. setExports skipped');
-              return;
+              if (module.exports.hasOwnProperty(name)) {
+                debugLog('cannot setExports when exports have already been set. setExports skipped');
+                return;
+              }
             }
             switch (typeof(xobj)) {
             case 'object':
@@ -548,6 +557,14 @@ var Executor;
         if (this.broken[moduleId] && this.broken.hasOwnProperty(moduleId)) {
           throw new Error('module ' + moduleId + ' failed to load successfully');
         }
+
+        // is it aliases?
+        // is this somewhere else in the system?
+        var alias = RulesEngine.getPackages(moduleId, true);
+        if (alias && this.cache[alias]) {
+          return this.cache[alias];
+        }
+
         return this.cache[moduleId] || null;
       },
 

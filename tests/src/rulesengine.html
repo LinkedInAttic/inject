@@ -219,6 +219,11 @@ governing permissions and limitations under the License.
       RulesEngine.resolveFile("example");
       equal(order.join(', '), "four, three", "rules were ran in weight order: 100, 67, 23");
     });
+
+    test("Adding Package Aliases", function() {
+      RulesEngine.addPackage('foo/main', 'foo');
+      equal(RulesEngine.getPackages('foo/main', true), 'foo', 'able to retrieve alias');
+    });
   </script>
 </body>
 </html>
