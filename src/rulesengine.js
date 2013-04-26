@@ -487,6 +487,14 @@ var RulesEngine;
         return lastPath;
       },
 
+      /**
+       * Get the package associated with a given ID, also by reverse lookup
+       * @method RulesEngine.getPackages
+       * @param {String} id - The resolved or Alias ID to look up
+       * @param {Boolean} searchByAlias - Search by the alias instead of the resolved value
+       * @returns {String} a matching alias if found
+       * @public
+       */
       getPackages: function (id, searchByAlias) {
         // if (!this.dirty.aliasRules && this.caches.aliasRules[resolvedId]) {
         //   return this.caches.aliasRules[resolvedId];
@@ -496,6 +504,13 @@ var RulesEngine;
         return aliases;
       },
 
+      /**
+       * Get the fetch rules for a given moduleId
+       * @method RulesEngine.getFetchRules
+       * @param {String} moduleId - The module ID to retrieve fetch rules for
+       * @public
+       * @returns {Array} A collection of fetch rules for this module ID
+       */
       getFetchRules: function (moduleId) {
         // if (!this.dirty.fetchRules && this.caches.fetchRules[moduleId]) {
         //   return this.caches.fetchRules[moduleId];
@@ -532,6 +547,13 @@ var RulesEngine;
         return matchingRules;
       },
 
+      /**
+       * Get the content rules for a given path
+       * @method RulesEngine.getContentRules
+       * @param {String} path - The path to retrieve content rules for
+       * @public
+       * @returns {Array} A collection of content rules for this path
+       */
       getContentRules: function (path) {
         // if (!this.dirty.contentRules && this.caches.contentRules[path]) {
         //   return this.caches.contentRules[path];
