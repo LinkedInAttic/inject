@@ -38,6 +38,7 @@ governing permissions and limitations under the License.
 
     module("Communicator", {
       setup: function() {
+        userConfig.fileExpires = 1000;
         lscache = {
           setBucket: function() {},
           flush: function() {},
@@ -47,6 +48,8 @@ governing permissions and limitations under the License.
         Executor = {
           flagModuleAsBroken: function() {}
         };
+
+        lscache.get.returns('foo');
       }
     });
 
@@ -62,6 +65,7 @@ governing permissions and limitations under the License.
     });
 
     asyncTest("Get uses lscache", 2, function() {
+      lscache.get.returns(null);
       Communicator.get("sampleModule", location.href, function(results) {
         ok(lscache.get.called, "lscache get called");
         ok(lscache.set.called, "lscache set called");
@@ -77,7 +81,15 @@ governing permissions and limitations under the License.
         ok(!lscache.set.called, "lscache set not called");
         start();
       });
+    });
 
+    asyncTest("setExpires 0 means lscache is never called", 2, function() {
+      userConfig.fileExpires = 0;
+      Communicator.get("sampleModule", location.href, function(results) {
+        ok(!lscache.get.called, "lscache get never called");
+        ok(!lscache.set.called, "lscache set never called");
+        start();
+      });
     });
   </script>
 </body>
