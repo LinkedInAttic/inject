@@ -53,7 +53,12 @@ var Communicator;
     **/
     function writeToCache(url, contents) {
       // lscache and passthrough
-      return lscache.set(url, contents, userConfig.fileExpires);
+      if (userConfig.fileExpires > 0) {
+        return lscache.set(url, contents, userConfig.fileExpires);
+      }
+      else {
+        return null;
+      }
     }
 
     /**
@@ -66,7 +71,12 @@ var Communicator;
     **/
     function readFromCache(url) {
       // lscache and passthrough
-      return lscache.get(url);
+      if (userConfig.fileExpires > 0) {
+        return lscache.get(url);
+      }
+      else {
+        return null;
+      }
     }
 
     /**
