@@ -222,7 +222,9 @@ governing permissions and limitations under the License.
 
     test("Adding Package Aliases", function() {
       RulesEngine.addPackage('foo/main', 'foo');
-      equal(RulesEngine.getPackages('foo/main', true), 'foo', 'able to retrieve alias');
+      RulesEngine.addPackage('foo/main', 'bar');
+      equal(RulesEngine.getOriginalName('foo'), 'foo/main', 'able to retrieve alias');
+      equal(RulesEngine.getAliases('foo/main').join(', '), 'foo, bar', 'original mappings are stored');
     });
   </script>
 </body>

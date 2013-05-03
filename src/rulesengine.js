@@ -280,6 +280,8 @@ var RulesEngine;
 
       /**
        * Add a package alias. Useful for installing a module into a global location
+       * Packages are stored as "originalName": [aliases]
+       * and "alias": "originalName".
        * @method RulesEngine.addPackage
        * @param {String} resolvedId - the resolved ID to match against
        * @param {String} alsoKnownAs - the alternate ID for this matching string
@@ -287,10 +289,14 @@ var RulesEngine;
        // jquery-1.7 aka jquery
       addPackage: function (resolvedId, alsoKnownAs) {
         this.dirty.aliasRules = true;
-        if (this.aliasRules[resolvedId] || this.revAliasRules[alsoKnownAs]) {
-          throw new Error('addPackage is a 1:1 relationship');
+        if (this.revAliasRules[resolvedId]) {
+          throw new Error('An alias can only map back to 1 origin');
         }
-        this.aliasRules[resolvedId] = alsoKnownAs;
+        if (!this.aliasRules[resolvedId]) {
+          this.aliasRules[resolvedId] = [];
+        }
+
+        this.aliasRules[resolvedId].push(alsoKnownAs);
         this.revAliasRules[alsoKnownAs] = resolvedId;
       },
 
@@ -488,20 +494,29 @@ var RulesEngine;
       },
 
       /**
-       * Get the package associated with a given ID, also by reverse lookup
-       * @method RulesEngine.getPackages
+       * Get the alternate names for a package
+       * Packages are stored as "originalName": [aliases]
+       * and "alias": "originalName".
+       * @method RulesEngine.getAliases
        * @param {String} id - The resolved or Alias ID to look up
-       * @param {Boolean} searchByAlias - Search by the alias instead of the resolved value
+       * @returns {Array} all other known names
+       * @public
+       */
+      getAliases: function (id) {
+        return this.aliasRules[id] || [];
+      },
+
+      /**
+       * Get the alternate names for a package
+       * Packages are stored as "originalName": [aliases]
+       * and "alias": "originalName".
+       * @method RulesEngine.getOriginalName
+       * @param {String} id - The resolved or Alias ID to look up
        * @returns {String} a matching alias if found
        * @public
        */
-      getPackages: function (id, searchByAlias) {
-        // if (!this.dirty.aliasRules && this.caches.aliasRules[resolvedId]) {
-        //   return this.caches.aliasRules[resolvedId];
-        // }
-        var aliases = (searchByAlias) ? this.revAliasRules[id] : this.aliasRules[id];
-        // this.caches.aliasRules[resolvedId] = aliases || [];
-        return aliases;
+      getOriginalName: function (alias) {
+        return this.revAliasRules[alias] || null;
       },
 
       /**

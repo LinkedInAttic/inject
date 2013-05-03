@@ -445,7 +445,7 @@ var Executor;
         var module;
         
         // is this somewhere else in the system? If so, copy it over
-        var alias = RulesEngine.getPackages(moduleId, true);
+        var alias = RulesEngine.getOriginalName(moduleId);
         if (alias && this.cache[alias]) {
           this.cache[moduleId] = this.cache[alias];
         }
@@ -560,7 +560,7 @@ var Executor;
 
         // is it aliases?
         // is this somewhere else in the system?
-        var alias = RulesEngine.getPackages(moduleId, true);
+        var alias = RulesEngine.getOriginalName(moduleId);
         if (alias && this.cache[alias]) {
           return this.cache[alias];
         }
