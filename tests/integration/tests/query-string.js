@@ -12,7 +12,7 @@ asyncTest("Make sure query string params are handled properly in pointcut paths"
       }
     }
   });
-  
+
   require.ensure(["foo"], function(require) {
     equal(require("foo").foo, "foo", "module exports loaded");
     start();

@@ -23,9 +23,9 @@ governing permissions and limitations under the License.
 **/
 (function () {
   var style = document.createElement('style');
+  style.type = 'text/css';
   var placed = false;
   var useCssText = (style.styleSheet) ? true : false;
-  style.type = 'text/css';
 
   function CSS(txt) {
     this.txt = txt;
@@ -54,7 +54,7 @@ governing permissions and limitations under the License.
     },
     addStyles: function (text) {
       if (useCssText) {
-        style.styleSheet.cssText = [style.styleSheet.cssText, text].join('\n');
+        style.styleSheet.cssText = [style.innerHTML, text].join('\n');
       }
       else {
         style.appendChild(document.createTextNode(text));
