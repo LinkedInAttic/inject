@@ -76,7 +76,7 @@ governing permissions and limitations under the License.
       };
 
       RulesEngine = {
-        getPackages: function() { return null; }
+        getOriginalName: function() { return null; }
       };
 
       var testScript = "exports.foo = \"bar\";";
@@ -93,15 +93,15 @@ governing permissions and limitations under the License.
 
     test('using module aliases', function() {
       RulesEngine = {
-        getPackages: function(path, byAlias) {
-          return (byAlias) ? 'foo/bar/baz' : 'foo';
+        getOriginalName: function(id) {
+          return (id === 'foo') ? 'foo/bar/baz' : null;
         }
       };
 
       var testScript = "exports.foo = \"bar\";";
       Executor.runModule("foo/bar/baz", testScript, "http://example.com/testid.js", {});
 
-      equal(Executor.getModule('foo/bar/baz'), Executor.getModule('foo'), 'able to retrieve a module via its alias name');
+      equal(Executor.getModule('foo'), Executor.getModule('foo/bar/baz'), 'able to retrieve a module via its alias name');
 
     });
   </script>
