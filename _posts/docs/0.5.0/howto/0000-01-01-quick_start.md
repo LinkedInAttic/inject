@@ -70,7 +70,7 @@ Inject.setModuleRoot("path");
 Inject.setExpires(integerValue);
 
 // configure "cross domain" support. You need to put "relay.swf" and "relay.html"
-// on your remote server for this to work
+// from the download on to your CDN server for this to work
 Inject.setModuleRoot("http://example-cdn.com/modules");
 Inject.setCrossDomain({
   relayHtml: "http://example-cdn.com/relay.html",

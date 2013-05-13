@@ -26,39 +26,29 @@ Inject.addContentRule(/jquery-1\.7\.js/, function(next, text) {
 });
 {% endhighlight %}
 
+In a multi-jQuery environment, the most recently loaded jQuery will occupy the global "jquery" module ID. This is because jQuery is a special named module.
+
 ### jQuery UI
 
-[jQuery UI](http://jqueryui.com/) requires two changes. The first affects all jQuery UI modules. They all explicitly require jQuery, and then record jQuery as their module.exports. This sharing ensures you can always say `$ = require('jquery.ui.component')` and get a working jQuery object with the plugin loaded. The second `addRule` call enables you to specify dependencies using the same `afterFetch` pointcut. The below example shows how you might specify jQuery and jQuery UI.
+[jQuery UI](http://jqueryui.com/) the newest versions of jQuery UI come pre-configured as a single file. We recommend hitting up the [jquery UI custom download page](http://jqueryui.com/download/) to get your single-file version. The only requirement, is we need to say there's a dependency on jQuery
 
 {% highlight js %}
-// note: weighting is important
+// First, let's route the "jquery.ui" module to a URL we can manage
 Inject.addFileRule(/jquery\.ui/, function(path) {
-  return 'jqueryui/' + path + '.min.js';
+  return 'jquery/ui/your-jquery-custom.min.js';
 });
 
-// this generally adjusts all jquery ui files
-Inject.addContentRule(/jqueryui\//, function(next, text) {
+// Second, let's add a content rule for the jQuery UI file
+// this makes jquery a dependency for jQuery UI
+Inject.addContentRule(/your-jquery-custom\.min\.js/, function(next, text) {
   next(null, [
     'if (!jQuery) var $ = jQuery = require(\'jquery\');',
     text,
     'module.setExports(jQuery);',
   ''].join('\n'));
-}, { weight: 300 });
-
-// this specifically sets up button's dependencies
-Inject.addContentRule(/jqueryui\/.*?button/, function(next, text) {
-  next(null, [
-    'if (!jQuery) var $ = jQuery = require(\'jquery\');',
-    'require(\'jquery.ui.core\');',
-    'require(\'jquery.ui.widget\');',
-    text,
-  ''].join('\n'));
-}, { weight: 500 });
-
-// jQuery shim
-Inject.addFileRule(/^jquery$/, function() {
-  return 'jquery-1.7.js';
 });
+
+// remember to also shim jQuery like above in the jQuery example
 Inject.addContentRule(/jquery-1\.7\.js/, function(next, text) {
   next(null, [
     'var oldJQ = window.jQuery;',

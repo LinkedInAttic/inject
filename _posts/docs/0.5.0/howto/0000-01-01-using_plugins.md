@@ -83,4 +83,6 @@ The JSON plugin reads the JSON file in as text, and automatically performs a `JS
 
 ### Writing Your Own Plugin
 
-Start with the [Inject Plugin API](/docs/0.5.0/api/inject.plugin.html). It's syntax is similar to `addRule`, but comes with additional functionality to add globally reachable functions to Inject, and pre-build your regex matches for you.
+Start with the [Inject.addFetchRule()](/docs/0.5.0/api/inject.addfetchrule.html) API. This allows you to define custom rules for fetching content. Coupled with [Inject.addContentRule()](/docs/0.5.0/api/inject.addcontentrule.html), you can easily transform any file into JavaScript-ready code for use in a module.
+
+The [plugins that Inject comes with](https://github.com/linkedin/inject/tree/master/src/plugins) serve as a great example for getting started.
