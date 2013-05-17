@@ -1,0 +1,22 @@
+{
+  "name": "inject",
+  "version": "0.4.2",
+  "main": "artifacts/**/*",
+  "ignore": ["node_modules/", "tmp/"],
+  "description": "Dependency Management got Awesome",
+  "keywords": [
+    "inject",
+    "dependency",
+    "dependencies",
+    "commonjs",
+    "amd",
+    "module",
+    "loader"
+  ],
+  "license": [
+    "Apache",
+    "MIT"
+  ]
+}
+    
+
