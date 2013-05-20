@@ -5006,5 +5006,5 @@ context.require = context.Inject.INTERNAL.createRequire();
     @public
  */
 context.define = context.Inject.INTERNAL.createDefine();
-;context.Inject.version = "v0.4.2-22-gcefebed";
+;context.Inject.version = "v0.4.2-24-g6fabe5f";
 })(this);
