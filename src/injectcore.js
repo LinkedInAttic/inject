@@ -51,8 +51,8 @@ var InjectCore;
         require.run = proxy(req.run, req);
         // resolve an identifier to a URL (AMD compatibility)
         require.toUrl = function (identifier) {
-          var resolvedId = RulesEngine.resolveIdentifier(identifier, id);
-          var resolvedPath = RulesEngine.resolveUrl(resolvedId, path, true);
+          var resolvedId = RulesEngine.resolveModule(identifier, id);
+          var resolvedPath = RulesEngine.resolveFile(resolvedId, path, true);
           return resolvedPath;
         };
         return require;

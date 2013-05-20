@@ -24,7 +24,7 @@ governing permissions and limitations under the License.
     @property {number} fileExpires Time (in seconds) for how long to preserve
       items in cache @see InjectCore.setExpires
     @property {boolean} useSuffix Specify true to append file suffix when
-      resolving an identifier to a URL.  @see RulesEngine.resolveUrl
+      resolving an identifier to a URL.  @see RulesEngine.resolveFile
     @property {object} xd Contains properties related to cross-domain requests
     @property {string|null} xd.relayFile URL to easyXDM provider document
       @see <a href="https://github.com/oyvindkinsey/easyXDM">easyXDM</a>

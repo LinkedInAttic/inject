@@ -434,6 +434,29 @@ var Executor;
       },
 
       /**
+       * Get the cached version of a module ID, accounting
+       * for any possible aliases. If an alias exists,
+       * the cache is also updated
+       * @method Executor.getFromCache
+       * @param {String} idAlias - an ID or alias to get
+       * @returns {Object} module at the ID or alias
+       */
+      getFromCache: function(idAlias) {
+        // check by moduleID
+        if (this.cache[idAlias]) {
+          return this.cache[idAlias];
+        }
+
+        // check by alias (updates module ID reference)
+        var alias = RulesEngine.getOriginalName(idAlias);
+        if (alias && this.cache[alias]) {
+          this.cache[idAlias] = this.cache[alias];
+        }
+
+        return this.cache[idAlias] || null;
+      },
+
+      /**
        * Create a module if it doesn't exist, and store it locally
        * @method Executor.createModule
        * @param {string} moduleId - the module identifier
@@ -443,7 +466,8 @@ var Executor;
        */
       createModule: function (moduleId, path) {
         var module;
-        if (!this.cache[moduleId]) {
+
+        if (!this.getFromCache(moduleId)) {
           module = {};
           module.id = moduleId || null;
           module.uri = path || null;
@@ -452,8 +476,10 @@ var Executor;
           module.setExports = function (xobj) {
             var name;
             for (name in module.exports) {
-              debugLog('cannot setExports when exports have already been set. setExports skipped');
-              return;
+              if (Object.hasOwnProperty.call(module.exports, name)) {
+                debugLog('cannot setExports when exports have already been set. setExports skipped');
+                return;
+              }
             }
             switch (typeof(xobj)) {
             case 'object':
@@ -548,7 +574,9 @@ var Executor;
         if (this.broken[moduleId] && this.broken.hasOwnProperty(moduleId)) {
           throw new Error('module ' + moduleId + ' failed to load successfully');
         }
-        return this.cache[moduleId] || null;
+
+        // return from the cache (or its alias location)
+        return this.getFromCache(moduleId) || null;
       },
 
       /**
