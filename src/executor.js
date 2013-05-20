@@ -434,6 +434,29 @@ var Executor;
       },
 
       /**
+       * Get the cached version of a module ID, accounting
+       * for any possible aliases. If an alias exists,
+       * the cache is also updated
+       * @method Executor.getFromCache
+       * @param {String} idAlias - an ID or alias to get
+       * @returns {Object} module at the ID or alias
+       */
+      getFromCache: function(idAlias) {
+        // check by moduleID
+        if (this.cache[idAlias]) {
+          return this.cache[idAlias];
+        }
+
+        // check by alias (updates module ID reference)
+        var alias = RulesEngine.getOriginalName(idAlias);
+        if (alias && this.cache[alias]) {
+          this.cache[idAlias] = this.cache[alias];
+        }
+
+        return this.cache[idAlias] || null;
+      },
+
+      /**
        * Create a module if it doesn't exist, and store it locally
        * @method Executor.createModule
        * @param {string} moduleId - the module identifier
@@ -443,14 +466,8 @@ var Executor;
        */
       createModule: function (moduleId, path) {
         var module;
-        
-        // is this somewhere else in the system? If so, copy it over
-        var alias = RulesEngine.getOriginalName(moduleId);
-        if (alias && this.cache[alias]) {
-          this.cache[moduleId] = this.cache[alias];
-        }
 
-        if (!this.cache[moduleId]) {
+        if (!this.getFromCache(moduleId)) {
           module = {};
           module.id = moduleId || null;
           module.uri = path || null;
@@ -558,14 +575,8 @@ var Executor;
           throw new Error('module ' + moduleId + ' failed to load successfully');
         }
 
-        // is it aliases?
-        // is this somewhere else in the system?
-        var alias = RulesEngine.getOriginalName(moduleId);
-        if (alias && this.cache[alias]) {
-          return this.cache[alias];
-        }
-
-        return this.cache[moduleId] || null;
+        // return from the cache (or its alias location)
+        return this.getFromCache(moduleId) || null;
       },
 
       /**
