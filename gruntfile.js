@@ -463,7 +463,9 @@ module.exports = function (grunt) {
 
   grunt.registerTask('release', [
     'build',
-    'compress:release'
+    'compress:release',
+    'copy:release',
+    'shell:commitDist'
   ]);
 
 };
