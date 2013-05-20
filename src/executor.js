@@ -476,7 +476,7 @@ var Executor;
           module.setExports = function (xobj) {
             var name;
             for (name in module.exports) {
-              if (module.exports.hasOwnProperty(name)) {
+              if (Object.hasOwnProperty.call(module.exports, name)) {
                 debugLog('cannot setExports when exports have already been set. setExports skipped');
                 return;
               }
