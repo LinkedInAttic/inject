@@ -19,29 +19,23 @@ governing permissions and limitations under the License.
 /**
  * The text plugin enables the loading of plain text.
  * This can also serve as a template for more complex text
- * transformations such as markdown syntax (just mutate in
- * the "after" pointcut)
+ * transformations such as markdown syntax
  * @file
 **/
 (function () {
-  Inject.plugin('text',
-  // ruleset
-  {
-    useSuffix: false,
-    path: function (path) {
-      return path.replace(/^text!\s*/, '');
-    },
-    pointcuts: {
-      afterFetch: function (next, text) {
-        next(null, ['',
-          'var text = "',
-          encodeURIComponent(text),
-          '";',
-          'module.setExports(decodeURIComponent(text));',
-          ''].join('')
-        );
-      }
-    }
-  },
-  {});
+  Inject.addFetchRule(/^text\!.+$/, function(next, content, resolver, comm, options) {
+    var moduleId = options.moduleId.replace(/^text!\s*/, '');
+    var resolvedMid = resolver.module(moduleId, options.parentId);
+    var path = resolver.url(resolvedMid, options.parentUrl, true);
+
+    comm.get(resolvedMid, path, function(text) {
+      next(null, ['',
+        'var text = "',
+        encodeURIComponent(text),
+        '";',
+        'module.setExports(decodeURIComponent(text));',
+        ''].join('')
+      );
+    });
+  });
 })();

@@ -140,7 +140,7 @@ var RequireContext = Fiber.extend(function () {
         }
 
         // try to get the module a couple different ways
-        identifier = RulesEngine.resolveIdentifier(moduleIdOrList, this.getId());
+        identifier = RulesEngine.resolveModule(moduleIdOrList, this.getId());
         module = Executor.getModule(identifier);
         assignedModule = Executor.getAssignedModule(this.getId(), identifier);
 
@@ -318,7 +318,7 @@ var RequireContext = Fiber.extend(function () {
         // TODO: amd dependencies are resolved FIRST against their current ID
         // then against the module Root (huge deviation from CommonJS which uses
         // the filepaths)
-        tempModuleId = RulesEngine.resolveIdentifier(dependencies[i], this.getId());
+        tempModuleId = RulesEngine.resolveModule(dependencies[i], this.getId());
         resolvedDependencyList.push(tempModuleId);
         if (!Executor.isModuleCircular(tempModuleId) && !Executor.isModuleDefined(tempModuleId)) {
           remainingDependencies.push(dependencies[i]);

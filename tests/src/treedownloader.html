@@ -84,13 +84,13 @@ governing permissions and limitations under the License.
         var dRequires = ["a"];
 
         // stub our rules engine
-        sinon.stub(RulesEngine, "resolveIdentifier")
+        sinon.stub(RulesEngine, "resolveModule")
           .withArgs("root").returns("root")
           .withArgs("a").returns("a")
           .withArgs("b").returns("b")
           .withArgs("c").returns("c")
           .withArgs("d").returns("d")
-        sinon.stub(RulesEngine, "resolveUrl")
+        sinon.stub(RulesEngine, "resolveFile")
           .withArgs("root").returns(rootUrl)
           .withArgs("a").returns(aUrl)
           .withArgs("b").returns(bUrl)
@@ -114,8 +114,8 @@ governing permissions and limitations under the License.
           .withArgs(dJS).returns(dRequires);
       },
       teardown: function() {
-        RulesEngine.resolveIdentifier.restore();
-        RulesEngine.resolveUrl.restore();
+        RulesEngine.resolveModule.restore();
+        RulesEngine.resolveFile.restore();
         Communicator.get.restore();
         Analyzer.extractRequires.restore();
       }
