@@ -20,6 +20,8 @@ module.exports = function (grunt) {
     // grunt anonymize
     anonymous_header: '!(function(context, undefined){\n',
     anonymous_footer: '\n;context.Inject.version = "__INJECT__VERSION__";\n})(this);',
+    relay_html_header: '<!DOCTYPE html>\n<html><head>\n<script type="text/javascript">',
+    relay_html_footer: '\n</script>\n</body>\n</html>',
 
     // these are the possible output files when done
     output_files: {
@@ -123,7 +125,7 @@ module.exports = function (grunt) {
       },
       xd: {
         files: [
-          {src: ['./src/xd/relay.html'], dest: '<%= output_files.relayHtml %>', filter: 'isFile'},
+          {src: [genFileName('concat', 'relayHtml')], dest: '<%= output_files.relayHtml %>', filter: 'isFile'},
           {src: ['./src/xd/relay.swf'], dest: '<%= output_files.relaySwf %>', filter: 'isFile'}
         ]
       }
@@ -258,6 +260,20 @@ module.exports = function (grunt) {
           './src/plugins/text.js',
           './src/plugins/json.js'
         ]
+      },
+      relayHtml: {
+        dest: '', // placeholder
+        options: {
+          separator: '\n',
+          banner: '<%= relay_html_header %>\n<%= inject_header %>\n',
+          footer: '<%= relay_html_footer %>'
+        },
+        src: [
+          './src/includes/userconfig.js',
+          './src/lib/easyxdm.js',
+          './src/lib/lscache.js',
+          './src/relay.js'
+        ]
       }
     },
 
@@ -357,6 +373,7 @@ module.exports = function (grunt) {
   grunt.config.set('concat.noxd.dest', genFileName('concat', 'noxd'));
   grunt.config.set('concat.ie7.dest', genFileName('concat', 'ie7'));
   grunt.config.set('concat.plugins.dest', genFileName('concat', 'plugins'));
+  grunt.config.set('concat.relayHtml.dest', genFileName('concat', 'relayHtml'));
 
   // load NPM tasks
   grunt.loadNpmTasks('grunt-contrib-jshint');
@@ -408,6 +425,7 @@ module.exports = function (grunt) {
     'copy:ie7',
 
     'copy:legalish',
+    'concat:relayHtml',
     'copy:xd',
 
     'clean:tmp'
