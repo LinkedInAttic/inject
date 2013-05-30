@@ -108,7 +108,7 @@ var Communicator;
           ((contents) ? contents.length : 'NaN'));
 
       // write cache
-      if (statusCode === 200) {
+      if (statusCode === 200 && ! userConfig.xd.relayFile ) {
         writeToCache(url, contents);
       }
 
@@ -238,11 +238,13 @@ var Communicator;
 
         debugLog('Communicator (' + url + ')', 'requesting');
 
-        var cachedResults = readFromCache(url);
-        if (cachedResults) {
-          debugLog('Communicator (' + url + ')', 'retireved from cache. length: ' + cachedResults.length);
-          callback(cachedResults);
-          return;
+        if( ! userConfig.xd.relayFile ) {
+          var cachedResults = readFromCache(url);
+          if (cachedResults) {
+            debugLog('Communicator (' + url + ')', 'retireved from cache. length: ' + cachedResults.length);
+            callback(cachedResults);
+            return;
+          }
         }
 
         debugLog('Communicator (' + url + ')', 'queued');
