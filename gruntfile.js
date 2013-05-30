@@ -25,6 +25,8 @@ module.exports = function (grunt) {
 
     // these are the possible output files when done
     output_files: {
+      all:          './artifacts/inject-__INJECT__VERSION__/*',
+      all_cwd:      './artifacts/inject-__INJECT__VERSION__/',
       main:         './artifacts/inject-__INJECT__VERSION__/inject.js',
       main_min:     './artifacts/inject-__INJECT__VERSION__/inject.min.js',
       ie7:          './artifacts/inject-__INJECT__VERSION__/inject-ie7.js',
@@ -57,6 +59,10 @@ module.exports = function (grunt) {
      * shell: run shell commands. We use this for git ops
      */
     shell: {
+      commitDist: {
+        command: 'git add dist && git commit -m "auto-commit inject release via gruntfile"',
+        options: {}
+      },
       tag: {
         command: 'git describe HEAD',
         options: {
@@ -127,6 +133,11 @@ module.exports = function (grunt) {
         files: [
           {src: [genFileName('concat', 'relayHtml')], dest: '<%= output_files.relayHtml %>', filter: 'isFile'},
           {src: ['./src/xd/relay.swf'], dest: '<%= output_files.relaySwf %>', filter: 'isFile'}
+        ]
+      },
+      release: {
+        files: [
+          {expand:true, cwd: '<%= output_files.all_cwd %>', src: '*', dest: './dist/', filter: 'isFile'}
         ]
       }
     },
@@ -470,7 +481,9 @@ module.exports = function (grunt) {
 
   grunt.registerTask('release', [
     'build',
-    'compress:release'
+    'compress:release',
+    'copy:release',
+    'shell:commitDist'
   ]);
 
 };

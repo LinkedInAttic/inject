@@ -1,0 +1,36 @@
+{
+  "name": "inject",
+  "version": "0.4.2",
+  "main": [
+    "dist/inject-ie7.js",
+    "dist/inject-ie7.min.js",
+    "dist/inject-plugins.js",
+    "dist/inject-plugins.min.js",
+    "dist/inject.js",
+    "dist/inject.min.js",
+    "dist/LICENSE",
+    "dist/README.markdown",
+    "dist/relay.html",
+    "dist/relay.swf"
+  ],
+  "ignore": [
+    ".jshintrc",
+    "node_modules/",
+    "tmp/",
+    "artifacts/"
+  ],
+  "description": "Dependency manager for the browsers with CommonJS and AMD Support",
+  "keywords": [
+    "inject",
+    "dependency",
+    "dependencies",
+    "commonjs",
+    "amd",
+    "module",
+    "loader"
+  ],
+  "license": [
+    "Apache",
+    "MIT"
+  ]
+}
