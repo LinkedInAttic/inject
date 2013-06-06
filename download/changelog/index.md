@@ -3,6 +3,24 @@ layout: download
 title : Changelog
 ---
 
+## 0.5.0 (current: RC1)
+### Breaks Backwards Compatibility
+* \#246 **pointcuts.before and pointcuts.after are removed:** Instead of using the before/after pointcuts, we encourage the use of the new addRule replacement methods. The afterFetch pointcut is still supported, although addRule itself is now deprecated. We encourage everyone to move to the new addXXRule methods.
+
+### New Features
+* \#254 **new rules to replace addRule:** addModuleRule, addFileRule, addContentRule, addFetchRule, addPackage. This collection of rules gives the developer much greater control of the loading system, allowing any or many parts of the module loader to be circumvented. Additionally, packages can be regstered globally using addPackage.
+* \#244 **run Inject alongside script tags:** Unlike traditional AMD loaders, you are able to run Inject alongside code that checks for define and define.amd. A new method Inject.setGlobalAMD(false) allows the global define.amd to be disabled. The define.amd variable will still be available within the sandbox context. This is an incredibly useful feature if you have both script tags and Inject on your page.
+* \#217 **remote localStorage:** to improve security, when using a CDN, the remote localStorage location will be used as opposed to the primary hosting domain. This frees up the main URLs localStorage for other storage operations.
+
+### Bug Fixes
+* \#255 setExpires(0) was treated as "always cache" instead of "never cache"
+* \#256 CSS plugin attaches properly in IE7
+
+### Dev Features
+* \#213 Bower Support available as the package "inject"
+* \#254 addRule is now deprecated
+* \#248 "grunt release" available for creating the release .tgz file
+
 ## 0.4.2 (Released March 27, 2013)
 ### New Features
 n/a
