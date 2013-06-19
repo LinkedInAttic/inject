@@ -21,12 +21,10 @@
       "url": "http://www.apache.org/licenses/LICENSE-2.0"
     }
   ],
-  "repositories": [
-    {
-      "type": "git",
-      "url": "git@github.com:linkedin/inject.git"
-    }
-  ],
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:linkedin/inject.git"
+  },
   "implements": [
     "CommonJS/Modules/1.0",
     "CommonJS/Modules/1.1",
