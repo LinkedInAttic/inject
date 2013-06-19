@@ -35,8 +35,40 @@ governing permissions and limitations under the License.
   <script type="text/javascript">
     module("RequireContext");
     
+    var Analyzer = null;
+
     test("Scaffolding", function() {
       ok(typeof(RequireContext) === "function", "object exists as instantiable");
+    });
+    
+    test("#234: CommonJS scan does not occur if dependencies are set", function() {
+    	Analyzer = {
+    		extractRequires: sinon.spy()
+    	};
+    	Executor = {
+    		isModuleDefined: sinon.stub().returns(false),
+    		flagModuleAsDefined: sinon.stub()
+    	};
+    	
+    	var rq = new RequireContext();
+    	sinon.stub(rq, "require").returns(true);
+    	
+    	rq.define("foo", [], function(){
+  			var fooName = 'foo';
+
+  			// the bar module should not be loaded per the AMD spec
+  			try {
+    			fooName = require('bar').name;
+ 			}
+  			catch(e) {}
+
+  			return {
+    			name: fooName
+  			};
+		});
+		
+		ok(!Analyzer.extractRequires.called, 'extractRequires is not called');	
+		// ok(!test, "Define Function doesn't run ____ when dependencies passed in as a parameter");
     });
   </script>
 </body>
