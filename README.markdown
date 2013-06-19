@@ -97,4 +97,5 @@ Inject couldn't be as great as it is without these other rockstar libraries:
 * lscache: LocalStorage Cache Provider 
 * link.js: dependency extraction (from their src/Library/link.js)
 * GoWithTheFlow.js: simple flow control
-* (and a whole lot of npm related things for development) 
+* (and a whole lot of npm related things for development)
+
