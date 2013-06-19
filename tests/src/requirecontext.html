@@ -20,7 +20,7 @@ governing permissions and limitations under the License.
 */
 -->
   <meta charset="UTF-8" />
-  <title>Inject Test Suite - Analyzer SRC Tests</title>
+  <title>Inject Test Suite - RequireContext SRC Tests</title>
   <link rel="stylesheet" href="../resources/qunit.css" type="text/css" media="screen">
   <script type="text/javascript" src="../resources/qunit.js"></script>
   <script type="text/javascript" src="../resources/config.js"></script>
@@ -33,42 +33,46 @@ governing permissions and limitations under the License.
   <script type="text/javascript" src="../../src/lib/fiber.js"></script>
   <script type="text/javascript" src="../../src/requirecontext.js"></script>
   <script type="text/javascript">
-    module("RequireContext");
-    
     var Analyzer = null;
+    var Executor = null;
+    module('RequireContext', {
+      teardown : function() {
+        Executor = null;
+        Analyzer = null;
+      }
+    });
 
     test("Scaffolding", function() {
-      ok(typeof(RequireContext) === "function", "object exists as instantiable");
+      ok( typeof (RequireContext) === "function", "object exists as instantiable");
     });
-    
+
     test("#234: CommonJS scan does not occur if dependencies are set", function() {
-    	Analyzer = {
-    		extractRequires: sinon.spy()
-    	};
-    	Executor = {
-    		isModuleDefined: sinon.stub().returns(false),
-    		flagModuleAsDefined: sinon.stub()
-    	};
-    	
-    	var rq = new RequireContext();
-    	sinon.stub(rq, "require").returns(true);
-    	
-    	rq.define("foo", [], function(){
-  			var fooName = 'foo';
+      Analyzer = {
+        extractRequires : sinon.spy()
+      };
+      Executor = {
+        isModuleDefined : sinon.stub().returns(false),
+        flagModuleAsDefined : sinon.stub()
+      };
 
-  			// the bar module should not be loaded per the AMD spec
-  			try {
-    			fooName = require('bar').name;
- 			}
-  			catch(e) {}
+      var rq = new RequireContext();
+      sinon.stub(rq, "require").returns(true);
 
-  			return {
-    			name: fooName
-  			};
-		});
-		
-		ok(!Analyzer.extractRequires.called, 'extractRequires is not called');	
-		// ok(!test, "Define Function doesn't run ____ when dependencies passed in as a parameter");
+      rq.define("foo", [], function() {
+        var fooName = 'foo';
+
+        // the bar module should not be loaded per the AMD spec
+        try {
+          fooName = require('bar').name;
+        } catch(e) {
+        }
+
+        return {
+          name : fooName
+        };
+      });
+
+      ok(!Analyzer.extractRequires.called, 'extractRequires is not called');
     });
   </script>
 </body>
