@@ -48,7 +48,7 @@ governing permissions and limitations under the License.
 
     test("#234: CommonJS scan does not occur if dependencies are set", function() {
       Analyzer = {
-        extractRequires : sinon.spy()
+        extractRequires : sinon.spy(),
       };
       Executor = {
         isModuleDefined : sinon.stub().returns(false),
@@ -56,7 +56,7 @@ governing permissions and limitations under the License.
       };
 
       var rq = new RequireContext();
-      sinon.stub(rq, "require").returns(true);
+      sinon.stub(rq, "ensure").returns(true);
 
       rq.define("foo", [], function() {
         var fooName = 'foo';

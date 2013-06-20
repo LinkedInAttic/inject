@@ -39,17 +39,18 @@ var Analyzer;
        * @public
        * @returns {Array} a clean list of modules without buildins
        */
+
       stripBuiltins: function (modules) {
         var strippedModuleList = [];
-        var moduleId;
         for (var i = 0, len = modules.length; i < len; i++) {
-          moduleId = modules[i];
-          if (moduleId !== 'require' && moduleId !== 'exports' && moduleId !== 'module') {
-            strippedModuleList.push(moduleId);
+          //modules[i] is the moduleId
+          if (!BUILTINS[modules[i]]) {
+            strippedModuleList.push(modules[i]);
           }
         }
         return strippedModuleList;
       },
+
       
       /**
        * Extract the clean dependency requires from a given file as
