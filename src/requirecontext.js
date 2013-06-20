@@ -160,8 +160,7 @@ var RequireContext = Fiber.extend(function () {
 
       // AMD require
       this.log('AMD require(Array) of ' + moduleIdOrList.join(', '));
-      var strippedModules = Analyzer.stripBuiltins(moduleIdOrList);
-      this.ensure(strippedModules, proxy(function (localRequire) {
+      this.ensure(moduleIdOrList, proxy(function (localRequire) {
         var module = Executor.createModule();
         var modules = this.getAllModules(moduleIdOrList, localRequire, module);
         callback.apply(context, modules);
@@ -356,7 +355,7 @@ var RequireContext = Fiber.extend(function () {
 
       // ask only for the missed items + a require
       remainingDependencies.unshift('require');
-      this.require(remainingDependencies, proxy(function (require) {
+      this.ensure(remainingDependencies, proxy(function (require) {
         this.log('AMD define(...) of ' + id + ' all downloads required');
 
         // use require as our first arg
