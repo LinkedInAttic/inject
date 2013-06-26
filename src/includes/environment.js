@@ -53,3 +53,10 @@ Test the schema version inside of lscache, and if it has changed, flush the cach
     @global
  */
 var Fiber = this.Fiber.noConflict();
+
+/**
+    TraceKit instance
+    @type {object}
+    @global
+ */
+var TraceKit = this.TraceKit.noConflict();

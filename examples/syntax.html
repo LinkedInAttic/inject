@@ -39,12 +39,12 @@ Inject.reset();
 Inject.enableDebug("sourceMap", true);
 Inject.setModuleRoot("/examples/dependencies/syntax/");
 
-window.onerror = function(message) {
+Inject.onError(function(e) {
   var err = document.createElement("p");
-  err.innerHTML = message.replace("\n", "<br>");
+  err.innerHTML = e.message;
   document.getElementById("output-err").appendChild(err);
   return true;
-};
+});
 
 require.ensure(["syntaxerror"], function(require) {
   // this should never run

@@ -273,7 +273,16 @@ var TreeDownloader = Fiber.extend(function () {
             // store file contents for later
             this.files[node.getValue().name] = contents;
 
-            var results = Analyzer.extractRequires(contents);
+            var results;
+            
+            try {
+              results = Analyzer.extractRequires(contents);
+            }
+            catch(e) {
+              // an exception in parsing causes there to be no requires
+              // exceptions are handled on execution
+              results = [];
+            }
             var tempRequires = results;
             var requires = [];
             var childNode;
