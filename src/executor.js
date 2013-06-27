@@ -84,10 +84,10 @@ var Executor;
   } catch (e) {
     docHead = false;
   }
-  
+
   /*
    * Set up TraceKit error handler.
-   * Captures the error report created by 
+   * Captures the error report created by
    * TraceKit and passes it to our global
    * error handler.
    */
@@ -95,7 +95,7 @@ var Executor;
     // passes through to Inject emitter right now
     Inject.emit(errorReport);
   });
-  
+
   /**
    * Error handler called in executor.js
    * Caches the original error and then calls
@@ -144,24 +144,23 @@ var Executor;
 
     // add source string in sourcemap compatible browsers
     code = [code, sourceString].join('\n');
-    
+
     try {
       LinkJS.parse('function linktest() {' + options.originalCode + '\n}');
       eval(code);
-    }
-    catch(e) {
-      var linkJsLine;      
+    } catch(e) {
+      var linkJsLine;
       linkJsLine = parseInt(e.message.replace(/.+? at line (.+)$/, '$1'), 10);
       err = new Error('Parse error in ' + options.moduleId + ' (' + options.url + ') at line ' + linkJsLine);
       try {
         throw err;
-      }
-      catch(tkerr) {
+      } catch(tkerr) {
         failed = true;
         sendToTraceKit(tkerr, options.moduleId);
       }
     }
 
+    var lineException, adjustedLineNumber;
     // if there were no errors, tempErrorHandler never ran and therefore
     // failed is false. We can now evaluate using either the eval()
     // method or just running the function we built.
@@ -175,53 +174,41 @@ var Executor;
         // sourcemap string enabled. This allows some browsers (Chrome and Firefox)
         // to properly see file names instead of just "eval" as the file name in inspectors
         var toExec = code.replace(/([\w\W]+?)=([\w\W]*\})[\w\W]*?$/, '$1 = ($2)();');
-        var lineException;
-        var adjustedLineNumber;
         toExec = [toExec, sourceString].join('\n');
         // generate an exception and capture the line number for later
         // you must keep try/catch and this eval on one line
-        try {toExec.undefined_function();}catch(ex) {lineException = ex;} eval(toExec);
-        
+        try {toExec.undefined_function();} catch(ex) {lineException = ex;}eval(toExec);
         result = context.Inject.INTERNAL.execute[options.functionId];
-        // set the error object using our standard method
-        if (result.error) {
-          if (result.error.lineNumber) {
-            // firefox supports lineNumber as a property
-            adjustedLineNumber = result.error.lineNumber - lineException.lineNumber - options.preambleLength;
-          }
-          else if (result.error.stack) {
-            // chrome supports structured stack messages
-            adjustedLineNumber = result.error.stack.toString().replace(/\n/g, ' ').replace(/.+?at .+?:(\d+).*/, '$1');
-            adjustedLineNumber -= options.preambleLength;
-          }
-          else if (result.error.line) {
-            adjustedLineNumber = result.error.line - options.preambleLength;
-          }
-          else {
-            adjustedLineNumber = 'unknown';
-          }
-          
-          err = new Error('Runtime error in ' + options.moduleId + '(' + options.url + ') at line ' + adjustedLineNumber);
-          err.stack = result.error.stack;
-          err.lineNumber = result.error.lineNumber;
-          sendToTraceKit(err, options.moduleId);
-        }
       } else {
         // there is an executable object AND source maps are off
         // just run it. Try/catch will capture exceptions and put them
         // into result.error internally for us from the commonjs harness
         result = context.Inject.INTERNAL.execute[options.functionId]();
-        if (result.error) {
-          sendToTraceKit(result.error, options.moduleId);
+      }
+      // set the error object using our standard method
+      if (result.error) {
+        debugger;
+        if (result.error.lineNumber) {
+          // firefox supports lineNumber as a property
+          adjustedLineNumber = result.error.lineNumber - options.preambleLength;
+          adjustedLineNumber -= (lineException) ? lineException.lineNumber: 0;
+        } else if (result.error.stack) {
+          // chrome supports structured stack messages
+          adjustedLineNumber = result.error.stack.toString().replace(/\n/g, ' ').replace(/.+?at .+?:(\d+).*/, '$1');
+          adjustedLineNumber -= options.preambleLength;
+          adjustedLineNumber -= (lineException) ? parseInt(lineException.stack.toString().replace(/\n/g, ' ').replace(/.+?at .+?:(\d+).*/, '$1'), 10) : 0;
+        } else if (result.error.line) {
+          adjustedLineNumber = result.error.line - options.preambleLength;
+          adjustedLineNumber -= (lineException) ? lineException.line : 0;
+        } else {
+          adjustedLineNumber = 'unknown';
         }
+        err = new Error('Runtime error in ' + options.moduleId + '(' + options.url + ') at line ' + adjustedLineNumber);
+        err.stack = result.error.stack;
+        err.lineNumber = result.error.lineNumber;
+        sendToTraceKit(err, options.moduleId);
       }
     }
-
-
-
-
-
-
 
     // clean up the function or object we globally created if it exists
     if (context.Inject.INTERNAL.execute[options.functionId]) {
@@ -512,10 +499,9 @@ var Executor;
        */
       getModule : function(moduleId) {
         if (this.broken[moduleId] && this.broken.hasOwnProperty(moduleId)) {
-          var e=new Error('module ' + moduleId + ' failed to load successfully');
-          e.originalError=moduleFailureCache[moduleId];
-          debugger;
-          throw e;    
+          var e = new Error('module ' + moduleId + ' failed to load successfully');
+          e.originalError = moduleFailureCache[moduleId];
+          throw e;
         }
 
         // return from the cache (or its alias location)
@@ -587,4 +573,4 @@ var Executor;
     };
   });
   Executor = new AsStatic();
-})(); 
+})();

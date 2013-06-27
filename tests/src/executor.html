@@ -48,7 +48,7 @@
       var TYPE_ERROR = ['function typeError() {', 'this.date = null;', 'this.error = null;', '}', 'var errorObj = new typeError();', 'errorObj.date = new Date();', 'errorObj.error = "error" in true;', 'exports.test = true'].join('\n');
       var REF_ERROR = ["var bar = function() {", "baz();", "};", "baz();", "exports.biz = 'boz';"].join('\n');
 
-      module("Executor", {
+      module("Executor with no eval", {
         setup : function() {
           sinon.spy(window, "eval");
         },
@@ -112,6 +112,9 @@
         equal(module.exports.foo, "bar", "module sandboxed and set exports");
         equal(module, moduleB, "same execution yields same module result");
       });
+      
+      
+      module("Executor with eval enabled");
 
       test('Error handling', function() {
         var syntaxError, refError, typeError;
@@ -142,18 +145,19 @@
 
         Executor.runModule("syntaxError", SYNTAX_ERROR, "http://example.com/syntaxerror.js", {});
         raises(function() {
+          
           var moduleC = Executor.getModule('syntaxError');
-        }, /*ourSyntaxError,*/ "Syntax Error thrown with correct line number");
+        }, /*ourSyntaxError,*/ "Syntax Error thrown with correct line number"); //debugger;
 
         Executor.runModule("refError", REF_ERROR, "http://example.com/referror.js", {});
         raises(function() {
           var moduleD = Executor.getModule('refError');
-        }, /*ourRefError,*/ "Reference Error thrown with correct line number");
+        }, /*ourRefError,*/ "Reference Error thrown with correct line number"); //debugger;
 
         Executor.runModule("typeError", TYPE_ERROR, "http://example.com/typeerror.js", {});
         raises(function() {
           var moduleE = Executor.getModule('typeError');
-        }, /*ourTypeError,*/ "Syntax Error thrown with correct line number");
+        }, /*ourTypeError,*/ "Syntax Error thrown with correct line number"); //debugger;
         /*
          Executor.runModule("syntaxError", SYNTAX_ERROR, "http://example.com/syntaxerror.js", {});
          try{
