@@ -42,7 +42,8 @@ var commonJSHeader = (['',
   '          require = __INJECT_NS__.INTERNAL.createRequire(module.id, module.uri),',
   '          define = __INJECT_NS__.INTERNAL.createDefine(module.id, module.uri),',
   '          exports = module.exports;',
-  '']).join('\n');
+  '      try{module.undefined_function();}catch(e){module.__error_line = e;}' // no blank lines after this, it marks the start of file
+  ]).join('\n');
 
 /**
     CommonJS footer with placeholders for Inject namespace, exception, and
@@ -54,12 +55,12 @@ var commonJSFooter = (['',
   '    __INJECT_NS__.INTERNAL.modules.__FUNCTION_ID__ = module;',
   '    };',
   '    __INJECT_NS__.INTERNAL.defineExecutingModuleAs("__MODULE_ID__", "__MODULE_URI__");',
-  '    __error = window.onerror;',
   '    try {',
+  '      // this must be on one line in code for line number handling',
   '      __INJECT_NS__.INTERNAL.execs.__FUNCTION_ID__.call(__INJECT_NS__.INTERNAL.modules.__FUNCTION_ID__);',
   '    }',
-  '    catch (__EXCEPTION__) {debugger;',
-  '      __INJECT_NS__.INTERNAL.modules.__FUNCTION_ID__.error = __EXCEPTION__;',
+  '    catch (__EXCEPTION__) {',
+  '      __INJECT_NS__.INTERNAL.modules.__FUNCTION_ID__.__error = __EXCEPTION__;',
   '    }',
   '    __INJECT_NS__.INTERNAL.undefineExecutingModule();',
   '    return __INJECT_NS__.INTERNAL.modules.__FUNCTION_ID__;',

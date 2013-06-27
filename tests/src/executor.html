@@ -46,11 +46,43 @@
     <script type="text/javascript">
       var SYNTAX_ERROR = ['var use = true;', 'var barTwo = function() {', '  if (use) {', '};', 'exports.test = true;', ''].join('\n');
       var TYPE_ERROR = ['function typeError() {', 'this.date = null;', 'this.error = null;', '}', 'var errorObj = new typeError();', 'errorObj.date = new Date();', 'errorObj.error = "error" in true;', 'exports.test = true'].join('\n');
-      var REF_ERROR = ["var bar = function() {", "baz();", "};", "baz();", "exports.biz = 'boz';"].join('\n');
+      var REF_ERROR = ["", "", "", "baz();", "", "exports.biz = 'boz';"].join('\n');
 
       module("Executor with no eval", {
         setup : function() {
           sinon.spy(window, "eval");
+          
+	        // inject facade
+	        window.Inject = {
+	          INTERNAL : {
+	            execute : {},
+	            modules : {},
+	            execs : {},
+	            createModule : function() {
+	              return {
+	                exports : {}
+	              };
+	            },
+	            createRequire : function() {
+	              return function() {
+	              };
+	            },
+	            createDefine : function() {
+	              return function() {
+	              };
+	            },
+	            require : function() {
+	            },
+	            defineExecutingModuleAs : function() {
+	            },
+	            undefineExecutingModule : function() {
+	            },
+	            setModuleExports : function() {
+	            }
+	          },
+	          clearCache : function() {
+	          }
+	        };
         },
         teardown : function() {
           window.eval.restore();
@@ -63,38 +95,6 @@
 
       test("JS Execution", function() {
         userConfig.debug.sourceMap = false;
-
-        // inject facade
-        Inject = {
-          INTERNAL : {
-            execute : {},
-            modules : {},
-            execs : {},
-            createModule : function() {
-              return {
-                exports : {}
-              };
-            },
-            createRequire : function() {
-              return function() {
-              };
-            },
-            createDefine : function() {
-              return function() {
-              };
-            },
-            require : function() {
-            },
-            defineExecutingModuleAs : function() {
-            },
-            undefineExecutingModule : function() {
-            },
-            setModuleExports : function() {
-            }
-          },
-          clearCache : function() {
-          }
-        };
 
         RulesEngine = {
           getOriginalName : function() {
@@ -114,50 +114,60 @@
       });
       
       
-      module("Executor with eval enabled");
+      module("Executor with eval enabled", {
+      	setup: function() {
+        	// inject facade
+	        window.Inject = {
+	          INTERNAL : {
+	            execute : {},
+	            modules : {},
+	            execs : {},
+	            createModule : function() {
+	              return {
+	                exports : {}
+	              };
+	            },
+	            createRequire : function() {
+	              return function() {
+	              };
+	            },
+	            createDefine : function() {
+	              return function() {
+	              };
+	            },
+	            require : function() {
+	            },
+	            defineExecutingModuleAs : function() {
+	            },
+	            undefineExecutingModule : function() {
+	            },
+	            setModuleExports : function() {
+	            }
+	          },
+	          clearCache : function() {
+	          }
+	        };
+      	}
+      });
 
       test('Error handling', function() {
         var syntaxError, refError, typeError;
-
-        /*function ourSyntaxError() {
-          this.lineNo = 507;
-          //line number in executor.js where exception is created
-          this.message = "Error: module syntaxError failed to load successfully";
-          this.originalError = {};
-          this.originalError.message = "Error: Parse error in syntaxError (http://example.com/syntaxerror.js) at line 7";
-        }
-
-        function ourTypeError() {
-          this.lineNo = 507;
-          //line number in executor.js where exception is created
-          this.message = "Error: module typeError failed to load successfully";
-          this.originalError = {};
-          this.originalError.message = "invalid 'in' operand true";
-        }
-
-        function ourRefError() {
-          this.lineNo = 507;
-          //line number in executor.js where exception is created
-          this.message = "Error: module refError failed to load successfully";
-          this.originalError = {};
-          this.originalError.message = "baz is not defined";
-        }*/
 
         Executor.runModule("syntaxError", SYNTAX_ERROR, "http://example.com/syntaxerror.js", {});
         raises(function() {
           
           var moduleC = Executor.getModule('syntaxError');
-        }, /*ourSyntaxError,*/ "Syntax Error thrown with correct line number"); //debugger;
+        }, /Parse error .+? at line 7/ ,"Syntax Error thrown with correct line number (7)"); //debugger;
 
         Executor.runModule("refError", REF_ERROR, "http://example.com/referror.js", {});
         raises(function() {
           var moduleD = Executor.getModule('refError');
-        }, /*ourRefError,*/ "Reference Error thrown with correct line number"); //debugger;
+        }, /Runtime error .+? at line 4/,  "Reference Error thrown with correct line number (4)"); //debugger;
 
         Executor.runModule("typeError", TYPE_ERROR, "http://example.com/typeerror.js", {});
         raises(function() {
           var moduleE = Executor.getModule('typeError');
-        }, /*ourTypeError,*/ "Syntax Error thrown with correct line number"); //debugger;
+        },  /Runtime error .+? at line 7/,  "Type Error thrown with correct line number (7)"); //debugger;
         /*
          Executor.runModule("syntaxError", SYNTAX_ERROR, "http://example.com/syntaxerror.js", {});
          try{

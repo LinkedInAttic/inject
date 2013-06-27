@@ -155,8 +155,11 @@ var Executor;
       try {
         throw err;
       } catch(tkerr) {
-        failed = true;
         sendToTraceKit(tkerr, options.moduleId);
+        // exit early. This is not a usable module.
+        return {
+          __error: tkerr
+        };
       }
     }
 
@@ -167,48 +170,73 @@ var Executor;
     // if there is not a registered function in the INTERNAL namespace, there
     // must have been a syntax error. Firefox mandates an eval to expose it, so
     // we use that as the least common denominator
-    if (!failed) {
-      if (userConfig.debug.sourceMap) {
-        // if sourceMap is enabled
-        // create a version of our code that can be put through eval with the
-        // sourcemap string enabled. This allows some browsers (Chrome and Firefox)
-        // to properly see file names instead of just "eval" as the file name in inspectors
-        var toExec = code.replace(/([\w\W]+?)=([\w\W]*\})[\w\W]*?$/, '$1 = ($2)();');
-        toExec = [toExec, sourceString].join('\n');
-        // generate an exception and capture the line number for later
-        // you must keep try/catch and this eval on one line
-        try {toExec.undefined_function();} catch(ex) {lineException = ex;}eval(toExec);
-        result = context.Inject.INTERNAL.execute[options.functionId];
-      } else {
-        // there is an executable object AND source maps are off
-        // just run it. Try/catch will capture exceptions and put them
-        // into result.error internally for us from the commonjs harness
-        result = context.Inject.INTERNAL.execute[options.functionId]();
-      }
-      // set the error object using our standard method
-      if (result.error) {
-        debugger;
-        if (result.error.lineNumber) {
+  
+    if (userConfig.debug.sourceMap) {
+      // if sourceMap is enabled
+      // create a version of our code that can be put through eval with the
+      // sourcemap string enabled. This allows some browsers (Chrome and Firefox)
+      // to properly see file names instead of just "eval" as the file name in inspectors
+      var toExec = code.replace(/([\w\W]+?)=([\w\W]*\})[\w\W]*?$/, '$1 = ($2)();');
+      toExec = [toExec, sourceString].join('\n');
+      // generate an exception and capture the line number for later
+      // you must keep try/catch and this eval on one line
+      try { toExec.undefined_function(); } catch(ex) { lineException = ex; } eval(toExec);
+      result = context.Inject.INTERNAL.execute[options.functionId];
+      if (result.__error) {
+        if (result.__error.lineNumber) {
           // firefox supports lineNumber as a property
-          adjustedLineNumber = result.error.lineNumber - options.preambleLength;
-          adjustedLineNumber -= (lineException) ? lineException.lineNumber: 0;
-        } else if (result.error.stack) {
+          adjustedLineNumber = result.__error.lineNumber - options.preambleLength;
+          adjustedLineNumber -= (lineException) ? lineException.lineNumber : 0;
+        } else if (result.__error.line) {
+          adjustedLineNumber = result.__error.line - options.preambleLength;
+          adjustedLineNumber -= (lineException) ? lineException.line : 0;
+        } else if (result.__error.stack) {
           // chrome supports structured stack messages
-          adjustedLineNumber = result.error.stack.toString().replace(/\n/g, ' ').replace(/.+?at .+?:(\d+).*/, '$1');
+          adjustedLineNumber = parseInt(result.__error.stack.toString().replace(/\n/g, ' ').replace(/.+?at .+?:(\d+).*/, '$1'), 10);
           adjustedLineNumber -= options.preambleLength;
           adjustedLineNumber -= (lineException) ? parseInt(lineException.stack.toString().replace(/\n/g, ' ').replace(/.+?at .+?:(\d+).*/, '$1'), 10) : 0;
-        } else if (result.error.line) {
-          adjustedLineNumber = result.error.line - options.preambleLength;
-          adjustedLineNumber -= (lineException) ? lineException.line : 0;
         } else {
           adjustedLineNumber = 'unknown';
         }
         err = new Error('Runtime error in ' + options.moduleId + '(' + options.url + ') at line ' + adjustedLineNumber);
-        err.stack = result.error.stack;
-        err.lineNumber = result.error.lineNumber;
+        err.stack = result.__error.stack;
+        err.lineNumber = result.__error.lineNumber;
+        sendToTraceKit(err, options.moduleId);
+      }
+    } else {
+      // there is an executable object AND source maps are off
+      // just run it. Try/catch will capture exceptions and put them
+      // into result.__error internally for us from the commonjs harness
+      // NOTE: these all receive "-1" due to the semicolon auto added by the Executor at the end of
+      // the preamble.
+      // __EXCEPTION__.lineNumber - Inject.INTERNAL.modules.exec2.__error_line.lineNumber - 1
+      result = context.Inject.INTERNAL.execute[options.functionId]();
+      if (result.__error) {
+        if (result.__error.lineNumber) {
+          // firefox supports lineNumber as a property
+          adjustedLineNumber = result.__error.lineNumber;
+          adjustedLineNumber -= result.__error_line.lineNumber;
+          adjustedLineNumber -= 1;
+        } else if (result.__error.line) {
+          adjustedLineNumber = result.__error.line;
+          adjustedLineNumber -= result.__error_line.line;
+          adjustedLineNumber -= 1;
+        } else if (result.__error.stack) {
+          // chrome supports structured stack messages
+          adjustedLineNumber = parseInt(result.__error.stack.toString().replace(/\n/g, ' ').replace(/.+?at .+?:(\d+).*/, '$1'), 10);
+          adjustedLineNumber -= parseInt(result.__error_line.stack.toString().replace(/\n/g, ' ').replace(/.+?at .+?:(\d+).*/, '$1'), 10);
+          adjustedLineNumber -= 1;
+        } else {
+          adjustedLineNumber = 'unknown';
+        }
+
+        err = new Error('Runtime error in ' + options.moduleId + '(' + options.url + ') at line ' + adjustedLineNumber);
+        err.stack = result.__error.stack;
+        err.lineNumber = result.__error.lineNumber;
         sendToTraceKit(err, options.moduleId);
       }
     }
+
 
     // clean up the function or object we globally created if it exists
     if (context.Inject.INTERNAL.execute[options.functionId]) {
@@ -216,9 +244,7 @@ var Executor;
     }
 
     // return the results
-    return (failed) ? {
-      error : true
-    } : result;
+    return result;
   }
 
   var AsStatic = Fiber.extend(function() {
@@ -499,8 +525,16 @@ var Executor;
        */
       getModule : function(moduleId) {
         if (this.broken[moduleId] && this.broken.hasOwnProperty(moduleId)) {
-          var e = new Error('module ' + moduleId + ' failed to load successfully');
-          e.originalError = moduleFailureCache[moduleId];
+          var errorMessage = 'module ' + moduleId + ' failed to load successfully';
+          var originalException = moduleFailureCache[moduleId];
+          errorMessage += (originalException) ? ': ' + originalException.message : '';
+          var e = new Error(errorMessage);
+          
+          if (originalException) {
+            e.originalException = originalException;
+            e.stack = originalException.stack;
+          }
+
           throw e;
         }
 
@@ -550,8 +584,8 @@ var Executor;
         });
 
         // if a global error object was created
-        if (result && result.error) {
-          context[NAMESPACE].clearCache();
+        if (result && result.__error) {
+          // context[NAMESPACE].clearCache();
           // exit early, this module is broken
           this.executed[moduleId] = true;
           Executor.flagModuleAsBroken(moduleId);
