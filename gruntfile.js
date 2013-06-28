@@ -139,9 +139,11 @@ module.exports = function (grunt) {
         files: {
           src: [
             './gruntfile.js',
+            './src/*.js',
+            './src/compat/localstorage-shim.js',
             './src/includes/*.js',
             './src/plugins/*.js',
-            './src/*.js'
+            './src/xd/*.js'
           ]
         },
         jshintrc: './.jshintrc'
