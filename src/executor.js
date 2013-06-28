@@ -182,7 +182,6 @@ var Executor;
       toExec = [toExec, sourceString].join('\n');
       // generate an exception and capture the line number for later
       // you must keep try/catch and this eval on one line
-      debugger;
       try { toExec.undefined_function(); } catch(ex) { lineException = ex; } eval(toExec);
       result = context.Inject.INTERNAL.execute[options.functionId];
       if (result.__error) {
