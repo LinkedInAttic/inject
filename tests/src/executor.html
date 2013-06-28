@@ -1,109 +1,187 @@
 <!DOCTYPE html>
 <html>
-<head>
-<!--
-/*
-Inject
-Copyright 2011 LinkedIn
+  <head>
+    <!--
+    /*
+    Inject
+    Copyright 2011 LinkedIn
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
 
     http://www.apache.org/licenses/LICENSE-2.0
 
-Unless required by applicable law or agreed to in writing,
-software distributed under the License is distributed on an "AS
-IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
-express or implied.   See the License for the specific language
-governing permissions and limitations under the License.
-*/
--->
-  <meta charset="UTF-8" />
-  <title>Inject Test Suite - Executor SRC Tests</title>
-  <link rel="stylesheet" href="../resources/qunit.css" type="text/css" media="screen">
-  <script type="text/javascript" src="../resources/qunit.js"></script>
-  <script type="text/javascript" src="../resources/config.js"></script>
-  <script type="text/javascript" src="../resources/sinon.js"></script>
-</head>
-<body>
-  <div id="qunit"></div>
-  <script type="text/javascript" src="../../src/includes/constants.js"></script>
-  <script type="text/javascript" src="../../src/includes/globals.js"></script>
-  <script type="text/javascript" src="../../src/includes/commonjs.js"></script>
-  <script type="text/javascript" src="../../src/lib/fiber.js"></script>
-  <script type="text/javascript" src="../../src/executor.js"></script>
-  <script type="text/javascript">
-    module("Executor", {
-      setup: function() {
-        sinon.spy(window, "eval");
-      },
-      teardown: function() {
-        window.eval.restore();
-      }
-    });
-
-    test("Scaffolding", function() {
-      ok(typeof(Executor) === "object", "object exists");
-    });
-
-    test("JS Execution", function() {
-      userConfig.debug.sourceMap = false;
-
-      // inject facade
-      Inject = {
-        INTERNAL: {
-          execute: {},
-          modules: {},
-          execs: {},
-          createModule: function() {
-            return {
-              exports: {}
-            };
-          },
-          createRequire: function() {
-            return function() {};
-          },
-          createDefine: function() {
-            return function() {};
-          },
-          require: function() {},
-          defineExecutingModuleAs: function() {},
-          undefineExecutingModule: function() {},
-          setModuleExports: function() {}
-        },
-        clearCache: function() {}
-      };
-
-      RulesEngine = {
-        getOriginalName: function() { return null; }
-      };
-
-      var testScript = "exports.foo = \"bar\";";
-      Executor.runModule("testId", testScript, "http://example.com/testid.js", {});
-      var module = Executor.getModule('testId');
-
-      Executor.runModule("testId", testScript, "http://example.com/testid.js", {});
-      var moduleB = Executor.getModule('testId');
-
-      equal(module.exports.foo, "bar", "module sandboxed and set exports");
-      ok(!eval.called, "eval not called when sourcemap is off");
-      equal(module, moduleB, "same execution yields same module result");
-    });
-
-    test('using module aliases', function() {
-      RulesEngine = {
-        getOriginalName: function(id) {
-          return (id === 'foo') ? 'foo/bar/baz' : null;
+    Unless required by applicable law or agreed to in writing,
+    software distributed under the License is distributed on an "AS
+    IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+    express or implied.   See the License for the specific language
+    governing permissions and limitations under the License.
+    */
+    -->
+    <meta charset="UTF-8" />
+    <title>Inject Test Suite - Executor SRC Tests</title>
+    <link rel="stylesheet" href="../resources/qunit.css" type="text/css" media="screen">
+    <script type="text/javascript" src="../resources/qunit.js"></script>
+    <script type="text/javascript" src="../resources/config.js"></script>
+    <script type="text/javascript" src="../resources/sinon.js"></script>
+  </head>
+  <body>
+    <div id="qunit"></div>
+    <script type="text/javascript" src="../../src/includes/constants.js"></script>
+    <script type="text/javascript" src="../../src/includes/globals.js"></script>
+    <script type="text/javascript" src="../../src/includes/commonjs.js"></script>
+    <script type="text/javascript" src="../../src/lib/fiber.js"></script>
+    <script type="text/javascript">
+      //TraceKit facade
+      TraceKit = {
+        report : function() {
         }
       };
+      TraceKit.report.subscribe = function() {
+      };
+    </script>
+    <script type="text/javascript" src="../../src/lib/link.js"></script>
+    <script type="text/javascript" src="../../src/executor.js"></script>
+    <script type="text/javascript">
+      var SYNTAX_ERROR = ['var use = true;', 'var barTwo = function() {', '  if (use) {', '};', 'exports.test = true;', ''].join('\n');
+      var TYPE_ERROR = ['function typeError() {', 'this.date = null;', 'this.error = null;', '}', 'var errorObj = new typeError();', 'errorObj.date = new Date();', 'errorObj.error = "error" in true;', 'exports.test = true'].join('\n');
+      var REF_ERROR = ["", "", "", "baz();", "", "exports.biz = 'boz';"].join('\n');
 
-      var testScript = "exports.foo = \"bar\";";
-      Executor.runModule("foo/bar/baz", testScript, "http://example.com/testid.js", {});
+      module("Executor with no eval", {
+        setup : function() {
+          sinon.spy(window, "eval");
+          
+	        // inject facade
+	        window.Inject = {
+	          INTERNAL : {
+	            execute : {},
+	            modules : {},
+	            execs : {},
+	            createModule : function() {
+	              return {
+	                exports : {}
+	              };
+	            },
+	            createRequire : function() {
+	              return function() {
+	              };
+	            },
+	            createDefine : function() {
+	              return function() {
+	              };
+	            },
+	            require : function() {
+	            },
+	            defineExecutingModuleAs : function() {
+	            },
+	            undefineExecutingModule : function() {
+	            },
+	            setModuleExports : function() {
+	            }
+	          },
+	          clearCache : function() {
+	          }
+	        };
+        },
+        teardown : function() {
+          window.eval.restore();
+        }
+      });
 
-      equal(Executor.getModule('foo'), Executor.getModule('foo/bar/baz'), 'able to retrieve a module via its alias name');
+      test("Scaffolding", function() {
+        ok( typeof (Executor) === "object", "object exists");
+      });
 
-    });
-  </script>
-</body>
+      test("JS Execution", function() {
+        userConfig.debug.sourceMap = false;
+
+        RulesEngine = {
+          getOriginalName : function() {
+            return null;
+          }
+        };
+
+        var testScript = "exports.foo = \"bar\";";
+        Executor.runModule("testId", testScript, "http://example.com/testid.js", {});
+        var module = Executor.getModule('testId');
+
+        Executor.runModule("testId", testScript, "http://example.com/testid.js", {});
+        var moduleB = Executor.getModule('testId');
+
+        equal(module.exports.foo, "bar", "module sandboxed and set exports");
+        equal(module, moduleB, "same execution yields same module result");
+      });
+      
+      
+      module("Executor with eval enabled", { //eval necessary for error handling
+      	setup: function() {
+        	// inject facade (necessary second time because safari was having problems with scoping)
+	        window.Inject = {
+	          INTERNAL : {
+	            execute : {},
+	            modules : {},
+	            execs : {},
+	            createModule : function() {
+	              return {
+	                exports : {}
+	              };
+	            },
+	            createRequire : function() {
+	              return function() {
+	              };
+	            },
+	            createDefine : function() {
+	              return function() {
+	              };
+	            },
+	            require : function() {
+	            },
+	            defineExecutingModuleAs : function() {
+	            },
+	            undefineExecutingModule : function() {
+	            },
+	            setModuleExports : function() {
+	            }
+	          },
+	          clearCache : function() {
+	          }
+	        };
+      	}
+      });
+
+      test('Error handling', function() {
+        var syntaxError, refError, typeError;
+
+        Executor.runModule("syntaxError", SYNTAX_ERROR, "http://example.com/syntaxerror.js", {});
+        raises(function() {
+        //Regex used to confirm error messages and line numbers  
+          var moduleC = Executor.getModule('syntaxError');
+        }, /Parse error .+? at line 7/ ,"Syntax Error thrown with correct line number (7)"); 
+
+        Executor.runModule("refError", REF_ERROR, "http://example.com/referror.js", {});
+        raises(function() {
+          var moduleD = Executor.getModule('refError');
+        }, /Runtime error .+? at line 4/,  "Reference Error thrown with correct line number (4)");
+        Executor.runModule("typeError", TYPE_ERROR, "http://example.com/typeerror.js", {});
+        raises(function() {
+          var moduleE = Executor.getModule('typeError');
+        },  /Runtime error .+? at line 7/,  "Type Error thrown with correct line number (7)"); 
+      });
+
+      test('using module aliases', function() {
+        RulesEngine = {
+          getOriginalName : function(id) {
+            return (id === 'foo') ? 'foo/bar/baz' : null;
+          }
+        };
+
+        var testScript = "exports.foo = \"bar\";";
+        Executor.runModule("foo/bar/baz", testScript, "http://example.com/testid.js", {});
+
+        equal(Executor.getModule('foo'), Executor.getModule('foo/bar/baz'), 'able to retrieve a module via its alias name');
+
+      });
+    </script>
+  </body>
 </html>

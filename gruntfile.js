@@ -199,6 +199,7 @@ module.exports = function (grunt) {
           './src/lib/easyxdm-closure.js',
           './src/lib/easyxdm.js',
           './src/lib/lscache.js',
+          './src/lib/tracekit.js',
           './src/includes/environment.js',
           './src/analyzer.js',
           './src/communicator.js',

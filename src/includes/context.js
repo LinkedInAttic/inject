@@ -23,6 +23,8 @@ governing permissions and limitations under the License.
  */
 var globalRequire = new RequireContext();
 
+var errorQueue = [];
+
 /**
     This object contains the public interface for Inject.
     @class
@@ -82,6 +84,28 @@ context.Inject = {
   enableDebug: function () {
     InjectCore.enableDebug.apply(this, arguments);
   },
+  
+  /**
+   * Add a listener for error events
+   * @method onError
+   * @public
+   */
+	onError: function(fn) {
+    errorQueue.push(fn);
+  },
+
+  
+  /**
+   * Emit an error to all onError handlers
+   * @method emit
+   * @public
+   */	
+  emit: function(e) {
+    for (var i = 0, len = errorQueue.length; i < len; i++) {
+      errorQueue[i].call(context, e);
+    }
+  },
+
 
   /**
     Enables AMD Plugins if that's your thing
