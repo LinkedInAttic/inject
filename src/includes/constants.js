@@ -24,12 +24,6 @@ governing permissions and limitations under the License.
  */
 var IS_IE = eval('/*@cc_on!@*/false');
 
-/**
- * a simple sniff to determine if this is the FF engine
- * @constant
- */
-var IS_GK = false;
-
 // sniffs and assigns UA tests
 (function () {
   var ua = navigator.userAgent.toLowerCase();

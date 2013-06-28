@@ -1,5 +1,5 @@
 /*jshint evil:true */
-/*global context:true, document:true */
+/*global context:true, document:true, TraceKit:true */
 
 /*
 Inject
@@ -9,7 +9,7 @@ Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
-    http://www.apache.org/licenses/LICENSE-2.0
+http://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing,
 software distributed under the License is distributed on an "AS
@@ -25,9 +25,13 @@ governing permissions and limitations under the License.
  * modules have been AMD-defined, are broken, or contain circular
  * references.
  * @file
-**/
+ **/
 var Executor;
-(function () {
+(function() {
+  
+  //Cache to store errors thrown by failed modules(indexed by moduleId)
+  //getModule uses this to return the right error when asked for a broken module
+  var moduleFailureCache = {};
 
   /**
    * create a script node containing code to execute when
@@ -43,12 +47,10 @@ var Executor;
     scr.type = 'text/javascript';
     try {
       scr.text = code;
-    }
-    catch (e) {
+    } catch (e) {
       try {
         scr.innerHTML = code;
-      }
-      catch (ee) {
+      } catch (ee) {
         return false;
       }
     }
@@ -64,7 +66,7 @@ var Executor;
    * @private
    */
   function cleanupEvalScriptNode(node) {
-    context.setTimeout(function () {
+    context.setTimeout(function() {
       if (docHead) {
         return docHead.removeChild(node);
       }
@@ -78,50 +80,35 @@ var Executor;
    */
   var docHead = false;
 
-  /**
-   * on error, this offset represents the delta between actual
-   * errors and the reported line
-   * @private
-   * @type {int}
-   */
-  var onErrorOffset = (IS_GK) ? -3 : 0;
-
-  /**
-   * the old onerror object for restoring
-   * @private
-   * @type {*}
-   */
-  var initOldError = context.onerror;
-
   // capture document head
-  try { docHead = document.getElementsByTagName('head')[0]; }
-  catch (e) { docHead = false; }
+  try {
+    docHead = document.getElementsByTagName('head')[0];
+  } catch (e) {
+    docHead = false;
+  }
+
+  /*
+   * Set up TraceKit error handler.
+   * Captures the error report created by
+   * TraceKit and passes it to our global
+   * error handler.
+   */
+  TraceKit.report.subscribe(function(errorReport) {
+    // passes through to Inject emitter right now
+    Inject.emit(errorReport);
+  });
 
   /**
-   * extract line numbers from an exception.
-   * it turns out that an exception can have an error line
-   * in multiple places. If there is e.lineNumber, then we
-   * can use that. Otherwise, we deconstruct the stack and
-   * locate the trace line with a line number
+   * Error handler called in executor.js
+   * Caches the original error and then calls
+   * the TraceKit error handler.
    * @function
-   * @param {Exception} e - the exception to get a line number from
-   * @private
+   * @param {Error} - the error to be handled
+   * @param {moduleId} - module which caused Error to be thrown
    */
-  function getLineNumberFromException(e) {
-    var lines;
-    var phrases;
-    var offset = parseInt(onErrorOffset, 10);
-    if (typeof(e.lineNumber) !== 'undefined' && e.lineNumber !== null) {
-      return parseInt(e.lineNumber, 10) + offset;
-    }
-    if (typeof(e.line) !== 'undefined' && e.line !== null) {
-      return parseInt(e.line, 10) + offset;
-    }
-    if (e.stack) {
-      lines = e.stack.split('\n');
-      phrases = lines[1].split(':');
-      return parseInt(phrases[phrases.length - 2], 10) + offset;
-    }
+  function sendToTraceKit(err, moduleId) {
+    moduleFailureCache[moduleId] = err;
+    TraceKit.report(err);
   }
 
   /**
@@ -141,149 +128,119 @@ var Executor;
    * @param {Object} options - a collection of options
    */
   function executeJavaScriptModule(code, options) {
-    var errorObject = null;
+    var failed = false;
     var sourceString = IS_IE ? '' : '//@ sourceURL=' + options.url;
     var result;
+    var err;
 
     options = {
-      moduleId: options.moduleId || null,
-      functionId: options.functionId || null,
-      preamble: options.preamble || '',
-      preambleLength: options.preamble.split('\n').length + 1,
-      epilogue: options.epilogue || '',
-      epilogueLength: options.epilogue.split('\n').length + 1,
-      originalCode: options.originalCode || code,
-      url: options.url || null
+      moduleId : options.moduleId || null,
+      functionId : options.functionId || null,
+      preamble : options.preamble || '',
+      preambleLength : options.preamble.split('\n').length,
+      epilogue : options.epilogue || '',
+      epilogueLength : options.epilogue.split('\n').length,
+      originalCode : options.originalCode || code,
+      url : options.url || null
     };
 
     // add source string in sourcemap compatible browsers
     code = [code, sourceString].join('\n');
-
-    /**
-     * a temp error handler that lasts for the duration of this code
-     * run. It allows us to catch syntax error handling in this specific
-     * code execution. It sets an errorObject via closure so that
-     * we know we entered an error state
-     * @function
-     * @param {string} err - the error string
-     * @param {string} where - the file with the error
-     * @param {int} line - the line number of the error
-     * @param {string} type - the type of error (runtime, parse)
-     */
-    var tempErrorHandler = function (err, where, line, type) {
-      var actualErrorLine =  line - options.preambleLength;
-      var originalCodeLength = options.originalCode.split('\n').length;
-      var message = '';
-
-      if (type === 'runtime') {
-        message = 'Runtime error in ' + options.moduleId + ' (' + options.url + ') on line ' + actualErrorLine + ':\n  ' + err;
+    
+   //Parse file and catch any parse errors
+    try {
+      LinkJS.parse('function linktest() {' + options.originalCode + '\n}');
+      eval(code);
+    } catch(e) {
+      var linkJsLine;
+      linkJsLine = parseInt(e.message.replace(/.+? at line (.+)$/, '$1'), 10);
+      err = new Error('Parse error in ' + options.moduleId + ' (' + options.url + ') at line ' + linkJsLine);
+      try {
+        throw err;
+      } catch(tkerr) {
+        sendToTraceKit(tkerr, options.moduleId);
+        // exit early. This is not a usable module.
+        return {
+          __error: tkerr
+        };
       }
-      else {
-        // case: parse
-        // end of input test
-        actualErrorLine = (actualErrorLine > originalCodeLength) ? originalCodeLength : actualErrorLine;
-        message = 'Parsing error in ' + options.moduleId + ' (' + options.url + ') on line ' + actualErrorLine + ':\n  ' + err;
-      }
-
-      // set the error object global to the executor's run
-      errorObject = new Error(message);
-      errorObject.line = actualErrorLine;
-      errorObject.stack = null;
-
-      return true;
-    };
-
-    // set global onError handler
-    // insert script - catches parse errors
-    context.onerror = tempErrorHandler;
-    var scr = createEvalScript(code);
-    if (scr && docHead) {
-      docHead.appendChild(scr);
-      cleanupEvalScriptNode(scr);
     }
 
-    // if there were no errors, tempErrorHandler never ran and therefore
-    // errorObject was never set. We can now evaluate using either the eval()
+    var lineException, adjustedLineNumber;
+    // We only reach here if there are no parse errors
+    // We can now evaluate using either the eval()
     // method or just running the function we built.
     // if there is not a registered function in the INTERNAL namespace, there
     // must have been a syntax error. Firefox mandates an eval to expose it, so
     // we use that as the least common denominator
-    if (!errorObject) {
-      if (!context.Inject.INTERNAL.execute[options.functionId] || userConfig.debug.sourceMap) {
-        // source mapping means we will take the same source as before,
-        // add a () to the end to make it auto execute, and shove it through
-        // eval. This means we are doing dual eval (one for parse, one for
-        // runtime) when sourceMap is enabled. Some people really want their
-        // debug.
-        var toExec = code.replace(/([\w\W]+?)=([\w\W]*\})[\w\W]*?$/, '$1 = ($2)();');
-        var relativeE;
-        toExec = [toExec, sourceString].join('\n');
-        if (!context.Inject.INTERNAL.execute[options.functionId]) {
-          // there is nothing to run, so there must have been an uncaught
-          // syntax error (firefox).
-          try {
-            try { eval('+\n//@ sourceURL=Inject-Executor-line.js'); } catch (ee) { relativeE = ee; }
-            eval(toExec);
-          }
-          catch (e) {
-            if (e.lineNumber && relativeE.lineNumber) {
-              e.lineNumber = e.lineNumber - relativeE.lineNumber + 1;
-            }
-            else {
-              e.lineNumber = getLineNumberFromException(e);
-            }
-            tempErrorHandler(e.message, null, e.lineNumber, 'parse');
-          }
+    if (userConfig.debug.sourceMap) {
+      // if sourceMap is enabled
+      // create a version of our code that can be put through eval with the
+      // sourcemap string enabled. This allows some browsers (Chrome and Firefox)
+      // to properly see file names instead of just "eval" as the file name in inspectors
+      var toExec = code.replace(/([\w\W]+?)=([\w\W]*\})[\w\W]*?$/, '$1 = ($2)();');
+      toExec = [toExec, sourceString].join('\n');
+      // generate an exception and capture the line number for later
+      // you must keep try/catch and this eval on one line
+      try { toExec.undefined_function(); } catch(ex) { lineException = ex; } eval(toExec);
+      result = context.Inject.INTERNAL.execute[options.functionId];
+      if (result.__error) {
+        if (result.__error.lineNumber) {
+          // firefox supports lineNumber as a property
+          adjustedLineNumber = result.__error.lineNumber - options.preambleLength;
+          adjustedLineNumber -= (lineException) ? lineException.lineNumber : 0;
+        } else if (result.__error.line) {
+          //safari supports line as a property AND structured stack messages, but line numbers for 
+          //structured stack messages are problematic
+          adjustedLineNumber = result.__error.line - options.preambleLength;
+        } else if (result.__error.stack) {
+          // chrome supports structured stack messages
+          adjustedLineNumber = parseInt(result.__error.stack.toString().replace(/\n/g, ' ').replace(/.+?at .+?:(\d+).*/, '$1'), 10);
+          adjustedLineNumber -= options.preambleLength;
+        } else {
+          adjustedLineNumber = 'unknown';
         }
-        else {
-          // again, we are creating a "relativeE" to capture the eval line
-          // this allows us to get accurate line numbers in firefox
-          try {
-            eval('+\n//@ sourceURL=Inject-Executor-line.js');
-          }
-          catch (ee) {
-            relativeE = ee;
-          }
-          eval(toExec);
+        err = new Error('Runtime error in ' + options.moduleId + '(' + options.url + ') at line ' + adjustedLineNumber);
+        err.stack = result.__error.stack;
+        err.lineNumber = result.__error.lineNumber;
+        sendToTraceKit(err, options.moduleId);
+      }
+    } else {
+      // there is an executable object AND source maps are off
+      // just run it. Try/catch will capture exceptions and put them
+      // into result.__error internally for us from the commonjs harness
+      // NOTE: these all receive "-1" due to the semicolon auto added by the Executor at the end of
+      // the preamble.
+      // __EXCEPTION__.lineNumber - Inject.INTERNAL.modules.exec2.__error_line.lineNumber - 1
+      result = context.Inject.INTERNAL.execute[options.functionId]();
+      if (result.__error) {
+        if (result.__error.lineNumber) {
+          // firefox supports lineNumber as a property
+          adjustedLineNumber = result.__error.lineNumber;
+          adjustedLineNumber -= result.__error_line.lineNumber;
+          adjustedLineNumber -= 1;
+        } else if (result.__error.line) { 
+           //safari supports line as a property AND structured stack messages, but line numbers for 
+          //structured stack messages are problematic
+          adjustedLineNumber = result.__error.line;
+          adjustedLineNumber -= result.__error_line.line;
+          adjustedLineNumber -= 1;
+        } else if (result.__error.stack) {
+          // chrome supports structured stack messages
+          adjustedLineNumber = parseInt(result.__error.stack.toString().replace(/\n/g, ' ').replace(/.+?at .+?:(\d+).*/, '$1'), 10);
+          adjustedLineNumber -= parseInt(result.__error_line.stack.toString().replace(/\n/g, ' ').replace(/.+?at .+?:(\d+).*/, '$1'), 10);
+          adjustedLineNumber -= 1;
+        } else {
+          adjustedLineNumber = 'unknown';
         }
 
-        if (context.Inject.INTERNAL.execute[options.functionId]) {
-          result = context.Inject.INTERNAL.execute[options.functionId];
-          // set the error object using our standard method
-          // result.error will be later overwritten with a clean and readable Error()
-          if (result.error) {
-            if (result.error.lineNumber && relativeE.lineNumber) {
-              result.error.lineNumber = result.error.lineNumber - relativeE.lineNumber;
-            }
-            else {
-              result.error.lineNumber = getLineNumberFromException(result.error);
-            }
-            tempErrorHandler(result.error.message, null, result.error.lineNumber, 'runtime');
-          }
-        }
-      }
-      else {
-        // just run it. Try/catch will capture exceptions and put them
-        // into result.error for us from commonjs harness
-        result = context.Inject.INTERNAL.execute[options.functionId]();
-        if (result.error) {
-          tempErrorHandler(result.error.message, null, getLineNumberFromException(result.error), 'runtime');
-        }
+        err = new Error('Runtime error in ' + options.moduleId + '(' + options.url + ') at line ' + adjustedLineNumber);
+        err.stack = result.__error.stack;
+        err.lineNumber = result.__error.lineNumber;
+        sendToTraceKit(err, options.moduleId);
       }
     }
 
-    // if we have an error object, we should attach it to the result
-    // if there is no result, make an empty shell so we can test for
-    // result.error in other code.
-    if (errorObject) {
-      if (!result) {
-        result = {};
-      }
-      result.error = errorObject;
-    }
-
-    // clean up our error handler
-    context.onerror = initOldError;
 
     // clean up the function or object we globally created if it exists
     if (context.Inject.INTERNAL.execute[options.functionId]) {
@@ -294,14 +251,14 @@ var Executor;
     return result;
   }
 
-  var AsStatic = Fiber.extend(function () {
+  var AsStatic = Fiber.extend(function() {
     var functionCount = 0;
     return {
       /**
        * Create the executor and initialize its caches
        * @constructs Executor
        */
-      init: function () {
+      init : function() {
         this.clearCaches();
       },
 
@@ -310,7 +267,7 @@ var Executor;
        * @method Executor.clearCaches
        * @public
        */
-      clearCaches: function () {
+      clearCaches : function() {
         // cache of resolved exports
         this.cache = {};
 
@@ -340,10 +297,10 @@ var Executor;
        * @param {string} path - the path for the current module
        * @public
        */
-      defineExecutingModuleAs: function (moduleId, path) {
+      defineExecutingModuleAs : function(moduleId, path) {
         return this.anonymousAMDStack.push({
-          id: moduleId,
-          path: path
+          id : moduleId,
+          path : path
         });
       },
 
@@ -352,7 +309,7 @@ var Executor;
        * @method Executor.undefineExecutingModule
        * @public
        */
-      undefineExecutingModule: function () {
+      undefineExecutingModule : function() {
         return this.anonymousAMDStack.pop();
       },
 
@@ -362,7 +319,7 @@ var Executor;
        * @public
        * @returns {object} the id and path of the current module
        */
-      getCurrentExecutingAMD: function () {
+      getCurrentExecutingAMD : function() {
         return this.anonymousAMDStack[this.anonymousAMDStack.length - 1];
       },
 
@@ -378,7 +335,7 @@ var Executor;
        * @param {String} path - a path for module completeness (module.uri) sake
        * @param {Object} exports - the item to assign to module.exports
        */
-      assignModule: function (parentName, moduleName, path, exports) {
+      assignModule : function(parentName, moduleName, path, exports) {
         var module = Executor.createModule(parentName + '^^^' + moduleName, path);
         module.exports = exports;
       },
@@ -393,7 +350,7 @@ var Executor;
        * @param {String} moduleName - the name of the module to retrieve
        * @returns {Object} the module object
        */
-      getAssignedModule: function (parentName, moduleName) {
+      getAssignedModule : function(parentName, moduleName) {
         return this.getModule(parentName + '^^^' + moduleName);
       },
 
@@ -407,12 +364,13 @@ var Executor;
        * @param {Function} callback - a callback to run when the tree is executed
        * @public
        */
-      runTree: function (root, files, callback) {
+      runTree : function(root, files, callback) {
         // do a post-order traverse of files for execution
         var returns = [];
-        root.postOrder(function (node) {
+        root.postOrder(function(node) {
           if (!node.getValue().name) {
-            return; // root node
+            return;
+            // root node
           }
           var name = node.getValue().name;
           var path = node.getValue().path;
@@ -441,7 +399,7 @@ var Executor;
        * @param {String} idAlias - an ID or alias to get
        * @returns {Object} module at the ID or alias
        */
-      getFromCache: function(idAlias) {
+      getFromCache : function(idAlias) {
         // check by moduleID
         if (this.cache[idAlias]) {
           return this.cache[idAlias];
@@ -464,7 +422,7 @@ var Executor;
        * @public
        * @returns {Object} - a module object representation
        */
-      createModule: function (moduleId, path) {
+      createModule : function(moduleId, path) {
         var module;
 
         if (!this.getFromCache(moduleId)) {
@@ -473,7 +431,7 @@ var Executor;
           module.uri = path || null;
           module.exports = {};
           module.error = null;
-          module.setExports = function (xobj) {
+          module.setExports = function(xobj) {
             var name;
             for (name in module.exports) {
               if (Object.hasOwnProperty.call(module.exports, name)) {
@@ -482,19 +440,19 @@ var Executor;
               }
             }
             switch (typeof(xobj)) {
-            case 'object':
-              // objects are enumerated and added
-              for (name in xobj) {
-                module.exports[name] = xobj[name];
-              }
-              break;
-            case 'function':
-              module.exports = xobj;
-              break;
-            default:
-              // non objects are written directly, blowing away exports
-              module.exports = xobj;
-              break;
+              case 'object':
+                // objects are enumerated and added
+                for (name in xobj) {
+                  module.exports[name] = xobj[name];
+                }
+                break;
+              case 'function':
+                module.exports = xobj;
+                break;
+              default:
+                // non objects are written directly, blowing away exports
+                module.exports = xobj;
+                break;
             }
           };
 
@@ -505,8 +463,7 @@ var Executor;
 
         if (moduleId) {
           return this.cache[moduleId];
-        }
-        else {
+        } else {
           return module;
         }
       },
@@ -518,7 +475,7 @@ var Executor;
        * @public
        * @returns {boolean} if the module is AMD defined
        */
-      isModuleDefined: function (moduleId) {
+      isModuleDefined : function(moduleId) {
         return this.defined[moduleId];
       },
 
@@ -528,7 +485,7 @@ var Executor;
        * @param {string} moduleId - the module ID
        * @public
        */
-      flagModuleAsDefined: function (moduleId) {
+      flagModuleAsDefined : function(moduleId) {
         this.defined[moduleId] = true;
       },
 
@@ -538,7 +495,7 @@ var Executor;
        * @param {string} moduleId - the module ID
        * @public
        */
-      flagModuleAsBroken: function (moduleId) {
+      flagModuleAsBroken : function(moduleId) {
         this.broken[moduleId] = true;
       },
 
@@ -548,7 +505,7 @@ var Executor;
        * @param {string} moduleId - the module ID
        * @public
        */
-      flagModuleAsCircular: function (moduleId) {
+      flagModuleAsCircular : function(moduleId) {
         this.circular[moduleId] = true;
       },
 
@@ -559,7 +516,7 @@ var Executor;
        * @public
        * @returns {boolean} true if the module is circular
        */
-      isModuleCircular: function (moduleId) {
+      isModuleCircular : function(moduleId) {
         return this.circular[moduleId];
       },
 
@@ -570,9 +527,19 @@ var Executor;
        * @public
        * @returns {object} the module at the identifier
        */
-      getModule: function (moduleId) {
+      getModule : function(moduleId) {
         if (this.broken[moduleId] && this.broken.hasOwnProperty(moduleId)) {
-          throw new Error('module ' + moduleId + ' failed to load successfully');
+          var errorMessage = 'module ' + moduleId + ' failed to load successfully';
+          var originalException = moduleFailureCache[moduleId];
+          errorMessage += (originalException) ? ': ' + originalException.message : '';
+          var e = new Error(errorMessage);
+          
+          if (originalException) {
+            e.originalException = originalException;
+            e.stack = originalException.stack;
+          }
+
+          throw e;
         }
 
         // return from the cache (or its alias location)
@@ -588,9 +555,8 @@ var Executor;
        * @returns {Object} a module object
        * @public
        */
-      runModule: function (moduleId, code, path) {
+      runModule : function(moduleId, code, path) {
         debugLog('Executor', 'executing ' + path);
-
         // check cache
         if (this.cache[moduleId] && this.executed[moduleId]) {
           return this.cache[moduleId];
@@ -604,10 +570,7 @@ var Executor;
         var functionId = 'exec' + (functionCount++);
 
         function swapUnderscoreVars(text) {
-          return text.replace(/__MODULE_ID__/g, moduleId)
-                     .replace(/__MODULE_URI__/g, path)
-                     .replace(/__FUNCTION_ID__/g, functionId)
-                     .replace(/__INJECT_NS__/g, NAMESPACE);
+          return text.replace(/__MODULE_ID__/g, moduleId).replace(/__MODULE_URI__/g, path).replace(/__FUNCTION_ID__/g, functionId).replace(/__INJECT_NS__/g, NAMESPACE);
         }
 
         var header = swapUnderscoreVars(commonJSHeader);
@@ -616,18 +579,22 @@ var Executor;
         var result;
 
         result = executeJavaScriptModule(runCommand, {
-          moduleId: moduleId,
-          functionId: functionId,
-          preamble: header,
-          epilogue: footer,
-          originalCode: code,
-          url: path
+          moduleId : moduleId,
+          functionId : functionId,
+          preamble : header,
+          epilogue : footer,
+          originalCode : code,
+          url : path
         });
 
         // if a global error object was created
-        if (result && result.error) {
-          context[NAMESPACE].clearCache();
-          throw result.error;
+        if (result && result.__error) {
+          // context[NAMESPACE].clearCache();
+          // exit early, this module is broken
+          this.executed[moduleId] = true;
+          Executor.flagModuleAsBroken(moduleId);
+          debugLog('Executor', 'broken', moduleId, path, result);
+          return;
         }
 
         // cache the result (IF NOT AMD)
