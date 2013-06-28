@@ -1,4 +1,12 @@
 /**
+ * The relay.html file's purpose is to sit on the remote location
+ * (such as a CDN) and make XHR requests on behalf of the parent
+ * page running Inject. It uses easyXDM's simple socket connection,
+ * with a __DOUBLE_UNDERSCORE__ delimiter to split fields.
+ * @file Contains the relay.html file to be placed on a remote server
+**/
+
+/**
 * Write file contents to local storage
 * @function
 * @param {string} url - url to use as a key to store file content
@@ -33,15 +41,6 @@ function readFromCache(url) {
     return null;
   }
 }
-
-
-/**
- * The relay.html file's purpose is to sit on the remote location
- * (such as a CDN) and make XHR requests on behalf of the parent
- * page running Inject. It uses easyXDM's simple socket connection,
- * with a __DOUBLE_UNDERSCORE__ delimiter to split fields.
- * @file Contains the relay.html file to be placed on a remote server
-**/
 
     // the SWF's location is passed in to us from the parent page as a parameter
 var swfLocation = location.href.match(/swf=(.*?)(&|$)/)[1],
