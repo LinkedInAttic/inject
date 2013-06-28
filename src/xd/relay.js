@@ -3,7 +3,7 @@
  * (such as a CDN) and make XHR requests on behalf of the parent
  * page running Inject. It uses easyXDM's simple socket connection,
  * with a __DOUBLE_UNDERSCORE__ delimiter to split fields.
- * @file Contains the relay.html file to be placed on a remote server
+ * Relay.js is one of four files that make up relay.html 
 **/
 
 /**
@@ -127,6 +127,13 @@ function doXmlHttpRequest(args) {
   xhr.send(null);
 }
 
+/**
+ * Sends a message based on a cached module
+ * Checks availibility of port and either sends 
+ * directly or pushes to queue
+ * @param {array} args - array about module with moduleId and URL
+ * @param {Object} cachedData - string version of module itself
+ */
 function sendFromCache(args, cachedData){
 	var sendCacheMessage = function() {
 		socket.postMessage([

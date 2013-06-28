@@ -270,7 +270,7 @@ module.exports = function (grunt) {
           banner: '<%= relay_html_header %>\n<%= inject_header %>\n',
           footer: '<%= relay_html_footer %>'
         },
-        src: [
+        src: [    //four files that make up relayconfig.html
           './src/includes/relayconfig.js',
           './src/lib/easyxdm.js',
           './src/lib/lscache.js',

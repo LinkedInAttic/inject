@@ -1,11 +1,15 @@
+/**
+ * Object that stores states for relay.html,
+ * which manages cross-domain dependencies
+ */
 var ALLOWED_DOMAIN = null,
 
 relayConfig = {
   moduleRoot: null,
   fileExpires: 300,
   useSuffix: true,
-  xd: {
-    relayFile: null,
+  xd: {              //xd directory in src contains relay and relay.swf files,which have to
+    relayFile: null, //be put on the domain being used for the cross-domain dependencies
     relaySwf: null
   },
   debug: {
