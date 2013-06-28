@@ -8,8 +8,8 @@
 **/
 function writeToCache(url, contents) {
   // lscache and passthrough
-  if (userConfig.fileExpires > 0) {
-    return lscache.set(url, contents, userConfig.fileExpires);
+  if (relayConfig.fileExpires > 0) {
+    return lscache.set(url, contents, relayConfig.fileExpires);
   }
   else {
     return null;
@@ -26,7 +26,7 @@ function writeToCache(url, contents) {
 **/
 function readFromCache(url) {
   // lscache and passthrough
-  if (userConfig.fileExpires > 0) {
+  if (relayConfig.fileExpires > 0) {
     return lscache.get(url);
   }
   else {

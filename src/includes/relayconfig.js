@@ -1,6 +1,6 @@
 var ALLOWED_DOMAIN = null,
 
-userConfig = {
+relayConfig = {
   moduleRoot: null,
   fileExpires: 300,
   useSuffix: true,

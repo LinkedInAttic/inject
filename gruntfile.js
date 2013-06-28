@@ -269,7 +269,7 @@ module.exports = function (grunt) {
           footer: '<%= relay_html_footer %>'
         },
         src: [
-          './src/includes/userconfig.js',
+          './src/includes/relayconfig.js',
           './src/lib/easyxdm.js',
           './src/lib/lscache.js',
           './src/relay.js'
