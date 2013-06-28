@@ -114,9 +114,9 @@
       });
       
       
-      module("Executor with eval enabled", {
+      module("Executor with eval enabled", { //eval necessary for error handling
       	setup: function() {
-        	// inject facade
+        	// inject facade (necessary second time because safari was having problems with scoping)
 	        window.Inject = {
 	          INTERNAL : {
 	            execute : {},
@@ -155,44 +155,18 @@
 
         Executor.runModule("syntaxError", SYNTAX_ERROR, "http://example.com/syntaxerror.js", {});
         raises(function() {
-          
+        //Regex used to confirm error messages and line numbers  
           var moduleC = Executor.getModule('syntaxError');
-        }, /Parse error .+? at line 7/ ,"Syntax Error thrown with correct line number (7)"); //debugger;
+        }, /Parse error .+? at line 7/ ,"Syntax Error thrown with correct line number (7)"); 
 
         Executor.runModule("refError", REF_ERROR, "http://example.com/referror.js", {});
         raises(function() {
           var moduleD = Executor.getModule('refError');
-        }, /Runtime error .+? at line 4/,  "Reference Error thrown with correct line number (4)"); //debugger;
-
+        }, /Runtime error .+? at line 4/,  "Reference Error thrown with correct line number (4)");
         Executor.runModule("typeError", TYPE_ERROR, "http://example.com/typeerror.js", {});
         raises(function() {
           var moduleE = Executor.getModule('typeError');
-        },  /Runtime error .+? at line 7/,  "Type Error thrown with correct line number (7)"); //debugger;
-        /*
-         Executor.runModule("syntaxError", SYNTAX_ERROR, "http://example.com/syntaxerror.js", {});
-         try{
-         var moduleC = Executor.getModule('syntaxError');
-         }catch(e){
-         syntaxError=e;
-         }
-         equal(typeof syntaxError, "object", "object exists");
-
-         Executor.runModule("refError", REF_ERROR, "http://example.com/referror.js", {});
-         try{
-         var moduleC = Executor.getModule('refError');
-         }catch(e){
-         refError=e;
-         }
-         equal(typeof refError, "object", "object exists");
-
-         Executor.runModule("typeError", TYPE_ERROR, "http://example.com/typeerror.js", {});
-         try{
-         var moduleC = Executor.getModule('typeError');
-         }catch(e){
-         typeError=e;
-         }
-         equal(typeof typeError, "object", "object exists");
-         */
+        },  /Runtime error .+? at line 7/,  "Type Error thrown with correct line number (7)"); 
       });
 
       test('using module aliases', function() {

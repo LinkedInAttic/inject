@@ -144,7 +144,8 @@ var Executor;
 
     // add source string in sourcemap compatible browsers
     code = [code, sourceString].join('\n');
-
+    
+   //Parse file and catch any parse errors
     try {
       LinkJS.parse('function linktest() {' + options.originalCode + '\n}');
       eval(code);
@@ -164,13 +165,12 @@ var Executor;
     }
 
     var lineException, adjustedLineNumber;
-    // if there were no errors, tempErrorHandler never ran and therefore
-    // failed is false. We can now evaluate using either the eval()
+    // We only reach here if there are no parse errors
+    // We can now evaluate using either the eval()
     // method or just running the function we built.
     // if there is not a registered function in the INTERNAL namespace, there
     // must have been a syntax error. Firefox mandates an eval to expose it, so
     // we use that as the least common denominator
-  
     if (userConfig.debug.sourceMap) {
       // if sourceMap is enabled
       // create a version of our code that can be put through eval with the
@@ -188,6 +188,8 @@ var Executor;
           adjustedLineNumber = result.__error.lineNumber - options.preambleLength;
           adjustedLineNumber -= (lineException) ? lineException.lineNumber : 0;
         } else if (result.__error.line) {
+          //safari supports line as a property AND structured stack messages, but line numbers for 
+          //structured stack messages are problematic
           adjustedLineNumber = result.__error.line - options.preambleLength;
           adjustedLineNumber -= (lineException) ? lineException.line : 0;
         } else if (result.__error.stack) {
@@ -217,7 +219,9 @@ var Executor;
           adjustedLineNumber = result.__error.lineNumber;
           adjustedLineNumber -= result.__error_line.lineNumber;
           adjustedLineNumber -= 1;
-        } else if (result.__error.line) {
+        } else if (result.__error.line) { 
+           //safari supports line as a property AND structured stack messages, but line numbers for 
+          //structured stack messages are problematic
           adjustedLineNumber = result.__error.line;
           adjustedLineNumber -= result.__error_line.line;
           adjustedLineNumber -= 1;

@@ -41,8 +41,8 @@ var commonJSHeader = (['',
   '      var module = __INJECT_NS__.INTERNAL.modules.__FUNCTION_ID__,',
   '          require = __INJECT_NS__.INTERNAL.createRequire(module.id, module.uri),',
   '          define = __INJECT_NS__.INTERNAL.createDefine(module.id, module.uri),',
-  '          exports = module.exports;',
-  '      try{module.undefined_function();}catch(e){module.__error_line = e;}' // no blank lines after this, it marks the start of file
+  '          exports = module.exports;',                                       //NOTE: FOLLOWING TRY/CATCH MUST BE ON ONE LINE!
+  '      try{module.undefined_function();}catch(e){module.__error_line = e;}' // NOTE: no lines (blank or otherwise) after this, it marks the start of file
   ]).join('\n');
 
 /**
@@ -56,7 +56,6 @@ var commonJSFooter = (['',
   '    };',
   '    __INJECT_NS__.INTERNAL.defineExecutingModuleAs("__MODULE_ID__", "__MODULE_URI__");',
   '    try {',
-  '      // this must be on one line in code for line number handling',
   '      __INJECT_NS__.INTERNAL.execs.__FUNCTION_ID__.call(__INJECT_NS__.INTERNAL.modules.__FUNCTION_ID__);',
   '    }',
   '    catch (__EXCEPTION__) {',
