@@ -28,7 +28,9 @@ governing permissions and limitations under the License.
  **/
 var Executor;
 (function() {
-
+  
+  //Cache to store errors thrown by failed modules(indexed by moduleId)
+  //getModule uses this to return the right error when asked for a broken module
   var moduleFailureCache = {};
 
   /**
