@@ -182,6 +182,7 @@ var Executor;
       toExec = [toExec, sourceString].join('\n');
       // generate an exception and capture the line number for later
       // you must keep try/catch and this eval on one line
+      debugger;
       try { toExec.undefined_function(); } catch(ex) { lineException = ex; } eval(toExec);
       result = context.Inject.INTERNAL.execute[options.functionId];
       if (result.__error) {
@@ -193,12 +194,10 @@ var Executor;
           //safari supports line as a property AND structured stack messages, but line numbers for 
           //structured stack messages are problematic
           adjustedLineNumber = result.__error.line - options.preambleLength;
-          adjustedLineNumber -= (lineException) ? lineException.line : 0;
         } else if (result.__error.stack) {
           // chrome supports structured stack messages
           adjustedLineNumber = parseInt(result.__error.stack.toString().replace(/\n/g, ' ').replace(/.+?at .+?:(\d+).*/, '$1'), 10);
           adjustedLineNumber -= options.preambleLength;
-          adjustedLineNumber -= (lineException) ? parseInt(lineException.stack.toString().replace(/\n/g, ' ').replace(/.+?at .+?:(\d+).*/, '$1'), 10) : 0;
         } else {
           adjustedLineNumber = 'unknown';
         }
