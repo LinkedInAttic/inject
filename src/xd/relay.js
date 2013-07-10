@@ -1,4 +1,12 @@
 /**
+ * The relay.html file's purpose is to sit on the remote location
+ * (such as a CDN) and make XHR requests on behalf of the parent
+ * page running Inject. It uses easyXDM's simple socket connection,
+ * with a __DOUBLE_UNDERSCORE__ delimiter to split fields.
+ * Relay.js is one of four files that make up relay.html 
+**/
+
+/**
 * Write file contents to local storage
 * @function
 * @param {string} url - url to use as a key to store file content
@@ -8,8 +16,8 @@
 **/
 function writeToCache(url, contents) {
   // lscache and passthrough
-  if (userConfig.fileExpires > 0) {
-    return lscache.set(url, contents, userConfig.fileExpires);
+  if (relayConfig.fileExpires > 0) {
+    return lscache.set(url, contents, relayConfig.fileExpires);
   }
   else {
     return null;
@@ -26,22 +34,13 @@ function writeToCache(url, contents) {
 **/
 function readFromCache(url) {
   // lscache and passthrough
-  if (userConfig.fileExpires > 0) {
+  if (relayConfig.fileExpires > 0) {
     return lscache.get(url);
   }
   else {
     return null;
   }
 }
-
-
-/**
- * The relay.html file's purpose is to sit on the remote location
- * (such as a CDN) and make XHR requests on behalf of the parent
- * page running Inject. It uses easyXDM's simple socket connection,
- * with a __DOUBLE_UNDERSCORE__ delimiter to split fields.
- * @file Contains the relay.html file to be placed on a remote server
-**/
 
     // the SWF's location is passed in to us from the parent page as a parameter
 var swfLocation = location.href.match(/swf=(.*?)(&|$)/)[1],
@@ -128,6 +127,13 @@ function doXmlHttpRequest(args) {
   xhr.send(null);
 }
 
+/**
+ * Sends a message based on a cached module
+ * Checks availibility of port and either sends 
+ * directly or pushes to queue
+ * @param {array} args - array about module with moduleId and URL
+ * @param {Object} cachedData - string version of module itself
+ */
 function sendFromCache(args, cachedData){
 	var sendCacheMessage = function() {
 		socket.postMessage([

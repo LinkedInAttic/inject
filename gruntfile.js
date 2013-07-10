@@ -139,9 +139,11 @@ module.exports = function (grunt) {
         files: {
           src: [
             './gruntfile.js',
+            './src/*.js',
+            './src/compat/localstorage-shim.js',
             './src/includes/*.js',
             './src/plugins/*.js',
-            './src/*.js'
+            './src/xd/*.js'
           ]
         },
         jshintrc: './.jshintrc'
@@ -269,11 +271,11 @@ module.exports = function (grunt) {
           banner: '<%= relay_html_header %>\n<%= inject_header %>\n',
           footer: '<%= relay_html_footer %>'
         },
-        src: [
-          './src/includes/userconfig.js',
+        src: [    //four files that make up relayconfig.html
+          './src/includes/relayconfig.js',
           './src/lib/easyxdm.js',
           './src/lib/lscache.js',
-          './src/relay.js'
+          './src/xd/relay.js'
         ]
       }
     },
