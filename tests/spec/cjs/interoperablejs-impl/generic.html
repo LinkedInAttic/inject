@@ -64,6 +64,9 @@ governing permissions and limitations under the License.
           ok(false, message);
           break;
         case 'info':
+          if (message === 'DONE') {
+            ok(true, 'DONE reached');
+          }
           break;
       }
     }
