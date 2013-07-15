@@ -1,6 +1,9 @@
 <!DOCTYPE html>
+
 <html>
+
   <head>
+
     <title>
       {% if page.title %}
         {{page.title}} | Inject
@@ -52,8 +55,11 @@
     <!-- end google custom search engine -->
     
   </head>
+
   <body>
+
     <div class="global-header">
+
       <div class="top-nav">
         <div class="wrapper">
           <h2 class="logo">
@@ -64,8 +70,11 @@
           </h2>
         </div>
       </div>
+
       <div class="bottom-nav">
+
         <div class="wrapper">
+
           <ul class="nav" role="navigation">
             <li class="tab {% if page.nav == "home" %}selected{% endif %}">
               <a href="/" class="tab-name"><span>Home</span></a>
@@ -83,17 +92,22 @@
               <a href="http://github.com/linkedin/inject" class="tab-name"><span>GitHub</span></a>
             </li>
           </ul>
-      <div class="global-search">
-        <div class="gcse">
-          <gcse:searchbox-only></gcse:searchbox-only>
+
+          <div class="global-search">
+            <div class="gcse">
+              <gcse:searchbox-only></gcse:searchbox-only>
+            </div>
+          </div>
+
         </div>
+
       </div>
-        </div>
-      </div>
+
     </div>
 
     <div class="content">
 
+      {% if page.nav != "home" %}
       <div class="row">
         <div id="content-header" class="full">
           <div class="desc">
@@ -106,6 +120,7 @@
           </div>
         </div>
       </div>
+      {% endif %}
 
       {{ content }}
 
@@ -122,5 +137,7 @@
     {% for js in page.javascript %}
     <script type="text/javascript" src="{{js}}"></script>
     {% endfor %}
+
   </body>
+
 </html>

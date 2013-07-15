@@ -5,35 +5,30 @@ nav   : home
 ---
 {% include config %}
 
-<div class="row">
-  <div id="content-main" class="grid24 first">
-    <div id="key-example" class="pad">
-      <span id="demo-tag">...</span>
-{% highlight html %}
-<script type="text/javascript" src="/scripts/lib/inject-v0.4.0/inject.js"></script>
-<script type="text/javascript">
-  Inject.setModuleRoot("/scripts/demo/modules");
-  require.run("program");
-</script>
-{% endhighlight %}
-      <script src="/scripts/lib/inject-v0.4.0/inject.js"></script>
-      <script>
-        Inject.setModuleRoot("/scripts/demo/modules");
-        Inject.reset();
-        require.run("program");
-      </script>
-    </div>
+<div id="homepage-splash">
 
+  <!-- This ... is ... INJECT -->
+  <h1 class="splash"><img src="{{ site.logo }}" alt="Inject Logo"/>{{ site.name }}</h1>
+  <h2 class="splash">{{ site.description.short }}</h2>
+  <p class="splash">CommonJS and AMD module loading, cross-origin fetching, localStorage caching, and more.</p>
+  <a class="button" href="{{site.stable_dl}}">Download {{site.name}}</a>
+  <a class="see-all-versions" href="/download">Current version is {{ site.version }}. See all versions.</a>
+
+  <!-- Share The Love -->
     <div id="share-love">
-      <iframe src="http://ghbtns.com/github-btn.html?user=linkedin&amp;repo=inject&amp;type=watch&amp;count=true"
-  allowtransparency="true" frameborder="0" scrolling="0" width="110" height="20"></iframe>
 
-      <div>
-        <!-- Place this tag where you want the +1 button to render. -->
-        <div class="g-plusone" data-size="medium" data-annotation="none" data-href="http://www.injectjs.com"></div>
-        <a href="https://twitter.com/share" class="twitter-share-button" data-url="http://www.injectjs.com" data-via="InjectJS" data-count="none">Tweet</a>
-        <script type="IN/Share" data-url="http://www.injectjs.com"></script>
-      </div>
+      <!-- GitHub -->
+      <iframe src="http://ghbtns.com/github-btn.html?user=linkedin&amp;repo=inject&amp;type=watch&amp;count=true"
+  allowtransparency="true" frameborder="0" scrolling="0" width="86" height="20"></iframe>
+
+      <!-- G+ -->
+      <div class="g-plusone" data-size="medium" data-annotation="none" data-href="http://www.injectjs.com"></div>
+
+      <!-- Twitter -->
+      <a href="https://twitter.com/share" class="twitter-share-button" data-url="http://www.injectjs.com" data-via="InjectJS" data-count="none">Tweet</a>
+
+      <!-- LI -->
+      <script type="IN/Share" data-url="http://www.injectjs.com"></script>
 
       <!-- Place this tag after the last +1 button tag. -->
       <script type="text/javascript">
@@ -43,16 +38,105 @@ nav   : home
           var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(po, s);
         })();
       </script>
+
       <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src="//platform.twitter.com/widgets.js";fjs.parentNode.insertBefore(js,fjs);}}(document,"script","twitter-wjs");</script>
       <script src="//platform.linkedin.com/in.js" type="text/javascript"></script>
+
     </div>
-  </div>
+
 </div>
 
-<div class="row">
-  <div id="content-secondary" class="grid24 first">
-    <div class="pad">
-      {{ content }}
+<div class="row homepage code">
+
+  <div id="content-main" class="first">
+
+    <!-- Live Inject Example -->
+    <div id="key-example" class="pad">
+      <p id="demo-tag">...</p>
+
+      <div id="demo-code">
+        <h6 class="demo-code-header">html</h6>
+
+{% highlight html %}
+<script src="/path/to/inject.js"></script>
+<script>
+  Inject.setModuleRoot("/path/to/modules");
+  require.run("program");
+</script>
+{% endhighlight %}
+
+      </div>
+
+
+      <script src="/scripts/lib/inject-v0.4.0/inject.js"></script>
+      <script>
+        Inject.setModuleRoot("/scripts/demo/modules");
+        Inject.reset();
+        require.run("program");
+      </script>
     </div>
+
   </div>
+
 </div>
+
+<ul id="actions-list">
+
+  <li class="action-item first">
+
+    <a class="action-link" href="/docs/0.5.0/howto/quick_start.html">
+      <div class="row homepage">
+        <span class="action-icon quick-start"></span>
+        <div class="pad">
+          <div class="homepage-action">
+            <div class="action-content">
+              <h3 class="action-headline">Get up and running.</h3>
+              <p class="action-description">Quickly learn how to include Inject, configure common options, and start your application.</p>
+            </div>
+            <span class="action button">Quick Start Guide</span>
+          </div>
+        </div>
+      </div>
+    </a>
+
+  </li>
+
+  <li class="action-item">
+
+    <a class="action-link" href="/docs/0.5.0x/howto/how_inject_works.html">
+      <div class="row homepage">
+        <span class="action-icon how-inject-works"></span>
+        <div class="pad">
+          <div class="homepage-action">
+            <div class="action-content">
+              <h3 class="action-headline">Peek under the hood.</h3>
+              <p class="action-description">Understand the different components of Inject and how they work together to resolve dependencies.</p>
+            </div>
+            <span class="action button">How Inject Works</span>
+          </div>
+        </div>
+      </div>
+    </a>
+
+  </li>
+
+  <li class="action-item">
+
+    <a class="action-link" href="/docs">
+      <div class="row homepage">
+        <span class="action-icon full-documentation"></span>
+        <div class="pad">
+          <div class="homepage-action">
+            <div class="action-content">
+              <h3 class="action-headline">Read all about it.</h3>
+              <p class="action-description">Everything you need to know about Inject, from API documentation to advanced configuration options.</p>
+            </div>
+            <span class="action button">Full Documentation</span>
+          </div>
+        </div>
+      </div>
+    </a>
+
+  </li>
+
+</ul>

@@ -15,6 +15,7 @@ $CONFIG_GRADIENT_BUTTON_SPOTLIGHT_HOVER_IE:             (#eddb11, #f2b21b, verti
 $main-logo: 'logos/linkedin.png';
 $main-header: 'logos/header.png';
 $main-header-height: image-height($main-header);
+$inject-logo: 'logos/inject.svg';
 
 // GENERAL BODY SETUP
 body, button, input, textarea {
@@ -310,6 +311,23 @@ $chrome-extra-large-text:               18px;
       }
     }
   }
+  .row.homepage .pad {
+    padding: 40px;
+  }
+  .row.homepage {
+    position: relative;
+    overflow: hidden;
+    @include box-shadow(0px 1px 3px -1px #000);
+
+    &.code #content-main {
+      overflow: auto;
+      padding-bottom: 40px;
+    }
+  }
+}
+
+#content-main {
+  @include box-shadow(0px 1px 3px -1px #000);
 }
 
 .global-footer{
@@ -374,6 +392,151 @@ $chrome-extra-large-text:               18px;
   }
 
 }
+
+#homepage-splash {
+  @include text-align(center);
+  padding: 32px 32px 8px 32px;
+
+  h1.splash {
+    padding-right: 40px;
+    font-size: 90px;
+    line-height: 182px;
+    font-weight: bold;
+  }
+  h2.splash {
+    @include styleguide(medium marketing headline);
+    text-shadow: 1px 1px 1px rgba(255, 255, 255, 0.75)
+  }
+  p.splash {
+    @include styleguide(large marketing copy);
+    margin-bottom: 20px;
+  }
+  .button {
+    @include styleguide(large spotlight button in a punchcut);
+    margin: 20px 0 4px 0;
+  }
+  .see-all-versions {
+    display: block;
+    margin-bottom: 46px;
+  }
+}
+
+#demo-tag {
+  @include styleguide(large marketing copy);
+  float: left;
+  width: 450px;
+  margin: 0 24px 24px 0;
+  line-height: 24px;
+}
+
+#demo-tada {
+  @include styleguide(medium marketing headline);
+}
+
+#demo-code {
+  
+  float: right;
+  width: 400px;
+  background-color: #f9f9f9;
+  border: 1px solid #ddd;
+
+  .demo-code-header {
+    padding: 5px 10px;
+    color: #7caf38;
+    background-color: #eee;
+    border-bottom: 1px solid #DDDDDD;
+    @include font-family(monospace);
+  }
+}
+
+#actions-list {
+  overflow: auto;
+
+  .action-item {
+    float: left;
+    margin-left: 20px;
+    width: 310px;
+
+    &.first {
+      margin-left: 2px;
+    }
+  }
+
+}
+
+.action-icon {
+  @include opacity(0.2);
+  position: absolute;
+
+  &.how-inject-works {
+    @include glyph-icon($icon: cog, $size: 132px, $color: #000, $placement: before);
+    bottom: -23px;
+    left: -25px;
+  }
+  &.quick-start {
+    @include glyph-icon($icon: fire, $size: 132px, $color: #000, $placement: before);
+    bottom: -23px;
+    left: -10px;
+  }
+  &.full-documentation {
+    @include glyph-icon($icon: file, $size: 132px, $color: #000, $placement: before);
+    bottom: -24px;
+    left: -11px;
+  }
+
+}
+
+$action-transition-speed: 250ms;
+
+.action-link {
+  color: #222;
+
+  .row.homepage > div {
+    -webkit-transition: background-color $action-transition-speed linear;
+    -moz-transition: background-color $action-transition-speed linear;
+    -o-transition: background-color $action-transition-speed linear;
+    -ms-transition: background-color $action-transition-speed linear;
+    transition: background-color $action-transition-speed linear;
+  }
+
+  &:hover {
+    text-decoration: none;
+    color: #000;
+
+    .row.homepage > div {
+      background-color: #ebebed;
+    }
+  }
+}
+
+  .homepage-action {
+    clear: both;
+    overflow: auto;
+
+    .action-content {
+      margin-bottom: 42px;
+
+      
+      .action-link:hover {
+        color: #0175B0;
+        text-decoration: none;
+      }
+
+      .action-headline {
+        font-size: 20px;
+        font-weight: bold;
+        line-height: 22px;
+        margin-bottom: 12px;
+      }
+
+    }
+    
+    .button {
+      @include styleguide(medium primary button in a punchcut);
+      float: right;
+    }
+
+  }
 
 #content-main {
   background: #fff;
