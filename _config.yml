@@ -62,7 +62,7 @@ future    : true
 production_url : http://www.injectjs.com
 
 # build config
-auto      : true
+auto      : false
 
 # github defaults
 lsi       : false
