@@ -3,7 +3,7 @@
 # site info
 name      : Inject
 version   : 0.4.2
-logo      : /assets/images/logos/inject.svg
+logo      : /assets/images/logos/inject.png
 stable_dl : /download/v0.4.x/inject-v0.4.2.zip
 description :
     short : Dependency Management Got Awesome

@@ -15,7 +15,7 @@ $CONFIG_GRADIENT_BUTTON_SPOTLIGHT_HOVER_IE:             (#eddb11, #f2b21b, verti
 $main-logo: 'logos/linkedin.png';
 $main-header: 'logos/header.png';
 $main-header-height: image-height($main-header);
-$inject-logo: 'logos/inject.svg';
+$inject-logo: 'logos/inject.png';
 
 // GENERAL BODY SETUP
 body, button, input, textarea {
@@ -72,6 +72,9 @@ $chrome-medium-text:                    13px;
 $chrome-large-text:                     16px;
 $chrome-extra-large-text:               18px;
 //-- Local Defaults
+
+// Animations
+$action-transition-speed:               250ms;
 
 @mixin zero-padding-margin() {
   margin:                               0;
@@ -311,23 +314,6 @@ $chrome-extra-large-text:               18px;
       }
     }
   }
-  .row.homepage .pad {
-    padding: 40px;
-  }
-  .row.homepage {
-    position: relative;
-    overflow: hidden;
-    @include box-shadow(0px 1px 3px -1px #000);
-
-    &.code #content-main {
-      overflow: auto;
-      padding-bottom: 40px;
-    }
-  }
-}
-
-#content-main {
-  @include box-shadow(0px 1px 3px -1px #000);
 }
 
 .global-footer{
@@ -398,10 +384,13 @@ $chrome-extra-large-text:               18px;
   padding: 32px 32px 8px 32px;
 
   h1.splash {
-    padding-right: 40px;
     font-size: 90px;
     line-height: 182px;
     font-weight: bold;
+
+    #inject-logo {
+      margin: 40px 40px 40px 0;
+    }
   }
   h2.splash {
     @include styleguide(medium marketing headline);
@@ -421,105 +410,97 @@ $chrome-extra-large-text:               18px;
   }
 }
 
-#demo-tag {
-  @include styleguide(large marketing copy);
-  float: left;
-  width: 450px;
-  margin: 0 24px 24px 0;
-  line-height: 24px;
-}
+#homepage-code {
+  @include box-shadow(0px 1px 3px -1px #000);
+  overflow: auto;
+  padding: 40px;
+  margin-bottom: 10px;
+  background-color: #fff;
 
-#demo-tada {
-  @include styleguide(medium marketing headline);
-}
+  #demo-tag {
+    @include styleguide(large marketing copy);
+    float: left;
+    width: 450px;
+    margin: 0 24px 24px 0;
+    line-height: 24px;
+  }
 
-#demo-code {
-  
-  float: right;
-  width: 400px;
-  background-color: #f9f9f9;
-  border: 1px solid #ddd;
+  #demo-tada {
+    @include styleguide(medium marketing headline);
+  }
 
-  .demo-code-header {
-    padding: 5px 10px;
-    color: #7caf38;
-    background-color: #eee;
-    border-bottom: 1px solid #DDDDDD;
-    @include font-family(monospace);
+  #demo-code {
+    float: right;
+    width: 400px;
+    background-color: #f9f9f9;
+    border: 1px solid #ddd;
+
+    .demo-code-header {
+      padding: 5px 10px;
+      color: #7caf38;
+      background-color: #eee;
+      border-bottom: 1px solid #DDDDDD;
+      @include font-family(monospace);
+    }
   }
 }
 
 #actions-list {
-  overflow: auto;
 
   .action-item {
+    position: relative;
     float: left;
-    margin-left: 20px;
-    width: 310px;
+    width: 311px;
+    margin: 10px 0 0 20px;
+    overflow: hidden;
+    background-color: #fff;
+    @include box-shadow(0px 1px 3px -1px #000);
 
     &.first {
-      margin-left: 2px;
+      margin-left: 0;
     }
-  }
 
-}
+    .action-link {
+      display: block;
+      overflow: auto;
+      color: #222;
+      padding: 40px;
+      background-color: #fff;
+      text-decoration: none;
 
-.action-icon {
-  @include opacity(0.2);
-  position: absolute;
+      -webkit-transition: background-color $action-transition-speed linear;
+      -moz-transition: background-color $action-transition-speed linear;
+      -o-transition: background-color $action-transition-speed linear;
+      -ms-transition: background-color $action-transition-speed linear;
+      transition: background-color $action-transition-speed linear;
 
-  &.how-inject-works {
-    @include glyph-icon($icon: cog, $size: 132px, $color: #000, $placement: before);
-    bottom: -23px;
-    left: -25px;
-  }
-  &.quick-start {
-    @include glyph-icon($icon: fire, $size: 132px, $color: #000, $placement: before);
-    bottom: -23px;
-    left: -10px;
-  }
-  &.full-documentation {
-    @include glyph-icon($icon: file, $size: 132px, $color: #000, $placement: before);
-    bottom: -24px;
-    left: -11px;
-  }
-
-}
-
-$action-transition-speed: 250ms;
-
-.action-link {
-  color: #222;
-
-  .row.homepage > div {
-    -webkit-transition: background-color $action-transition-speed linear;
-    -moz-transition: background-color $action-transition-speed linear;
-    -o-transition: background-color $action-transition-speed linear;
-    -ms-transition: background-color $action-transition-speed linear;
-    transition: background-color $action-transition-speed linear;
-  }
-
-  &:hover {
-    text-decoration: none;
-    color: #000;
-
-    .row.homepage > div {
-      background-color: #ebebed;
-    }
-  }
-}
-
-  .homepage-action {
-    clear: both;
-    overflow: auto;
-
-    .action-content {
-      margin-bottom: 42px;
-
-      
-      .action-link:hover {
-        color: #0175B0;
+      &:hover {
+        color: #000;
+        background-color: #ebebed;
         text-decoration: none;
+      }
+
+      .action-icon {
+        @include opacity(0.2);
+        position: absolute;
+        overflow: visible;
+        padding-top: 60px;
+
+        &.how-inject-works {
+          @include glyph-icon($icon: cog, $size: 132px, $color: #000, $placement: before);
+          bottom: -23px;
+          left: -25px;
+        }
+        &.quick-start {
+          @include glyph-icon($icon: fire, $size: 132px, $color: #000, $placement: before);
+          bottom: -23px;
+          left: -10px;
+        }
+        &.full-documentation {
+          @include glyph-icon($icon: file, $size: 132px, $color: #000, $placement: before);
+          bottom: -24px;
+          left: -11px;
+        }
       }
 
       .action-headline {
@@ -529,14 +510,17 @@ $action-transition-speed: 250ms;
         margin-bottom: 12px;
       }
 
-    }
-    
-    .button {
-      @include styleguide(medium primary button in a punchcut);
-      float: right;
-    }
+      .action-description {
+        margin-bottom: 40px;
+      }
 
+      .button {
+        @include styleguide(medium primary button in a punchcut);
+        float: right;
+      }
+    }
   }
+}
 
 #content-main {
   background: #fff;
