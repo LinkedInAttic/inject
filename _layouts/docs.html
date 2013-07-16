@@ -17,6 +17,29 @@ nav   : docs
             <div class="doc_version">{{page.version}}</div>
           {% endif %}
           <hr>
+          {% if page.deprecated == true %}
+          <div class="deprecated" style="border: 1px dashed #666; background: #ccc; padding: 10px;">
+            <p>
+              <strong>Deprecation Warning:</strong> This method is deprecated and will be removed in
+              a future version. Please see the documentation below for the new methods or APIs to replace
+              this (if applicable). You may also access the another version of the documentation that may
+              contain this method:
+
+              {% for doc in site.documentation %}
+                {% if doc.version != page.version %}
+                  {% for cat in doc.categories %}
+                    {% for post in site.categories[cat.cat] reversed %}
+                      {% if post.version != page.version and post.title == page.title %}
+                        [<a href="{{post.url}}">{{post.version}}</a>]
+                      {% endif %}
+                    {% endfor %}
+                  {% endfor %}
+                {% endif %}
+              {% endfor %}
+            </p>
+          </div>
+          {% endif %}
+          
           {{ content }}
         </div>
         {% if page.no_comments != true %}
@@ -50,30 +73,38 @@ nav   : docs
 
   <div id="content-sidebar" class="grid8">
     <div class="pad">
-      <div class="block">
-        <ul>
-          {% for d in site.documentation %}
-            <li><b>{{d.version}}</b>
-              <ul>
-                {% for cat in d.categories %}
-                  <li><b>{{cat.name}}</b>
-                    <ul>
-                      {% for p in site.categories[cat.cat] reversed %}
-                        {% if p.version == d.version %}
-                          {% if p.title == page.title and p.version == page.version %}
-                            <li class="current"><a href="{{p.url}}">{{p.title}}</a></li>
-                          {% else %}
-                            <li><a href="{{p.url}}">{{p.title}}</a></li>
-                          {% endif %}
+      {% for d in site.documentation %}
+        {% if page.version == d.version %}
+          <div class="block">
+            <ul>
+              {% for cat in d.categories %}
+                <li><b>{{cat.name}}</b>
+                  <ul>
+                    {% for p in site.categories[cat.cat] reversed %}
+                      {% if p.version == d.version %}
+                        {% if p.title == page.title %}
+                          <li class="current"><a href="{{p.url}}" style="font-weight:normal">{{p.title}}</a></li>
+                        {% else %}
+                          <li><a href="{{p.url}}" style="font-weight:normal">{{p.title}}</a></li>
                         {% endif %}
-                      {% endfor %}
-                    </ul>
-                  </li>
-                {% endfor %}
-              </ul>
-            </li>
+                      {% endif %}
+                    {% endfor %}
+                  </ul>
+                </li>
+              {% endfor %}
+            </ul>
+          </div>
+        {% endif %}
+      {% endfor %}
+      <div class="block">
+        <p>
+          Other Versions:<br/>
+          {% for d in site.documentation %}
+            {% if page.version != d.version %}
+              [<a href="/docs/{{d.version}}/index.html">{{d.version}}</a>]
+            {% endif %}
           {% endfor %}
-        </ul>
+        </p>
       </div>
     </div>
   </div>

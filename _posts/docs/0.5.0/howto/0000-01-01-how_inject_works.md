@@ -3,7 +3,7 @@ layout: docs
 version: 0.5.0
 title: How Inject Works
 category: howto
-permalink: /docs/0.5.0x/howto/how_inject_works.html
+permalink: /docs/0.5.0/howto/how_inject_works.html
 ---
 
 This is a guide that explains the various components of Inject, how they relate to each other, and what exactly happens when you type `require`, `require.ensure`, or many other Inject invocations into your JavaScript.

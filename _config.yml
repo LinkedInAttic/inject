@@ -1,19 +1,21 @@
 # Reference : https://github.com/mojombo/jekyll/wiki/Configuration
 
 # site info
-name      : Inject
-version   : 0.4.2
-stable_dl : /download/v0.4.x/inject-v0.4.2.zip
-description :
-    short : Dependency Management got Awesome
-    long  : CommonJS and AMD Compliant dependency loader for modern web apps
+name         : Inject
+version      : 0.4.2
+stable_dl    : /download/v0.4.x/inject-v0.4.2.zip
+description  :
+    short    : Dependency Management got Awesome
+    long     : CommonJS and AMD Compliant dependency loader for modern web apps
 
 # documentation structure
 documentation:
   - version: 0.5.0
     categories:
-      - cat: spec
-        name: Global API
+      - cat: cjs
+        name: CommonJS Interface
+      - cat: amd
+        name: AMD Interface
       - cat: api
         name: The Inject API
       - cat: howto
