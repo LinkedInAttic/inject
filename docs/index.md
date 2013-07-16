@@ -1,7 +1,7 @@
 ---
 layout      : docs
 title       : Inject Documentation
-version     : 0.5.0
+version     : 0.4.x
 no_comments : true
 ---
 {% include config %}
