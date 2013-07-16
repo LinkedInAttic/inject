@@ -10,6 +10,14 @@ description :
 
 # documentation structure
 documentation:
+  - version: 0.5.0
+    categories:
+      - cat: spec
+        name: Global API
+      - cat: api
+        name: The Inject API
+      - cat: howto
+        name: How To and Tutorials
   - version: 0.4.x
     categories:
       - cat: api
