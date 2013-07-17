@@ -3,8 +3,15 @@ $CONFIG_DISABLE_STYLEGUIDE_SPRITES: true;
 $CONFIG_ICON_HOVERCARD_TIP:         ("sprites/hovercard_tip.png") !default;
 $CONFIG_THEME:                      archetype-aspirational !default;
 
-$CONFIG_GLYPHS_EOT:               "fontawesome-webfont.eot" !default;
-$CONFIG_GLYPHS_FILES:             font-files("fontawesome-webfont.ttf", "fontawesome-webfont.woff", "fontawesome-webfont.svg") !default;
+$CONFIG_GLYPHS_EOT:               "LinkedIn-Glyphs.eot" !default;
+$CONFIG_GLYPHS_NAME:              LinkedIn-Glyphs !default;
+$CONFIG_GLYPHS_FILES:             font-files("LinkedIn-Glyphs.ttf", "LinkedIn-Glyphs.woff", "LinkedIn-Glyphs.svg") !default;
+
+$CONFIG_GLYPHS_MAPPINGS: (
+  fire      (("\e00b") 20px),
+  cog       (("\e010") 16px),
+  file      (("\e036") 32px)
+) !default;
 
 $CONFIG_SAFE_FONTS: (
   // custom narrow font stack

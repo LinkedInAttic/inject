@@ -5,68 +5,101 @@ nav   : home
 ---
 {% include config %}
 
-<div class="row">
-  <div id="content-main" class="grid16 first">
-    <div class="pad">
-      {% if page.no_format == true %}
-        {{ content }}
-      {% else %}
-        <div class="markdown-body">
-          {% include partials/headline %}
-          {{ content }}
-        </div>
-        <script type="text/javascript" src="/scripts/lib/inject-v0.4.0/inject.js"></script>
-        <script type="text/javascript">
-          Inject.setModuleRoot("/scripts/demo/modules");
-          Inject.reset();
-          require.run("program");
-        </script>
-      {% endif %}
-    </div>
-  </div>
+<!-- Splash -->
+<div id="homepage-splash">
 
-  <div id="content-sidebar" class="grid8">
-    <div class="pad">
-      <div class="block">
-        <h3>Share the love</h3>
-        <div>
-          <div>
-            <!-- Place this tag where you want the +1 button to render. -->
-            <div class="g-plusone" data-size="medium" data-annotation="none" data-href="http://www.injectjs.com"></div>
-            <a href="https://twitter.com/share" class="twitter-share-button" data-url="http://www.injectjs.com" data-via="InjectJS" data-count="none">Tweet</a>
-            <script type="IN/Share" data-url="http://www.injectjs.com"></script>
-          </div>
+  <!-- Banner -->
+  <h1 class="splash"><img id="inject-logo" src="{{ site.logo }}" alt="Inject Logo"/>{{ site.name }}</h1>
+  <h2 class="splash">{{ site.description.short }}</h2>
+  <p class="splash">CommonJS and AMD module loading, cross-origin fetching, localStorage caching, and more.</p>
+  <a class="button" href="{{site.stable_dl}}">Download {{site.name}}</a>
+  <a class="see-all-versions" href="/download">Current version is {{ site.version }}. See all versions.</a>
 
-          <!-- Place this tag after the last +1 button tag. -->
-          <script type="text/javascript">
-            (function() {
-              var po = document.createElement('script'); po.type = 'text/javascript'; po.async = true;
-              po.src = 'https://apis.google.com/js/plusone.js';
-              var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(po, s);
-            })();
-          </script>
-          <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src="//platform.twitter.com/widgets.js";fjs.parentNode.insertBefore(js,fjs);}}(document,"script","twitter-wjs");</script>
-          <script src="//platform.linkedin.com/in.js" type="text/javascript"></script>
-        </div>
-      </div>
-      
-      <div class="block">
-        <h3>Source code</h3>
-        Get the source code over on <a href="http://github.com/linkedin/inject">GitHub</a>
-      </div>
+  <!-- Share The Love -->
 
-      <div class="block">
-        <h3>Join the community</h3>
-        <ul>
-          <li><a href="https://groups.google.com/forum/#!forum/injectjs">Mailing List</a></li>
-          <li><a href="https://twitter.com/InjectJS">@InjectJS</a></li>
-        </ul>
-      </div>
+  <!-- GitHub -->
+  <iframe src="http://ghbtns.com/github-btn.html?user=linkedin&amp;repo=inject&amp;type=watch&amp;count=true"
+allowtransparency="true" frameborder="0" scrolling="0" width="86" height="20"></iframe>
 
-      <div class="block">
-        <h3>License</h3>
-        Inject is released under the <a href="https://github.com/linkedin/inject/blob/master/LICENSE">Apache Software License 2.0</a>
-      </div>
-    </div>
-  </div>
+  <!-- G+ -->
+  <div class="g-plusone" data-size="medium" data-annotation="none" data-href="http://www.injectjs.com"></div>
+
+  <!-- Twitter -->
+  <a href="https://twitter.com/share" class="twitter-share-button" data-url="http://www.injectjs.com" data-via="InjectJS" data-count="none">Tweet</a>
+
+  <!-- LI -->
+  <script type="IN/Share" data-url="http://www.injectjs.com"></script>
+
+  <!-- Place this tag after the last +1 button tag. -->
+  <script type="text/javascript">
+    (function() {
+      var po = document.createElement('script'); po.type = 'text/javascript'; po.async = true;
+      po.src = 'https://apis.google.com/js/plusone.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(po, s);
+    })();
+  </script>
+
+  <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src="//platform.twitter.com/widgets.js";fjs.parentNode.insertBefore(js,fjs);}}(document,"script","twitter-wjs");</script>
+  <script src="//platform.linkedin.com/in.js" type="text/javascript"></script>
+
 </div>
+
+<!-- Sample Code Box -->
+<div id="homepage-code">
+
+  <p id="demo-tag">...</p>
+
+  <div id="demo-code">
+    <h6 class="demo-code-header">html</h6>
+{% highlight html %}
+<script src="/path/to/inject.js"></script>
+<script>
+  Inject.setModuleRoot("/path/to/modules");
+  require.run("program");
+</script>
+{% endhighlight %}
+  </div>
+
+  <script src="/scripts/lib/inject-v0.4.0/inject.js"></script>
+  <script>
+    Inject.setModuleRoot("/scripts/demo/modules");
+    Inject.reset();
+    require.run("program");
+  </script>
+
+</div>
+
+<!-- Actions -->
+<ul id="actions-list">
+
+  <!-- Quick Start -->
+  <li class="action-item first">
+    <a class="action-link" href="/docs/0.4.x/howto/quick_start.html">
+      <span class="action-icon quick-start"></span>
+      <h3 class="action-headline">Get up and running.</h3>
+      <p class="action-description">Quickly learn how to include Inject, configure common options, and start your application.</p>
+      <span class="action button">Quick Start Guide</span>
+    </a>
+  </li>
+
+  <!-- How Inject Works -->
+  <li class="action-item">
+    <a class="action-link" href="/docs/0.4.x/howto/how_inject_works.html">
+      <span class="action-icon how-inject-works"></span>
+      <h3 class="action-headline">Peek under the hood.</h3>
+      <p class="action-description">Understand the different components of Inject and how they work together to resolve dependencies.</p>
+      <span class="action button">How Inject Works</span>
+    </a>
+  </li>
+
+  <!-- Documentation -->
+  <li class="action-item">
+    <a class="action-link" href="/docs">
+      <span class="action-icon full-documentation"></span>
+      <h3 class="action-headline">Read all about it.</h3>
+      <p class="action-description">Everything you need to know about Inject, from API documentation to advanced configuration options.</p>
+      <span class="action button">Full Documentation</span>
+    </a>
+  </li>
+
+</ul>
