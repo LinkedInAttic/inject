@@ -3,7 +3,6 @@ layout: news
 title: Accouncing Inject 0.5.0
 category: news
 author: fsimeon
-published: false
 ---
 
 Get this release over at the [downloads](/download) page
