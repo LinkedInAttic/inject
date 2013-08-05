@@ -56,6 +56,12 @@ authors :
     li_pic_url: https://m1-s.licdn.com/mpr/mpr/shrink_60_60/p/3/000/095/332/3c93849.jpg
     github: mattpowell
     twitter: mattpowell
+  fsimeon :
+    name : Fermin Simeon
+    li_pub_profile: ferminsimeon
+    li_pic_url: http://m.c.lnkd.licdn.com/mpr/mpr/shrink_60_60/p/7/000/1ec/0d8/3840805.jpg
+    github: fsimeon
+    twitter: injectjs
 
 # publish posts with a future date
 future    : true
