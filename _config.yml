@@ -12,7 +12,6 @@ description  :
 # documentation structure
 documentation:
   - version: 0.5.0
-    draft: true
     categories:
       - cat: cjs
         name: CommonJS Interface
