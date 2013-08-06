@@ -97,7 +97,7 @@ $action-transition-speed:               250ms;
   }
 
   strong {
-    font-weight:                      normal;
+    font-weight:                      bold;
   }
 
   // Nav sections
@@ -534,6 +534,10 @@ $action-transition-speed:               250ms;
     color: #000000;
     padding: 0px 10px;
     font-size: 22px;
+  }
+
+  .markdown-body strong {
+    font-weight: bold;
   }
   
   &.news{
