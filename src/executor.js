@@ -146,18 +146,31 @@ var Executor;
 
     // add source string in sourcemap compatible browsers
     code = [code, sourceString].join('\n');
-    
-   //Parse file and catch any parse errors
+
+    // Parse file and catch any parse errors
     try {
-      LinkJS.parse('function linktest() {' + options.originalCode + '\n}');
       eval(code);
-    } catch(e) {
-      var linkJsLine;
-      linkJsLine = parseInt(e.message.replace(/.+? at line (.+)$/, '$1'), 10);
-      err = new Error('Parse error in ' + options.moduleId + ' (' + options.url + ') at line ' + linkJsLine);
+    }
+    catch(ex) {
+      // use LinkJS if available to generate a better error
+      // this allows Inject to eventually have a .debug version for a 15k penalty
+      if (LinkJS) {
+        try {
+          LinkJS.parse('function linktest() {' + options.originalCode + '\n}');
+        }
+        catch(e) {
+          var linkJsLine;
+          linkJsLine = parseInt(e.message.replace(/.+? at line (.+)$/, '$1'), 10);
+          err = new Error('Parse error in ' + options.moduleId + ' (' + options.url + ') at line ' + linkJsLine);
+        }
+      }
+      else {
+        err = new Error('Parse error in ' + options.moduleId + ' (' + options.url + ') at line unknown');
+      }
       try {
         throw err;
-      } catch(tkerr) {
+      }
+      catch(tkerr) {
         sendToTraceKit(tkerr, options.moduleId);
         // exit early. This is not a usable module.
         return {
@@ -205,7 +218,8 @@ var Executor;
         err.lineNumber = result.__error.lineNumber;
         sendToTraceKit(err, options.moduleId);
       }
-    } else {
+    }
+    else {
       // there is an executable object AND source maps are off
       // just run it. Try/catch will capture exceptions and put them
       // into result.__error internally for us from the commonjs harness

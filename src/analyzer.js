@@ -78,7 +78,7 @@ var Analyzer;
           '(?:^|[\\s;,=\\?:\\}\\)\\(])' + // begins with start of string, and any symbol a function call() can follow
           'require[\\s]*\\('+             // the keyword "require", whitespace, and then an opening paren
           '[\'"]'+                        // a quoted stirng (require takes a single or double quoted string)
-          '(.+?)'+                        // the valid characters for a "module identifier"... includes AMD characters
+          '([^\'"]+?)'+                   // the valid characters for a "module identifier"... includes AMD characters. You cannot match a quote
           '[\'"]' +                       // the closing quote character
           '\\)',                          // end of paren for "require"
           'gi'                            // flags: global, case-insensitive
