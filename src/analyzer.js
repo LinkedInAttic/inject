@@ -75,29 +75,29 @@ var Analyzer;
         var term;
         var dep;
         var requireRegex = new RegExp(
-          '(?:^|[\\s;,=\\?:\\}\\)])' +  // begins with start of string, and any symbol a function call() can follow
-          'require[\\s]*\\('+           // the keyword "require", whitespace, and then an opening paren
-          '[\'"]'+                      // a quoted stirng (require takes a single or double quoted string)
-          '(.+?)'+                      // the valid characters for a "module identifier"... includes AMD characters
-          '[\'"]' +                     // the closing quote character
-          '\\)',                        // end of paren for "require"
-          'gi'                          // flags: global, case-insensitive
+          '(?:^|[\\s;,=\\?:\\}\\)\\(])' + // begins with start of string, and any symbol a function call() can follow
+          'require[\\s]*\\('+             // the keyword "require", whitespace, and then an opening paren
+          '[\'"]'+                        // a quoted stirng (require takes a single or double quoted string)
+          '(.+?)'+                        // the valid characters for a "module identifier"... includes AMD characters
+          '[\'"]' +                       // the closing quote character
+          '\\)',                          // end of paren for "require"
+          'gi'                            // flags: global, case-insensitive
         );
 
         var defineRegex = new RegExp(
-          '(?:^|[\\s;,\\?\\}\\)])' +    // begins with start of string, and any symbol a function call() can follow
-          'define[\\s]*\\(' +           // the "define" keyword, followed by optional whitespace and its opening paren
-          '.*?\\[' +                    // anything (don't care) until we hit the first [
-          '(.*?)' +                     // our match (contents of the array)
-          '\\]',                        // the closing bracket
-          'gi'                          // flags: global, case-insensitive
+          '(?:^|[\\s;,\\?\\}\\)\\(])' +   // begins with start of string, and any symbol a function call() can follow
+          'define[\\s]*\\(' +             // the "define" keyword, followed by optional whitespace and its opening paren
+          '.*?\\[' +                      // anything (don't care) until we hit the first [
+          '(.*?)' +                       // our match (contents of the array)
+          '\\]',                          // the closing bracket
+          'gi'                            // flags: global, case-insensitive
         );
 
         var defineTermRegex = new RegExp(
-          '[\'"]' +                     // a quote
-          '(.*?)' +                     // the term inside of quotes
-          '[\'"]',                      // the closing quotes
-          'gi'                          // flags: global, case-insensitive
+          '[\'"]' +                       // a quote
+          '(.*?)' +                       // the term inside of quotes
+          '[\'"]',                        // the closing quotes
+          'gi'                            // flags: global, case-insensitive
         );
         
         while (item = requireRegex.exec(file)) {
