@@ -118,8 +118,6 @@ var Analyzer;
           }
         }
         
-        debugger;
-        
         return dependencies;
       }
     };
