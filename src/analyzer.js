@@ -41,8 +41,12 @@ var Analyzer;
        */
 
       stripBuiltins: function (modules) {
-        var strippedModuleList = [];
-        for (var i = 0, len = modules.length; i < len; i++) {
+
+        var strippedModuleList = [],
+            len = modules.length,
+            i = 0;
+
+        for (i; i < len; i++) {
           //modules[i] is the moduleId
           if (!BUILTINS[modules[i]]) {
             strippedModuleList.push(modules[i]);
@@ -64,43 +68,20 @@ var Analyzer;
        */
       extractRequires: function (file) {
         /*jshint boss:true */
+
+        var dependencies = [],
+            dependencyCache = {
+              require: 1,
+              module: 1,
+              exports: 1
+            },
+            item,
+            term,
+            dep;
+
         file = file.replace(JS_COMMENTS_REGEX, '');
-        var dependencies = [];
-        var dependencyCache = {
-          require: 1,
-          module: 1,
-          exports: 1
-        };
-        var item;
-        var term;
-        var dep;
-        var requireRegex = new RegExp(
-          '(?:^|[\\s;,=\\?:\\}\\)\\(])' + // begins with start of string, and any symbol a function call() can follow
-          'require[\\s]*\\('+             // the keyword "require", whitespace, and then an opening paren
-          '[\'"]'+                        // a quoted stirng (require takes a single or double quoted string)
-          '([^\'"]+?)'+                   // the valid characters for a "module identifier"... includes AMD characters. You cannot match a quote
-          '[\'"]' +                       // the closing quote character
-          '\\)',                          // end of paren for "require"
-          'gi'                            // flags: global, case-insensitive
-        );
 
-        var defineRegex = new RegExp(
-          '(?:^|[\\s;,\\?\\}\\)\\(])' +   // begins with start of string, and any symbol a function call() can follow
-          'define[\\s]*\\(' +             // the "define" keyword, followed by optional whitespace and its opening paren
-          '.*?\\[' +                      // anything (don't care) until we hit the first [
-          '(.*?)' +                       // our match (contents of the array)
-          '\\]',                          // the closing bracket
-          'gi'                            // flags: global, case-insensitive
-        );
-
-        var defineTermRegex = new RegExp(
-          '[\'"]' +                       // a quote
-          '(.*?)' +                       // the term inside of quotes
-          '[\'"]',                        // the closing quotes
-          'gi'                            // flags: global, case-insensitive
-        );
-        
-        while (item = requireRegex.exec(file)) {
+        while (item = REQUIRE_REGEX.exec(file)) {
           dep = item[1];
           if (!dependencyCache[dep]) {
             dependencyCache[dep] = 1;
@@ -108,8 +89,8 @@ var Analyzer;
           }
         }
         
-        while (item = defineRegex.exec(file)) {
-          while (term = defineTermRegex.exec(item[1])) {
+        while (item = DEFINE_REGEX.exec(file)) {
+          while (term = DEFINE_TERM_REGEX.exec(item[1])) {
             dep = term[1];
             if (!dependencyCache[dep]) {
               dependencyCache[dep] = 1;
