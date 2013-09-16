@@ -128,10 +128,45 @@ var FUNCTION_BODY_REGEX = /[\w\W]*?\{([\w\W]*)\}/m;
 var WHITESPACE_REGEX = /\s+/g;
 
 /**
- * extract require() statements from within a larger string
+ * Extract require() statements from within a larger string.
+ * Used by analyzer to parse files.
  * @constant
  */
-var REQUIRE_REGEX = /(?:^|[^\w\$_.\(])require\s*\(\s*("[^"\\]*(?:\\.[^"\\]*)*"|'[^'\\]*(?:\\.[^'\\]*)*')\s*\)/g;
+var REQUIRE_REGEX = new RegExp(
+  '(?:^|[\\s;,=\\?:\\}\\)\\(])' + // begins with start of string, and any symbol a function call() can follow
+  'require[\\s]*\\('+             // the keyword "require", whitespace, and then an opening paren
+  '[\'"]'+                        // a quoted stirng (require takes a single or double quoted string)
+  '([^\'"]+?)'+                   // the valid characters for a "module identifier"... includes AMD characters. You cannot match a quote
+  '[\'"]' +                       // the closing quote character
+  '\\)',                          // end of paren for "require"
+  'gi'                            // flags: global, case-insensitive
+);
+
+/**
+ * Extract define() statements from within a larger string.
+ * Used by analyzer to parse files.
+ * @constant
+ */
+var DEFINE_REGEX = new RegExp(
+  '(?:^|[\\s;,\\?\\}\\)\\(])' +   // begins with start of string, and any symbol a function call() can follow
+  'define[\\s]*\\(' +             // the "define" keyword, followed by optional whitespace and its opening paren
+  '.*?\\[' +                      // anything (don't care) until we hit the first [
+  '(.*?)' +                       // our match (contents of the array)
+  '\\]',                          // the closing bracket
+  'gi'                            // flags: global, case-insensitive
+);
+
+/**
+ * Extract terms from define statements.
+ * Used by analyzer to parse files in conjunction with DEFINE_REGEX.
+ * @constant
+ */
+var DEFINE_TERM_REGEX = new RegExp(
+  '[\'"]' +                       // a quote
+  '(.*?)' +                       // the term inside of quotes
+  '[\'"]',                        // the closing quotes
+  'gi'                            // flags: global, case-insensitive
+);
 
 /**
  * extract define() statements from within a larger string
