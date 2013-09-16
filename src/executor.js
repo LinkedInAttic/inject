@@ -612,7 +612,7 @@ var Executor;
         }
 
         // cache the result (IF NOT AMD)
-        if (!DEFINE_EXTRACTION_REGEX.test(code)) {
+        if (!IS_AMD_REGEX.test(code)) {
           this.cache[moduleId] = result;
         }
 
