@@ -174,7 +174,7 @@ var DEFINE_TERM_REGEX = new RegExp(
  * don't-be-greedy modifiers on the \S and \w\W sections
  * @constant
  */
-var DEFINE_EXTRACTION_REGEX = /(?:^|[\s]+)define[\s]*\([\s]*((?:"|')\S+?(?:"|'))?,?[\s]*(?:\[([\w\W]+?)\])?/g;
+var IS_AMD_REGEX = /(?:^|[\s]+)define[\s]*\(/g;
 
 /**
  * index of all commonJS builtins in a function arg collection
