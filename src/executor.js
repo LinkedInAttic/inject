@@ -34,46 +34,6 @@ var Executor;
   var moduleFailureCache = {};
 
   /**
-   * create a script node containing code to execute when
-   * placed into the page. IE behaves differently from other
-   * browsers, which is why the logic has been encapsulated into
-   * a function.
-   * @function
-   * @param {String} code - the code to create a node with
-   * @private
-   */
-  function createEvalScript(code) {
-    var scr = document.createElement('script');
-    scr.type = 'text/javascript';
-    try {
-      scr.text = code;
-    } catch (e) {
-      try {
-        scr.innerHTML = code;
-      } catch (ee) {
-        return false;
-      }
-    }
-    return scr;
-  }
-
-  /**
-   * remove an inserted script node from the page.
-   * It is put into a setTimeout call so that it will
-   * happen after all other code in queue has completed.
-   * @function
-   * @param {node} node - the HTML node to clean
-   * @private
-   */
-  function cleanupEvalScriptNode(node) {
-    context.setTimeout(function() {
-      if (docHead) {
-        return docHead.removeChild(node);
-      }
-    });
-  }
-
-  /**
    * the document head
    * @private
    * @type {boolean}
@@ -152,31 +112,19 @@ var Executor;
       eval(code);
     }
     catch(ex) {
-      // use LinkJS if available to generate a better error
-      // this allows Inject to eventually have a .debug version for a 15k penalty
-      if (LinkJS) {
-        try {
-          LinkJS.parse('function linktest() {' + options.originalCode + '\n}');
-        }
-        catch(e) {
-          var linkJsLine;
-          linkJsLine = parseInt(e.message.replace(/.+? at line (.+)$/, '$1'), 10);
-          err = new Error('Parse error in ' + options.moduleId + ' (' + options.url + ') at line ' + linkJsLine);
-        }
-      }
-      else {
-        err = new Error('Parse error in ' + options.moduleId + ' (' + options.url + ') at line unknown');
-      }
-      try {
-        throw err;
-      }
-      catch(tkerr) {
-        sendToTraceKit(tkerr, options.moduleId);
-        // exit early. This is not a usable module.
-        return {
-          __error: tkerr
-        };
-      }
+      // this file will fail when directly injected. We can leverage that to generate a
+      // proper syntax error, removing the LinkJS dependency completely. While the debugging
+      // is not as perfect, the 15k savings are well worth it. Window level reporting is
+      // undisturbed by this change
+      var tkerr = new Error('Parse error in ' + options.moduleId + ' (' + options.url + ') please check for an uncaught error');
+      var scr = document.createElement('script');
+      scr.src = options.url;
+      scr.type = 'text/javascript';
+      docHead.appendChild(scr);
+      sendToTraceKit(tkerr, options.moduleId);
+      return {
+        __error: tkerr
+      };
     }
 
     var lineException, adjustedLineNumber;

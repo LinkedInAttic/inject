@@ -48,17 +48,17 @@ Inject.onError(function(e) {
 
 require.ensure(["syntaxerror"], function(require) {
   // this should never run
-  alert("I never run!");
+  alert("syntax: I never run!");
 });
 
 require.ensure(["typeerror"], function(require) {
   // this should never run
-  alert("I never run!");
+  alert("type: I never run!");
 });
 
 require.ensure(["referenceerror"], function(require) {
   // this should never run
-  alert("I never run!");
+  alert("reference: I never run!");
 });
 </textarea>
 
