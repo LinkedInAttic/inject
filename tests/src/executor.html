@@ -157,7 +157,7 @@
         raises(function() {
         //Regex used to confirm error messages and line numbers  
           var moduleC = Executor.getModule('syntaxError');
-        }, /Parse error .+? at line 7/ ,"Syntax Error thrown with correct line number (7)"); 
+        }, /Parse error .+?/ ,"Syntax Error thrown (no line number)"); 
 
         Executor.runModule("refError", REF_ERROR, "http://example.com/referror.js", {});
         raises(function() {
