@@ -3,7 +3,15 @@ layout: download
 title : Changelog
 ---
 
-## 0.5.0 (current: RC1)
+## 0.5.1
+
+### Dev Features
+* \#284 removed LinkJS and reverted to Regex to improve performance
+* \#282 easyXDM Upgraded to latest version
+* \#258 Stack traces are improved when JS errors are encounted
+
+## 0.5.0 (Released August 5, 2013)
+
 ### Breaks Backwards Compatibility
 * \#246 **pointcuts.before and pointcuts.after are removed:** Instead of using the before/after pointcuts, we encourage the use of the new addRule replacement methods. The afterFetch pointcut is still supported, although addRule itself is now deprecated. We encourage everyone to move to the new addXXRule methods.
 
@@ -22,6 +30,7 @@ title : Changelog
 * \#248 "grunt release" available for creating the release .tgz file
 
 ## 0.4.2 (Released March 27, 2013)
+
 ### New Features
 n/a
 
@@ -37,6 +46,7 @@ n/a
 * \# upgraded from Class.js to Fiber.js
 
 ## 0.4.1 (Released Jan 4, 2013)
+
 ### New Features
 * Introduces the afterFetch pointcut, allowing for mutation of a file before it is executed. This collapses the before/after pointcuts under one umbrella.
 * AMD and Inject Plugins: We can now load plugins with a `plugin!` prefix, where "plugin" is a supported plugin. We're launching with text, json, and css. We also support AMD loader plugins
@@ -46,7 +56,7 @@ n/a
 * \#176 test for line offset is relegated to just Firefox (remove unneeded fake-error utility)
 * \#177 improved detection of dependencies
 * \#194 addRule regex fixes for Chrome 12
-# \#196 Relative paths do not resolve to correct absolute paths beyond immediate peer
+* \#196 Relative paths do not resolve to correct absolute paths beyond immediate peer
 
 ### Dev Features
 * AMD tests are now external to the repository to ensure maximum compliance
