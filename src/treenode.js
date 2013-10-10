@@ -24,27 +24,16 @@ governing permissions and limitations under the License.
 var TreeNode = Fiber.extend(function () {
   return {
     /**
-     * Create a TreeNode with a defined value
+     * Create a TreeNode
      * @constructs TreeNode
-     * @param {TreeNode} value - the value of this node
      */
-    init: function (value) {
-      this.value = value;
+    init: function () {
+      this.data = {};
       this.children = [];
       this.left = null;
       this.right = null;
       this.parent = null;
       this.isCircularNode = false;
-    },
-
-    /**
-     * Get the value associated with the TreeNode
-     * @method TreeNode#getValue
-     * @public
-     * @returns {variable} the value of the node
-     */
-    getValue: function () {
-      return this.value;
     },
 
     /**
@@ -184,7 +173,7 @@ var TreeNode = Fiber.extend(function () {
         }
 
         // node correct
-        output.push(currentNode.getValue());
+        output.push(currentNode);
         if (callback) {
           callback(currentNode);
         }

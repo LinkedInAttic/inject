@@ -71,52 +71,6 @@ var RequireContext = Fiber.extend(function () {
     },
 
     /**
-     * Get the module for a provided module ID. Used as a passthrough
-     * to collect modules during depenency resolution
-     * @method requireContext#getModule
-     * @param {String} moduleId - the module ID to retrieve
-     * @protected
-     * @see Executor.getModule
-     */
-    getModule: function (moduleId) {
-      return Executor.getModule(moduleId).exports;
-    },
-
-    /**
-     * Get all modules that have loaded up to this point based on
-     * a list. Require and module calls are transparently added
-     * to the output
-     * @method RequireContext#getAllModules
-     * @param {Array|String} moduleIdOrList - a single or list of modules to resolve
-     * @param {Function} require - a require function, usually from a RequireContext
-     * @param {Object} module - a module representing the current executor, from Executor
-     * @protected
-     * @returns {Array} an array of modules matching moduleIdOrList
-     */
-    getAllModules: function (moduleIdOrList, require, module) {
-      var args = [];
-      var mId = null;
-      for (var i = 0, len = moduleIdOrList.length; i < len; i++) {
-        mId = moduleIdOrList[i];
-        switch (mId) {
-        case 'require':
-          args.push(require);
-          break;
-        case 'module':
-          args.push(module);
-          break;
-        case 'exports':
-          args.push(module.exports);
-          break;
-        default:
-          // push the resolved item onto the stack direct from executor
-          args.push(this.getModule(mId));
-        }
-      }
-      return args;
-    },
-
-    /**
      * The CommonJS and AMD require interface<br>
      * CommonJS: <strong>require(moduleId)</strong><br>
      * AMD: <strong>require(moduleList, callback)</strong>
@@ -142,17 +96,9 @@ var RequireContext = Fiber.extend(function () {
         // try to get the module a couple different ways
         identifier = RulesEngine.resolveModule(moduleIdOrList, this.getId());
         module = Executor.getModule(identifier);
-        assignedModule = Executor.getAssignedModule(this.getId(), identifier);
-
-        // try the assignment identifier
-        if (assignedModule) {
-          return assignedModule.exports;
-        }
-        // then try the module
-        else if (module) {
+        if (module) {
           return module.exports;
         }
-        // or fail
         else {
           throw new Error('module ' + moduleIdOrList + ' not found');
         }
@@ -160,10 +106,21 @@ var RequireContext = Fiber.extend(function () {
 
       // AMD require
       this.log('AMD require(Array) of ' + moduleIdOrList.join(', '));
+      var resolved = [];
       this.ensure(moduleIdOrList, proxy(function (localRequire) {
-        var module = Executor.createModule();
-        var modules = this.getAllModules(moduleIdOrList, localRequire, module);
-        callback.apply(context, modules);
+        for (var i = 0, len = moduleIdOrList.length; i < len; i++) {
+          switch(moduleIdOrList[i]) {
+          case 'require':
+            resolved.push(localRequire);
+            break;
+          case 'module':
+          case 'exports':
+            throw new Error('require(array, callback) doesn\'t create a module. You cannot use module/exports here');
+          default:
+            resolved.push(localRequire(moduleIdOrList[i]));
+          }
+        }
+        callback.apply(context, resolved);
       }, this));
     },
 
@@ -185,39 +142,12 @@ var RequireContext = Fiber.extend(function () {
       // strip builtins (CommonJS doesn't download or make these available)
       moduleList = Analyzer.stripBuiltins(moduleList);
 
-      var tn;
-      var td;
-      var callsRemaining = moduleList.length;
-      var thisPath = (this.getPath()) ? this.getPath() : userConfig.moduleRoot;
-      var downloadCommand = proxy(function (root, files) {
-        Executor.runTree(root, files, proxy(function () {
-          // test if all modules are done
-          if (--callsRemaining === 0) {
-            if (callback) {
-              callback(InjectCore.createRequire(this.getId(), this.getPath()));
-            }
-          }
-        }, this));
-      }, this);
-
-      // exit early when we have no builtins left
-      if (!callsRemaining) {
-        if (callback) {
-          callback(InjectCore.createRequire(this.getId(), this.getPath()));
+      var require = proxy(this.require, this);
+      this.process(moduleList, function(root) {
+        if (typeof callback == 'function') {
+          callback(require);
         }
-        return;
-      }
-
-      // for each module, spawn a download. On download, spawn an execution
-      // when all executions have ran, fire the callback with the local require
-      // scope
-      for (var i = 0, len = moduleList.length; i < len; i++) {
-        tn = TreeDownloader.createNode(moduleList[i], thisPath);
-        td = new TreeDownloader(tn);
-        // get the tree, then run the tree, then --count
-        // if count is 0, callback
-        td.get(downloadCommand);
-      }
+      });
     },
 
     /**
@@ -304,26 +234,6 @@ var RequireContext = Fiber.extend(function () {
         }
       }
 
-      this.log('AMD define(...) of ' + ((id) ? id : 'anonymous'));
-
-      // strip any circular dependencies that exist
-      // this will prematurely create modules
-      for (i = 0, len = dependencies.length; i < len; i++) {
-        if (BUILTINS[dependencies[i]]) {
-          // was a builtin, skip
-          resolvedDependencyList.push(dependencies[i]);
-          continue;
-        }
-        // TODO: amd dependencies are resolved FIRST against their current ID
-        // then against the module Root (huge deviation from CommonJS which uses
-        // the filepaths)
-        tempModuleId = RulesEngine.resolveModule(dependencies[i], this.getId());
-        resolvedDependencyList.push(tempModuleId);
-        if (!Executor.isModuleCircular(tempModuleId) && !Executor.isModuleDefined(tempModuleId)) {
-          remainingDependencies.push(dependencies[i]);
-        }
-      }
-
       // handle anonymous modules
       if (!id) {
         currentExecutingAMD = Executor.getCurrentExecutingAMD();
@@ -335,55 +245,89 @@ var RequireContext = Fiber.extend(function () {
         }
         this.log('AMD identified anonymous module as ' + id);
       }
-
-      if (Executor.isModuleDefined(id)) {
-        this.log('AMD module ' + id + ' has already ran once');
-        return;
-      }
-      Executor.flagModuleAsDefined(id);
-
-      if (!dependenciesDeclared && typeof(executionFunctionOrLiteral) === 'function') {
-        // with Link.JS, we need to convert from a function object to
-        // a statement
-        var fnBody = ['(', executionFunctionOrLiteral.toString(), ')'].join('');
-        var analyzedRequires = Analyzer.extractRequires(fnBody);
-        dependencies.concat(analyzedRequires);
-      }
-
-      this.log('AMD define(...) of ' + id + ' depends on: ' + dependencies.join(', '));
-      this.log('AMD define(...) of ' + id + ' will retrieve: ' + remainingDependencies.join(', '));
-
-      // ask only for the missed items + a require
-      remainingDependencies.unshift('require');
-      this.ensure(remainingDependencies, proxy(function (require) {
-        this.log('AMD define(...) of ' + id + ' all downloads required');
-
-        // use require as our first arg
-        var module = Executor.getModule(id);
-
-        // if there is no module, it was defined inline
-        if (!module) {
-          module = Executor.createModule(id);
-        }
-
-        var resolvedDependencies = this.getAllModules(resolvedDependencyList, require, module);
-        var results;
-
-        // if the executor is a function, run it
-        // if it is an object literal, walk it.
-        if (typeof(executionFunctionOrLiteral) === 'function') {
-          results = executionFunctionOrLiteral.apply(null, resolvedDependencies);
-          if (results) {
-            module.setExports(results);
+      
+      this.process(dependencies, function(root) {
+        // all modules have been ran, now to deal with this guy's args
+        var resolved = [];
+        var deps = (dependenciesDeclared) ? dependencies : [];
+        var require = InjectCore.createRequire(root.data.resolvedId, root.data.resolvedUrl);
+        var module = Executor.createModule(root.data.resolvedId, root.data.resolvedUrl);
+        var result;
+        for (var i = 0, len = deps.length; i < len; i++) {
+          switch(deps[i]) {
+          case 'require':
+            resolved.push(require);
+            break;
+          case 'module':
+            resolved.push(module);
+            break;
+          case 'exports':
+            resolved.push(module.exports);
+            break;
+          default:
+            resolved.push(require(deps[i]));
           }
         }
-        else {
-          for (var modName in executionFunctionOrLiteral) {
-            module.exports[modName] = executionFunctionOrLiteral[modName];
+        if (typeof factory === 'function') {
+          result = factory.apply(module, resolved);
+          if (result) {
+            module.exports = results;
           }
         }
-
-      }, this));
+        else if (typeof factory === 'object') {
+          module.exports = factory;
+        }
+        module.amd = true;
+        Executor.setModule(module.id, module);
+      });
+    },
+    
+    /**
+     * Process all the modules selected by the various CJS / AMD interfaces
+     * builds a tree to handle the dependency download and execution
+     * upon completion, calls the provided callback, returning the root node
+     * @method RequireContext#process
+     * @param {Array} dependencies - an array of dependencies to process
+     * @param {Function} callback - a function called when the module tree is downloaded and processed
+     * @private
+     */
+    process: function(dependencies, callback) {
+      var root = new TreeNode();
+      var count = dependencies.length;
+      var node;
+      var runner;
+      var runners = [];
+      var resolveCount = function() {
+        if (count === 0 || --count === 0) {
+          runner = new TreeRunner(root);
+          runner.execute(function() {
+            callback(root);
+          });
+        }
+      };
+      root.data.originalId = this.id;
+      root.data.resolvedId = this.id;
+      root.data.resolvedUrl = this.path;
+      
+      if (dependencies.length) {
+        for (i = 0, len = dependencies.length; i < len; i++) {
+          if (BUILTINS[dependencies[i]]) {
+            count--;
+            resolveCount();
+          }
+          else {
+            node = new TreeNode();
+            node.data.originalId = dependencies[i];
+            runner = new TreeRunner(node);
+            runners.push(runner);
+            root.addChild(node);
+            runner.download(resolveCount);
+          }
+        }
+      }
+      else {
+        resolveCount();
+      }
     }
   };
 });

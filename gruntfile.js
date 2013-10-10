@@ -208,7 +208,7 @@ module.exports = function (grunt) {
           './src/injectcore.js',
           './src/requirecontext.js',
           './src/rulesengine.js',
-          './src/treedownloader.js',
+          './src/treerunner.js',
           './src/treenode.js',
           './src/includes/context.js'
         ]
@@ -232,7 +232,7 @@ module.exports = function (grunt) {
           './src/injectcore.js',
           './src/requirecontext.js',
           './src/rulesengine.js',
-          './src/treedownloader.js',
+          './src/treerunner.js',
           './src/treenode.js',
           './src/includes/context.js'
         ]

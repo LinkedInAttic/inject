@@ -284,73 +284,12 @@ var Executor;
       getCurrentExecutingAMD : function() {
         return this.anonymousAMDStack[this.anonymousAMDStack.length - 1];
       },
-
-      /**
-       * Assigning a module puts it into a special scope. Since we cannot
-       * predict what was going to be put here, we have to assume the calling
-       * context knows what the intent was. This is primarily used in AMD
-       * flows, but is made generic should someone else want to force assign
-       * exports through an addRule mechanism
-       * @method Executor.assignModule
-       * @param {String} parentName - the name of the parent module
-       * @param {String} moduleName - the name of the module that was invoked
-       * @param {String} path - a path for module completeness (module.uri) sake
-       * @param {Object} exports - the item to assign to module.exports
-       */
-      assignModule : function(parentName, moduleName, path, exports) {
-        var module = Executor.createModule(parentName + '^^^' + moduleName, path);
-        module.exports = exports;
-      },
-
-      /**
-       * Retrieves a module from an assignment location
-       * Modules are placed in a special namespace when assigned.
-       * This allows them to be retrieved without polluting the main
-       * namespaces
-       * @method Executor.getAssignedModule
-       * @param {String} parentName - the name of the parent module
-       * @param {String} moduleName - the name of the module to retrieve
-       * @returns {Object} the module object
-       */
-      getAssignedModule : function(parentName, moduleName) {
-        return this.getModule(parentName + '^^^' + moduleName);
-      },
-
-      /**
-       * run all items within the tree, then run the provided callback
-       * If we encounter any modules that are paused, we BLOCK and wait
-       * for their resolution
-       * @method Executor.runTree
-       * @param {TreeNode} root - the root TreeNode to run execution on
-       * @param {Object} files - a hash of filename / contents
-       * @param {Function} callback - a callback to run when the tree is executed
-       * @public
-       */
-      runTree : function(root, files, callback) {
-        // do a post-order traverse of files for execution
-        var returns = [];
-        root.postOrder(function(node) {
-          if (!node.getValue().name) {
-            return;
-            // root node
-          }
-          var name = node.getValue().name;
-          var path = node.getValue().path;
-          var file = files[name];
-          var resolvedId = node.getValue().resolvedId;
-          var module;
-
-          Executor.createModule(resolvedId, path);
-          if (!node.isCircular()) {
-            // note: we use "name" here, because of CommonJS Spec 1.0 Modules
-            // the relative includes we find must be relative to "name", not the
-            // resovled name
-            module = Executor.runModule(resolvedId, file, path);
-            returns.push(module);
-          }
-        });
-
-        callback(returns);
+      
+      setModule: function(id, module) {
+        if (id === null || ''+id === '') {
+          return;
+        }
+        this.cache[id] = module;
       },
 
       /**
@@ -393,6 +332,7 @@ var Executor;
           module.uri = path || null;
           module.exports = {};
           module.error = null;
+          module.exec = false;
           module.setExports = function(xobj) {
             var name;
             for (name in module.exports) {
@@ -431,83 +371,16 @@ var Executor;
       },
 
       /**
-       * Check if a module is an AMD style define
-       * @method Executor.isModuleDefined
-       * @param {string} moduleId - the module ID
-       * @public
-       * @returns {boolean} if the module is AMD defined
-       */
-      isModuleDefined : function(moduleId) {
-        return this.defined[moduleId];
-      },
-
-      /**
-       * Flag a module as defined AMD style
-       * @method Executor.flagModuleAsDefined
-       * @param {string} moduleId - the module ID
-       * @public
-       */
-      flagModuleAsDefined : function(moduleId) {
-        this.defined[moduleId] = true;
-      },
-
-      /**
-       * Flag a module as broken
-       * @method Executor.flagModuleAsBroken
-       * @param {string} moduleId - the module ID
-       * @public
-       */
-      flagModuleAsBroken : function(moduleId) {
-        this.broken[moduleId] = true;
-      },
-
-      /**
-       * Flag a module as circular
-       * @method Executor.flagModuleAsCircular
-       * @param {string} moduleId - the module ID
-       * @public
-       */
-      flagModuleAsCircular : function(moduleId) {
-        this.circular[moduleId] = true;
-      },
-
-      /**
-       * returns if the module is circular or not
-       * @method Executor.isModuleCircular
-       * @param {string} moduleId - the module ID
-       * @public
-       * @returns {boolean} true if the module is circular
-       */
-      isModuleCircular : function(moduleId) {
-        return this.circular[moduleId];
-      },
-
-      /**
        * Get the module matching the specified Identifier
        * @method Executor.getModule
        * @param {string} moduleId - the module ID
        * @public
        * @returns {object} the module at the identifier
        */
-      getModule : function(moduleId) {
-        if (this.broken[moduleId] && this.broken.hasOwnProperty(moduleId)) {
-          var errorMessage = 'module ' + moduleId + ' failed to load successfully';
-          var originalException = moduleFailureCache[moduleId];
-          errorMessage += (originalException) ? ': ' + originalException.message : '';
-          var e = new Error(errorMessage);
-          
-          if (originalException) {
-            e.originalException = originalException;
-            e.stack = originalException.stack;
-          }
-
-          throw e;
-        }
-
-        // return from the cache (or its alias location)
-        return this.getFromCache(moduleId) || null;
+      getModule : function(moduleId, undef) {
+        return this.getFromCache(moduleId) || undef;
       },
-
+      
       /**
        * Build a sandbox around and execute a module
        * @method Executor.runModule
@@ -553,18 +426,15 @@ var Executor;
         if (result && result.__error) {
           // context[NAMESPACE].clearCache();
           // exit early, this module is broken
-          this.executed[moduleId] = true;
-          Executor.flagModuleAsBroken(moduleId);
           debugLog('Executor', 'broken', moduleId, path, result);
           return;
         }
 
         // cache the result (IF NOT AMD)
         if (!IS_AMD_REGEX.test(code)) {
-          this.cache[moduleId] = result;
+          this.setModule(moduleId, result);
         }
 
-        this.executed[moduleId] = true;
         debugLog('Executor', 'executed', moduleId, path, result);
 
         // return the result
