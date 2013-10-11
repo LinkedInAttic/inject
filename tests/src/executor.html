@@ -32,21 +32,13 @@
     <script type="text/javascript" src="../../src/includes/globals.js"></script>
     <script type="text/javascript" src="../../src/includes/commonjs.js"></script>
     <script type="text/javascript" src="../../src/lib/fiber.js"></script>
-    <script type="text/javascript">
-      //TraceKit facade
-      TraceKit = {
-        report : function() {
-        }
-      };
-      TraceKit.report.subscribe = function() {
-      };
-    </script>
-    <script type="text/javascript" src="../../src/lib/link.js"></script>
     <script type="text/javascript" src="../../src/executor.js"></script>
     <script type="text/javascript">
       var SYNTAX_ERROR = ['var use = true;', 'var barTwo = function() {', '  if (use) {', '};', 'exports.test = true;', ''].join('\n');
       var TYPE_ERROR = ['function typeError() {', 'this.date = null;', 'this.error = null;', '}', 'var errorObj = new typeError();', 'errorObj.date = new Date();', 'errorObj.error = "error" in true;', 'exports.test = true'].join('\n');
       var REF_ERROR = ["", "", "", "baz();", "", "exports.biz = 'boz';"].join('\n');
+
+      var RulesEngine;
 
       module("Executor with no eval", {
         setup : function() {
@@ -86,6 +78,7 @@
         },
         teardown : function() {
           window.eval.restore();
+          RulesEngine = null;
         }
       });
 
@@ -116,6 +109,14 @@
       
       module("Executor with eval enabled", { //eval necessary for error handling
       	setup: function() {
+          
+          var stubGetOriginalName = sinon.stub();
+          stubGetOriginalName.returns(null);
+          
+          RulesEngine = {
+            getOriginalName: stubGetOriginalName
+          };
+          
         	// inject facade (necessary second time because safari was having problems with scoping)
 	        window.Inject = {
 	          INTERNAL : {
@@ -154,19 +155,28 @@
         var syntaxError, refError, typeError;
 
         Executor.runModule("syntaxError", SYNTAX_ERROR, "http://example.com/syntaxerror.js", {});
-        raises(function() {
-        //Regex used to confirm error messages and line numbers  
+        try {
           var moduleC = Executor.getModule('syntaxError');
-        }, /Parse error .+?/ ,"Syntax Error thrown (no line number)"); 
-
+        }
+        catch(e) {
+          ok((/Parse error .+?/).test(e.message), 'Syntax Error thrown (no line number)');
+        }
+        
         Executor.runModule("refError", REF_ERROR, "http://example.com/referror.js", {});
-        raises(function() {
+        try {
           var moduleD = Executor.getModule('refError');
-        }, /Runtime error .+? at line 4/,  "Reference Error thrown with correct line number (4)");
-        Executor.runModule("typeError", TYPE_ERROR, "http://example.com/typeerror.js", {});
-        raises(function() {
+        }
+        catch(e) {
+          ok((/Runtime error .+? Line: 4/).test(e.message), 'Reference Error thrown with correct line number (4)');
+        }
+        
+        Executor.runModule("typeError", TYPE_ERROR, "http://example.com/typeerrror.js", {});
+        try {
           var moduleE = Executor.getModule('typeError');
-        },  /Runtime error .+? at line 7/,  "Type Error thrown with correct line number (7)"); 
+        }
+        catch(e) {
+          ok((/Runtime error .+? Line: 7/).test(e.message), 'Type Error thrown with correct line number (7)');
+        }
       });
 
       test('using module aliases', function() {

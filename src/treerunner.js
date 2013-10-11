@@ -66,7 +66,12 @@ var TreeRunner = Fiber.extend(function () {
       // -- in a next-tick, create a new TreeDownloader at the new child (async)
       // -- -- on complete, decrement children count by 1
       // -- -- when children count hits 0, call downloadComplete()
-      root.data.resolvedId = RulesEngine.resolveModule(root.data.originalId, root.getParent().data.ressolvedId);
+      if (root.getParent()) {
+        root.data.resolvedId = RulesEngine.resolveModule(root.data.originalId, root.getParent().data.resolvedId);
+      }
+      else {
+        root.data.resolvedId = RulesEngine.resolveModule(root.data.originalId, '');
+      }
       root.data.resolvedUrl = RulesEngine.resolveFile(root.data.resolvedId);
       
       // select a communcator function. If there are fetch rules, create a flow control
@@ -84,8 +89,8 @@ var TreeRunner = Fiber.extend(function () {
         commFlow.seq(function(next, error, contents) {
           fn(next, contents, commFlowResolver, commFlowCommunicator, {
             moduleId: root.data.originalId,
-            parentId: root.getParent().data.originalId,
-            parentUrl: root.getParent().data.resolvedUrl
+            parentId: (root.getParent()) ? root.getParent().data.originalId : '',
+            parentUrl: (root.getParent()) ? root.getParent().data.resolvedUrl : ''
           });
         });
       };
@@ -105,7 +110,7 @@ var TreeRunner = Fiber.extend(function () {
       }
       
       // download the file via communicator, get back contents
-      communicatorGet(root.data.originalName, root.data.resolvedUrl, function(content) {
+      communicatorGet(root.data.originalId, root.data.resolvedUrl, function(content) {
         // build a flow control to adjust the contents based on rules
         var pointcuts = RulesEngine.getContentRules(root.data.resolvedUrl);
         var contentFlow = new Flow();

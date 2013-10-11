@@ -5,17 +5,16 @@ Apache Software License 2.0 (see below)
 lscache library (c) 2011 Pamela Fox
 Apache Software License 2.0 (see below)
 
-Link.JS (c) 2012 Calyptus Life AB, Sweden
-Simplified BSD / MIT License (see below)
-Uses code derived from http://code.google.com/p/jstokenizer/
-Copyright (c) 2011 Ariya Hidayat <ariya.hidayat@gmail.com>
+stacktrace.js
+Domain Public by Eric Wendelin http://eriwen.com/ (2008)
+                 Luke Smith http://lucassmith.name/ (2008)
+                 Loic Dachary <loic@dachary.org> (2008)
+                 Johan Euphrosine <proppy@aminche.com> (2008)
+                 Oyvind Sean Kinsey http://kinsey.no/blog (2010)
+                 Victor Homyakov <victor-homyakov@users.sourceforge.net> (2010)
 
 easyXDM
 Copyright (c) 2009-2011 Øyvind Sean Kinsey
-MIT License (see below)
-
-TraceKit
-Copyright (c) 2013 Onur Can Cakmak <onur.cakmak@gmail.com> and all TraceKit contributors.
 MIT License (see below)
 
 JSON

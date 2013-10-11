@@ -31,10 +31,12 @@ governing permissions and limitations under the License.
   <script type="text/javascript" src="../../src/includes/constants.js"></script>
   <script type="text/javascript" src="../../src/includes/globals.js"></script>
   <script type="text/javascript" src="../../src/lib/fiber.js"></script>
+  <script type="text/javascript" src="../../src/treenode.js"></script>
   <script type="text/javascript" src="../../src/requirecontext.js"></script>
   <script type="text/javascript">
     var Analyzer = null;
     var Executor = null;
+    var TreeRunner = null;
     module('RequireContext', {
       teardown : function() {
         Executor = null;
@@ -53,6 +55,11 @@ governing permissions and limitations under the License.
       Executor = {
         isModuleDefined : sinon.stub().returns(false),
         flagModuleAsDefined : sinon.stub()
+      };
+      TreeRunner = function() {};
+      TreeRunner.prototype = {
+        download: sinon.stub(),
+        execute: sinon.stub()
       };
 
       var rq = new RequireContext();
