@@ -249,7 +249,7 @@ var RequireContext = Fiber.extend(function () {
       this.process(dependencies, function(root) {
         // all modules have been ran, now to deal with this guy's args
         var resolved = [];
-        var deps = (dependenciesDeclared) ? dependencies : [];
+        var deps = (dependenciesDeclared) ? dependencies : ['require', 'exports', 'module'];
         var require = InjectCore.createRequire(root.data.resolvedId, root.data.resolvedUrl);
         var module = Executor.createModule(root.data.resolvedId, root.data.resolvedUrl);
         var result;
