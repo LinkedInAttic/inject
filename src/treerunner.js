@@ -77,6 +77,7 @@ var TreeRunner = Fiber.extend(function () {
       // select a communcator function. If there are fetch rules, create a flow control
       // to handle communication (as opposed to the internal communicator)
       var communicatorGet = Communicator.get;
+      var fetchRules = RulesEngine.getFetchRules(root.data.resolvedId);
       var commFlow = new Flow();
       var commFlowResolver = {
         module: function() { return RulesEngine.resolveModule.apply(RulesEngine, arguments); },
@@ -95,13 +96,13 @@ var TreeRunner = Fiber.extend(function () {
         });
       };
       
-      if (RulesEngine.getFetchRules(root.data.resolvedUrl).length > 0) {
+      if (fetchRules.length > 0) {
         communicatorGet = function(name, path, cb) {
           commFlow.seq(function(next) {
             next(null, '');
           });
           for (var i = 0, len = fetchRules.length; i < len; i++) {
-            addToCommFlow(fetchRules[i]);
+            addComm(fetchRules[i]);
           }
           commFlow.seq(function (next, error, contents) {
             cb(contents);
@@ -123,7 +124,7 @@ var TreeRunner = Fiber.extend(function () {
           next(null, content);
         });
         for (var i = 0, len = pointcuts.length; i < len; i++) {
-          makeFlow(pointcuts[i]);
+          addContent(pointcuts[i]);
         }
         contentFlow.seq(function (next, error, contents) {
           root.data.file = contents;

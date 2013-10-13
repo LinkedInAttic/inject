@@ -79,6 +79,10 @@ var Analyzer;
             term,
             dep;
 
+        if (!file) {
+          return [];
+        }
+
         file = file.replace(JS_COMMENTS_REGEX, '');
 
         while (item = REQUIRE_REGEX.exec(file)) {

@@ -82,7 +82,8 @@ var commonJSHeader = (['',
   '            }',
   '            module.amd = true;',
   '          },',
-  '          exports = module.exports;',                                       //NOTE: FOLLOWING TRY/CATCH MUST BE ON ONE LINE!
+  '          exports = module.exports;',  
+  '          define.amd = {};',                                               // NOTE: FOLLOWING TRY/CATCH MUST BE ON ONE LINE!
   '      try{module.undefined_function();}catch(e){module.__error_line = e;}' // NOTE: no lines (blank or otherwise) after this, it marks the start of file
   ]).join('\n');
 

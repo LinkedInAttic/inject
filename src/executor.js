@@ -233,7 +233,7 @@ var Executor;
       }
       return stack;
     }
-  }
+  };
 
   /**
    * execute a javascript module after wrapping it in sandbox code
@@ -290,7 +290,6 @@ var Executor;
       };
     }
 
-    var lineException, adjustedLineNumber;
     // We only reach here if there are no parse errors
     // We can now evaluate using either the eval()
     // method or just running the function we built.
@@ -305,10 +304,10 @@ var Executor;
       var toExec = code.replace(/([\w\W]+?)=([\w\W]*\})[\w\W]*?$/, '$1 = ($2)();');
       toExec = [toExec, sourceString].join('\n');
 
-      result = context.Inject.INTERNAL.execute[options.functionId];
+      result = eval(toExec); // context.Inject.INTERNAL.execute[options.functionId];
       
       if (result.__error) {
-        result.__error.message = 'Runtime error in ' + options.moduleId + '(' + options.url + ') ' + result.__error.message
+        result.__error.message = 'Runtime error in ' + options.moduleId + '(' + options.url + ') ' + result.__error.message;
       }
     }
     else {
@@ -321,7 +320,7 @@ var Executor;
       result = context.Inject.INTERNAL.execute[options.functionId]();
 
       if (result.__error) {
-        result.__error.message = 'Runtime error in ' + options.moduleId + '(' + options.url + ') ' + result.__error.message
+        result.__error.message = 'Runtime error in ' + options.moduleId + '(' + options.url + ') ' + result.__error.message;
       }
     }
 
