@@ -244,13 +244,13 @@ var RequireContext = Fiber.extend(function () {
           throw new Error('Anonymous AMD module used, but it was not included as a dependency. This is most often caused by an anonymous define() from a script tag.');
         }
         this.log('AMD identified anonymous module as ' + id);
-      }
+      }      
       
       this.process(dependencies, function(root) {
         // all modules have been ran, now to deal with this guy's args
         var resolved = [];
         var deps = (dependenciesDeclared) ? dependencies : ['require', 'exports', 'module'];
-        var require = InjectCore.createRequire(root.data.resolvedId, root.data.resolvedUrl);
+        var require = RequireContext.createRequire(root.data.resolvedId, root.data.resolvedUrl);
         var module = Executor.createModule(root.data.resolvedId, root.data.resolvedUrl);
         var result;
         for (var i = 0, len = deps.length; i < len; i++) {
@@ -332,4 +332,93 @@ var RequireContext = Fiber.extend(function () {
   };
 });
 
-RequireContext = RequireContext;
+/**
+ * create a require() method within a given context path
+ * relative require() calls can be based on the provided
+ * id and path
+ * @method RequireContext.createRequire
+ * @param {string} id - the module identifier for relative module IDs
+ * @param {string} path - the module path for relative path operations
+ * @public
+ * @returns a function adhearing to CommonJS and AMD require()
+ */
+RequireContext.createRequire = function (id, path) {
+  var req = new RequireContext(id, path);
+  var require = proxy(req.require, req);
+
+  require.ensure = proxy(req.ensure, req);
+  require.run = proxy(req.run, req);
+  // resolve an identifier to a URL (AMD compatibility)
+  require.toUrl = function (identifier) {
+    var resolvedId = RulesEngine.resolveModule(identifier, id);
+    var resolvedPath = RulesEngine.resolveFile(resolvedId, path, true);
+    return resolvedPath;
+  };
+  return require;
+};
+
+/**
+ * create a define() method within a given context path
+ * relative define() calls can be based on the provided
+ * id and path
+ * @method RequireContext.createDefine
+ * @param {string} id - the module identifier for relative module IDs
+ * @param {string} path - the module path for relative path operations
+ * @param {boolean} disableAMD - if provided, define.amd will be false, disabling AMD detection
+ * @public
+ * @returns a function adhearing to the AMD define() method
+ */
+RequireContext.createDefine = function (id, path, disableAMD) {
+  var req = new RequireContext(id, path);
+  var define = proxy(req.define, req);
+  define.amd = (disableAMD) ? false : {};
+  return define;
+};
+
+
+RequireContext.createInlineDefine = function(module, require) {
+  var define = function() {
+    // this is a serial define and is no longer functioning asynchronously',
+    function isArray(a) {
+      return (Object.prototype.toString.call(a) === '[object Array]');
+    }
+    var deps = [];
+    var depends = ['require', 'exports', 'module'];
+    var factory = {};
+    var result;
+    for (var i = 0, len = arguments.length; i < len; i++) {
+      if (isArray(arguments[i])) {
+        depends = arguments[i];
+        break;
+      }
+    }
+    factory = arguments[arguments.length - 1];
+    for (var d = 0, dlen = depends.length; d < dlen; d++) {
+      switch(depends[d]) {
+      case 'require':
+        deps.push(require);
+        break;
+      case 'module':
+        deps.push(module);
+        break;
+      case 'exports':
+        deps.push(module.exports);
+        break;
+      default:
+        deps.push(require(depends[d]));
+      }
+    }
+    if (typeof factory === 'function') {
+      result = factory.apply(module, deps);
+      if (result) {
+        module.exports = result;
+      }
+    }
+    else if (typeof factory === 'object') {
+      module.exports = factory;
+    }
+    module.amd = true;
+  };
+  define.amd = {};
+  return define;
+};

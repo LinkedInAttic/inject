@@ -105,6 +105,7 @@ var TreeRunner = Fiber.extend(function () {
             addComm(fetchRules[i]);
           }
           commFlow.seq(function (next, error, contents) {
+            // If AMD is enabled, and it has a new ID, then assign that
             cb(contents);
           });
         };
@@ -127,12 +128,21 @@ var TreeRunner = Fiber.extend(function () {
           addContent(pointcuts[i]);
         }
         contentFlow.seq(function (next, error, contents) {
-          root.data.file = contents;
+          if (typeof contents === 'string') {
+            root.data.file = contents;
+          }
+          else {
+            root.data.exports = contents;
+            // store in the module cache as well, since this was resolved
+            // externally
+            
+          }
 
           // determine if this is circular
           var circular = false;
           var searchIndex = {};
           var parent = root.getParent();
+          var module;
           searchIndex[root.data.originalId] = true;
           while(parent && !circular) {
             if (searchIndex[parent.data.originalId]) {
@@ -146,8 +156,14 @@ var TreeRunner = Fiber.extend(function () {
           root.data.circular = circular;
 
           // kick off its children
-          if (typeof contents === 'object') {
-            root.data.exports = contents;
+          if (root.data.exports) {
+            // when there are exports available, then we prematurely resolve this module
+            // this can happen when the an external rule for the communicator has resolved
+            // the export object for us
+            module = Executor.createModule(root.data.resolvedId, root.data.resolvedUrl);
+            module.exec = true;
+            module.exports = contents;
+            Executor.setModule(root.data.resolvedId, module);
             downloadComplete();
           }
           else if (root.data.circular) {
@@ -155,6 +171,7 @@ var TreeRunner = Fiber.extend(function () {
             downloadComplete();
           }
           else {
+            // analyze the file for depenencies, kick off a child download for each one
             var requires = Analyzer.extractRequires(root.data.file);
             var children = requires.length;
             var childDone = function() {
@@ -193,29 +210,39 @@ var TreeRunner = Fiber.extend(function () {
           return;
         }
         var module;
+        var result;
+        var qualifiedIdChain = [];
+        var qualifiedId;
+        
+        // node.parents(function(current) {
+        //   qualifiedIdChain.push(current.data.resolvedId);
+        // });
+        // qualifiedId = qualifiedIdChain.join('(from)');
+        // console.log('run: ' + qualifiedId);
         
         // executor: create a module
         // if not circular, executor: run module (otherwise, the circular reference begins as empty exports)
         module = Executor.createModule(node.data.resolvedId, node.data.resolvedUrl);
+        node.data.module = module;
         
-        if (Executor.getModule(node.data.resolvedId).exec) {
+        if (module.exec) {
           return;
         }
         
-        Executor.setModule(node.data.resolvedId, module);
         if (!node.data.circular) {
-          if (typeof node.data.file === 'string') {
-            module = Executor.runModule(node.data.resolvedId, node.data.file, node.data.resolvedUrl);
+          if (node.data.exports) {
+            // exports came pre set
+            module.exports = node.data.exports;
+            module.exec = true;
+          }
+          else if (typeof node.data.file === 'string') {
+            result = Executor.runModule(module, node.data.file);
             module.exec = true;
             // if this is an AMD module, it's define() is back on the stack, so we're back to async
+            // so do not update the exports (it will be done during the file's define() call)
             if (!module.amd) {
               node.data.exports = module.exports;
-              Executor.setModule(node.data.resolvedId, module);
             }
-          }
-          else {
-            module.exec = true;
-            Executor.setModule(node.data.resolvedId, module);
           }
         }
       };

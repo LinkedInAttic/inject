@@ -251,22 +251,13 @@ var Executor;
    * @param {String} code - the code to execute
    * @param {Object} options - a collection of options
    */
-  function executeJavaScriptModule(code, options) {
+  function executeJavaScriptModule(code, functionId) {
+    var meta = context.Inject.INTERNAL.executor[functionId];
+    var module = meta.module;
     var failed = false;
-    var sourceString = IS_IE ? '' : '//@ sourceURL=' + options.url;
+    var sourceString = IS_IE ? '' : '//@ sourceURL=' + module.uri;
     var result;
     var err;
-
-    options = {
-      moduleId : options.moduleId || null,
-      functionId : options.functionId || null,
-      preamble : options.preamble || '',
-      preambleLength : options.preamble.split('\n').length,
-      epilogue : options.epilogue || '',
-      epilogueLength : options.epilogue.split('\n').length,
-      originalCode : options.originalCode || code,
-      url : options.url || null
-    };
 
     // add source string in sourcemap compatible browsers
     code = [code, sourceString].join('\n');
@@ -280,9 +271,9 @@ var Executor;
       // proper syntax error, removing the LinkJS dependency completely. While the debugging
       // is not as perfect, the 15k savings are well worth it. Window level reporting is
       // undisturbed by this change
-      ex.message = 'Parse error in ' + options.moduleId + ' (' + options.url + ') please check for an uncaught error ' + ex.message;
+      ex.message = 'Parse error in ' + module.id + ' (' + module.uri + ') please check for an uncaught error ' + ex.message;
       var scr = document.createElement('script');
-      scr.src = options.url;
+      scr.src = module.uri;
       scr.type = 'text/javascript';
       docHead.appendChild(scr);
       return {
@@ -304,10 +295,10 @@ var Executor;
       var toExec = code.replace(/([\w\W]+?)=([\w\W]*\})[\w\W]*?$/, '$1 = ($2)();');
       toExec = [toExec, sourceString].join('\n');
 
-      result = eval(toExec); // context.Inject.INTERNAL.execute[options.functionId];
+      eval(toExec);
       
-      if (result.__error) {
-        result.__error.message = 'Runtime error in ' + options.moduleId + '(' + options.url + ') ' + result.__error.message;
+      if (module.__error) {
+        module.__error.message = 'Runtime error in ' + module.id + '(' + module.uri + ') ' + module.__error.message;
       }
     }
     else {
@@ -317,21 +308,17 @@ var Executor;
       // NOTE: these all receive "-1" due to the semicolon auto added by the Executor at the end of
       // the preamble.
       // __EXCEPTION__.lineNumber - Inject.INTERNAL.modules.exec2.__error_line.lineNumber - 1
-      result = context.Inject.INTERNAL.execute[options.functionId]();
+      context.Inject.INTERNAL.executor[functionId].fn();
 
-      if (result.__error) {
-        result.__error.message = 'Runtime error in ' + options.moduleId + '(' + options.url + ') ' + result.__error.message;
+      if (module.__error) {
+        module.__error.message = 'Runtime error in ' + module.id + '(' + module.uri + ') ' + module.__error.message;
       }
     }
 
-
-    // clean up the function or object we globally created if it exists
-    if (context.Inject.INTERNAL.execute[options.functionId]) {
-      delete context.Inject.INTERNAL.execute[options.functionId];
-    }
-
-    // return the results
-    return result;
+    // // clean up the function or object we globally created if it exists
+    // if (context.Inject.INTERNAL.execute[functionId]) {
+    //   delete context.Inject.INTERNAL.execute[functionId];
+    // }
   }
 
   var AsStatic = Fiber.extend(function() {
@@ -356,9 +343,6 @@ var Executor;
         
         // any modules that had errors
         this.errors = {};
-
-        // cache of executed modules (true/false)
-        this.executed = {};
 
         // the stack of AMD define functions, because they "could" be anonymous
         this.anonymousAMDStack = [];
@@ -449,7 +433,6 @@ var Executor;
           errorMessage = 'module ' + idAlias + ' failed to load successfully';
           errorMessage += (err) ? ': ' + err.message : '';
           
-          console.log(err, module);
           // building a better stack trace
           if (module && module.__error_line) {
             // runtime errors need better stack trace
@@ -544,58 +527,44 @@ var Executor;
       /**
        * Build a sandbox around and execute a module
        * @method Executor.runModule
-       * @param {string} moduleId - the module ID
+       * @param {object} module - the module
        * @param {string} code - the code to execute
-       * @param {string} path - the URL for the module to run
        * @returns {Object} a module object
        * @public
        */
-      runModule : function(moduleId, code, path) {
-        debugLog('Executor', 'executing ' + path);
-        // check cache
-        if (this.cache[moduleId] && this.executed[moduleId]) {
-          return this.cache[moduleId];
-        }
+      runModule : function(module, code) {
+        debugLog('Executor', 'executing ' + module.uri);
 
         var functionId = 'exec' + (functionCount++);
+        var localMeta = {};
+        context.Inject.INTERNAL.executor[functionId] = localMeta;
+        
+        localMeta.module = module;
+        localMeta.require = RequireContext.createRequire(module.id, module.uri);
+        localMeta.define = RequireContext.createInlineDefine(module, localMeta.require);
 
         function swapUnderscoreVars(text) {
-          return text.replace(/__MODULE_ID__/g, moduleId).replace(/__MODULE_URI__/g, path).replace(/__FUNCTION_ID__/g, functionId).replace(/__INJECT_NS__/g, NAMESPACE);
+          return text.replace(/__MODULE_ID__/g, module.id)
+            .replace(/__MODULE_URI__/g, module.uri)
+            .replace(/__FUNCTION_ID__/g, functionId)
+            .replace(/__INJECT_NS__/g, NAMESPACE);
         }
 
         var header = swapUnderscoreVars(commonJSHeader);
         var footer = swapUnderscoreVars(commonJSFooter);
         var runCommand = ([header, ';', code, footer]).join('\n');
-        var result;
 
-        result = executeJavaScriptModule(runCommand, {
-          moduleId : moduleId,
-          functionId : functionId,
-          preamble : header,
-          epilogue : footer,
-          originalCode : code,
-          url : path
-        });
-        
-        this.executed[moduleId] = true;
+        executeJavaScriptModule(runCommand, functionId);
 
         // if a global error object was created
-        if (result && result.__error) {
+        if (module.__error) {
           // context[NAMESPACE].clearCache();
           // exit early, this module is broken
-          debugLog('Executor', 'broken', moduleId, path, result);
-          this.errors[moduleId] = result.__error;
+          debugLog('Executor', 'broken', module.id, module.uri, module.exports);
+          this.errors[module.id] = module.__error;
         }
 
-        // cache the result (IF NOT AMD)
-        if (!IS_AMD_REGEX.test(code)) {
-          this.setModule(moduleId, result);
-        }
-
-        debugLog('Executor', 'executed', moduleId, path, result);
-
-        // return the result
-        return result;
+        debugLog('Executor', 'executed', module.id, module.uri, module.exports);
       }
     };
   });

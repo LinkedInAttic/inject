@@ -37,25 +37,6 @@ var TreeNode = Fiber.extend(function () {
     },
 
     /**
-     * Flag this tree node as circular
-     * @method TreeNode#flagCircular
-     * @public
-     */
-    flagCircular: function () {
-      this.isCircularNode = true;
-    },
-
-    /**
-     * return if this node is a circular reference
-     * @method TreeNode#isCircular
-     * @public
-     * @returns {boolean} true if this is a circular reference
-     */
-    isCircular: function () {
-      return this.isCircularNode;
-    },
-
-    /**
      * Add a child to the node. It also sets up left
      * and right relationships as well as the parent.
      * @method TreeNode#addChild
@@ -147,6 +128,28 @@ var TreeNode = Fiber.extend(function () {
      */
     getParent: function () {
       return this.parent;
+    },
+    
+    /**
+     * Returns all of a requested data element for the parents
+     * @method TreeNode#parents
+     * @param {String} param - the data paramter to get
+     * @param {string} joins - the string to join it
+     * @returns {Array} - an array of the parent values
+     */
+    parents: function(callback) {
+      var output = [],
+          currentNode = this;
+      
+      while (currentNode) {
+        if (callback) {
+          callback(currentNode);
+        }
+        output.push(currentNode);
+        currentNode = currentNode.getParent();
+      }
+      
+      return output;
     },
 
     /**

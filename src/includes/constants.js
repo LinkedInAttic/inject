@@ -57,6 +57,13 @@ var LSCACHE_SCHEMA_VERSION_STRING = '!version';
 var LSCACHE_APP_KEY_STRING = '!appCacheKey';
 
 /**
+ * As an alternate storage, modules keep track of their cascading module ID
+ * this ID is based on their parents' resolvedID, separated by this token
+ * @constant
+ */
+var CASCADING_MODULE_SEPARATOR = ')(';
+
+/**
  * AMD modules that are deferred have this set
  * as their "arg[0]" as a way to flag
  * @constant
