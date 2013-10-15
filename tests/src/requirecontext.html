@@ -37,6 +37,7 @@ governing permissions and limitations under the License.
     var Analyzer = null;
     var Executor = null;
     var TreeRunner = null;
+    var RulesEngine = null;
     module('RequireContext', {
       teardown : function() {
         Executor = null;
@@ -60,6 +61,10 @@ governing permissions and limitations under the License.
       TreeRunner.prototype = {
         download: sinon.stub(),
         execute: sinon.stub()
+      };
+      RulesEngine = {
+        resolveFile: sinon.stub(),
+        resolveModule: sinon.stub()
       };
 
       var rq = new RequireContext();
