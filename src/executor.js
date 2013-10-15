@@ -60,39 +60,42 @@ var Executor;
      * @return {String} mode of operation for the exception
      */
     mode: function(e) {
-        if (e['arguments'] && e.stack) {
-            return 'chrome';
-        } else if (e.stack && e.sourceURL) {
-            return 'safari';
-        } else if (e.stack && e.number) {
-            return 'ie';
-        } else if (e.stack && e.fileName) {
-            return 'firefox';
-        } else if (e.message && e['opera#sourceloc']) {
-            // e.message.indexOf("Backtrace:") > -1 -> opera9
-            // 'opera#sourceloc' in e -> opera9, opera10a
-            // !e.stacktrace -> opera9
-            if (!e.stacktrace) {
-                return 'opera9'; // use e.message
-            }
-            if (e.message.indexOf('\n') > -1 && e.message.split('\n').length > e.stacktrace.split('\n').length) {
-                // e.message may have more stack entries than e.stacktrace
-                return 'opera9'; // use e.message
-            }
-            return 'opera10a'; // use e.stacktrace
-        } else if (e.message && e.stack && e.stacktrace) {
-            // e.stacktrace && e.stack -> opera10b
-            if (e.stacktrace.indexOf("called from line") < 0) {
-                return 'opera10b'; // use e.stacktrace, format differs from 'opera10a'
-            }
-            // e.stacktrace && e.stack -> opera11
-            return 'opera11'; // use e.stacktrace, format differs from 'opera10a', 'opera10b'
-        } else if (e.stack && !e.fileName) {
-            // Chrome 27 does not have e.arguments as earlier versions,
-            // but still does not have e.fileName as Firefox
-            return 'chrome';
+      if (e['arguments'] && e.stack) {
+        return 'chrome';
+      } else if (e.stack && e.sourceURL) {
+        return 'safari';
+      } else if (e.stack && e.number) {
+        return 'ie';
+      } else if (e.stack && e.fileName) {
+        return 'firefox';
+      } else if (e.message && e['opera#sourceloc']) {
+        // e.message.indexOf("Backtrace:") > -1 -> opera9
+        // 'opera#sourceloc' in e -> opera9, opera10a
+        // !e.stacktrace -> opera9
+        if (!e.stacktrace) {
+          return 'opera9'; // use e.message
         }
-        return 'other';
+        if (e.message.indexOf('\n') > -1 && e.message.split('\n').length > e.stacktrace.split('\n').length) {
+          // e.message may have more stack entries than e.stacktrace
+          return 'opera9'; // use e.message
+        }
+        return 'opera10a'; // use e.stacktrace
+      } else if (e.message && e.stack && e.stacktrace) {
+        // e.stacktrace && e.stack -> opera10b
+        if (e.stacktrace.indexOf("called from line") < 0) {
+          return 'opera10b'; // use e.stacktrace, format differs from 'opera10a'
+        }
+        // e.stacktrace && e.stack -> opera11
+        return 'opera11'; // use e.stacktrace, format differs from 'opera10a', 'opera10b'
+      } else if (e.stack && !e.fileName) {
+        // phantomJS looks like chrome, but only returns line numbers
+        // We can look for [\d]+:[\d]+)?\n|$
+        // Chrome 27 does not have e.arguments as earlier versions,
+        // but still does not have e.fileName as Firefox
+        var hasColumns = /[\d]+:[\d]+\)?(\n|$)/;
+        return (hasColumns.test(e.stack)) ? 'chrome' : 'phantom';
+      }
+      return 'other';
     },
   
     /**
@@ -107,6 +110,23 @@ var Executor;
         .replace(/^([^\(]+?)([\n$])/gm, '{anonymous}() ($1)$2')
         .replace(/^Object.<anonymous>\s*\(([^\)]+)\)/gm, '{anonymous}() ($1)')
         .replace(/^(.+) \((.+)\)$/gm, '$1@$2')
+        .split('\n')
+        .slice(1, -1);
+    },
+    
+    /**
+     * Given an Error object, return a formatted Array based on PhantomJS's stack string.
+     *
+     * @param e - Error object to inspect
+     * @return Array<String> of function calls, files and line numbers
+     */
+    phantom: function(e) {
+      return (e.stack + '\n')
+        .replace(/^\s+(at eval )?at\s+/gm, '') // remove 'at' and indentation
+        .replace(/^([^\(]+?)([\n$])/gm, '{anonymous}() ($1)$2')
+        .replace(/^Object.<anonymous>\s*\(([^\)]+)\)/gm, '{anonymous}() ($1)')
+        .replace(/^(.+) \((.+)\)$/gm, '$1@$2')
+        .replace(/(.+):([0-9]+)(\)?)/g, '$1:$2:0$3')
         .split('\n')
         .slice(1, -1);
     },
@@ -444,7 +464,7 @@ var Executor;
             
             actualChar = mainTracePieces[mainTracePieces.length - 1];
             
-            errorMessage = errorMessage + '@ Line: ' + actualLine + ' Column: ' + actualChar + ' ';
+            errorMessage = errorMessage + ' @ Line: ' + actualLine + ' Column: ' + actualChar + ' ';
           }
           
           err.message = errorMessage;

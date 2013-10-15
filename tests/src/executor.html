@@ -34,9 +34,31 @@
     <script type="text/javascript" src="../../src/lib/fiber.js"></script>
     <script type="text/javascript" src="../../src/executor.js"></script>
     <script type="text/javascript">
-      var SYNTAX_ERROR = ['var use = true;', 'var barTwo = function() {', '  if (use) {', '};', 'exports.test = true;', ''].join('\n');
-      var TYPE_ERROR = ['function typeError() {', 'this.date = null;', 'this.error = null;', '}', 'var errorObj = new typeError();', 'errorObj.date = new Date();', 'errorObj.error = "error" in true;', 'exports.test = true'].join('\n');
-      var REF_ERROR = ["", "", "", "baz();", "", "exports.biz = 'boz';"].join('\n');
+      var SYNTAX_ERROR = [
+        'var use = true;',
+        'var barTwo = function() {',
+        '  if (use) {',
+        '};',
+        'exports.test = true;',
+      ''].join('\n');
+      var TYPE_ERROR = [
+        'function typeError() {',
+        '  this.date = null;',
+        '  this.error = null;',
+        '}',
+        'var errorObj = new typeError();',
+        'errorObj.date = new Date();',
+        'errorObj.error = "error" in true;',
+        'exports.test = true',
+      ''].join('\n');
+      var REF_ERROR = [
+        '',
+        '',
+        '',
+        'baz();',
+        '',
+        'exports.biz = \'boz\';',
+        ''].join('\n');
 
       var RulesEngine;
       var RequireContext;
