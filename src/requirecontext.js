@@ -201,7 +201,7 @@ var RequireContext = Fiber.extend(function () {
       var id = null;
       var dependencies = ['require', 'exports', 'module'];
       var dependenciesDeclared = false;
-      var executionFunctionOrLiteral = {};
+      var factory = {};
       var remainingDependencies = [];
       var resolvedDependencyList = [];
       var tempModuleId = null;
@@ -211,10 +211,10 @@ var RequireContext = Fiber.extend(function () {
       // while not efficient, it makes this overloaed interface easier to
       // maintain
       var interfaces = {
-        'string array object': ['id', 'dependencies', 'executionFunctionOrLiteral'],
-        'string object':       ['id', 'executionFunctionOrLiteral'],
-        'array object':        ['dependencies', 'executionFunctionOrLiteral'],
-        'object':              ['executionFunctionOrLiteral']
+        'string array object': ['id', 'dependencies', 'factory'],
+        'string object':       ['id', 'factory'],
+        'array object':        ['dependencies', 'factory'],
+        'object':              ['factory']
       };
       var key = [];
       var value;
@@ -247,8 +247,8 @@ var RequireContext = Fiber.extend(function () {
           dependencies = value;
           dependenciesDeclared = true;
           break;
-        case 'executionFunctionOrLiteral':
-          executionFunctionOrLiteral = value;
+        case 'factory':
+          factory = value;
           break;
         }
       }
@@ -265,7 +265,7 @@ var RequireContext = Fiber.extend(function () {
         this.log('AMD identified anonymous module as ' + id);
       }      
       
-      this.process(dependencies, function(root) {
+      this.process(id, dependencies, function(root) {
         // don't bobther with the artificial root we created
         if (!root.data.resolvedId) {
           return;
@@ -292,10 +292,7 @@ var RequireContext = Fiber.extend(function () {
           }
         }
         if (typeof factory === 'function') {
-          result = factory.apply(module, resolved);
-          if (result) {
-            module.exports = results;
-          }
+          factory.apply(module, resolved);
         }
         else if (typeof factory === 'object') {
           module.exports = factory;
@@ -313,7 +310,13 @@ var RequireContext = Fiber.extend(function () {
      * @param {Function} callback - a function called when the module tree is downloaded and processed
      * @private
      */
-    process: function(dependencies, callback) {
+    process: function(id, dependencies, callback) {
+      if (typeof id !== 'string') {
+        callback = dependencies;
+        dependencies = id;
+        id = this.id;
+      }
+      
       var root = new TreeNode();
       var count = dependencies.length;
       var node;
@@ -327,9 +330,9 @@ var RequireContext = Fiber.extend(function () {
           });
         }
       };
-      root.data.originalId = this.id;
-      root.data.resolvedId = this.id;
-      root.data.resolvedUrl = this.path;
+      root.data.originalId = id;
+      root.data.resolvedId = id;
+      root.data.resolvedUrl = RulesEngine.resolveFile(id, this.path);
       
       if (dependencies.length) {
         for (i = 0, len = dependencies.length; i < len; i++) {
