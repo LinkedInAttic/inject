@@ -39,6 +39,7 @@
       var REF_ERROR = ["", "", "", "baz();", "", "exports.biz = 'boz';"].join('\n');
 
       var RulesEngine;
+      var RequireContext;
 
       module("Executor with no eval", {
         setup : function() {
@@ -47,16 +48,7 @@
 	        // inject facade
 	        window.Inject = {
 	          INTERNAL : {
-	            execute : {},
-	            modules : {},
-	            execs : {},
-	            createModule : function() {
-	              return {
-	                exports : {}
-	              };
-	            },
-	            require : function() {
-	            },
+              executor: {},
 	            defineExecutingModuleAs : function() {
 	            },
 	            undefineExecutingModule : function() {
@@ -67,10 +59,15 @@
 	          clearCache : function() {
 	          }
 	        };
+          
+          RequireContext = {};
+          RequireContext.createRequire = sinon.stub();
+          RequireContext.createInlineDefine = sinon.stub();
         },
         teardown : function() {
           window.eval.restore();
           RulesEngine = null;
+          RequireContext = null;
         }
       });
 
@@ -88,14 +85,18 @@
         };
 
         var testScript = "exports.foo = \"bar\";";
-        Executor.runModule("testId", testScript, "http://example.com/testid.js", {});
-        var module = Executor.getModule('testId');
+        var module = Executor.createModule('testId', '', 'http://example.com/testid.js');
+        Executor.runModule(module, testScript);
 
-        Executor.runModule("testId", testScript, "http://example.com/testid.js", {});
+        var moduleA = Executor.getModule('testId');
+
+        var module = Executor.createModule('testId', '', 'http://example.com/testid.js');
+        Executor.runModule(module, testScript);
+        
         var moduleB = Executor.getModule('testId');
 
-        equal(module.exports.foo, "bar", "module sandboxed and set exports");
-        equal(module, moduleB, "same execution yields same module result");
+        equal(moduleA.exports.foo, "bar", "module sandboxed and set exports");
+        equal(moduleA, moduleB, "same execution yields same module result");
       });
       
       
@@ -112,24 +113,7 @@
         	// inject facade (necessary second time because safari was having problems with scoping)
 	        window.Inject = {
 	          INTERNAL : {
-	            execute : {},
-	            modules : {},
-	            execs : {},
-	            createModule : function() {
-	              return {
-	                exports : {}
-	              };
-	            },
-	            createRequire : function() {
-	              return function() {
-	              };
-	            },
-	            createDefine : function() {
-	              return function() {
-	              };
-	            },
-	            require : function() {
-	            },
+	            executor : {},
 	            defineExecutingModuleAs : function() {
 	            },
 	            undefineExecutingModule : function() {
@@ -140,31 +124,38 @@
 	          clearCache : function() {
 	          }
 	        };
+          
+          RequireContext = {};
+          RequireContext.createRequire = sinon.stub();
+          RequireContext.createInlineDefine = sinon.stub();
       	}
       });
 
       test('Error handling', function() {
         var syntaxError, refError, typeError;
 
-        Executor.runModule("syntaxError", SYNTAX_ERROR, "http://example.com/syntaxerror.js", {});
+        var syntaxModule = Executor.createModule('syntaxError', '', 'http://example.com/syntaxerror.js');
+        Executor.runModule(syntaxModule, SYNTAX_ERROR);
         try {
-          var moduleC = Executor.getModule('syntaxError');
+          var syntaxModuleError = Executor.getModule('syntaxError');
         }
         catch(e) {
           ok((/Parse error .+?/).test(e.message), 'Syntax Error thrown (no line number)');
         }
         
-        Executor.runModule("refError", REF_ERROR, "http://example.com/referror.js", {});
+        var refModule = Executor.createModule('refError', '', 'http://example.com/referror.js');
+        Executor.runModule(refModule, REF_ERROR);
         try {
-          var moduleD = Executor.getModule('refError');
+          var refModuleError = Executor.getModule('refError');
         }
         catch(e) {
           ok((/Runtime error .+? Line: 4/).test(e.message), 'Reference Error thrown with correct line number (4)');
         }
         
-        Executor.runModule("typeError", TYPE_ERROR, "http://example.com/typeerrror.js", {});
+        var typeModule = Executor.createModule('typeError', '', 'http://example.com/typeerror.js');
+        Executor.runModule(typeModule, TYPE_ERROR);
         try {
-          var moduleE = Executor.getModule('typeError');
+          var typeModuleError = Executor.getModule('typeError');
         }
         catch(e) {
           ok((/Runtime error .+? Line: 7/).test(e.message), 'Type Error thrown with correct line number (7)');
@@ -179,7 +170,9 @@
         };
 
         var testScript = "exports.foo = \"bar\";";
-        Executor.runModule("foo/bar/baz", testScript, "http://example.com/testid.js", {});
+        
+        var module = Executor.createModule('foo/bar/baz', '', 'http://example.com/syntaxerror.js');
+        Executor.runModule(module, testScript);
 
         equal(Executor.getModule('foo'), Executor.getModule('foo/bar/baz'), 'able to retrieve a module via its alias name');
 
