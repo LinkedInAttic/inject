@@ -40,6 +40,7 @@ governing permissions and limitations under the License.
     var RulesEngine;
     var Communicator;
     var Analyzer;
+    var RequireContext;
 
     module("TreeRunner", {
       setup: function() {
@@ -128,21 +129,38 @@ governing permissions and limitations under the License.
           extractRequires: stubExtractRequires
         };
         
+        // stub the require context
+        var stubQualifiedId = sinon.stub();
+        stubQualifiedId.returns('');
+        RequireContext = {
+          qualifiedId: stubQualifiedId
+        };
+        
         // stub our executor calls
         var stubCreateModule = sinon.stub();
         var stubGetModule = sinon.stub();
         var stubSetModule = sinon.stub();
         var stubRunModule = sinon.stub();
 
-        stubCreateModule.returns({
+        stubCreateModule.withArgs('root').returns({
+          exports: {}
+        });
+        stubCreateModule.withArgs('a').returns({
+          exports: {}
+        });
+        stubCreateModule.withArgs('b').returns({
+          exports: {}
+        });
+        stubCreateModule.withArgs('c').returns({
+          exports: {}
+        });
+        stubCreateModule.withArgs('d').returns({
           exports: {}
         });
         
         stubGetModule.returns({
           exports: {}
         });
-        
-        stubSetModule.returns(null);
 
         stubRunModule.returns({
           exports: {}
@@ -151,12 +169,11 @@ governing permissions and limitations under the License.
         Executor = {
           createModule: stubCreateModule,
           getModule: stubGetModule,
-          setModule: stubSetModule,
           runModule: stubRunModule
         };
       },
       teardown: function() {
-        RulesEngine = Analyzer = Communicator = Executor = null;
+        RulesEngine = Analyzer = Communicator = Executor = RequireContext = null;
       }
     });
 
@@ -190,11 +207,10 @@ governing permissions and limitations under the License.
       });
     });
     
-    asyncTest("Run a Tree", 3, function() {
+    asyncTest("Run a Tree", 2, function() {
       var expected = ["(a)", "d", "b", "c", "a", "(b)", "c", "a", "d", "b", "root"];
       var defaultCount = expected.length;
-      var countMinusCircular = defaultCount - 2;
-      var doubledCountMinusCircular = (defaultCount * 2) - 2;
+      var runCount = 5; // one per unique module
       var root = new TreeNode();
 
       root.data.originalId = 'root';
@@ -205,8 +221,7 @@ governing permissions and limitations under the License.
       tr.download(function() {
         tr.execute(function() {
           equal(Executor.createModule.callCount, defaultCount, 'createModule tried once for every module');
-          equal(Executor.runModule.callCount, countMinusCircular, 'runModule invoked only for non-circular items');
-          equal(Executor.setModule.callCount, doubledCountMinusCircular, 'setModule called once for all modules, then again for non-circular items');
+          equal(Executor.runModule.callCount, runCount, 'runModule invoked only for non-circular items');
           start();
         });
       });
