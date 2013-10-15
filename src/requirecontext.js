@@ -109,13 +109,18 @@ var RequireContext = Fiber.extend(function () {
           module = Executor.getModule(identifier);
         }
         
-        // if we have the module, then we return it, else throw an error
-        if (module) {
-          return module.exports;
+        // still no module means it was never seen in a loading path
+        if (!module) {
+          throw new Error('module ' + moduleIdOrList + ' is not available');
         }
-        else {
-          throw new Error('module ' + moduleIdOrList + ' not found');
+        
+        // if the module has an error, we need to throw it
+        if (module.__error) {
+          throw module.__error;
         }
+        
+        // now it's safe to return the exports
+        return module.exports;
       }
 
       // AMD require

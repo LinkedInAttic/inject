@@ -472,7 +472,6 @@ var Executor;
         module.qualifiedId = qualifiedId || null;
         module.uri = path || null;
         module.exports = {};
-        module.error = null;
         module.exec = false;
         module.setExports = function(xobj) {
           var name;

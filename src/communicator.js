@@ -111,15 +111,15 @@ var Communicator;
       if (statusCode === 200 && ! userConfig.xd.relayFile ) {
         writeToCache(url, contents);
       }
+      
+      // all non-200 codes create a runtime error that includes the error code
+      if (statusCode !== 200) {
+        contents = 'throw new Error(\'Error ' + statusCode + ': Unable to retrieve ' + url + '\');';
+      }
 
       // locate all callbacks associated with the URL
       each(downloadCompleteQueue[url], function (cb) {
-        if (statusCode !== 200) {
-          cb(false);
-        }
-        else {
-          cb(contents);
-        }
+        cb(contents);
       });
       downloadCompleteQueue[url] = [];
     }

@@ -133,9 +133,6 @@ var TreeRunner = Fiber.extend(function () {
           }
           else {
             root.data.exports = contents;
-            // store in the module cache as well, since this was resolved
-            // externally
-            
           }
 
           // determine if this is circular
@@ -228,7 +225,7 @@ var TreeRunner = Fiber.extend(function () {
             module.exec = true;
           }
           else if (typeof node.data.file === 'string') {
-            result = Executor.runModule(module, node.data.file);
+            Executor.runModule(module, node.data.file);
             module.exec = true;
             // if this is an AMD module, it's exports are coming from define()
             if (!module.amd) {
