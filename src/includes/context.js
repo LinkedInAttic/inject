@@ -115,6 +115,32 @@ context.Inject = {
       var identifier = pieces[1];
 
       var parentRequire = RequireContext.createRequire(parentId, parentUrl);
+      
+      // when loading via a plugin, once you call load() or load.fromText(), you are DONE
+      // this special require ensures you cannot call require() after you've gotten the text
+      // we then copy all the properties over to ensure it behaves (duck typing) like the
+      // normal require
+      var loadCalled = false;
+      var pluginRequire = function() {
+        if (loadCalled) {
+          return;
+        }
+        return parentRequire.apply(parentRequire, arguments);
+      };
+      var addToPluginRequire = function(prop) {
+        pluginRequire[prop] = function() {
+          return parentRequire[prop].apply(parentRequire, arguments);
+        };
+      };
+      for (var prop in parentRequire) {
+        if (HAS_OWN_PROPERTY.call(parentRequire, prop)) {
+          addToPluginRequire(prop);
+        }
+      }
+      
+      // the resolver function is passed into a plugin for resolving a name relative to
+      // the current module's scope. We pass through to resolver.module which passes
+      // through to RulesEngine
       var resolveFn = function (name) {
         return resolver.module(name, parentId);
       };
@@ -123,7 +149,14 @@ context.Inject = {
       parentRequire([pluginId], function(plugin) {
         // normalize the module ID if the plugin supports it
         var normalized = (plugin.normalize) ? plugin.normalize(identifier, resolveFn) : resolveFn(identifier);
+        
+        // create the onload handlers that trigger the callback on completion
         var onload = function(contents) {
+          if (loadCalled) {
+            return;
+          }
+          loadCalled = true;
+          
           // if it is a string, then its exports are saved as a URI component
           if (typeof(contents) === 'string') {
             contents = ['module.exports = decodeURIComponent("', encodeURIComponent(contents), '");'].join('');
@@ -132,6 +165,11 @@ context.Inject = {
           next(null, contents);
         };
         onload.fromText = function(moduleName, contents) {
+          if (loadCalled) {
+            return;
+          }
+          loadCalled = true;
+          
           if (!contents) {
             contents = moduleName;
             moduleName = null;
@@ -141,7 +179,7 @@ context.Inject = {
           next(null, contents);
         };
         
-        plugin.load(normalized, parentRequire, onload, {});
+        plugin.load(normalized, pluginRequire, onload, {});
       });
     });
   },
