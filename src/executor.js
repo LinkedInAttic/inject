@@ -39,6 +39,10 @@ var Executor;
    * @type {boolean}
    */
   var docHead = false;
+  
+  function hasOwnProperty(obj, prop) {
+    return {}.prototype.hasOwnProperty.call(obj, prop);
+  }
 
   // capture document head
   try {
@@ -406,10 +410,10 @@ var Executor;
         var actualLine;
         var actualChar;
         
-        if (this.errors[idAlias]) {
+        if (HAS_OWN_PROPERTY.call(this.errors, idAlias) && this.errors[idAlias]) {
           err = this.errors[idAlias];
         }
-        else if (alias && this.errors[alias]) {
+        else if (alias && HAS_OWN_PROPERTY.call(this.errors, alias) && this.errors[alias]) {
           err = this.errors[alias];
         }
         
