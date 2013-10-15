@@ -383,13 +383,6 @@ var Executor;
       getCurrentExecutingAMD : function() {
         return this.anonymousAMDStack[this.anonymousAMDStack.length - 1];
       },
-      
-      setModule: function(id, module) {
-        if (id === null || ''+id === '') {
-          return;
-        }
-        this.cache[id] = module;
-      },
 
       /**
        * Get the cached version of a module ID, accounting
@@ -466,51 +459,54 @@ var Executor;
        * @public
        * @returns {Object} - a module object representation
        */
-      createModule : function(moduleId, path) {
+      createModule : function(moduleId, qualifiedId, path) {
         var module;
-
-        if (!this.getFromCache(moduleId)) {
-          module = {};
-          module.id = moduleId || null;
-          module.uri = path || null;
-          module.exports = {};
-          module.error = null;
-          module.exec = false;
-          module.setExports = function(xobj) {
-            var name;
-            for (name in module.exports) {
-              if (Object.hasOwnProperty.call(module.exports, name)) {
-                debugLog('cannot setExports when exports have already been set. setExports skipped');
-                return;
-              }
-            }
-            switch (typeof(xobj)) {
-              case 'object':
-                // objects are enumerated and added
-                for (name in xobj) {
-                  module.exports[name] = xobj[name];
-                }
-                break;
-              case 'function':
-                module.exports = xobj;
-                break;
-              default:
-                // non objects are written directly, blowing away exports
-                module.exports = xobj;
-                break;
-            }
-          };
-
-          if (moduleId) {
-            this.cache[moduleId] = module;
-          }
-        }
-
-        if (moduleId) {
+        
+        if (!(/\!/.test(moduleId)) && this.cache[moduleId]) {
+          this.cache[qualifiedId] = this.cache[moduleId];
           return this.cache[moduleId];
-        } else {
-          return module;
         }
+        
+        module = {};
+        module.id = moduleId || null;
+        module.qualifiedId = qualifiedId || null;
+        module.uri = path || null;
+        module.exports = {};
+        module.error = null;
+        module.exec = false;
+        module.setExports = function(xobj) {
+          var name;
+          for (name in module.exports) {
+            if (Object.hasOwnProperty.call(module.exports, name)) {
+              debugLog('cannot setExports when exports have already been set. setExports skipped');
+              return;
+            }
+          }
+          switch (typeof(xobj)) {
+            case 'object':
+              // objects are enumerated and added
+              for (name in xobj) {
+                module.exports[name] = xobj[name];
+              }
+              break;
+            case 'function':
+              module.exports = xobj;
+              break;
+            default:
+              // non objects are written directly, blowing away exports
+              module.exports = xobj;
+              break;
+          }
+        };
+        
+        // Important AMD item. Do not store any IDs with an !
+        if (!(/\!/.test(moduleId))) {
+          this.cache[moduleId] = module;
+        }
+        
+        this.cache[qualifiedId] = module;
+        
+        return module;
       },
 
       /**
@@ -540,7 +536,7 @@ var Executor;
         context.Inject.INTERNAL.executor[functionId] = localMeta;
         
         localMeta.module = module;
-        localMeta.require = RequireContext.createRequire(module.id, module.uri);
+        localMeta.require = RequireContext.createRequire(module.id, module.uri, module.qualifiedId);
         localMeta.define = RequireContext.createInlineDefine(module, localMeta.require);
 
         function swapUnderscoreVars(text) {
@@ -570,3 +566,4 @@ var Executor;
   });
   Executor = new AsStatic();
 })();
+

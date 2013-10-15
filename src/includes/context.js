@@ -40,7 +40,6 @@ context.Inject = {
     // used by the executor. these let inject know the module that is currently running
     defineExecutingModuleAs: proxy(Executor.defineExecutingModuleAs, Executor),
     undefineExecutingModule: proxy(Executor.undefineExecutingModule, Executor),
-    createModule: proxy(Executor.createModule, Executor),
     setModuleExports: function () {},
 
     // a hash of publicly reachable module sandboxes ie exec0, exec1...
@@ -129,7 +128,7 @@ context.Inject = {
           if (typeof(contents) === 'string') {
             contents = ['module.exports = decodeURIComponent("', encodeURIComponent(contents), '");'].join('');
           }
-          
+
           next(null, contents);
         };
         onload.fromText = function(moduleName, contents) {

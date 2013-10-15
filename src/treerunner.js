@@ -143,6 +143,7 @@ var TreeRunner = Fiber.extend(function () {
           var searchIndex = {};
           var parent = root.getParent();
           var module;
+          var qualifiedId;
           searchIndex[root.data.originalId] = true;
           while(parent && !circular) {
             if (searchIndex[parent.data.originalId]) {
@@ -160,10 +161,9 @@ var TreeRunner = Fiber.extend(function () {
             // when there are exports available, then we prematurely resolve this module
             // this can happen when the an external rule for the communicator has resolved
             // the export object for us
-            module = Executor.createModule(root.data.resolvedId, root.data.resolvedUrl);
+            module = Executor.createModule(root.data.resolvedId, RequireContext.qualifiedId(root), root.data.resolvedUrl);
             module.exec = true;
             module.exports = contents;
-            Executor.setModule(root.data.resolvedId, module);
             downloadComplete();
           }
           else if (root.data.circular) {
@@ -211,18 +211,10 @@ var TreeRunner = Fiber.extend(function () {
         }
         var module;
         var result;
-        var qualifiedIdChain = [];
-        var qualifiedId;
-        
-        // node.parents(function(current) {
-        //   qualifiedIdChain.push(current.data.resolvedId);
-        // });
-        // qualifiedId = qualifiedIdChain.join('(from)');
-        // console.log('run: ' + qualifiedId);
         
         // executor: create a module
         // if not circular, executor: run module (otherwise, the circular reference begins as empty exports)
-        module = Executor.createModule(node.data.resolvedId, node.data.resolvedUrl);
+        module = Executor.createModule(node.data.resolvedId, RequireContext.qualifiedId(node), node.data.resolvedUrl);
         node.data.module = module;
         
         if (module.exec) {
@@ -238,8 +230,7 @@ var TreeRunner = Fiber.extend(function () {
           else if (typeof node.data.file === 'string') {
             result = Executor.runModule(module, node.data.file);
             module.exec = true;
-            // if this is an AMD module, it's define() is back on the stack, so we're back to async
-            // so do not update the exports (it will be done during the file's define() call)
+            // if this is an AMD module, it's exports are coming from define()
             if (!module.amd) {
               node.data.exports = module.exports;
             }

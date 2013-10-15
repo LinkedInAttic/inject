@@ -32,9 +32,10 @@ var RequireContext = Fiber.extend(function () {
      * @param {String} path - the current module URL for this context
      * @public
      */
-    init: function (id, path) {
+    init: function (id, path, qualifiedId) {
       this.id = id || null;
       this.path = path || null;
+      this.qualifiedId = qualifiedId || null;
     },
 
     /**
@@ -86,6 +87,7 @@ var RequireContext = Fiber.extend(function () {
       var module;
       var identifier;
       var assignedModule;
+      var qualifiedId;
 
       if (typeof(moduleIdOrList) === 'string') {
         this.log('CommonJS require(string) of ' + moduleIdOrList);
@@ -95,7 +97,19 @@ var RequireContext = Fiber.extend(function () {
 
         // try to get the module a couple different ways
         identifier = RulesEngine.resolveModule(moduleIdOrList, this.getId());
-        module = Executor.getModule(identifier);
+        qualifiedId = RequireContext.qualifiedId(identifier, this.qualifiedId);
+
+        // try the qualified path if we had a qualified ID
+        if (qualifiedId) {
+          module = Executor.getModule(qualifiedId);
+        }
+        
+        // if we still don't have a module from a qualified path, try a direct get
+        if (!module) {
+          module = Executor.getModule(identifier);
+        }
+        
+        // if we have the module, then we return it, else throw an error
         if (module) {
           return module.exports;
         }
@@ -247,11 +261,15 @@ var RequireContext = Fiber.extend(function () {
       }      
       
       this.process(dependencies, function(root) {
+        // don't bobther with the artificial root we created
+        if (!root.data.resolvedId) {
+          return;
+        }
         // all modules have been ran, now to deal with this guy's args
         var resolved = [];
         var deps = (dependenciesDeclared) ? dependencies : ['require', 'exports', 'module'];
         var require = RequireContext.createRequire(root.data.resolvedId, root.data.resolvedUrl);
-        var module = Executor.createModule(root.data.resolvedId, root.data.resolvedUrl);
+        var module = Executor.createModule(root.data.resolvedId, RequireContext.qualifiedId(root), root.data.resolvedUrl);
         var result;
         for (var i = 0, len = deps.length; i < len; i++) {
           switch(deps[i]) {
@@ -278,7 +296,6 @@ var RequireContext = Fiber.extend(function () {
           module.exports = factory;
         }
         module.amd = true;
-        Executor.setModule(module.id, module);
       });
     },
     
@@ -342,8 +359,8 @@ var RequireContext = Fiber.extend(function () {
  * @public
  * @returns a function adhearing to CommonJS and AMD require()
  */
-RequireContext.createRequire = function (id, path) {
-  var req = new RequireContext(id, path);
+RequireContext.createRequire = function (id, path, qualifiedId) {
+  var req = new RequireContext(id, path, qualifiedId);
   var require = proxy(req.require, req);
 
   require.ensure = proxy(req.ensure, req);
@@ -373,6 +390,27 @@ RequireContext.createDefine = function (id, path, disableAMD) {
   var define = proxy(req.define, req);
   define.amd = (disableAMD) ? false : {};
   return define;
+};
+
+RequireContext.qualifiedId = function(rootOrId, qualifiedId) {
+  var out = [];
+  
+  if (typeof rootOrId === 'string') {
+    if (qualifiedId) {
+      return [rootOrId, qualifiedId].join('(from)');
+    }
+    else {
+      return rootOrId;
+    }
+  }
+  else {
+    rootOrId.parents(function(node) {
+      if (node.data.resolvedId) {
+        out.push(node.data.resolvedId);
+      }
+    });
+    return out.join('(from)');
+  }
 };
 
 
