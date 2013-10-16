@@ -33,7 +33,6 @@ var TreeNode = Fiber.extend(function () {
       this.left = null;
       this.right = null;
       this.parent = null;
-      this.isCircularNode = false;
     },
 
     /**

@@ -30,6 +30,7 @@ var RequireContext = Fiber.extend(function () {
      * @constructs RequireContext
      * @param {String} id - the current module ID for this context
      * @param {String} path - the current module URL for this context
+     * @param {String} qualifiedId - a (from)-joined collection of paths
      * @public
      */
     init: function (id, path, qualifiedId) {
@@ -400,6 +401,18 @@ RequireContext.createDefine = function (id, path, disableAMD) {
   return define;
 };
 
+/**
+ * generate a Qualified ID
+ * A qualified ID behaves differently than a module ID. Based on it's parents,
+ * it refers to the ID as based on the chain of modules that were executed to
+ * invoke it. While this may be a reference to another module, a qualified ID is
+ * the real source of truth for where a module may be found
+ * @method RequireContext.qualifiedId
+ * @public
+ * @param {Object} rootOrId - either a {TreeNode} or {String} representing the current ID
+ * @param {String} qualifiedId - if provided, the qualfied ID is used instead of parent references
+ * @returns {String}
+ */
 RequireContext.qualifiedId = function(rootOrId, qualifiedId) {
   var out = [];
   
@@ -421,7 +434,18 @@ RequireContext.qualifiedId = function(rootOrId, qualifiedId) {
   }
 };
 
-
+/**
+ * Creates a synchronous define() function as used inside of the Inject Sandbox
+ * Unlike a global define(), this local define already has a module context and
+ * a local require function. It is used inside of the sandbox because at
+ * execution time, it's assumed all dependencies have been resolved. This is
+ * a much lighter version of RequireContext#define
+ * @method RequireContext.createInlineDefine
+ * @public
+ * @param {Object} module - a module object from the Executor
+ * @param {Function} require - a synchronous require function
+ * @returns {Function}
+ */
 RequireContext.createInlineDefine = function(module, require) {
   var define = function() {
     // this is a serial define and is no longer functioning asynchronously',

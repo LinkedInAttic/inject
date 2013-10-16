@@ -1,57 +1,81 @@
-// nextTick - by stagas / public domain
-var nextTick = (function () {
-  var queue = [],
-      hasPostMessage = !!window.postMessage,
-      messageName = 'inject-nexttick',
-      dirty = false,
-      trigger,
-      processQueue;
-  
-  function flushQueue () {
-    var lQueue = queue;
-    queue = [];
-    dirty = false;
-    fn = lQueue.shift();
-    while (fn) {
-      fn();
-      fn = lQueue.shift();
-    }
-  }
-  
-  function nextTick (fn) {
-    queue.push(fn);
-    if (dirty) return;
-    dirty = true;
-    trigger();
-  }
-  
-  if (hasPostMessage) {
-    trigger = function () { window.postMessage(messageName, '*'); };
-    processQueue = function (event) {
-      if (event.source === window && event.data === messageName) {
-        event.stopPropagation();
-        flushQueue();
-      }
-    };
-    nextTick.listener = window.addEventListener('message', processQueue, true);
-  }
-  else {
-    trigger = function () { window.setTimeout(function () { processQueue(); }, 0); };
-    processQueue = flushQueue;
-  }
-
-  nextTick.removeListener = function () {
-    window.removeEventListener('message', processQueue, true);
-  };
-
-  return nextTick;
-}());
-
 var TreeRunner = Fiber.extend(function () {
+  /**
+   * Perform a function on the next-tick, faster than setTimeout
+   * Taken from stagas / public domain
+   * By using window.postMessage, we can immediately queue a function
+   * to run on the event stack once the current JS thread has completed.
+   * For browsers that do not support postMessage, a setTimeout of 0 is
+   * used instead.
+   * @method TreeRunner.nextTick
+   * @private
+   * @param {Function} fn - the function to call on the next tick
+   */
+  var nextTick = (function () {
+    var queue = [],
+        hasPostMessage = !!window.postMessage,
+        messageName = 'inject-nexttick',
+        dirty = false,
+        trigger,
+        processQueue;
+  
+    function flushQueue () {
+      var lQueue = queue;
+      queue = [];
+      dirty = false;
+      fn = lQueue.shift();
+      while (fn) {
+        fn();
+        fn = lQueue.shift();
+      }
+    }
+  
+    function nextTick (fn) {
+      queue.push(fn);
+      if (dirty) return;
+      dirty = true;
+      trigger();
+    }
+  
+    if (hasPostMessage) {
+      trigger = function () { window.postMessage(messageName, '*'); };
+      processQueue = function (event) {
+        if (event.source === window && event.data === messageName) {
+          event.stopPropagation();
+          flushQueue();
+        }
+      };
+      nextTick.listener = window.addEventListener('message', processQueue, true);
+    }
+    else {
+      trigger = function () { window.setTimeout(function () { processQueue(); }, 0); };
+      processQueue = flushQueue;
+    }
+
+    nextTick.removeListener = function () {
+      window.removeEventListener('message', processQueue, true);
+    };
+
+    return nextTick;
+  }());
+  
   return {
+    /**
+     * Construct a Tree Runner Object
+     * A tree runner, given a node, is responsible for the download and execution
+     * of the root node and any children it encounters.
+     * @constructs TreeRunner
+     * @param {TreeNode} root - a Tree Node at the root of this tree
+     */
     init: function(root) {
       this.root = root;
     },
+    
+    /**
+     * Downloads the tree, starting from this node, and spanning into its children
+     * @method TreeRunner#download
+     * @public
+     * @param {Function} downloadComplete - a callback executed when the download is done
+     */
     download: function(downloadComplete) {
       var root = this.root;
       // given original id & parent resolved id, create resolved id
@@ -199,6 +223,17 @@ var TreeRunner = Fiber.extend(function () {
         });
       });
     },
+    
+    /**
+     * Executes a tree, starting from the root node
+     * In order to ensure a tree has all of its dependencies available
+     * a post-order traversal is used
+     * http://en.wikipedia.org/wiki/Tree_traversal#Post-order
+     * This loads Bottom-To-Top, Left-to-Right
+     * @method TreeRunner#execute
+     * @public
+     * @param {Function} executeComplete - a callback function ran when all execution is done
+     */
     execute: function(executeComplete) {
       var nodes = this.root.postOrder();
       

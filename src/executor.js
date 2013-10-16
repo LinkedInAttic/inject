@@ -40,6 +40,15 @@ var Executor;
    */
   var docHead = false;
   
+  /**
+   * Determines if an object has its own property. Uses {} instead of a local
+   * object in case the hasOwnProperty property has been overwritten
+   * @method Executor.hasOwnProperty
+   * @private
+   * @param {Object} obj - the object to test for a property on
+   * @param {String} prop - the prop to test for
+   * @returns Boolean
+   */
   function hasOwnProperty(obj, prop) {
     return {}.prototype.hasOwnProperty.call(obj, prop);
   }
@@ -92,7 +101,7 @@ var Executor;
         // We can look for [\d]+:[\d]+)?\n|$
         // Chrome 27 does not have e.arguments as earlier versions,
         // but still does not have e.fileName as Firefox
-        var hasColumns = /[\d]+:[\d]+\)?(\n|$)/;
+        var hasColumns = /:[\d]+:[\d]+\)?(\n|$)/;
         return (hasColumns.test(e.stack)) ? 'chrome' : 'phantom';
       }
       return 'other';
@@ -338,11 +347,6 @@ var Executor;
         module.__error.message = 'Runtime error in ' + module.id + '(' + module.uri + ') ' + module.__error.message;
       }
     }
-
-    // // clean up the function or object we globally created if it exists
-    // if (context.Inject.INTERNAL.execute[functionId]) {
-    //   delete context.Inject.INTERNAL.execute[functionId];
-    // }
   }
 
   var AsStatic = Fiber.extend(function() {
