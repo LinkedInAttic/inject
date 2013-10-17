@@ -139,7 +139,7 @@ var REQUIRE_REGEX = new RegExp(
   '([^\'"]+?)'+                   // the valid characters for a "module identifier"... includes AMD characters. You cannot match a quote
   '[\'"]' +                       // the closing quote character
   '\\)',                          // end of paren for "require"
-  'gi'                            // flags: global, case-insensitive
+  'gim'                           // flags: global, case-insensitive, multiline
 );
 
 /**
@@ -150,10 +150,10 @@ var REQUIRE_REGEX = new RegExp(
 var DEFINE_REGEX = new RegExp(
   '(?:^|[\\s;,\\?\\}\\)\\(])' +   // begins with start of string, and any symbol a function call() can follow
   'define[\\s]*\\(' +             // the "define" keyword, followed by optional whitespace and its opening paren
-  '.*?\\[' +                      // anything (don't care) until we hit the first [
-  '(.*?)' +                       // our match (contents of the array)
+  '[\\w\\W]*?\\[' +               // anything (don't care) until we hit the first [
+  '([\\w\\W]*?)' +                // our match (contents of the array)
   '\\]',                          // the closing bracket
-  'gi'                            // flags: global, case-insensitive
+  'gim'                           // flags: global, case-insensitive, multiline
 );
 
 /**
@@ -163,9 +163,9 @@ var DEFINE_REGEX = new RegExp(
  */
 var DEFINE_TERM_REGEX = new RegExp(
   '[\'"]' +                       // a quote
-  '(.*?)' +                       // the term inside of quotes
+  '([\\w\\W]*?)' +                // the term inside of quotes
   '[\'"]',                        // the closing quotes
-  'gi'                            // flags: global, case-insensitive
+  'gim'                           // flags: global, case-insensitive, multiline
 );
 
 /**

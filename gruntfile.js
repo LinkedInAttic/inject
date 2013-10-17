@@ -309,14 +309,6 @@ module.exports = function (grunt) {
       }
     },
 
-    wait: {
-      server_start: {
-        options: {
-          delay: 3
-        }
-      }
-    },
-
     log: {
       server: {
         options: {
@@ -434,7 +426,6 @@ module.exports = function (grunt) {
   grunt.registerTask('test', [
     'express:generic',
     'express:alternate',
-    'wait:server_start',
     'qunit',
     'express-stop'
   ]);
@@ -442,7 +433,6 @@ module.exports = function (grunt) {
   grunt.registerTask('server', [
     'express:generic',
     'express:alternate',
-    'wait:server_start',
     'log:server',
     'express-keepalive'
   ]);

@@ -309,9 +309,8 @@ var RulesEngine;
        * @returns {String} the resolved identifier
        */
       resolveModule: function (moduleId, relativeTo) {
-        // if (!this.dirty.moduleRules && this.caches.moduleRules[moduleId]) {
-        //   return this.caches.moduleRules[moduleId];
-        // }
+        moduleId = moduleId || '';
+        relativeTo = relativeTo || '';
 
         this.sort('moduleRules');
         var lastId = moduleId;
@@ -377,9 +376,8 @@ var RulesEngine;
        * @returns {String} a resolved URL
        */
       resolveFile: function (path, relativeTo, noSuffix) {
-        // if (!this.dirty.fileRules && this.caches.fileRules[path]) {
-        //   return this.caches.fileRules[path];
-        // }
+        path = path || '';
+        relativeTo = relativeTo || '';
 
         this.sort('fileRules');
         var lastPath = path;

@@ -37,10 +37,21 @@ context.Inject = {
       @private
    */
   INTERNAL: {
+    // expose all our classes for troubleshooting ease
+    Classes: {
+      Analyzer: Analyzer,
+      Communicator: Communicator,
+      Executor: Executor,
+      InjectCore: InjectCore,
+      RequireContext: RequireContext,
+      RulesEngine: RulesEngine,
+      TreeNode: TreeNode,
+      TreeRunner: TreeRunner
+    },
+    
     // used by the executor. these let inject know the module that is currently running
     defineExecutingModuleAs: proxy(Executor.defineExecutingModuleAs, Executor),
     undefineExecutingModule: proxy(Executor.undefineExecutingModule, Executor),
-    setModuleExports: function () {},
 
     // a hash of publicly reachable module sandboxes ie exec0, exec1...
     executor: {},
