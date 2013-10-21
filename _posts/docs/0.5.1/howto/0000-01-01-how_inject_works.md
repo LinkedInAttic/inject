@@ -53,39 +53,34 @@ The `RequireContext` is actually the touch point whenever you use an Entry Point
 
 Invoking an entry point starts the creation of a Tree, expressed by our `TreeDownloader` and `TreeNode`. In Inject, we must construct a list of dependencies so that we know both what must be downloaded and what must be executed.
 
-### TreeDownloader and "The Loop"
+### TreeRunner and "The Loop"
 
-`TreeDownloader` is a bit of a misnomer. It's really the "TreeController", but it hasn't been renamed yet. The `TreeDownloader` is a very sequential piece of code.
+The `TreeRunner` is responsible for the download and execution of a collection of nodes.
+
+For download:
 
 1. Given a node...
-2. Ask the `RulesEngine` to convert this node's ID into a Module Identifier
-3. Ask the `RulesEngine` to convert this Module Identifier into a URL
-4. Ask the `Communicator` to download the URL (async)
-5. (onComplete) ask the `RulesEngine` for a collection of pointcuts
-6. Apply these pointcuts to the contents
-7. Ask the `Analyzer` to provide a list of dependencies
-8. For each dependency...
-  1. Create a new `TreeNode` for the dependency
-  2. Return to (1) "Given a node..." to resolve that branch of the tree
-9. When all dependencies are resolved
-10. Ask `Executor` to Execute a given collection of `TreeNodes`
-11. (onComplete) fire the requested callback
+2. Convert this node's ID into a Module Identifier
+3. Convert this Module Identifier into a URL
+4. Download the URL (async)
+5. Apply a collection of content modifications
+6. Collect a list of dependencies for this content
+7. For each dependency...
+  1. Create a new `TreeRunner` for the dependency
+  2. Restart at *1* for this dependency
 
-The ultimate artifact that comes out of `TreeDownloader` is a complete Tree:
+For Execution:
+
+1. Post-Order Traverse the tree (bottom-up)
+2. Execute the modules in the tree, beginning with the lowest level node
 
 ![A Dependency Tree](/docs/0.5.1/howto/how_inject_works/tree.png "A Dependency Tree")
 
-In the above tree, we've built out all our dependencies and downloaded all the code. When `TreeDownloader` encountered "B" for the second time, it traversed parents and found that it was "Circular". Circular nodes won't execute their first time through (or else you'd be caught in a perpetual execution loop), and they are automatically assigned zero dependencies (or else you'd be downloading forever).
+In the above tree, we've built out all our dependencies and downloaded all the code. When `TreeRunner` encountered "B" for the second time, it traversed parents and found that it was "Circular". Circular nodes won't execute their first time through (or else you'd be caught in a perpetual execution loop), and they are automatically assigned zero dependencies (or else you'd be downloading forever).
 
 ### Post-Download, the Executor
 
-The `Executor` does the heavy lifting of running code for Inject. It receives a `TreeNode` with children from the `TreeDownloader`, and must:
-
-1. Get a post-order traversal of the tree
-2. Starting with the lowest level dependencies, wrap the code in a sandbox
-3. Write out and execute the JavaScript
-4. Collect the exports
-5. When the tree is executed, fire the callback
+The `Executor` is responsible for the sandboxing of a JS Module when it executes.
 
 A [Post-Order Traversal](http://en.wikipedia.org/wiki/Tree_traversal#Example) allows us to walk the tree in array form, starting from the lowest level dependencies. An item with zero dependencies is safe to run, whereas an item with &gt; 0 dependencies must have all dependencies executed before using it.
 
