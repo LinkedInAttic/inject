@@ -25,6 +25,12 @@ nav   : docs
                 These docs may change without warning.
               </div>
             {% endif %}
+            {% if doc.version == page.version and doc.old == true %}
+              <div style="border: 1px solid #600; background: #fcc; padding: 10px; font-size:20px; color: #600">
+                OLD: This is an old version of documentation. You probably want the most recent version of this
+                document, from the sidebar on the right.
+              </div>
+            {% endif %}
           {% endfor %}
           
           {% if page.deprecated == true %}
