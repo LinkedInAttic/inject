@@ -33,16 +33,15 @@ governing permissions and limitations under the License.
     @global
 */
 var commonJSHeader = (['',
-  '__INJECT_NS__.INTERNAL.execute.__FUNCTION_ID__ = function() {',
+  '__INJECT_NS__.INTERNAL.executor.__FUNCTION_ID__.fn = function() {',
   '  with (window) {',
-  '  __INJECT_NS__.INTERNAL.modules.__FUNCTION_ID__ = __INJECT_NS__.INTERNAL.createModule("__MODULE_ID__", "__MODULE_URI__");',
-  '    __INJECT_NS__.INTERNAL.execs.__FUNCTION_ID__ = function() {',
+  '    __INJECT_NS__.INTERNAL.executor.__FUNCTION_ID__.innerFn = function() {',
   '      // id: __MODULE_ID__ uri: __MODULE_URI__',
-  '      var module = __INJECT_NS__.INTERNAL.modules.__FUNCTION_ID__,',
-  '          require = __INJECT_NS__.INTERNAL.createRequire(module.id, module.uri),',
-  '          define = __INJECT_NS__.INTERNAL.createDefine(module.id, module.uri),',
-  '          exports = module.exports;',                                       //NOTE: FOLLOWING TRY/CATCH MUST BE ON ONE LINE!
-  '      try{module.undefined_function();}catch(e){module.__error_line = e;}' // NOTE: no lines (blank or otherwise) after this, it marks the start of file
+  '      var module = __INJECT_NS__.INTERNAL.executor.__FUNCTION_ID__.module,',
+  '          require = __INJECT_NS__.INTERNAL.executor.__FUNCTION_ID__.require,',
+  '          define = __INJECT_NS__.INTERNAL.executor.__FUNCTION_ID__.define,',
+  '          exports = module.exports;',  
+  '      try{module.undefined_function();}catch(e){module.__error_line = e;}' // NOTE: Must be on one line for clean error reporting
   ]).join('\n');
 
 /**
@@ -52,17 +51,16 @@ var commonJSHeader = (['',
     @global
 */
 var commonJSFooter = (['',
-  '    __INJECT_NS__.INTERNAL.modules.__FUNCTION_ID__ = module;',
+  '      __INJECT_NS__.INTERNAL.executor.__FUNCTION_ID__.module = module;',
   '    };',
   '    __INJECT_NS__.INTERNAL.defineExecutingModuleAs("__MODULE_ID__", "__MODULE_URI__");',
   '    try {',
-  '      __INJECT_NS__.INTERNAL.execs.__FUNCTION_ID__.call(__INJECT_NS__.INTERNAL.modules.__FUNCTION_ID__);',
+  '      __INJECT_NS__.INTERNAL.executor.__FUNCTION_ID__.innerFn.call(__INJECT_NS__.INTERNAL.executor.__FUNCTION_ID__.module);',
   '    }',
   '    catch (__EXCEPTION__) {',
-  '      __INJECT_NS__.INTERNAL.modules.__FUNCTION_ID__.__error = __EXCEPTION__;',
+  '      __INJECT_NS__.INTERNAL.executor.__FUNCTION_ID__.module.__error = __EXCEPTION__;',
   '    }',
   '    __INJECT_NS__.INTERNAL.undefineExecutingModule();',
-  '    return __INJECT_NS__.INTERNAL.modules.__FUNCTION_ID__;',
   '  }',
   '};',
   '']).join('\n');

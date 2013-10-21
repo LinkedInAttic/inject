@@ -1,5 +1,5 @@
 /*jshint evil:true */
-/*global context:true, document:true, TraceKit:true */
+/*global context:true, document:true */
 
 /*
 Inject
@@ -39,6 +39,19 @@ var Executor;
    * @type {boolean}
    */
   var docHead = false;
+  
+  /**
+   * Determines if an object has its own property. Uses {} instead of a local
+   * object in case the hasOwnProperty property has been overwritten
+   * @method Executor.hasOwnProperty
+   * @private
+   * @param {Object} obj - the object to test for a property on
+   * @param {String} prop - the prop to test for
+   * @returns Boolean
+   */
+  function hasOwnProperty(obj, prop) {
+    return {}.prototype.hasOwnProperty.call(obj, prop);
+  }
 
   // capture document head
   try {
@@ -47,29 +60,213 @@ var Executor;
     docHead = false;
   }
 
-  /*
-   * Set up TraceKit error handler.
-   * Captures the error report created by
-   * TraceKit and passes it to our global
-   * error handler.
-   */
-  TraceKit.report.subscribe(function(errorReport) {
-    // passes through to Inject emitter right now
-    Inject.emit(errorReport);
-  });
+  // stack normalizer from https://github.com/eriwen/javascript-stacktrace/blob/master/stacktrace.js
+  var stacknorm = {
+    /**
+     * Mode could differ for different exception, e.g.
+     * exceptions in Chrome may or may not have arguments or stack.
+     *
+     * @return {String} mode of operation for the exception
+     */
+    mode: function(e) {
+      if (e['arguments'] && e.stack) {
+        return 'chrome';
+      } else if (e.stack && e.sourceURL) {
+        return 'safari';
+      } else if (e.stack && e.number) {
+        return 'ie';
+      } else if (e.stack && e.fileName) {
+        return 'firefox';
+      } else if (e.message && e['opera#sourceloc']) {
+        // e.message.indexOf("Backtrace:") > -1 -> opera9
+        // 'opera#sourceloc' in e -> opera9, opera10a
+        // !e.stacktrace -> opera9
+        if (!e.stacktrace) {
+          return 'opera9'; // use e.message
+        }
+        if (e.message.indexOf('\n') > -1 && e.message.split('\n').length > e.stacktrace.split('\n').length) {
+          // e.message may have more stack entries than e.stacktrace
+          return 'opera9'; // use e.message
+        }
+        return 'opera10a'; // use e.stacktrace
+      } else if (e.message && e.stack && e.stacktrace) {
+        // e.stacktrace && e.stack -> opera10b
+        if (e.stacktrace.indexOf("called from line") < 0) {
+          return 'opera10b'; // use e.stacktrace, format differs from 'opera10a'
+        }
+        // e.stacktrace && e.stack -> opera11
+        return 'opera11'; // use e.stacktrace, format differs from 'opera10a', 'opera10b'
+      } else if (e.stack && !e.fileName) {
+        // phantomJS looks like chrome, but only returns line numbers
+        // We can look for [\d]+:[\d]+)?\n|$
+        // Chrome 27 does not have e.arguments as earlier versions,
+        // but still does not have e.fileName as Firefox
+        var hasColumns = /:[\d]+:[\d]+\)?(\n|$)/;
+        return (hasColumns.test(e.stack)) ? 'chrome' : 'phantom';
+      }
+      return 'other';
+    },
+  
+    /**
+     * Given an Error object, return a formatted Array based on Chrome's stack string.
+     *
+     * @param e - Error object to inspect
+     * @return Array<String> of function calls, files and line numbers
+     */
+    chrome: function(e) {
+      return (e.stack + '\n')
+        .replace(/^\s+(at eval )?at\s+/gm, '') // remove 'at' and indentation
+        .replace(/^([^\(]+?)([\n$])/gm, '{anonymous}() ($1)$2')
+        .replace(/^Object.<anonymous>\s*\(([^\)]+)\)/gm, '{anonymous}() ($1)')
+        .replace(/^(.+) \((.+)\)$/gm, '$1@$2')
+        .split('\n')
+        .slice(1, -1);
+    },
+    
+    /**
+     * Given an Error object, return a formatted Array based on PhantomJS's stack string.
+     *
+     * @param e - Error object to inspect
+     * @return Array<String> of function calls, files and line numbers
+     */
+    phantom: function(e) {
+      return (e.stack + '\n')
+        .replace(/^\s+(at eval )?at\s+/gm, '') // remove 'at' and indentation
+        .replace(/^([^\(]+?)([\n$])/gm, '{anonymous}() ($1)$2')
+        .replace(/^Object.<anonymous>\s*\(([^\)]+)\)/gm, '{anonymous}() ($1)')
+        .replace(/^(.+) \((.+)\)$/gm, '$1@$2')
+        .replace(/(.+):([0-9]+)(\)?)/g, '$1:$2:0$3')
+        .split('\n')
+        .slice(1, -1);
+    },
 
-  /**
-   * Error handler called in executor.js
-   * Caches the original error and then calls
-   * the TraceKit error handler.
-   * @function
-   * @param {Error} - the error to be handled
-   * @param {moduleId} - module which caused Error to be thrown
-   */
-  function sendToTraceKit(err, moduleId) {
-    moduleFailureCache[moduleId] = err;
-    TraceKit.report(err);
-  }
+    /**
+     * Given an Error object, return a formatted Array based on Safari's stack string.
+     *
+     * @param e - Error object to inspect
+     * @return Array<String> of function calls, files and line numbers
+     */
+    safari: function(e) {
+      return e.stack.replace(/\[native code\]\n/m, '')
+        .replace(/^(?=\w+Error\:).*$\n/m, '')
+        .replace(/^@/gm, '{anonymous}()@')
+        .split('\n');
+    },
+
+    /**
+     * Given an Error object, return a formatted Array based on IE's stack string.
+     *
+     * @param e - Error object to inspect
+     * @return Array<String> of function calls, files and line numbers
+     */
+    ie: function(e) {
+      return e.stack
+        .replace(/^\s*at\s+(.*)$/gm, '$1')
+        .replace(/^Anonymous function\s+/gm, '{anonymous}() ')
+        .replace(/^(.+)\s+\((.+)\)$/gm, '$1@$2')
+        .split('\n')
+        .slice(1);
+    },
+
+    /**
+     * Given an Error object, return a formatted Array based on Firefox's stack string.
+     *
+     * @param e - Error object to inspect
+     * @return Array<String> of function calls, files and line numbers
+     */
+    firefox: function(e) {
+      return e.stack.replace(/(?:\n@:0)?\s+$/m, '')
+        .replace(/^(?:\((\S*)\))?@/gm, '{anonymous}($1)@')
+        .split('\n');
+    },
+
+    opera11: function(e) {
+      var ANON = '{anonymous}', lineRE = /^.*line (\d+), column (\d+)(?: in (.+))? in (\S+):$/;
+      var lines = e.stacktrace.split('\n'), result = [];
+
+      for (var i = 0, len = lines.length; i < len; i += 2) {
+        var match = lineRE.exec(lines[i]);
+        if (match) {
+          var location = match[4] + ':' + match[1] + ':' + match[2];
+          var fnName = match[3] || "global code";
+          fnName = fnName.replace(/<anonymous function: (\S+)>/, "$1").replace(/<anonymous function>/, ANON);
+          result.push(fnName + '@' + location + ' -- ' + lines[i + 1].replace(/^\s+/, ''));
+        }
+      }
+
+      return result;
+    },
+
+    opera10b: function(e) {
+      // "<anonymous function: run>([arguments not available])@file://localhost/G:/js/stacktrace.js:27\n" +
+      // "printStackTrace([arguments not available])@file://localhost/G:/js/stacktrace.js:18\n" +
+      // "@file://localhost/G:/js/test/functional/testcase1.html:15"
+      var lineRE = /^(.*)@(.+):(\d+)$/;
+      var lines = e.stacktrace.split('\n'), result = [];
+
+      for (var i = 0, len = lines.length; i < len; i++) {
+        var match = lineRE.exec(lines[i]);
+        if (match) {
+          var fnName = match[1] ? (match[1] + '()') : "global code";
+          result.push(fnName + '@' + match[2] + ':' + match[3]);
+        }
+      }
+
+      return result;
+    },
+
+    /**
+     * Given an Error object, return a formatted Array based on Opera 10's stacktrace string.
+     *
+     * @param e - Error object to inspect
+     * @return Array<String> of function calls, files and line numbers
+     */
+    opera10a: function(e) {
+      // "  Line 27 of linked script file://localhost/G:/js/stacktrace.js\n"
+      // "  Line 11 of inline#1 script in file://localhost/G:/js/test/functional/testcase1.html: In function foo\n"
+      var ANON = '{anonymous}', lineRE = /Line (\d+).*script (?:in )?(\S+)(?:: In function (\S+))?$/i;
+      var lines = e.stacktrace.split('\n'), result = [];
+
+      for (var i = 0, len = lines.length; i < len; i += 2) {
+        var match = lineRE.exec(lines[i]);
+        if (match) {
+          var fnName = match[3] || ANON;
+          result.push(fnName + '()@' + match[2] + ':' + match[1] + ' -- ' + lines[i + 1].replace(/^\s+/, ''));
+        }
+      }
+
+      return result;
+    },
+
+    // Opera 7.x-9.2x only!
+    opera9: function(e) {
+      // "  Line 43 of linked script file://localhost/G:/js/stacktrace.js\n"
+      // "  Line 7 of inline#1 script in file://localhost/G:/js/test/functional/testcase1.html\n"
+      var ANON = '{anonymous}', lineRE = /Line (\d+).*script (?:in )?(\S+)/i;
+      var lines = e.message.split('\n'), result = [];
+
+      for (var i = 2, len = lines.length; i < len; i += 2) {
+        var match = lineRE.exec(lines[i]);
+        if (match) {
+          result.push(ANON + '()@' + match[2] + ':' + match[1] + ' -- ' + lines[i + 1].replace(/^\s+/, ''));
+        }
+      }
+
+      return result;
+    },
+
+    // Safari 5-, IE 9-, and others
+    other: function(curr) {
+      var ANON = '{anonymous}', fnRE = /function\s*([\w\-$]+)?\s*\(/i, stack = [], fn, args, maxStackSize = 10;
+      while (curr && curr['arguments'] && stack.length < maxStackSize) {
+        fn = fnRE.test(curr.toString()) ? RegExp.$1 || ANON : ANON;
+        args = Array.prototype.slice.call(curr['arguments'] || []);
+        stack[stack.length] = fn + '(' + this.stringifyArguments(args) + ')';
+        curr = curr.caller;
+      }
+      return stack;
+    }
+  };
 
   /**
    * execute a javascript module after wrapping it in sandbox code
@@ -87,22 +284,13 @@ var Executor;
    * @param {String} code - the code to execute
    * @param {Object} options - a collection of options
    */
-  function executeJavaScriptModule(code, options) {
+  function executeJavaScriptModule(code, functionId) {
+    var meta = context.Inject.INTERNAL.executor[functionId];
+    var module = meta.module;
     var failed = false;
-    var sourceString = IS_IE ? '' : '//@ sourceURL=' + options.url;
+    var sourceString = IS_IE ? '' : '//@ sourceURL=' + module.uri;
     var result;
     var err;
-
-    options = {
-      moduleId : options.moduleId || null,
-      functionId : options.functionId || null,
-      preamble : options.preamble || '',
-      preambleLength : options.preamble.split('\n').length,
-      epilogue : options.epilogue || '',
-      epilogueLength : options.epilogue.split('\n').length,
-      originalCode : options.originalCode || code,
-      url : options.url || null
-    };
 
     // add source string in sourcemap compatible browsers
     code = [code, sourceString].join('\n');
@@ -116,18 +304,16 @@ var Executor;
       // proper syntax error, removing the LinkJS dependency completely. While the debugging
       // is not as perfect, the 15k savings are well worth it. Window level reporting is
       // undisturbed by this change
-      var tkerr = new Error('Parse error in ' + options.moduleId + ' (' + options.url + ') please check for an uncaught error');
+      ex.message = 'Parse error in ' + module.id + ' (' + module.uri + ') please check for an uncaught error ' + ex.message;
       var scr = document.createElement('script');
-      scr.src = options.url;
+      scr.src = module.uri;
       scr.type = 'text/javascript';
       docHead.appendChild(scr);
-      sendToTraceKit(tkerr, options.moduleId);
       return {
-        __error: tkerr
+        __error: ex
       };
     }
 
-    var lineException, adjustedLineNumber;
     // We only reach here if there are no parse errors
     // We can now evaluate using either the eval()
     // method or just running the function we built.
@@ -141,30 +327,11 @@ var Executor;
       // to properly see file names instead of just "eval" as the file name in inspectors
       var toExec = code.replace(/([\w\W]+?)=([\w\W]*\})[\w\W]*?$/, '$1 = ($2)();');
       toExec = [toExec, sourceString].join('\n');
-      // generate an exception and capture the line number for later
-      // you must keep try/catch and this eval on one line
-      try { toExec.undefined_function(); } catch(ex) { lineException = ex; } eval(toExec);
-      result = context.Inject.INTERNAL.execute[options.functionId];
-      if (result.__error) {
-        if (result.__error.lineNumber) {
-          // firefox supports lineNumber as a property
-          adjustedLineNumber = result.__error.lineNumber - options.preambleLength;
-          adjustedLineNumber -= (lineException) ? lineException.lineNumber : 0;
-        } else if (result.__error.line) {
-          //safari supports line as a property AND structured stack messages, but line numbers for 
-          //structured stack messages are problematic
-          adjustedLineNumber = result.__error.line - options.preambleLength;
-        } else if (result.__error.stack) {
-          // chrome supports structured stack messages
-          adjustedLineNumber = parseInt(result.__error.stack.toString().replace(/\n/g, ' ').replace(/.+?at .+?:(\d+).*/, '$1'), 10);
-          adjustedLineNumber -= options.preambleLength;
-        } else {
-          adjustedLineNumber = 'unknown';
-        }
-        err = new Error('Runtime error in ' + options.moduleId + '(' + options.url + ') at line ' + adjustedLineNumber);
-        err.stack = result.__error.stack;
-        err.lineNumber = result.__error.lineNumber;
-        sendToTraceKit(err, options.moduleId);
+
+      eval(toExec);
+      
+      if (module.__error) {
+        module.__error.message = 'Runtime error in ' + module.id + '(' + module.uri + ') ' + module.__error.message;
       }
     }
     else {
@@ -174,43 +341,12 @@ var Executor;
       // NOTE: these all receive "-1" due to the semicolon auto added by the Executor at the end of
       // the preamble.
       // __EXCEPTION__.lineNumber - Inject.INTERNAL.modules.exec2.__error_line.lineNumber - 1
-      result = context.Inject.INTERNAL.execute[options.functionId]();
-      if (result.__error) {
-        if (result.__error.lineNumber) {
-          // firefox supports lineNumber as a property
-          adjustedLineNumber = result.__error.lineNumber;
-          adjustedLineNumber -= result.__error_line.lineNumber;
-          adjustedLineNumber -= 1;
-        } else if (result.__error.line) { 
-           //safari supports line as a property AND structured stack messages, but line numbers for 
-          //structured stack messages are problematic
-          adjustedLineNumber = result.__error.line;
-          adjustedLineNumber -= result.__error_line.line;
-          adjustedLineNumber -= 1;
-        } else if (result.__error.stack) {
-          // chrome supports structured stack messages
-          adjustedLineNumber = parseInt(result.__error.stack.toString().replace(/\n/g, ' ').replace(/.+?at .+?:(\d+).*/, '$1'), 10);
-          adjustedLineNumber -= parseInt(result.__error_line.stack.toString().replace(/\n/g, ' ').replace(/.+?at .+?:(\d+).*/, '$1'), 10);
-          adjustedLineNumber -= 1;
-        } else {
-          adjustedLineNumber = 'unknown';
-        }
+      context.Inject.INTERNAL.executor[functionId].fn();
 
-        err = new Error('Runtime error in ' + options.moduleId + '(' + options.url + ') at line ' + adjustedLineNumber);
-        err.stack = result.__error.stack;
-        err.lineNumber = result.__error.lineNumber;
-        sendToTraceKit(err, options.moduleId);
+      if (module.__error) {
+        module.__error.message = 'Runtime error in ' + module.id + '(' + module.uri + ') ' + module.__error.message;
       }
     }
-
-
-    // clean up the function or object we globally created if it exists
-    if (context.Inject.INTERNAL.execute[options.functionId]) {
-      delete context.Inject.INTERNAL.execute[options.functionId];
-    }
-
-    // return the results
-    return result;
   }
 
   var AsStatic = Fiber.extend(function() {
@@ -232,18 +368,9 @@ var Executor;
       clearCaches : function() {
         // cache of resolved exports
         this.cache = {};
-
-        // cache of executed modules (true/false)
-        this.executed = {};
-
-        // cache of "broken" modules (true/false)
-        this.broken = {};
-
-        // cache of "circular" modules (true/false)
-        this.circular = {};
-
-        // AMD style defined modules (true/false)
-        this.defined = {};
+        
+        // any modules that had errors
+        this.errors = {};
 
         // the stack of AMD define functions, because they "could" be anonymous
         this.anonymousAMDStack = [];
@@ -286,74 +413,6 @@ var Executor;
       },
 
       /**
-       * Assigning a module puts it into a special scope. Since we cannot
-       * predict what was going to be put here, we have to assume the calling
-       * context knows what the intent was. This is primarily used in AMD
-       * flows, but is made generic should someone else want to force assign
-       * exports through an addRule mechanism
-       * @method Executor.assignModule
-       * @param {String} parentName - the name of the parent module
-       * @param {String} moduleName - the name of the module that was invoked
-       * @param {String} path - a path for module completeness (module.uri) sake
-       * @param {Object} exports - the item to assign to module.exports
-       */
-      assignModule : function(parentName, moduleName, path, exports) {
-        var module = Executor.createModule(parentName + '^^^' + moduleName, path);
-        module.exports = exports;
-      },
-
-      /**
-       * Retrieves a module from an assignment location
-       * Modules are placed in a special namespace when assigned.
-       * This allows them to be retrieved without polluting the main
-       * namespaces
-       * @method Executor.getAssignedModule
-       * @param {String} parentName - the name of the parent module
-       * @param {String} moduleName - the name of the module to retrieve
-       * @returns {Object} the module object
-       */
-      getAssignedModule : function(parentName, moduleName) {
-        return this.getModule(parentName + '^^^' + moduleName);
-      },
-
-      /**
-       * run all items within the tree, then run the provided callback
-       * If we encounter any modules that are paused, we BLOCK and wait
-       * for their resolution
-       * @method Executor.runTree
-       * @param {TreeNode} root - the root TreeNode to run execution on
-       * @param {Object} files - a hash of filename / contents
-       * @param {Function} callback - a callback to run when the tree is executed
-       * @public
-       */
-      runTree : function(root, files, callback) {
-        // do a post-order traverse of files for execution
-        var returns = [];
-        root.postOrder(function(node) {
-          if (!node.getValue().name) {
-            return;
-            // root node
-          }
-          var name = node.getValue().name;
-          var path = node.getValue().path;
-          var file = files[name];
-          var resolvedId = node.getValue().resolvedId;
-          var module;
-
-          Executor.createModule(resolvedId, path);
-          if (!node.isCircular()) {
-            // note: we use "name" here, because of CommonJS Spec 1.0 Modules
-            // the relative includes we find must be relative to "name", not the
-            // resovled name
-            module = Executor.runModule(resolvedId, file, path);
-            returns.push(module);
-          }
-        });
-
-        callback(returns);
-      },
-
-      /**
        * Get the cached version of a module ID, accounting
        * for any possible aliases. If an alias exists,
        * the cache is also updated
@@ -362,18 +421,62 @@ var Executor;
        * @returns {Object} module at the ID or alias
        */
       getFromCache : function(idAlias) {
+        var alias = RulesEngine.getOriginalName(idAlias);
+        var err;
+        var errorMessage;
+        var e;
+        var module;
+        var stackMode;
+        var mainTrace;
+        var offsetTrace;
+        var mainTracePieces;
+        var offsetTracePieces;
+        var actualLine;
+        var actualChar;
+        
+        if (HAS_OWN_PROPERTY.call(this.errors, idAlias) && this.errors[idAlias]) {
+          err = this.errors[idAlias];
+        }
+        else if (alias && HAS_OWN_PROPERTY.call(this.errors, alias) && this.errors[alias]) {
+          err = this.errors[alias];
+        }
+        
         // check by moduleID
         if (this.cache[idAlias]) {
-          return this.cache[idAlias];
+          module = this.cache[idAlias];
         }
-
-        // check by alias (updates module ID reference)
-        var alias = RulesEngine.getOriginalName(idAlias);
-        if (alias && this.cache[alias]) {
+        else if(alias && this.cache[alias]) {
           this.cache[idAlias] = this.cache[alias];
+          module = this.cache[alias];
         }
-
-        return this.cache[idAlias] || null;
+        
+        if (err) {
+          errorMessage = 'module ' + idAlias + ' failed to load successfully';
+          errorMessage += (err) ? ': ' + err.message : '';
+          
+          // building a better stack trace
+          if (module && module.__error_line) {
+            // runtime errors need better stack trace
+            stackMode = stacknorm.mode(err);
+            mainTrace = stacknorm[stackMode](err);
+            offsetTrace = stacknorm[stackMode](module.__error_line);
+            mainTracePieces = mainTrace[0].split(/:/);
+            offsetTracePieces = offsetTrace[0].split(/:/);
+            
+            actualLine =  mainTracePieces[mainTracePieces.length - 2] - offsetTracePieces[offsetTracePieces.length - 2];
+            actualLine = actualLine - 1;
+            
+            actualChar = mainTracePieces[mainTracePieces.length - 1];
+            
+            errorMessage = errorMessage + ' @ Line: ' + actualLine + ' Column: ' + actualChar + ' ';
+          }
+          
+          err.message = errorMessage;
+          
+          throw err;
+        }
+        
+        return module || null;
       },
 
       /**
@@ -384,102 +487,53 @@ var Executor;
        * @public
        * @returns {Object} - a module object representation
        */
-      createModule : function(moduleId, path) {
+      createModule : function(moduleId, qualifiedId, path) {
         var module;
-
-        if (!this.getFromCache(moduleId)) {
-          module = {};
-          module.id = moduleId || null;
-          module.uri = path || null;
-          module.exports = {};
-          module.error = null;
-          module.setExports = function(xobj) {
-            var name;
-            for (name in module.exports) {
-              if (Object.hasOwnProperty.call(module.exports, name)) {
-                debugLog('cannot setExports when exports have already been set. setExports skipped');
-                return;
-              }
-            }
-            switch (typeof(xobj)) {
-              case 'object':
-                // objects are enumerated and added
-                for (name in xobj) {
-                  module.exports[name] = xobj[name];
-                }
-                break;
-              case 'function':
-                module.exports = xobj;
-                break;
-              default:
-                // non objects are written directly, blowing away exports
-                module.exports = xobj;
-                break;
-            }
-          };
-
-          if (moduleId) {
-            this.cache[moduleId] = module;
-          }
-        }
-
-        if (moduleId) {
+        
+        if (!(/\!/.test(moduleId)) && this.cache[moduleId]) {
+          this.cache[qualifiedId] = this.cache[moduleId];
           return this.cache[moduleId];
-        } else {
-          return module;
         }
-      },
-
-      /**
-       * Check if a module is an AMD style define
-       * @method Executor.isModuleDefined
-       * @param {string} moduleId - the module ID
-       * @public
-       * @returns {boolean} if the module is AMD defined
-       */
-      isModuleDefined : function(moduleId) {
-        return this.defined[moduleId];
-      },
-
-      /**
-       * Flag a module as defined AMD style
-       * @method Executor.flagModuleAsDefined
-       * @param {string} moduleId - the module ID
-       * @public
-       */
-      flagModuleAsDefined : function(moduleId) {
-        this.defined[moduleId] = true;
-      },
-
-      /**
-       * Flag a module as broken
-       * @method Executor.flagModuleAsBroken
-       * @param {string} moduleId - the module ID
-       * @public
-       */
-      flagModuleAsBroken : function(moduleId) {
-        this.broken[moduleId] = true;
-      },
-
-      /**
-       * Flag a module as circular
-       * @method Executor.flagModuleAsCircular
-       * @param {string} moduleId - the module ID
-       * @public
-       */
-      flagModuleAsCircular : function(moduleId) {
-        this.circular[moduleId] = true;
-      },
-
-      /**
-       * returns if the module is circular or not
-       * @method Executor.isModuleCircular
-       * @param {string} moduleId - the module ID
-       * @public
-       * @returns {boolean} true if the module is circular
-       */
-      isModuleCircular : function(moduleId) {
-        return this.circular[moduleId];
+        
+        module = {};
+        module.id = moduleId || null;
+        module.qualifiedId = qualifiedId || null;
+        module.uri = path || null;
+        module.exports = {};
+        module.exec = false;
+        module.setExports = function(xobj) {
+          var name;
+          for (name in module.exports) {
+            if (Object.hasOwnProperty.call(module.exports, name)) {
+              debugLog('cannot setExports when exports have already been set. setExports skipped');
+              return;
+            }
+          }
+          switch (typeof(xobj)) {
+            case 'object':
+              // objects are enumerated and added
+              for (name in xobj) {
+                module.exports[name] = xobj[name];
+              }
+              break;
+            case 'function':
+              module.exports = xobj;
+              break;
+            default:
+              // non objects are written directly, blowing away exports
+              module.exports = xobj;
+              break;
+          }
+        };
+        
+        // Important AMD item. Do not store any IDs with an !
+        if (!(/\!/.test(moduleId))) {
+          this.cache[moduleId] = module;
+        }
+        
+        this.cache[qualifiedId] = module;
+        
+        return module;
       },
 
       /**
@@ -489,88 +543,54 @@ var Executor;
        * @public
        * @returns {object} the module at the identifier
        */
-      getModule : function(moduleId) {
-        if (this.broken[moduleId] && this.broken.hasOwnProperty(moduleId)) {
-          var errorMessage = 'module ' + moduleId + ' failed to load successfully';
-          var originalException = moduleFailureCache[moduleId];
-          errorMessage += (originalException) ? ': ' + originalException.message : '';
-          var e = new Error(errorMessage);
-          
-          if (originalException) {
-            e.originalException = originalException;
-            e.stack = originalException.stack;
-          }
-
-          throw e;
-        }
-
-        // return from the cache (or its alias location)
-        return this.getFromCache(moduleId) || null;
+      getModule : function(moduleId, undef) {
+        return this.getFromCache(moduleId) || undef;
       },
-
+      
       /**
        * Build a sandbox around and execute a module
        * @method Executor.runModule
-       * @param {string} moduleId - the module ID
+       * @param {object} module - the module
        * @param {string} code - the code to execute
-       * @param {string} path - the URL for the module to run
        * @returns {Object} a module object
        * @public
        */
-      runModule : function(moduleId, code, path) {
-        debugLog('Executor', 'executing ' + path);
-        // check cache
-        if (this.cache[moduleId] && this.executed[moduleId]) {
-          return this.cache[moduleId];
-        }
-
-        // check AMD define-style cache
-        if (this.cache[moduleId] && this.defined[moduleId]) {
-          return this.cache[moduleId];
-        }
+      runModule : function(module, code) {
+        debugLog('Executor', 'executing ' + module.uri);
 
         var functionId = 'exec' + (functionCount++);
+        var localMeta = {};
+        context.Inject.INTERNAL.executor[functionId] = localMeta;
+        
+        localMeta.module = module;
+        localMeta.require = RequireContext.createRequire(module.id, module.uri, module.qualifiedId);
+        localMeta.define = RequireContext.createInlineDefine(module, localMeta.require);
 
         function swapUnderscoreVars(text) {
-          return text.replace(/__MODULE_ID__/g, moduleId).replace(/__MODULE_URI__/g, path).replace(/__FUNCTION_ID__/g, functionId).replace(/__INJECT_NS__/g, NAMESPACE);
+          return text.replace(/__MODULE_ID__/g, module.id)
+            .replace(/__MODULE_URI__/g, module.uri)
+            .replace(/__FUNCTION_ID__/g, functionId)
+            .replace(/__INJECT_NS__/g, NAMESPACE);
         }
 
         var header = swapUnderscoreVars(commonJSHeader);
         var footer = swapUnderscoreVars(commonJSFooter);
         var runCommand = ([header, ';', code, footer]).join('\n');
-        var result;
 
-        result = executeJavaScriptModule(runCommand, {
-          moduleId : moduleId,
-          functionId : functionId,
-          preamble : header,
-          epilogue : footer,
-          originalCode : code,
-          url : path
-        });
+        executeJavaScriptModule(runCommand, functionId);
 
         // if a global error object was created
-        if (result && result.__error) {
+        if (module.__error) {
           // context[NAMESPACE].clearCache();
           // exit early, this module is broken
-          this.executed[moduleId] = true;
-          Executor.flagModuleAsBroken(moduleId);
-          debugLog('Executor', 'broken', moduleId, path, result);
-          return;
+          debugLog('Executor', 'broken', module.id, module.uri, module.exports);
+          this.errors[module.id] = module.__error;
         }
 
-        // cache the result (IF NOT AMD)
-        if (!IS_AMD_REGEX.test(code)) {
-          this.cache[moduleId] = result;
-        }
-
-        this.executed[moduleId] = true;
-        debugLog('Executor', 'executed', moduleId, path, result);
-
-        // return the result
-        return result;
+        debugLog('Executor', 'executed', module.id, module.uri, module.exports);
       }
     };
   });
   Executor = new AsStatic();
 })();
+

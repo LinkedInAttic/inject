@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <!--
+    Inject
+    Copyright 2011 LinkedIn
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing,
+    software distributed under the License is distributed on an "AS
+    IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+    express or implied.   See the License for the specific language
+    governing permissions and limitations under the License.
+  -->
+  <!--[if lte IE 7]>
+    <script src="/ie-localstorage-json-shim.js" type="text/javascript" id="ie-localstorage-shim"></script>
+  <![endif]-->
+  <script type="text/javascript" src="/inject.js"></script>
+</head>
+<body>
+
+<h2>AMD (Asynchronous Module Definition) Nesting and Pre-Defining</h2>
+
+<div class="about">
+  <p>Using AMD syntax, you can pre-load modules either inline on the page or via script tags (if the AMD module is named). You can use this technique to speed up your page.</p>
+  <p>Another technique shown in this page is using an AMD "wrapper" to modularize non-AMD code. For libraries such as underscore or backbone which are not designed for AMD, you can include the un altered version of the library for 1 additional HTTP request.</p>
+  <p>Combining the two techniques above or using an AMD optimizer can further improve performance and remove this penalty.</p>
+</div>
+
+<textarea id="code">
+sandbox([
+  '<p id="output-sampleString"></p>',
+]);
+Inject.reset();
+Inject.setModuleRoot("/examples/dependencies/amdnesting/");
+debugger;
+define("custom", ["a/some"], function(a) {
+  document.getElementById("output-sampleString").innerHTML = "a.b is " + a.b.ans + " and a.win (shimmed from window) is " + a.win.ans;
+  return {};
+});
+</textarea>
+
+<script type="text/javascript" src="resources/layout.js"></script>
+
+</body>
+</html>

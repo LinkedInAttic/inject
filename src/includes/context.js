@@ -37,27 +37,27 @@ context.Inject = {
       @private
    */
   INTERNAL: {
+    // expose all our classes for troubleshooting ease
+    Classes: {
+      Analyzer: Analyzer,
+      Communicator: Communicator,
+      Executor: Executor,
+      InjectCore: InjectCore,
+      RequireContext: RequireContext,
+      RulesEngine: RulesEngine,
+      TreeNode: TreeNode,
+      TreeRunner: TreeRunner
+    },
+    
     // used by the executor. these let inject know the module that is currently running
     defineExecutingModuleAs: proxy(Executor.defineExecutingModuleAs, Executor),
     undefineExecutingModule: proxy(Executor.undefineExecutingModule, Executor),
-    createModule: proxy(Executor.createModule, Executor),
-    setModuleExports: function () {},
 
     // a hash of publicly reachable module sandboxes ie exec0, exec1...
-    execute: {},
-
-    // a hash of publicly reachable module objects ie exec0's modules, exec1's modules...
-    modules: {},
-
-    // a hash of publicly reachable executor scopes ie exec0's __exe function
-    execs: {},
+    executor: {},
 
     // a globally available require() call for the window and base page
-    globalRequire: globalRequire,
-
-    // creates require and define methods as passthrough
-    createRequire: proxy(InjectCore.createRequire, InjectCore),
-    createDefine: proxy(InjectCore.createDefine, InjectCore)
+    globalRequire: globalRequire
   },
 
   plugins: {},
@@ -117,43 +117,80 @@ context.Inject = {
     // modules matching pattern
     RulesEngine.addFetchRule(/^.+?\!.+$/, function (next, content, resolver, communicator, options) {
       var moduleName = options.moduleId;
-      var requestorName = options.parentId;
-      var requestorUrl = options.parentUrl;
+      var parentId = options.parentId;
+      var parentUrl = options.parentUrl;
 
       var pieces = moduleName.split('!');
-      var pluginId = resolver.module(pieces[0], requestorName);
-      var pluginUrl = resolver.url(pluginId, requestorUrl);
+      var pluginId = resolver.module(pieces[0], parentId);
+      var pluginUrl = resolver.url(pluginId, parentUrl);
       var identifier = pieces[1];
 
-      var rq = Inject.createRequire(moduleName, requestorUrl);
-      rq.ensure([pluginId], function (pluginRequire) {
-        // the plugin must come from the contextual require
-        // any subsequent fetching depends on the resolved plugin's location
-        var plugin = pluginRequire(pluginId);
-        var remappedRequire = Inject.createRequire(pluginId, pluginUrl);
-
-        var resolveIdentifier = function (name) {
-          return resolver.module(name, requestorName);
+      var parentRequire = RequireContext.createRequire(parentId, parentUrl);
+      
+      // when loading via a plugin, once you call load() or load.fromText(), you are DONE
+      // this special require ensures you cannot call require() after you've gotten the text
+      // we then copy all the properties over to ensure it behaves (duck typing) like the
+      // normal require
+      var loadCalled = false;
+      var pluginRequire = function() {
+        if (loadCalled) {
+          return;
+        }
+        return parentRequire.apply(parentRequire, arguments);
+      };
+      var addToPluginRequire = function(prop) {
+        pluginRequire[prop] = function() {
+          return parentRequire[prop].apply(parentRequire, arguments);
         };
-        var normalized = (plugin.normalize) ? plugin.normalize(identifier, resolveIdentifier) : resolveIdentifier(identifier);
-        var complete = function (contents) {
+      };
+      for (var prop in parentRequire) {
+        if (HAS_OWN_PROPERTY.call(parentRequire, prop)) {
+          addToPluginRequire(prop);
+        }
+      }
+      
+      // the resolver function is passed into a plugin for resolving a name relative to
+      // the current module's scope. We pass through to resolver.module which passes
+      // through to RulesEngine
+      var resolveFn = function (name) {
+        return resolver.module(name, parentId);
+      };
+      
+      // to run an AMD plugin
+      parentRequire([pluginId], function(plugin) {
+        // normalize the module ID if the plugin supports it
+        var normalized = (plugin.normalize) ? plugin.normalize(identifier, resolveFn) : resolveFn(identifier);
+        
+        // create the onload handlers that trigger the callback on completion
+        var onload = function(contents) {
+          if (loadCalled) {
+            return;
+          }
+          loadCalled = true;
+          
+          // if it is a string, then its exports are saved as a URI component
           if (typeof(contents) === 'string') {
             contents = ['module.exports = decodeURIComponent("', encodeURIComponent(contents), '");'].join('');
           }
+
           next(null, contents);
         };
-        complete.fromText = function (ftModname, body) {
-          if (!body) {
-            body = ftModname;
-            ftModname = null;
+        onload.fromText = function(moduleName, contents) {
+          if (loadCalled) {
+            return;
           }
-
-          // use the executor
-          Executor.runModule(ftModname, body, pluginUrl);
-
-          next(null, body);
+          loadCalled = true;
+          
+          if (!contents) {
+            contents = moduleName;
+            moduleName = null;
+          }
+          
+          // the contents of this are good
+          next(null, contents);
         };
-        plugin.load(normalized, remappedRequire, complete, {});
+        
+        plugin.load(normalized, pluginRequire, onload, {});
       });
     });
   },
@@ -215,10 +252,10 @@ context.Inject = {
    */
   disableGlobalAMD: function (disable) {
     if (disable) {
-      context.define = Inject.INTERNAL.createDefine(null, null, true);
+      context.define = RequireContext.createDefine(null, null, true);
     }
     else {
-      context.define = Inject.INTERNAL.createDefine();
+      context.define = RequireContext.createDefine();
     }
   },
 
@@ -297,14 +334,6 @@ context.Inject = {
     InjectCore.plugin.apply(InjectCore, args);
   },
 
-  createRequire: function() {
-    return InjectCore.createRequire.apply(InjectCore, arguments);
-  },
-
-  createDefine: function() {
-    return InjectCore.createDefine.apply(InjectCore, arguments);
-  },
-
   /**
       CommonJS and AMD require()
       @see InjectCore.createRequire
@@ -313,7 +342,7 @@ context.Inject = {
       @method
       @public
    */
-  require: InjectCore.createRequire(),
+  require: RequireContext.createRequire(),
   /**
       AMD define()
       @see InjectCore.createDefine
@@ -321,7 +350,7 @@ context.Inject = {
       @method
       @public
    */
-  define: InjectCore.createDefine(),
+  define: RequireContext.createDefine(),
   /**
       The version of Inject.
       @type {String}
@@ -338,7 +367,7 @@ context.Inject = {
     @method
     @public
  */
-context.require = context.Inject.INTERNAL.createRequire();
+context.require = context.Inject.require;
 
 /**
     AMD define()
@@ -347,4 +376,4 @@ context.require = context.Inject.INTERNAL.createRequire();
     @method
     @public
  */
-context.define = context.Inject.INTERNAL.createDefine();
+context.define = context.Inject.define;

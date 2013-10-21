@@ -44,7 +44,8 @@ governing permissions and limitations under the License.
        H I     J  K   L
       */
       function tn(val) {
-        var n = new TreeNode(val);
+        var n = new TreeNode();
+        n.data.value = val;
         return n;
       }
       var root = tn("root");
@@ -95,7 +96,7 @@ governing permissions and limitations under the License.
       var output = [];
 
       setupData.tree.postOrder(function(node) {
-        output.push(node.getValue());
+        output.push(node.data.value);
       });
       deepEqual(output, setupData.postOrder, "postOrder traversal");
     });

@@ -200,7 +200,6 @@ module.exports = function (grunt) {
           './src/lib/easyxdm-closure.js',
           './src/lib/easyxdm.js',
           './src/lib/lscache.js',
-          './src/lib/tracekit.js',
           './src/includes/environment.js',
           './src/analyzer.js',
           './src/communicator.js',
@@ -208,7 +207,7 @@ module.exports = function (grunt) {
           './src/injectcore.js',
           './src/requirecontext.js',
           './src/rulesengine.js',
-          './src/treedownloader.js',
+          './src/treerunner.js',
           './src/treenode.js',
           './src/includes/context.js'
         ]
@@ -232,7 +231,7 @@ module.exports = function (grunt) {
           './src/injectcore.js',
           './src/requirecontext.js',
           './src/rulesengine.js',
-          './src/treedownloader.js',
+          './src/treerunner.js',
           './src/treenode.js',
           './src/includes/context.js'
         ]
@@ -306,14 +305,6 @@ module.exports = function (grunt) {
         options: {
           port: 4001,
           server: path.resolve('./server.js')
-        }
-      }
-    },
-
-    wait: {
-      server_start: {
-        options: {
-          delay: 3
         }
       }
     },
@@ -435,7 +426,6 @@ module.exports = function (grunt) {
   grunt.registerTask('test', [
     'express:generic',
     'express:alternate',
-    'wait:server_start',
     'qunit',
     'express-stop'
   ]);
@@ -443,7 +433,6 @@ module.exports = function (grunt) {
   grunt.registerTask('server', [
     'express:generic',
     'express:alternate',
-    'wait:server_start',
     'log:server',
     'express-keepalive'
   ]);

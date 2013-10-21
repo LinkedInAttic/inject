@@ -34,49 +34,6 @@ var InjectCore;
       init: function () {},
 
       /**
-       * create a require() method within a given context path
-       * relative require() calls can be based on the provided
-       * id and path
-       * @method InjectCore.createRequire
-       * @param {string} id - the module identifier for relative module IDs
-       * @param {string} path - the module path for relative path operations
-       * @public
-       * @returns a function adhearing to CommonJS and AMD require()
-       */
-      createRequire: function (id, path) {
-        var req = new RequireContext(id, path);
-        var require = proxy(req.require, req);
-
-        require.ensure = proxy(req.ensure, req);
-        require.run = proxy(req.run, req);
-        // resolve an identifier to a URL (AMD compatibility)
-        require.toUrl = function (identifier) {
-          var resolvedId = RulesEngine.resolveModule(identifier, id);
-          var resolvedPath = RulesEngine.resolveFile(resolvedId, path, true);
-          return resolvedPath;
-        };
-        return require;
-      },
-
-      /**
-       * create a define() method within a given context path
-       * relative define() calls can be based on the provided
-       * id and path
-       * @method InjectCore.createDefine
-       * @param {string} id - the module identifier for relative module IDs
-       * @param {string} path - the module path for relative path operations
-       * @param {boolean} disableAMD - if provided, define.amd will be false, disabling AMD detection
-       * @public
-       * @returns a function adhearing to the AMD define() method
-       */
-      createDefine: function (id, path, disableAMD) {
-        var req = new RequireContext(id, path);
-        var define = proxy(req.define, req);
-        define.amd = (disableAMD) ? false : {};
-        return define;
-      },
-
-      /**
        * add a plugin to the Inject system
        * @method InjectCore.plugin
        * @param {string} plugin - the name of the plugin (comes before ! in require calls)

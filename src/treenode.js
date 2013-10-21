@@ -24,46 +24,15 @@ governing permissions and limitations under the License.
 var TreeNode = Fiber.extend(function () {
   return {
     /**
-     * Create a TreeNode with a defined value
+     * Create a TreeNode
      * @constructs TreeNode
-     * @param {TreeNode} value - the value of this node
      */
-    init: function (value) {
-      this.value = value;
+    init: function () {
+      this.data = {};
       this.children = [];
       this.left = null;
       this.right = null;
       this.parent = null;
-      this.isCircularNode = false;
-    },
-
-    /**
-     * Get the value associated with the TreeNode
-     * @method TreeNode#getValue
-     * @public
-     * @returns {variable} the value of the node
-     */
-    getValue: function () {
-      return this.value;
-    },
-
-    /**
-     * Flag this tree node as circular
-     * @method TreeNode#flagCircular
-     * @public
-     */
-    flagCircular: function () {
-      this.isCircularNode = true;
-    },
-
-    /**
-     * return if this node is a circular reference
-     * @method TreeNode#isCircular
-     * @public
-     * @returns {boolean} true if this is a circular reference
-     */
-    isCircular: function () {
-      return this.isCircularNode;
     },
 
     /**
@@ -159,6 +128,28 @@ var TreeNode = Fiber.extend(function () {
     getParent: function () {
       return this.parent;
     },
+    
+    /**
+     * Returns all of a requested data element for the parents
+     * @method TreeNode#parents
+     * @param {String} param - the data paramter to get
+     * @param {string} joins - the string to join it
+     * @returns {Array} - an array of the parent values
+     */
+    parents: function(callback) {
+      var output = [],
+          currentNode = this;
+      
+      while (currentNode) {
+        if (callback) {
+          callback(currentNode);
+        }
+        output.push(currentNode);
+        currentNode = currentNode.getParent();
+      }
+      
+      return output;
+    },
 
     /**
      * Perform a postOrder traversal over the tree, optionally running
@@ -184,7 +175,7 @@ var TreeNode = Fiber.extend(function () {
         }
 
         // node correct
-        output.push(currentNode.getValue());
+        output.push(currentNode);
         if (callback) {
           callback(currentNode);
         }

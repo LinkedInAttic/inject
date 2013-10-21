@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html>
+<head>
+<!--
+/*
+Inject
+Copyright 2011 LinkedIn
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing,
+software distributed under the License is distributed on an "AS
+IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+express or implied.   See the License for the specific language
+governing permissions and limitations under the License.
+*/
+-->
+  <meta charset="UTF-8" />
+  <title>Inject Test Suite - TreeRunner SRC Tests</title>
+  <link rel="stylesheet" href="../resources/qunit.css" type="text/css" media="screen">
+  <script type="text/javascript" src="../resources/qunit.js"></script>
+  <script type="text/javascript" src="../resources/config.js"></script>
+  <script type="text/javascript" src="../resources/sinon.js"></script>
+</head>
+<body>
+  <div id="qunit"></div>
+  <script type="text/javascript" src="../../src/includes/constants.js"></script>
+  <script type="text/javascript" src="../../src/includes/globals.js"></script>
+  <script type="text/javascript" src="../../src/lib/fiber.js"></script>
+  <script type="text/javascript" src="../../src/lib/flow.js"></script>
+  <script type="text/javascript" src="../../src/lib/lscache.js"></script>
+  <script type="text/javascript" src="../../src/treenode.js"></script>
+  <script type="text/javascript" src="../../src/treerunner.js"></script>
+  <script type="text/javascript">
+    var Executor;
+    var RulesEngine;
+    var Communicator;
+    var Analyzer;
+    var RequireContext;
+
+    module("TreeRunner", {
+      setup: function() {
+        /* Sample Tree To Build
+                root
+                /  \
+               A    B
+              / \   |
+             B   C  D
+             |      |
+             D      A
+             |     / \
+            (A)  (B)  C
+
+          ["(a)", "d", "b", "c", "a", "(b)", "c", "a", "d", "b", "ROOT"]
+        */
+
+        var rootJS = "root.js contents";
+        var rootUrl = "http://example.com/root.js";
+        var rootRequires = ["a", "b"];
+
+        var aJS = "a.js contents";
+        var aUrl = "http://example.com/a.js";
+        var aRequires = ["b", "c"];
+
+        var bJS = "b.js contents";
+        var bUrl = "http://example.com/b.js";
+        var bRequires = ["d"];
+
+        var cJS = "c.js contents";
+        var cUrl = "http://example.com/c.js";
+        var cRequires = [];
+
+        var dJS = "d.js contents";
+        var dUrl = "http://example.com/d.js";
+        var dRequires = ["a"];
+
+        // stub our rules engine
+        var stubResolveModule = sinon.stub();
+        var stubResolveFile = sinon.stub();
+        var stubGetFetchRules = sinon.stub();
+        var stubGetContentRules = sinon.stub();
+        
+        stubResolveModule.withArgs("root").returns("root");
+        stubResolveModule.withArgs("a").returns("a");
+        stubResolveModule.withArgs("b").returns("b");
+        stubResolveModule.withArgs("c").returns("c");
+        stubResolveModule.withArgs("d").returns("d");
+
+        stubResolveFile.withArgs("root").returns(rootUrl);
+        stubResolveFile.withArgs("a").returns(aUrl);
+        stubResolveFile.withArgs("b").returns(bUrl);
+        stubResolveFile.withArgs("c").returns(cUrl);
+        stubResolveFile.withArgs("d").returns(dUrl);
+
+        stubGetFetchRules.returns([]);
+
+        stubGetContentRules.returns([]);
+        
+        RulesEngine = {
+          resolveModule: stubResolveModule,
+          resolveFile: stubResolveFile,
+          getFetchRules: stubGetFetchRules,
+          getContentRules: stubGetContentRules
+        };
+
+        // stub our communicator calls
+        var stubGet = sinon.stub();
+        stubGet.withArgs("root", rootUrl).callsArgWith(2, rootJS);
+        stubGet.withArgs("a", aUrl).callsArgWith(2, aJS);
+        stubGet.withArgs("b", bUrl).callsArgWith(2, bJS);
+        stubGet.withArgs("c", cUrl).callsArgWith(2, cJS);
+        stubGet.withArgs("d", dUrl).callsArgWith(2, dJS);
+        Communicator = {
+          get: stubGet
+        };
+
+        // stub our analyzer calls
+        var stubExtractRequires = sinon.stub();
+        stubExtractRequires.withArgs(rootJS).returns(rootRequires);
+        stubExtractRequires.withArgs(aJS).returns(aRequires);
+        stubExtractRequires.withArgs(bJS).returns(bRequires);
+        stubExtractRequires.withArgs(cJS).returns(cRequires);
+        stubExtractRequires.withArgs(dJS).returns(dRequires);
+        Analyzer = {
+          extractRequires: stubExtractRequires
+        };
+        
+        // stub the require context
+        var stubQualifiedId = sinon.stub();
+        stubQualifiedId.returns('');
+        RequireContext = {
+          qualifiedId: stubQualifiedId
+        };
+        
+        // stub our executor calls
+        var stubCreateModule = sinon.stub();
+        var stubGetModule = sinon.stub();
+        var stubSetModule = sinon.stub();
+        var stubRunModule = sinon.stub();
+
+        stubCreateModule.withArgs('root').returns({
+          exports: {}
+        });
+        stubCreateModule.withArgs('a').returns({
+          exports: {}
+        });
+        stubCreateModule.withArgs('b').returns({
+          exports: {}
+        });
+        stubCreateModule.withArgs('c').returns({
+          exports: {}
+        });
+        stubCreateModule.withArgs('d').returns({
+          exports: {}
+        });
+        
+        stubGetModule.returns({
+          exports: {}
+        });
+
+        stubRunModule.returns({
+          exports: {}
+        });
+        
+        Executor = {
+          createModule: stubCreateModule,
+          getModule: stubGetModule,
+          runModule: stubRunModule
+        };
+      },
+      teardown: function() {
+        RulesEngine = Analyzer = Communicator = Executor = RequireContext = null;
+      }
+    });
+
+    test("Scaffolding", function() {
+      ok(typeof(TreeRunner) === "function", "object exists");
+    });
+
+    asyncTest("Download a Tree", 1, function() {
+      var expected = ["(a)", "d", "b", "c", "a", "(b)", "c", "a", "d", "b", "root"];
+      var root = new TreeNode();
+
+      root.data.originalId = 'root';
+      root.data.resolvedId = '';
+      root.data.resolvedUrl = '';
+
+      var tr = new TreeRunner(root);
+      tr.download(function() {
+        var items = root.postOrder();
+        var output = [];
+        for (var i = 0, len = items.length; i < len; i++) {
+          if (items[i].data.circular) {
+            output.push('(' + items[i].data.originalId + ')');
+          }
+          else {
+            output.push(items[i].data.originalId);
+          }
+        }
+        
+        equal(expected.join(' '), output.join(' '), 'circular dependencies found and is traversed in post-order mode');
+        start();
+      });
+    });
+    
+    asyncTest("Run a Tree", 2, function() {
+      var expected = ["(a)", "d", "b", "c", "a", "(b)", "c", "a", "d", "b", "root"];
+      var defaultCount = expected.length;
+      var runCount = 5; // one per unique module
+      var root = new TreeNode();
+
+      root.data.originalId = 'root';
+      root.data.resolvedId = '';
+      root.data.resolvedUrl = '';
+
+      var tr = new TreeRunner(root);
+      tr.download(function() {
+        tr.execute(function() {
+          equal(Executor.createModule.callCount, defaultCount, 'createModule tried once for every module');
+          equal(Executor.runModule.callCount, runCount, 'runModule invoked only for non-circular items');
+          start();
+        });
+      });
+    });
+  </script>
+</body>
+</html>
