@@ -293,12 +293,16 @@ var RequireContext = Fiber.extend(function () {
           }
         }
         if (typeof factory === 'function') {
-          factory.apply(module, resolved);
+          result = factory.apply(module, resolved);
+          if (result) {
+            module.exports = result;
+          }
         }
         else if (typeof factory === 'object') {
           module.exports = factory;
         }
         module.amd = true;
+        module.exec = true;
       });
     },
     
@@ -488,6 +492,7 @@ RequireContext.createInlineDefine = function(module, require) {
       module.exports = factory;
     }
     module.amd = true;
+    module.exec = true;
   };
   define.amd = {};
   return define;

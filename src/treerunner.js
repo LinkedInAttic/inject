@@ -216,8 +216,16 @@ var TreeRunner = Fiber.extend(function () {
               var node = new TreeNode();
               node.data.originalId = requires[i];
               root.addChild(node);
-              var runner = new TreeRunner(node);
-              childRunner(runner);
+              
+              if (Executor.getModule(requires[i]) && Executor.getModule(requires[i]).exec) {
+                // we have it
+                childDone();
+              }
+              else {
+                // go get it
+                var runner = new TreeRunner(node);
+                childRunner(runner);
+              }
             }
           }
         });
