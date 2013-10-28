@@ -3,12 +3,15 @@ layout: download
 title : Changelog
 ---
 
-## 0.5.1
+## 0.5.1 (Release October 28, 2013)
 
 ### Dev Features
 * \#284 removed LinkJS and reverted to Regex to improve performance
 * \#282 easyXDM Upgraded to latest version
 * \#258 Stack traces are improved when JS errors are encounted
+
+### Bug Fixes
+* (unreported) Deep nested AMD modules are returning an exports of `{}` instead of their contents
 
 ## 0.5.0 (Released August 5, 2013)
 
@@ -30,9 +33,6 @@ title : Changelog
 * \#248 "grunt release" available for creating the release .tgz file
 
 ## 0.4.2 (Released March 27, 2013)
-
-### New Features
-n/a
 
 ### Bug Fixes
 * \#245 protect against getCurrentAMD returning null

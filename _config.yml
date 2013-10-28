@@ -2,9 +2,9 @@
 
 # site info
 name         : Inject
-version      : 0.5.0
+version      : 0.5.1
 logo         : /assets/images/logos/inject.png
-stable_dl    : /download/0.5.x/inject-0.5.0.tgz
+stable_dl    : /download/0.5.x/inject-0.5.1.tgz
 description  :
     short    : Dependency Management Got Awesome
     long     : CommonJS and AMD Compliant dependency loader for modern web apps
@@ -12,7 +12,6 @@ description  :
 # documentation structure
 documentation:
   - version: 0.5.1
-    draft: true
     categories:
       - cat: cjs
         name: CommonJS Interface
@@ -23,6 +22,7 @@ documentation:
       - cat: howto
         name: How To and Tutorials
   - version: 0.5.0
+    old: true
     categories:
       - cat: cjs
         name: CommonJS Interface
@@ -52,27 +52,33 @@ copyright :
 authors :
   jheuser :
     name : Jakob Heuser
-    li_pub_profile : jakobheuser
+    li_pub_profile : https://www.linkedin.com/in/jakobheuser
     li_pic_url : https://m1-s.licdn.com/mpr/mpr/shrink_60_60/p/1/000/03f/2b3/1456141.jpg
     github : Jakobo
     twitter : jakobo
   jhoff :
     name : Jordan Hoff
-    li_pub_profile : jordanhoff
+    li_pub_profile : https://www.linkedin.com/in/jordanhoff
     li_pic_url : https://m1-s.licdn.com/mpr/mpr/shrink_60_60/p/1/000/094/13f/3e7fa8b.jpg
     github : jhoff
     twitter : jhoff484
   mpowell :
     name : Matt Powell
-    li_pub_profile: mttpwll
+    li_pub_profile: https://www.linkedin.com/in/mttpwll
     li_pic_url: https://m1-s.licdn.com/mpr/mpr/shrink_60_60/p/3/000/095/332/3c93849.jpg
     github: mattpowell
     twitter: mattpowell
   fsimeon :
     name : Fermin Simeon
-    li_pub_profile: ferminsimeon
+    li_pub_profile: https://www.linkedin.com/in/ferminsimeon
     li_pic_url: http://m.c.lnkd.licdn.com/mpr/mpr/shrink_60_60/p/7/000/1ec/0d8/3840805.jpg
     github: fsimeon
+    twitter: injectjs
+  apmadhani :
+    name : Akshay Madhani
+    li_pub_profile: www.linkedin.com/pub/akshay-madhani/29/60/a59
+    li_pic_url: http://m.c.lnkd.licdn.com/mpr/mpr/shrink_60_60/p/6/005/009/3d6/36b94f5.jpg
+    github: apmadhani
     twitter: injectjs
 
 # publish posts with a future date

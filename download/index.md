@@ -7,7 +7,7 @@ View the [Changelog](/download/changelog) to see what changed between versions.
 
 # 0.5.x
 
-* 0.5.1 - [rc3](0.5.x/inject-0.5.1-rc3.tgz), [rc2](0.5.x/inject-0.5.1-rc2.tgz), [rc1](0.5.x/inject-0.5.1-rc1.tgz)
+* [0.5.1 final](0.5.x/inject-0.5.1.tgz) - [rc3](0.5.x/inject-0.5.1-rc3.tgz), [rc2](0.5.x/inject-0.5.1-rc2.tgz), [rc1](0.5.x/inject-0.5.1-rc1.tgz)
 * [0.5.0 final](0.5.x/inject-0.5.0.tgz) - [rc1](0.5.x/inject-0.5.0-rc1.tgz)
 
 # 0.4.x
