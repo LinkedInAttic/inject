@@ -1,6 +1,6 @@
 ---
 layout: news
-title: Accouncing Inject 0.5.1
+title: Announcing Inject 0.5.1
 category: news
 author: apmadhani
 ---
