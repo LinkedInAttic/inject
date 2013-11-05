@@ -3,6 +3,11 @@ layout: download
 title : Changelog
 ---
 
+## 0.5.2 (Release November 5, 2013)
+
+### Bug Fixes
+* (internal reporting) A security issue that affects the inclusion of relay.swf from relay.html has been closed. Users who did not keep their relay.html and relay.swf files in the same directory will need to remediate using the following strategy: the new relay.html file contains a `ALTERNATE_SWF_LOCATION` parameter, which can be used to specify the location of the SWF file. This will need to be done as part of the upgrade of the relay files are in different locations.
+
 ## 0.5.1 (Release October 28, 2013)
 
 ### Dev Features
