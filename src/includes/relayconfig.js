@@ -1,10 +1,13 @@
-/**
- * Object that stores states for relay.html,
- * which manages cross-domain dependencies
- */
-var ALLOWED_DOMAIN = null,
+// For added security, set this to the only domain allowed to communicate with
+// this relay.html file
+var ALLOWED_DOMAIN = null;
 
-relayConfig = {        
+// If relay.swf is in a non-programtic location, but is NOT in the same directory as
+// this relay.html file, you may specify its alternate location here
+var ALTERNATE_SWF_LOCATION = null;
+
+// ====== DO NOT CHANGE BELOW THIS LINE ======
+var relayConfig = {
   moduleRoot: null,  //Root location of the module
   fileExpires: 300,  //request will expire 300 seconds
   useSuffix: true,

@@ -42,8 +42,8 @@ function readFromCache(url) {
   }
 }
 
-    // the SWF's location is passed in to us from the parent page as a parameter
-var swfLocation = location.href.match(/swf=(.*?)(&|$)/)[1],
+    // the location of the relay.swf (must be identical to relay.html's location)
+var swfLocation = ALTERNATE_SWF_LOCATION || null,
     
     // the queue object contains requests that are pending until the cross domain
     // setup is complete
@@ -60,6 +60,10 @@ var swfLocation = location.href.match(/swf=(.*?)(&|$)/)[1],
 
     // the token used to split and reassemble requests in cross domain comm
     INJECT_TOKEN = "__INJECT_SPLIT__";
+
+if (!swfLocation) {
+  swfLocation = location.href.replace(/relay\.html/, 'relay.swf');
+}
 
 /**
  * trim a provided string down to its hostname and port
