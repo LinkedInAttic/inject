@@ -2,27 +2,16 @@
 
 # site info
 name         : Inject
-version      : 0.5.1
+version      : 0.5.2
 logo         : /assets/images/logos/inject.png
-stable_dl    : /download/0.5.x/inject-0.5.1.tgz
+stable_dl    : /download/0.5.x/inject-0.5.2.tgz
 description  :
     short    : Dependency Management Got Awesome
     long     : CommonJS and AMD Compliant dependency loader for modern web apps
 
 # documentation structure
 documentation:
-  - version: 0.5.1
-    categories:
-      - cat: cjs
-        name: CommonJS Interface
-      - cat: amd
-        name: AMD Interface
-      - cat: api
-        name: The Inject API
-      - cat: howto
-        name: How To and Tutorials
-  - version: 0.5.0
-    old: true
+  - version: 0.5.x
     categories:
       - cat: cjs
         name: CommonJS Interface
@@ -86,9 +75,6 @@ future    : true
 
 # The production_url is only used when full-domain names are needed such as sitemap.txt
 production_url : http://www.injectjs.com
-
-# build config
-auto      : false
 
 # github defaults
 lsi       : false
