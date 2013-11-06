@@ -133,6 +133,9 @@ var Communicator;
     function createSocket() {
       var relayFile = userConfig.xd.relayFile;
       var relaySwf = userConfig.xd.relaySwf || '';
+      
+      relayFile += (relayFile.indexOf('?') >= 0) ? '&' : '?';
+      relayFile += 'swf=' + relaySwf;
 
       socket = new easyXDM.Socket({
         remote: relayFile,

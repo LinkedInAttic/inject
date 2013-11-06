@@ -6,14 +6,86 @@
  * Relay.js is one of four files that make up relay.html 
 **/
 
+// the location of the relay.swf (must be identical to relay.html's location)
+var swfLocation = ALTERNATE_SWF_LOCATION || null;
+
+// the queue object contains requests that are pending until the cross domain
+// setup is complete
+var queue = [];
+
+// a function that returns an XHR object
+var getXhr;
+
+// a flag that indicates if the socket is ready
+var socketReady = false;
+
+// the easyXDM connection object
+var socket;
+
+// the token used to split and reassemble requests in cross domain comm
+var INJECT_TOKEN = "__INJECT_SPLIT__";
+    
+// a regex URL that allows for the extraction of all a domain's parts
+// returns groups for protocol: (2), user/pass@ (3) domain (4) and port (5)
+var reURI = /^((http.?:)\/\/(.+:.+@)?([^:\/\s]+)(:\d+)*)/;
+    
+// try and extract a swf URL from the current URL
+var paramSwfLocation = location.href.match(/[&?#]swf=(.*?)(?:&|$|#)/);
+
+// if we didn't get a SWF location, and it came from the URL, and it's valid
+// then set it.
+if (!swfLocation && paramSwfLocation && isValidSwf(paramSwfLocation[1])) {
+  swfLocation = sanitizeSwfUrl(paramSwfLocation[1]);
+}
+
+if (!swfLocation) {
+  // throw when there is no swf location
+  throw new Error('invalid swf location');
+}
+
 /**
-* Write file contents to local storage
-* @function
-* @param {string} url - url to use as a key to store file content
-* @param {string} contents file contents to be stored in cache
-* @private
-* @returns a function adhearing to the lscache set() method
-**/
+ * test that the URL is a valid SWF location
+ * the location must come from the same protocol, user/pass, domain, and port
+ * as the location.href.
+ * @function
+ * @private
+ * @param {String} url - a URL to validate
+ * @returns {Boolean}
+ */
+function isValidSwf(url) {
+  var baseUrl = location.href.match(reURI);
+  var swfUrl = url.match(reURI);
+
+  // must be on the same protocol, user/pass, domain, and port
+  var valid = true;
+  valid = valid && (baseUrl[2] === swfUrl[2]);
+  valid = valid && (baseUrl[3] === swfUrl[3]);
+  valid = valid && (baseUrl[4] === swfUrl[4]);
+  valid = valid && (baseUrl[5] === swfUrl[5]);
+  return valid;
+}
+
+/**
+ * Sanitize a URL, making it safe for easyXDM's swf parameter
+ * @function
+ * @private
+ * @param {String} url - a URL to validate
+ * @returns {String}
+ */
+function sanitizeSwfUrl(url) {
+  // remove hash
+  url = url.replace(/#.*$/, '');
+  return XSS.sanitizeURL(url);
+}
+
+/**
+ * Write file contents to local storage
+ * @function
+ * @param {string} url - url to use as a key to store file content
+ * @param {string} contents file contents to be stored in cache
+ * @private
+ * @returns a function adhearing to the lscache set() method
+ */
 function writeToCache(url, contents) {
   // lscache and passthrough
   if (relayConfig.fileExpires > 0) {
@@ -25,13 +97,13 @@ function writeToCache(url, contents) {
 }
 
 /**
-* read cached file contents from local storage
-* @function
-* @param {string} url - url key that the content is stored under
-* @private
-* @returns the content that is stored under the url key
-*
-**/
+ * read cached file contents from local storage
+ * @function
+ * @param {string} url - url key that the content is stored under
+ * @private
+ * @returns the content that is stored under the url key
+ *
+ */
 function readFromCache(url) {
   // lscache and passthrough
   if (relayConfig.fileExpires > 0) {
@@ -40,29 +112,6 @@ function readFromCache(url) {
   else {
     return null;
   }
-}
-
-    // the location of the relay.swf (must be identical to relay.html's location)
-var swfLocation = ALTERNATE_SWF_LOCATION || null,
-    
-    // the queue object contains requests that are pending until the cross domain
-    // setup is complete
-    queue = [],
-
-    // a function that returns an XHR object
-    getXhr,
-
-    // a flag that indicates if the socket is ready
-    socketReady = false,
-
-    // the easyXDM connection object
-    socket,
-
-    // the token used to split and reassemble requests in cross domain comm
-    INJECT_TOKEN = "__INJECT_SPLIT__";
-
-if (!swfLocation) {
-  swfLocation = location.href.replace(/relay\.html/, 'relay.swf');
 }
 
 /**
@@ -74,10 +123,6 @@ if (!swfLocation) {
 function trimHost(host) {
   return host.replace(hostPrefixRegex, "").replace(hostSuffixRegex, "$1");
 }
-
-
-
-
 
 /**
  * makes an XmlHttpRequest and posts the message back through

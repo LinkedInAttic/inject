@@ -272,6 +272,7 @@ module.exports = function (grunt) {
           './src/includes/relayconfig.js',
           './src/lib/easyxdm.js',
           './src/lib/lscache.js',
+          './src/lib/xss.js',
           './src/xd/relay.js'
         ]
       }
