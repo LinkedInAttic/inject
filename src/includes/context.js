@@ -219,8 +219,8 @@ context.Inject = {
   },
   /**
       Sets the cross-domain configuration.  The cross-domain configuration
-      is an object consisting of two properties: relayHtml and relaySwf.  The
-      HTML and SWF file should be located on the remote server (for example
+      is an object consisting of one property: relayHtml.  The
+      HTML file should be located on the remote server (for example
       the CDN).
       @see InjectCore.setCrossDomain
       @method

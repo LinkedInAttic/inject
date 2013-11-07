@@ -59,7 +59,7 @@ var InjectCore;
       /**
        * set the cross domain configuration
        * the cross domain config is an object consisting of two properties,
-       * the relayHtml and the relaySwf. The HTML and SWF file should be
+       * the relayHtml. The HTML file should be
        * located on the remote server (for example the CDN).
        * @method InjectCore.setCrossDomain
        * @param {object} crossDomainConfig - the confuiguration object
@@ -67,7 +67,6 @@ var InjectCore;
        */
       setCrossDomain: function (crossDomainConfig) {
         userConfig.xd.relayFile = crossDomainConfig.relayFile || null;
-        userConfig.xd.relaySwf = crossDomainConfig.relaySwf || null;
       },
 
       /**

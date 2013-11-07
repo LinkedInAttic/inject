@@ -27,9 +27,6 @@ governing permissions and limitations under the License.
       resolving an identifier to a URL.  @see RulesEngine.resolveFile
     @property {object} xd Contains properties related to cross-domain requests
     @property {string|null} xd.relayFile URL to easyXDM provider document
-      @see <a href="https://github.com/oyvindkinsey/easyXDM">easyXDM</a>
-    @property {string|null} xd.relaySwf URL for easyXDM FlashTransport
-      @see <a href="https://github.com/oyvindkinsey/easyXDM">easyXDM</a>
     @property {object} debug
     @property {boolean} debug.sourceMap Specify true to enable source
       mapping @see Executor

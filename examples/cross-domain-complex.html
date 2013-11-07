@@ -37,8 +37,7 @@ sandbox([
 Inject.reset();
 Inject.setModuleRoot("http://localhost:4001/examples/dependencies/crossdomaincomplex/");
 Inject.setCrossDomain({
-  relayFile:    "http://localhost:4001/relay.html",
-  relaySwf:     "http://localhost:4001/relay.swf"
+  relayFile:    "http://localhost:4001/relay.html"
 });
 
 require.ensure(["one"], function(require) {
