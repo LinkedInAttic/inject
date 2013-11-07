@@ -43,8 +43,7 @@ var userConfig = {
   fileExpires: 0,
   useSuffix: true,
   xd: {
-    relayFile: null,
-    relaySwf: null
+    relayFile: null
   },
   debug: {
     sourceMap: false,
@@ -65,13 +64,6 @@ var context = this;
 var userModules = {};
 
 /**
-    Reference to easyXDM library, if loaded.
-    @see <a href="http://www.easyxdm.net">easyXDM</a>
-    @global
- */
-var easyXdm = false;
-
-/**
     Returns whether or not 'property' exists in 'object' as a Function
     or Object.
     @param {object} object The object to inspect.
@@ -87,36 +79,6 @@ var isHostMethod = function (object, property) {
   var t = typeof object[property];
   return t === 'function' || (!!(t === 'object' && object[property])) || t === 'unknown';
 };
-
-/**
-    Returns object for doing async requests.
-    @return {XMLHttpRequest|ActiveXObject}
-    @function
-    @global
- */
-var getXhr = (function () {
-  if (isHostMethod(window, 'XMLHttpRequest')) {
-    return function () {
-      return new XMLHttpRequest();
-    };
-  }
-  else {
-    var item = (function () {
-      var list = ['Microsoft', 'Msxml2', 'Msxml3'], i = list.length;
-      while (i--) {
-        try {
-          item = list[i] + '.XMLHTTP';
-          var obj = new ActiveXObject(item);
-          return item;
-        }
-        catch (e) {}
-      }
-    }());
-    return function () {
-      return new ActiveXObject(item);
-    };
-  }
-}());
 
 /**
     Calls the specified function in the specified scope.

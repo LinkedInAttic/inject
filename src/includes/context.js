@@ -61,13 +61,7 @@ context.Inject = {
   },
 
   plugins: {},
-  
-  /**
-      Exposes easyXDM API for doing cross-domain messaging.
-      @see <a href="http://www.easyxdm.net">easyXDM</a>
-      @public
-   */
-  easyXDM: easyXDM,
+
   /**
       Clears any locally cached modules, downloads and local storage.
       @see InjectCore.reset

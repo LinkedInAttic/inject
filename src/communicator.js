@@ -25,13 +25,56 @@ governing permissions and limitations under the License.
 var Communicator;
 (function () {
   var AsStatic = Fiber.extend(function () {
-    var pauseRequired = false;
-
-    var socketConnectionQueue;
-    var downloadCompleteQueue;
-
+    
     var socket;
+    var socketInProgress;
+    var socketQueue = [];
+    var socketQueueCache = {};
+    
+    function resolveSocketQueue() {
+      var lQueue = socketQueue;
+      socketQueue = [];
+      socketQueueCache = {};
+      for (var i = 0, len = lQueue.length; i < len; i++) {
+        sendMessage(socket.contentWindow, userConfig.xd.relayFile, 'fetch', {
+          url: lQueue[i]
+        });
+      }
+    }
+    
+    function addSocketQueue(lUrl) {
+      if (!socketQueueCache[lUrl]) {
+        socketQueueCache[lUrl] = 1;
+        socketQueue.push(lUrl);
+      }
+    }
+    
+    listenFor(window, 'message', function(e) {
+      var commands, command, params;
+      
+      if (!userConfig.xd.relayFile) {
+        return;
+      }
+      
+      if (getDomainName(e.origin) !== getDomainName(userConfig.xd.relayFile)) {
+        return;
+      }
+      
+      commands = e.data.split(/:/);
+      command = commands.shift();
 
+      switch (command) {
+      case 'ready':
+        socketInProgress = false;
+        resolveSocketQueue();
+        break;
+      case 'fetchFail':
+      case 'fetchOk':
+        params = JSON.parse(commands.join(':'));
+        resolveCompletedFile(params.url, params.status, params.responseText);
+      }
+    });
+    
     /**
     * Clear the records to socket connections and
     * downloaded files
@@ -39,7 +82,6 @@ var Communicator;
     * @private
     **/
     function clearCaches() {
-      socketConnectionQueue = [];
       downloadCompleteQueue = {};
     }
 
@@ -80,35 +122,21 @@ var Communicator;
     }
 
     /**
-    * Utility function to cleanup Host name by removing leading
-    * http or https string
-    * @function
-    * @param {string} host - The host name to trim.
-    * @private
-    * @returns hostname without leading http or https string
-    **/
-    function trimHost(host) {
-      host = host.replace(HOST_PREFIX_REGEX, '').replace(HOST_SUFFIX_REGEX, '$1');
-      return host;
-    }
-
-    /**
     * function that resolves all callbacks that are associated
     * to the loaded file
     * @function
-    * @param {string} moduleId - The id of the module that has been loaded
     * @param {string} url - The location of the module that has loaded
     * @param {int} statusCode - The result of the attempt to load the file at url
     * @param {string} contents - The contents that were loaded from url
     * @private
     **/
-    function resolveCompletedFile(moduleId, url, statusCode, contents) {
+    function resolveCompletedFile(url, statusCode, contents) {
       statusCode = 1 * statusCode;
       debugLog('Communicator (' + url + ')', 'status ' + statusCode + '. Length: ' +
           ((contents) ? contents.length : 'NaN'));
 
       // write cache
-      if (statusCode === 200 && ! userConfig.xd.relayFile ) {
+      if (statusCode === 200 && !userConfig.xd.relayFile) {
         writeToCache(url, contents);
       }
       
@@ -125,63 +153,62 @@ var Communicator;
     }
 
     /**
-    * Creates an easyXDM socket
-    * @function
-    * @private
-    * @returns and instance of a easyXDM Socket
-    **/
-    function createSocket() {
-      var relayFile = userConfig.xd.relayFile;
-      var relaySwf = userConfig.xd.relaySwf || '';
-
-      socket = new easyXDM.Socket({
-        remote: relayFile,
-        swf: relaySwf,
-        onMessage: function (message, origin) {
-          if (typeof(userConfig.moduleRoot) === 'string' && trimHost(userConfig.moduleRoot) !== trimHost(origin)) {
-            return;
-          }
-          var pieces = message.split('__INJECT_SPLIT__');
-          // pieces[0] moduleId
-          // pieces[1] file URL
-          // pieces[2] status code
-          // pieces[3] file contents
-          resolveCompletedFile(pieces[0], pieces[1], pieces[2], pieces[3]);
-        },
-        onReady: function () {
-          pauseRequired = false;
-          each(socketConnectionQueue, function (cb) {
-            cb();
-          });
-          socketConnectionQueue = [];
-        }
-      });
-    }
-
-    /**
     * Creates a standard xmlHttpRequest
     * @function
-    * @param {string} moduleId - id of the module for the request
     * @param {string} url - url where the content is located
     * @private
     **/
-    function sendViaIframe(moduleId, url) {
-      socket.postMessage(moduleId + '__INJECT_SPLIT__' + url);
+    function sendViaIframe(url) {      
+      if (socket && !socketInProgress) {
+        sendMessage(socket.contentWindow, userConfig.xd.relayFile, 'fetch', {
+          url: url
+        });
+      }
+      else if (socket && socketInProgress) {
+        addSocketQueue(url);
+        return;
+      }
+      else {
+        socketInProgress = true;
+        addSocketQueue(url);
+        var iframeSrc = userConfig.xd.relayFile;
+        
+        socket = document.createElement('iframe');
+        iframeSrc += (iframeSrc.indexOf('?') < 0) ? '?' : '&';
+        iframeSrc += 'injectReturn=' + encodeURIComponent(location.href);
+        socket.src = iframeSrc;
+        
+        socket.style.visibility = 'hidden';
+        socket.style.border = 0;
+        socket.style.width = '1px';
+        socket.style.height = '1px';
+        socket.style.left = '-5000px';
+        socket.style.top = '-5000px';
+        socket.style.opacity = '0';
+
+        window.setTimeout(function() {
+          if (!document.body.firsChild) {
+            document.body.appendChild(socket);
+          }
+          else {
+            document.body.insertBefore(socket, document.body.firstChild);
+          }
+        });
+      }
     }
 
     /**
     * Get contents via xhr for cross-domain requests
     * @function
-    * @param {string} moduleId - id of the module for the request
     * @param {string} url - url where the content is located
     * @private
     **/
-    function sendViaXHR(moduleId, url) {
-      var xhr = getXhr();
+    function sendViaXHR(url) {
+      var xhr = getXHR();
       xhr.open('GET', url);
       xhr.onreadystatechange = function () {
         if (xhr.readyState === 4) {
-          resolveCompletedFile(moduleId, url, xhr.status, xhr.responseText);
+          resolveCompletedFile(url, xhr.status, xhr.responseText);
         }
       };
       xhr.send(null);
@@ -233,7 +260,7 @@ var Communicator;
 
         debugLog('Communicator (' + url + ')', 'requesting');
 
-        if( ! userConfig.xd.relayFile ) {
+        if (!userConfig.xd.relayFile) {
           var cachedResults = readFromCache(url);
           if (cachedResults) {
             debugLog('Communicator (' + url + ')', 'retireved from cache. length: ' + cachedResults.length);
@@ -249,27 +276,15 @@ var Communicator;
           return;
         }
         downloadCompleteQueue[url].push(callback);
-
-        if (userConfig.xd.relayFile && !socket && !pauseRequired) {
-          pauseRequired = true;
-          context.setTimeout(createSocket);
+        
+        // local xhr
+        if (!userConfig.xd.relayFile) {
+          sendViaXHR(url);
+          return;
         }
-
-        var socketQueuedFn = function () {
-          sendViaIframe(moduleId, url);
-        };
-
-        if (pauseRequired) {
-          socketConnectionQueue.push(socketQueuedFn);
-        }
-        else {
-          if (userConfig.xd.relayFile) {
-            sendViaIframe(moduleId, url);
-          }
-          else {
-            sendViaXHR(moduleId, url);
-          }
-        }
+        
+        // remote xhr
+        sendViaIframe(url);
       }
     };
   });

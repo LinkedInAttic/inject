@@ -27,14 +27,11 @@ module.exports = function (grunt) {
     output_files: {
       main:         './artifacts/inject-__INJECT__VERSION__/inject.js',
       main_min:     './artifacts/inject-__INJECT__VERSION__/inject.min.js',
-      ie7:          './artifacts/inject-__INJECT__VERSION__/inject-ie7.js',
-      ie7_min:      './artifacts/inject-__INJECT__VERSION__/inject-ie7.min.js',
       plugins:      './artifacts/inject-__INJECT__VERSION__/inject-plugins.js',
       plugins_min:  './artifacts/inject-__INJECT__VERSION__/inject-plugins.min.js',
       license:      './artifacts/inject-__INJECT__VERSION__/LICENSE',
       readme:       './artifacts/inject-__INJECT__VERSION__/README.markdown',
-      relayHtml:    './artifacts/inject-__INJECT__VERSION__/relay.html',
-      relaySwf:     './artifacts/inject-__INJECT__VERSION__/relay.swf'
+      relayHtml:    './artifacts/inject-__INJECT__VERSION__/relay.html'
     },
 
     zip_locations: {
@@ -99,18 +96,6 @@ module.exports = function (grunt) {
           {src: [genFileName('uglify', 'main')], dest: '<%= output_files.main_min %>', filter: 'isFile'}
         ]
       },
-      noxd: {
-        files: [
-          {src: [genFileName('concat', 'noxd')], dest: '<%= output_files.main %>', filter: 'isFile'},
-          {src: [genFileName('uglify', 'noxd')], dest: '<%= output_files.main_min %>', filter: 'isFile'}
-        ]
-      },
-      ie7: {
-        files: [
-          {src: [genFileName('concat', 'ie7')], dest: '<%= output_files.ie7 %>', filter: 'isFile'},
-          {src: [genFileName('uglify', 'ie7')], dest: '<%= output_files.ie7_min %>', filter: 'isFile'}
-        ]
-      },
       plugins: {
         files: [
           {src: [genFileName('concat', 'plugins')], dest: '<%= output_files.plugins %>', filter: 'isFile'},
@@ -125,8 +110,7 @@ module.exports = function (grunt) {
       },
       xd: {
         files: [
-          {src: [genFileName('concat', 'relayHtml')], dest: '<%= output_files.relayHtml %>', filter: 'isFile'},
-          {src: ['./src/xd/relay.swf'], dest: '<%= output_files.relaySwf %>', filter: 'isFile'}
+          {src: [genFileName('concat', 'relayHtml')], dest: '<%= output_files.relayHtml %>', filter: 'isFile'}
         ]
       }
     },
@@ -163,17 +147,8 @@ module.exports = function (grunt) {
       main: {
         files: {} // placeholder
       },
-      noxd: {
-        files: {} // placeholder
-      },
       plugins: {
         files: {} // placeholder
-      },
-      ie7: {
-        files: {}, // placeholder
-        options: {
-          banner: grunt.file.read('./src/compat/localstorage-assets.txt') + '\n'
-        }
       }
     },
 
@@ -196,11 +171,11 @@ module.exports = function (grunt) {
           './src/includes/globals.js',
           './src/includes/commonjs.js',
           './src/lib/fiber.js',
+          './src/lib/fiber.post.js',
           './src/lib/flow.js',
-          './src/lib/easyxdm-closure.js',
-          './src/lib/easyxdm.js',
           './src/lib/lscache.js',
-          './src/includes/environment.js',
+          './src/lib/lscache.post.js',
+          './src/xd/postmessage.js',
           './src/analyzer.js',
           './src/communicator.js',
           './src/executor.js',
@@ -210,42 +185,6 @@ module.exports = function (grunt) {
           './src/treerunner.js',
           './src/treenode.js',
           './src/includes/context.js'
-        ]
-      },
-      noxd: {
-        dest: '', // placeholder
-        options: {
-          separator: ';'
-        },
-        src: [
-          './src/includes/constants.js',
-          './src/includes/globals.js',
-          './src/includes/commonjs.js',
-          './src/lib/fiber.js',
-          './src/lib/flow.js',
-          './src/lib/lscache.js',
-          './src/includes/environment.js',
-          './src/analyzer.js',
-          './src/communicator.js',
-          './src/executor.js',
-          './src/injectcore.js',
-          './src/requirecontext.js',
-          './src/rulesengine.js',
-          './src/treerunner.js',
-          './src/treenode.js',
-          './src/includes/context.js'
-        ]
-      },
-      ie7: {
-        dest: '', // placeholder
-        options: {
-          separator: '\n',
-          banner: grunt.file.read('./src/compat/localstorage-assets.txt'),
-          footer: ''
-        },
-        src: [
-          './src/compat/localstorage-shim.js',
-          './src/compat/json.js'
         ]
       },
       plugins: {
@@ -268,10 +207,9 @@ module.exports = function (grunt) {
           banner: '<%= relay_html_header %>\n<%= inject_header %>\n',
           footer: '<%= relay_html_footer %>'
         },
-        src: [    //four files that make up relayconfig.html
-          './src/includes/relayconfig.js',
-          './src/lib/easyxdm.js',
+        src: [
           './src/lib/lscache.js',
+          './src/xd/postmessage.js',
           './src/xd/relay.js'
         ]
       }
@@ -350,20 +288,11 @@ module.exports = function (grunt) {
   grunt.config.set('uglify.main.files', cfg);
 
   cfg = {};
-  cfg[genFileName('uglify', 'noxd')] = genFileName('concat', 'noxd');
-  grunt.config.set('uglify.noxd.files', cfg);
-
-  cfg = {};
-  cfg[genFileName('uglify', 'ie7')] = genFileName('concat', 'ie7');
-  grunt.config.set('uglify.ie7.files', cfg);
-
-  cfg = {};
   cfg[genFileName('uglify', 'plugins')] = genFileName('concat', 'plugins');
   grunt.config.set('uglify.plugins.files', cfg);
 
   grunt.config.set('concat.main.dest', genFileName('concat', 'main'));
   grunt.config.set('concat.noxd.dest', genFileName('concat', 'noxd'));
-  grunt.config.set('concat.ie7.dest', genFileName('concat', 'ie7'));
   grunt.config.set('concat.plugins.dest', genFileName('concat', 'plugins'));
   grunt.config.set('concat.relayHtml.dest', genFileName('concat', 'relayHtml'));
 
@@ -378,22 +307,7 @@ module.exports = function (grunt) {
   grunt.loadNpmTasks('grunt-contrib-compress');
   grunt.loadNpmTasks('grunt-shell');
   grunt.loadNpmTasks('grunt-express');
-
-  // from https://github.com/gruntjs/grunt/issues/236
-  grunt.registerMultiTask('wait', 'Wait for a set amount of time.', function () {
-    var delay = this.data.options.delay;
-    var d = delay ? delay + ' second' + (delay === '1' ? '' : 's') : 'forever';
-
-    grunt.log.write('Waiting ' + d + '...');
-
-    // Make this task asynchronous. Grunt will not continue processing
-    // subsequent tasks until done() is called.
-    var done = this.async();
-
-    // If a delay was specified, call done() after that many seconds.
-    if (delay) { setTimeout(done, delay * 1000); }
-  });
-
+  
   grunt.registerMultiTask('log', 'Print some messages', function() {
     grunt.log.writeln(this.data.options.message);
   });
@@ -411,10 +325,6 @@ module.exports = function (grunt) {
     'concat:plugins',
     'uglify:plugins',
     'copy:plugins',
-
-    'concat:ie7',
-    'uglify:ie7',
-    'copy:ie7',
 
     'copy:legalish',
     'concat:relayHtml',
@@ -435,27 +345,6 @@ module.exports = function (grunt) {
     'express:alternate',
     'log:server',
     'express-keepalive'
-  ]);
-
-  grunt.registerTask('noxd', [
-    'jshint',
-    'shell:tag',
-
-    'concat:noxd',
-    'uglify:noxd',
-    'copy:noxd',
-
-    'concat:plugins',
-    'uglify:plugins',
-    'copy:plugins',
-
-    'concat:ie7',
-    'uglify:ie7',
-    'copy:ie7',
-
-    'copy:legalish',
-
-    'clean:tmp'
   ]);
 
   grunt.registerTask('release', [
