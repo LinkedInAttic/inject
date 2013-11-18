@@ -342,15 +342,27 @@ var RequireContext = Fiber.extend(function () {
       if (dependencies.length) {
         for (i = 0, len = dependencies.length; i < len; i++) {
           if (BUILTINS[dependencies[i]]) {
-            count--;
             resolveCount();
+            continue;
+          }
+          
+          // add the node always at this point, we just may not need
+          // to download it.
+          node = new TreeNode();
+          node.data.originalId = dependencies[i];
+          root.addChild(node);
+          
+          if (Executor.getModule(dependencies[i])) {
+            resolveCount();
+            continue;
+          }
+          else if (Executor.getModule(RequireContext.qualifiedId(node))) {
+            resolveCount();
+            continue;
           }
           else {
-            node = new TreeNode();
-            node.data.originalId = dependencies[i];
             runner = new TreeRunner(node);
             runners.push(runner);
-            root.addChild(node);
             runner.download(resolveCount);
           }
         }
