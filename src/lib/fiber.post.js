@@ -15,4 +15,4 @@ express or implied.   See the License for the specific language
 governing permissions and limitations under the License.
 */
 
-var LOCAL_EASY_XDM = true;
+var Fiber = this.Fiber.noConflict();

@@ -66,7 +66,6 @@ Inject.setExpires(integerValue);
 Inject.setModuleRoot("http://example-cdn.com/modules");
 Inject.setCrossDomain({
   relayHtml: "http://example-cdn.com/relay.html",
-  relaySwf: "http://example-cdn.com/relay.swf"
 });
 ```
 

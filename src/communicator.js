@@ -18,39 +18,81 @@ governing permissions and limitations under the License.
 
 
 /**
-* Communicator handles the logic for
-* downloading and executing required files and dependencies
-* @file
-**/
+ * Communicator handles the logic for
+ * downloading and executing required files and dependencies
+ * @file
+ */
 var Communicator;
 (function () {
   var AsStatic = Fiber.extend(function () {
-    var pauseRequired = false;
-
-    var socketConnectionQueue;
-    var downloadCompleteQueue;
-
+    
     var socket;
+    var socketInProgress;
+    var socketQueue = [];
+    var socketQueueCache = {};
+    
+    function resolveSocketQueue() {
+      var lQueue = socketQueue;
+      socketQueue = [];
+      socketQueueCache = {};
+      for (var i = 0, len = lQueue.length; i < len; i++) {
+        sendMessage(socket.contentWindow, userConfig.xd.relayFile, 'fetch', {
+          url: lQueue[i]
+        });
+      }
+    }
+    
+    function addSocketQueue(lUrl) {
+      if (!socketQueueCache[lUrl]) {
+        socketQueueCache[lUrl] = 1;
+        socketQueue.push(lUrl);
+      }
+    }
+    
+    listenFor(window, 'message', function(e) {
+      var commands, command, params;
+      
+      if (!userConfig.xd.relayFile) {
+        return;
+      }
+      
+      if (getDomainName(e.origin) !== getDomainName(userConfig.xd.relayFile)) {
+        return;
+      }
+      
+      commands = e.data.split(/:/);
+      command = commands.shift();
 
+      switch (command) {
+      case 'ready':
+        socketInProgress = false;
+        resolveSocketQueue();
+        break;
+      case 'fetchFail':
+      case 'fetchOk':
+        params = JSON.parse(commands.join(':'));
+        resolveCompletedFile(params.url, params.status, params.responseText);
+      }
+    });
+    
     /**
-    * Clear the records to socket connections and
-    * downloaded files
-    * @function
-    * @private
-    **/
+     * Clear the records to socket connections and
+     * downloaded files
+     * @function
+     * @private
+     */
     function clearCaches() {
-      socketConnectionQueue = [];
       downloadCompleteQueue = {};
     }
 
     /**
-    * Write file contents to local storage
-    * @function
-    * @param {string} url - url to use as a key to store file content
-    * @param {string} contents file contents to be stored in cache
-    * @private
-    * @returns a function adhearing to the lscache set() method
-    **/
+     * Write file contents to local storage
+     * @function
+     * @param {string} url - url to use as a key to store file content
+     * @param {string} contents file contents to be stored in cache
+     * @private
+     * @returns a function adhearing to the lscache set() method
+     */
     function writeToCache(url, contents) {
       // lscache and passthrough
       if (userConfig.fileExpires > 0) {
@@ -62,13 +104,13 @@ var Communicator;
     }
 
     /**
-    * read cached file contents from local storage
-    * @function
-    * @param {string} url - url key that the content is stored under
-    * @private
-    * @returns the content that is stored under the url key
-    *
-    **/
+     * read cached file contents from local storage
+     * @function
+     * @param {string} url - url key that the content is stored under
+     * @private
+     * @returns the content that is stored under the url key
+     *
+     */
     function readFromCache(url) {
       // lscache and passthrough
       if (userConfig.fileExpires > 0) {
@@ -80,35 +122,21 @@ var Communicator;
     }
 
     /**
-    * Utility function to cleanup Host name by removing leading
-    * http or https string
-    * @function
-    * @param {string} host - The host name to trim.
-    * @private
-    * @returns hostname without leading http or https string
-    **/
-    function trimHost(host) {
-      host = host.replace(HOST_PREFIX_REGEX, '').replace(HOST_SUFFIX_REGEX, '$1');
-      return host;
-    }
-
-    /**
-    * function that resolves all callbacks that are associated
-    * to the loaded file
-    * @function
-    * @param {string} moduleId - The id of the module that has been loaded
-    * @param {string} url - The location of the module that has loaded
-    * @param {int} statusCode - The result of the attempt to load the file at url
-    * @param {string} contents - The contents that were loaded from url
-    * @private
-    **/
-    function resolveCompletedFile(moduleId, url, statusCode, contents) {
+     * function that resolves all callbacks that are associated
+     * to the loaded file
+     * @function
+     * @param {string} url - The location of the module that has loaded
+     * @param {int} statusCode - The result of the attempt to load the file at url
+     * @param {string} contents - The contents that were loaded from url
+     * @private
+     */
+    function resolveCompletedFile(url, statusCode, contents) {
       statusCode = 1 * statusCode;
       debugLog('Communicator (' + url + ')', 'status ' + statusCode + '. Length: ' +
           ((contents) ? contents.length : 'NaN'));
 
       // write cache
-      if (statusCode === 200 && ! userConfig.xd.relayFile ) {
+      if (statusCode === 200 && !userConfig.xd.relayFile) {
         writeToCache(url, contents);
       }
       
@@ -125,66 +153,62 @@ var Communicator;
     }
 
     /**
-    * Creates an easyXDM socket
-    * @function
-    * @private
-    * @returns and instance of a easyXDM Socket
-    **/
-    function createSocket() {
-      var relayFile = userConfig.xd.relayFile;
-      var relaySwf = userConfig.xd.relaySwf || '';
-      
-      relayFile += (relayFile.indexOf('?') >= 0) ? '&' : '?';
-      relayFile += 'swf=' + relaySwf;
+     * Creates a standard xmlHttpRequest
+     * @function
+     * @param {string} url - url where the content is located
+     * @private
+     */
+    function sendViaIframe(url) {      
+      if (socket && !socketInProgress) {
+        sendMessage(socket.contentWindow, userConfig.xd.relayFile, 'fetch', {
+          url: url
+        });
+      }
+      else if (socket && socketInProgress) {
+        addSocketQueue(url);
+        return;
+      }
+      else {
+        socketInProgress = true;
+        addSocketQueue(url);
+        var iframeSrc = userConfig.xd.relayFile;
+        
+        socket = document.createElement('iframe');
+        iframeSrc += (iframeSrc.indexOf('?') < 0) ? '?' : '&';
+        iframeSrc += 'injectReturn=' + encodeURIComponent(location.href);
+        socket.src = iframeSrc;
+        
+        socket.style.visibility = 'hidden';
+        socket.style.border = 0;
+        socket.style.width = '1px';
+        socket.style.height = '1px';
+        socket.style.left = '-5000px';
+        socket.style.top = '-5000px';
+        socket.style.opacity = '0';
 
-      socket = new easyXDM.Socket({
-        remote: relayFile,
-        swf: relaySwf,
-        onMessage: function (message, origin) {
-          if (typeof(userConfig.moduleRoot) === 'string' && trimHost(userConfig.moduleRoot) !== trimHost(origin)) {
-            return;
+        window.setTimeout(function() {
+          if (!document.body.firsChild) {
+            document.body.appendChild(socket);
           }
-          var pieces = message.split('__INJECT_SPLIT__');
-          // pieces[0] moduleId
-          // pieces[1] file URL
-          // pieces[2] status code
-          // pieces[3] file contents
-          resolveCompletedFile(pieces[0], pieces[1], pieces[2], pieces[3]);
-        },
-        onReady: function () {
-          pauseRequired = false;
-          each(socketConnectionQueue, function (cb) {
-            cb();
-          });
-          socketConnectionQueue = [];
-        }
-      });
+          else {
+            document.body.insertBefore(socket, document.body.firstChild);
+          }
+        });
+      }
     }
 
     /**
-    * Creates a standard xmlHttpRequest
-    * @function
-    * @param {string} moduleId - id of the module for the request
-    * @param {string} url - url where the content is located
-    * @private
-    **/
-    function sendViaIframe(moduleId, url) {
-      socket.postMessage(moduleId + '__INJECT_SPLIT__' + url);
-    }
-
-    /**
-    * Get contents via xhr for cross-domain requests
-    * @function
-    * @param {string} moduleId - id of the module for the request
-    * @param {string} url - url where the content is located
-    * @private
-    **/
-    function sendViaXHR(moduleId, url) {
-      var xhr = getXhr();
+     * Get contents via xhr for cross-domain requests
+     * @function
+     * @param {string} url - url where the content is located
+     * @private
+     */
+    function sendViaXHR(url) {
+      var xhr = getXHR();
       xhr.open('GET', url);
       xhr.onreadystatechange = function () {
         if (xhr.readyState === 4) {
-          resolveCompletedFile(moduleId, url, xhr.status, xhr.responseText);
+          resolveCompletedFile(url, xhr.status, xhr.responseText);
         }
       };
       xhr.send(null);
@@ -192,43 +216,43 @@ var Communicator;
 
     return {
       /**
-      *   The Communicator object is meant to be instantiated once, and have its
-      *   reference assigned to a location outside of the closure.
-      *   @constructs Communicator
-      **/
+       * The Communicator object is meant to be instantiated once, and have its
+       * reference assigned to a location outside of the closure.
+       * @constructs Communicator
+       */
       init: function () {
         this.clearCaches();
       },
 
       /**
-      * clear list of socket connections and list of downloaded files
-      * @method Communicator.clearCaches
-      * @public
-      */
+       * clear list of socket connections and list of downloaded files
+       * @method Communicator.clearCaches
+       * @public
+       */
       clearCaches: function () {
         clearCaches();
       },
 
       /**
-      * A noop for just running the callback. Useful for a passthrough
-      * operation
-      * @param {string} moduleId - The id of the module to be fetched
-      * @param {string} url - The location of the script to be fetched
-      * @param {object} callback - The function callback to execute after the file is retrieved and loaded
-      * @public
-      */
+       * A noop for just running the callback. Useful for a passthrough
+       * operation
+       * @param {string} moduleId - The id of the module to be fetched
+       * @param {string} url - The location of the script to be fetched
+       * @param {object} callback - The function callback to execute after the file is retrieved and loaded
+       * @public
+       */
       noop: function (moduleId, url, callback) {
         callback('');
       },
 
       /**
-      * retrieve file via download or cache keyed by the given url
-      * @method Communicator.get
-      * @param {string} moduleId - The id of the module to be fetched
-      * @param {string} url - The location of the script to be fetched
-      * @param {object} callback - The function callback to execute after the file is retrieved and loaded
-      * @public
-      */
+       * retrieve file via download or cache keyed by the given url
+       * @method Communicator.get
+       * @param {string} moduleId - The id of the module to be fetched
+       * @param {string} url - The location of the script to be fetched
+       * @param {object} callback - The function callback to execute after the file is retrieved and loaded
+       * @public
+       */
       get: function (moduleId, url, callback) {
         if (!downloadCompleteQueue[url]) {
           downloadCompleteQueue[url] = [];
@@ -236,7 +260,7 @@ var Communicator;
 
         debugLog('Communicator (' + url + ')', 'requesting');
 
-        if( ! userConfig.xd.relayFile ) {
+        if (!userConfig.xd.relayFile) {
           var cachedResults = readFromCache(url);
           if (cachedResults) {
             debugLog('Communicator (' + url + ')', 'retireved from cache. length: ' + cachedResults.length);
@@ -252,27 +276,15 @@ var Communicator;
           return;
         }
         downloadCompleteQueue[url].push(callback);
-
-        if (userConfig.xd.relayFile && !socket && !pauseRequired) {
-          pauseRequired = true;
-          context.setTimeout(createSocket);
+        
+        // local xhr
+        if (!userConfig.xd.relayFile) {
+          sendViaXHR(url);
+          return;
         }
-
-        var socketQueuedFn = function () {
-          sendViaIframe(moduleId, url);
-        };
-
-        if (pauseRequired) {
-          socketConnectionQueue.push(socketQueuedFn);
-        }
-        else {
-          if (userConfig.xd.relayFile) {
-            sendViaIframe(moduleId, url);
-          }
-          else {
-            sendViaXHR(moduleId, url);
-          }
-        }
+        
+        // remote xhr
+        sendViaIframe(url);
       }
     };
   });
