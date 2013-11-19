@@ -5,10 +5,44 @@ module.exports = function (grunt) {
 
   // a generic config object used for dynamic filename assignment
   var cfg = {};
+  
+  function setVersion(version) {
+    var foot = grunt.config.get('anonymous_footer');
+    var output_files = grunt.config.get('output_files');
+    var zip_locations = grunt.config.get('zip_locations');
+    var file;
+    var type;
 
-  // generates a filename based on target and task
-  function genFileName(target, task) {
-    return './tmp/' + target + '_' + task + '_out.js';
+    function addVersion(str) {
+      return str.replace(/__INJECT__VERSION__/g, version);
+    }
+
+    // set the inject version everywhere we need to
+    grunt.config.set('anonymous_footer', addVersion(foot));
+    for (type in output_files) {
+      file = grunt.config.get('output_files.'+type);
+      grunt.config.set('output_files.'+type, addVersion(file));
+    }
+    for (type in zip_locations) {
+      file = grunt.config.get('zip_locations.'+type);
+      grunt.config.set('zip_locations.'+type, addVersion(file));
+    }
+  }
+  
+  function setDynamicFileNames() {
+    // dynamic assignments
+    cfg = {};
+    cfg[genFileName('uglify', 'main')] = genFileName('concat', 'main');
+    grunt.config.set('uglify.main.files', cfg);
+
+    cfg = {};
+    cfg[genFileName('uglify', 'plugins')] = genFileName('concat', 'plugins');
+    grunt.config.set('uglify.plugins.files', cfg);
+
+    grunt.config.set('concat.main.dest', genFileName('concat', 'main'));
+    grunt.config.set('concat.noxd.dest', genFileName('concat', 'noxd'));
+    grunt.config.set('concat.plugins.dest', genFileName('concat', 'plugins'));
+    grunt.config.set('concat.relayHtml.dest', genFileName('concat', 'relayHtml'));
   }
 
   // the workhorse of the grunt file
@@ -25,61 +59,40 @@ module.exports = function (grunt) {
 
     // these are the possible output files when done
     output_files: {
-      main:         './artifacts/inject-__INJECT__VERSION__/inject.js',
-      main_min:     './artifacts/inject-__INJECT__VERSION__/inject.min.js',
-      plugins:      './artifacts/inject-__INJECT__VERSION__/inject-plugins.js',
-      plugins_min:  './artifacts/inject-__INJECT__VERSION__/inject-plugins.min.js',
-      license:      './artifacts/inject-__INJECT__VERSION__/LICENSE',
-      readme:       './artifacts/inject-__INJECT__VERSION__/README.markdown',
-      relayHtml:    './artifacts/inject-__INJECT__VERSION__/relay.html'
+      main:         './dist/recent/inject.js',
+      main_min:     './dist/recent/inject.min.js',
+      plugins:      './dist/recent/inject-plugins.js',
+      plugins_min:  './dist/recent/inject-plugins.min.js',
+      license:      './dist/recent/LICENSE',
+      readme:       './dist/recent/README.markdown',
+      relayHtml:    './dist/recent/relay.html',
+      release:      'dist/inject-__INJECT__VERSION__/'
     },
 
+    // what are the zip locations named?
     zip_locations: {
       archive:      'inject-__INJECT__VERSION__.tgz',
       path:         'inject-__INJECT__VERSION__'
     },
-
-    // normal grunt reading
-    pkg: grunt.file.readJSON('package.json'),
 
     /**
      * clean: clean up temp and artifact directories
      */
     clean: {
       tmp: ['./tmp'],
-      artifacts: ['./artifacts']
+      artifacts: ['./dist/inject-*']
     },
 
     /**
-     * shell: run shell commands. We use this for git ops
+     * shell: run shell commands. We use this to get the "tag" for generating temporary releases
      */
     shell: {
       tag: {
         command: 'git describe HEAD',
         options: {
           callback: function (err, stdout, stderr, next) {
-            var foot = grunt.config.get('anonymous_footer');
-            var output_files = grunt.config.get('output_files');
-            var zip_locations = grunt.config.get('zip_locations');
             var version = stdout.replace(/[\s]/g, '');
-            var file;
-            var type;
-
-            function addVersion(str) {
-              return str.replace(/__INJECT__VERSION__/g, version);
-            }
-
-            // set the inject version everywhere we need to
-            grunt.config.set('anonymous_footer', addVersion(foot));
-            for (type in output_files) {
-              file = grunt.config.get('output_files.'+type);
-              grunt.config.set('output_files.'+type, addVersion(file));
-            }
-            for (type in zip_locations) {
-              file = grunt.config.get('zip_locations.'+type);
-              grunt.config.set('zip_locations.'+type, addVersion(file));
-            }
-
+            setVersion(version);
             next();
           }
         }
@@ -87,31 +100,49 @@ module.exports = function (grunt) {
     },
 
     /**
-     * copy: copy files that need no modification
+     * copy: copy files from one place to another
+     * we use this both to copy our final files, but to also move items from generic input to
+     * generic output locations
      */
     copy: {
-      main: {
-        files: [
-          {src: [genFileName('concat', 'main')], dest: '<%= output_files.main %>', filter: 'isFile'},
-          {src: [genFileName('uglify', 'main')], dest: '<%= output_files.main_min %>', filter: 'isFile'}
-        ]
+      concat_to_uglify: {
+        files: {
+          // dest: src
+          './tmp/uglify.in': './tmp/concat.out'
+        }
       },
-      plugins: {
-        files: [
-          {src: [genFileName('concat', 'plugins')], dest: '<%= output_files.plugins %>', filter: 'isFile'},
-          {src: [genFileName('uglify', 'plugins')], dest: '<%= output_files.plugins_min %>', filter: 'isFile'}
-        ]
+      uglify_to_final: {
+        files: {'./tmp/final.out': './tmp/uglify.out'}
       },
-      legalish: {
-        files: [
+      concat_to_final: {
+        files: {'./tmp/final.out': './tmp/concat.out'}
+      },
+      final_to_main: {
+        files: [{src: './tmp/final.out', dest: '<%= output_files.main %>', filter: 'isFile'}]
+      },
+      final_to_main_min: {
+        files: [{src: './tmp/final.out', dest: '<%= output_files.main_min %>', filter: 'isFile'}]
+      },
+      final_to_plugins: {
+        files: [{src: './tmp/final.out', dest: '<%= output_files.plugins %>', filter: 'isFile'}]
+      },
+      final_to_plugins_min: {
+        files: [{src: './tmp/final.out', dest: '<%= output_files.plugins_min %>', filter: 'isFile'}]
+      },
+      final_to_relay: {
+        files: [{src: './tmp/final.out', dest: '<%= output_files.relayHtml %>', filter: 'isFile'}]
+      },
+      legal_to_legal: {
+        files:[
           {src: ['./LICENSE'], dest: '<%= output_files.license %>', filter: 'isFile'},
           {src: ['./README.markdown'], dest: '<%= output_files.readme %>', filter: 'isFile'}
         ]
       },
-      xd: {
-        files: [
-          {src: [genFileName('concat', 'relayHtml')], dest: '<%= output_files.relayHtml %>', filter: 'isFile'}
-        ]
+      recent_to_release: {
+        expand: true,
+        cwd: 'dist/recent',
+        src: '*',
+        dest: '<%= output_files.release %>'
       }
     },
 
@@ -144,11 +175,11 @@ module.exports = function (grunt) {
           except: ['require', 'define', 'easyxdm', 'localstorage', 'undefined']
         }
       },
-      main: {
-        files: {} // placeholder
-      },
-      plugins: {
-        files: {} // placeholder
+      file: {
+        files: {
+          // output: from input
+          './tmp/uglify.out': './tmp/uglify.in'
+        }
       }
     },
 
@@ -162,7 +193,7 @@ module.exports = function (grunt) {
         footer: '<%= anonymous_footer %>'
       },
       main: {
-        dest: '', // placeholder
+        dest: './tmp/concat.out',
         options: {
           separator: ';'
         },
@@ -188,7 +219,7 @@ module.exports = function (grunt) {
         ]
       },
       plugins: {
-        dest: '', // placeholder
+        dest: './tmp/concat.out',
         options: {
           separator: ';',
           banner: '',
@@ -201,7 +232,7 @@ module.exports = function (grunt) {
         ]
       },
       relayHtml: {
-        dest: '', // placeholder
+        dest: './tmp/concat.out', // placeholder
         options: {
           separator: '\n',
           banner: '<%= relay_html_header %>\n<%= inject_header %>\n',
@@ -266,7 +297,7 @@ module.exports = function (grunt) {
     compress: {
       release: {
         options: {
-          archive: './artifacts/<%= zip_locations.archive %>',
+          archive: './dist/<%= zip_locations.archive %>',
           pretty: true
         },
         files: [
@@ -275,26 +306,12 @@ module.exports = function (grunt) {
             dest: '/',
             expand: true,
             filter: 'isFile',
-            cwd: 'artifacts/<%= zip_locations.path %>/'
+            cwd: 'dist/<%= zip_locations.path %>/'
           }
         ]
       }
     }
   });
-
-  // dynamic assignments
-  cfg = {};
-  cfg[genFileName('uglify', 'main')] = genFileName('concat', 'main');
-  grunt.config.set('uglify.main.files', cfg);
-
-  cfg = {};
-  cfg[genFileName('uglify', 'plugins')] = genFileName('concat', 'plugins');
-  grunt.config.set('uglify.plugins.files', cfg);
-
-  grunt.config.set('concat.main.dest', genFileName('concat', 'main'));
-  grunt.config.set('concat.noxd.dest', genFileName('concat', 'noxd'));
-  grunt.config.set('concat.plugins.dest', genFileName('concat', 'plugins'));
-  grunt.config.set('concat.relayHtml.dest', genFileName('concat', 'relayHtml'));
 
   // load NPM tasks
   grunt.loadNpmTasks('grunt-contrib-jshint');
@@ -311,45 +328,64 @@ module.exports = function (grunt) {
   grunt.registerMultiTask('log', 'Print some messages', function() {
     grunt.log.writeln(this.data.options.message);
   });
+  
+  grunt.registerMultiTask('noop', 'Do nothing!', function() {});
 
   // set up grunt task options
-  grunt.registerTask('build', ['default']);
-  grunt.registerTask('default', [
+  grunt.registerTask('default', ['build']);
+  
+  grunt.registerTask('build', [
     'jshint',
-    'shell:tag',
+    (grunt.option('version')) ? 'noop' : 'shell:tag',
 
+    // build the main file
     'concat:main',
-    'uglify:main',
-    'copy:main',
+    'copy:concat_to_final',
+    'copy:final_to_main',
+    'copy:concat_to_uglify',
+    'uglify:file',
+    'copy:uglify_to_final',
+    'copy:final_to_main_min',
 
+    // build the plugin file
     'concat:plugins',
-    'uglify:plugins',
-    'copy:plugins',
-
-    'copy:legalish',
+    'copy:concat_to_final',
+    'copy:final_to_plugins',
+    'copy:concat_to_uglify',
+    'uglify:file',
+    'copy:uglify_to_final',
+    'copy:final_to_plugins_min',
+  
+    // build the relay file
     'concat:relayHtml',
-    'copy:xd',
-
+    'copy:concat_to_final',
+    'copy:final_to_relay',
+  
+    // copy the legal files over
+    'copy:legal_to_legal',
+  
+    // clean up
     'clean:tmp'
+  ]);
+  
+  grunt.registerTask('release', [
+    'build',
+    'copy:recent_to_release',
+    'compress:release'
   ]);
 
   grunt.registerTask('test', [
+    'build',
     'express:generic',
     'express:alternate',
     'qunit',
     'express-stop'
   ]);
-
+  
   grunt.registerTask('server', [
     'express:generic',
     'express:alternate',
     'log:server',
     'express-keepalive'
   ]);
-
-  grunt.registerTask('release', [
-    'build',
-    'compress:release'
-  ]);
-
 };

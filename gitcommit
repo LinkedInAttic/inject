@@ -1,0 +1,11 @@
+<type>(<scope>): <subject>
+
+<body>
+
+<footer>
+
+<type>:    feat, fix, docs, style, refactor, test, chore
+<scope>:   Object, file, or flow impacted
+<subject>: Present tense, don't capitalize the first word, no period
+<body>:    Present tense, explain motivation
+<footer>:  Breaking changes require "BREAKING CHANGE" + mitigation
