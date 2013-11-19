@@ -52,11 +52,7 @@ app.use('/examples/dependencies/addrule/jqueryui/jquery.ui.widget.min.js', delay
 app.use('/tests/spec/modules-1.1.1/includes/bugs/bug_56_a.js', delay(300));
 app.use('/tests/spec/amd/includes/bugs/bug_56_a.js', delay(300));
 
-exec('git describe HEAD', function(err, version) {
-  injectVersion = version.replace(/[\s]/g, '');
-
-  app.use(express.static(path.normalize(__dirname)));
-  app.use(express.static(path.normalize(path.join(__dirname, './', 'artifacts', 'inject-' + injectVersion))));
-});
+app.use(express.static(path.normalize(__dirname)));
+app.use(express.static(path.normalize(path.join(__dirname, './', 'dist/recent'))));
 
 module.exports = app;
