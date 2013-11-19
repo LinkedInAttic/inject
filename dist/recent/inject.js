@@ -951,7 +951,6 @@ var Analyzer;
        */
 
       stripBuiltins: function (modules) {
-
         var strippedModuleList = [],
             len = modules.length,
             i = 0;
@@ -1047,6 +1046,7 @@ var Communicator;
 (function () {
   var AsStatic = Fiber.extend(function () {
     
+    var alreadyListening = false;
     var socket;
     var socketInProgress;
     var socketQueue = [];
@@ -1070,31 +1070,38 @@ var Communicator;
       }
     }
     
-    listenFor(window, 'message', function(e) {
-      var commands, command, params;
-      
-      if (!userConfig.xd.relayFile) {
+    function beginListening() {
+      if (alreadyListening) {
         return;
       }
+      alreadyListening = true;
       
-      if (getDomainName(e.origin) !== getDomainName(userConfig.xd.relayFile)) {
-        return;
-      }
+      listenFor(window, 'message', function(e) {
+        var commands, command, params;
       
-      commands = e.data.split(/:/);
-      command = commands.shift();
+        if (!userConfig.xd.relayFile) {
+          return;
+        }
+      
+        if (getDomainName(e.origin) !== getDomainName(userConfig.xd.relayFile)) {
+          return;
+        }
+      
+        commands = e.data.split(/:/);
+        command = commands.shift();
 
-      switch (command) {
-      case 'ready':
-        socketInProgress = false;
-        resolveSocketQueue();
-        break;
-      case 'fetchFail':
-      case 'fetchOk':
-        params = JSON.parse(commands.join(':'));
-        resolveCompletedFile(params.url, params.status, params.responseText);
-      }
-    });
+        switch (command) {
+        case 'ready':
+          socketInProgress = false;
+          resolveSocketQueue();
+          break;
+        case 'fetchFail':
+        case 'fetchOk':
+          params = JSON.parse(commands.join(':'));
+          resolveCompletedFile(params.url, params.status, params.responseText);
+        }
+      });
+    }
     
     /**
      * Clear the records to socket connections and
@@ -1179,7 +1186,8 @@ var Communicator;
      * @param {string} url - url where the content is located
      * @private
      */
-    function sendViaIframe(url) {      
+    function sendViaIframe(url) {
+      beginListening();
       if (socket && !socketInProgress) {
         sendMessage(socket.contentWindow, userConfig.xd.relayFile, 'fetch', {
           url: url
@@ -2382,11 +2390,18 @@ var RequireContext = Fiber.extend(function () {
      * @param {Function} callback - a function called when the module tree is downloaded and processed
      * @private
      */
-    process: function(id, dependencies, callback) {
-      if (typeof id !== 'string') {
-        callback = dependencies;
-        dependencies = id;
+    process: function(possibleId) {
+      var id, dependencies, callback;
+      
+      if (typeof possibleId !== 'string') {
         id = this.id;
+        dependencies = arguments[0];
+        callback = arguments[1];
+      }
+      else {
+        id = arguments[0];
+        dependencies = arguments[1];
+        callback = arguments[2];
       }
       
       var root = new TreeNode();
@@ -2423,7 +2438,7 @@ var RequireContext = Fiber.extend(function () {
             resolveCount();
             continue;
           }
-          else if (Executor.getModule(RequireContext.qualifiedId(node))) {
+          else if (Executor.getModule(RequireContext.qualifiedId(RulesEngine.resolveModule(node.data.originalId, root.data.resolvedId), node))) {
             resolveCount();
             continue;
           }
@@ -3474,7 +3489,7 @@ var RulesEngine;
               });
             };
 
-            if (requires.length === 0) {
+            if (!requires.length) {
               return downloadComplete();
             }
 
@@ -3937,7 +3952,7 @@ context.Inject = {
           // the contents of this are good
           next(null, contents);
         };
-        
+
         plugin.load(normalized, pluginRequire, onload, {});
       });
     });
@@ -4125,5 +4140,5 @@ context.require = context.Inject.require;
     @public
  */
 context.define = context.Inject.define;
-;context.Inject.version = "0.5.2-7-ge922ef7";
+;context.Inject.version = "0.5.2-10-gce8575e";
 })(this);

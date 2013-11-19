@@ -26,6 +26,7 @@ var Communicator;
 (function () {
   var AsStatic = Fiber.extend(function () {
     
+    var alreadyListening = false;
     var socket;
     var socketInProgress;
     var socketQueue = [];
@@ -49,31 +50,38 @@ var Communicator;
       }
     }
     
-    listenFor(window, 'message', function(e) {
-      var commands, command, params;
-      
-      if (!userConfig.xd.relayFile) {
+    function beginListening() {
+      if (alreadyListening) {
         return;
       }
+      alreadyListening = true;
       
-      if (getDomainName(e.origin) !== getDomainName(userConfig.xd.relayFile)) {
-        return;
-      }
+      listenFor(window, 'message', function(e) {
+        var commands, command, params;
       
-      commands = e.data.split(/:/);
-      command = commands.shift();
+        if (!userConfig.xd.relayFile) {
+          return;
+        }
+      
+        if (getDomainName(e.origin) !== getDomainName(userConfig.xd.relayFile)) {
+          return;
+        }
+      
+        commands = e.data.split(/:/);
+        command = commands.shift();
 
-      switch (command) {
-      case 'ready':
-        socketInProgress = false;
-        resolveSocketQueue();
-        break;
-      case 'fetchFail':
-      case 'fetchOk':
-        params = JSON.parse(commands.join(':'));
-        resolveCompletedFile(params.url, params.status, params.responseText);
-      }
-    });
+        switch (command) {
+        case 'ready':
+          socketInProgress = false;
+          resolveSocketQueue();
+          break;
+        case 'fetchFail':
+        case 'fetchOk':
+          params = JSON.parse(commands.join(':'));
+          resolveCompletedFile(params.url, params.status, params.responseText);
+        }
+      });
+    }
     
     /**
      * Clear the records to socket connections and
@@ -158,7 +166,8 @@ var Communicator;
      * @param {string} url - url where the content is located
      * @private
      */
-    function sendViaIframe(url) {      
+    function sendViaIframe(url) {
+      beginListening();
       if (socket && !socketInProgress) {
         sendMessage(socket.contentWindow, userConfig.xd.relayFile, 'fetch', {
           url: url

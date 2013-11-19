@@ -222,7 +222,7 @@ var TreeRunner = Fiber.extend(function () {
               });
             };
 
-            if (requires.length === 0) {
+            if (!requires.length) {
               return downloadComplete();
             }
 

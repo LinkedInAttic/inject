@@ -183,7 +183,7 @@ context.Inject = {
           // the contents of this are good
           next(null, contents);
         };
-        
+
         plugin.load(normalized, pluginRequire, onload, {});
       });
     });

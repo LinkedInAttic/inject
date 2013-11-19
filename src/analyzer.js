@@ -41,7 +41,6 @@ var Analyzer;
        */
 
       stripBuiltins: function (modules) {
-
         var strippedModuleList = [],
             len = modules.length,
             i = 0;

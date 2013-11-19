@@ -315,11 +315,18 @@ var RequireContext = Fiber.extend(function () {
      * @param {Function} callback - a function called when the module tree is downloaded and processed
      * @private
      */
-    process: function(id, dependencies, callback) {
-      if (typeof id !== 'string') {
-        callback = dependencies;
-        dependencies = id;
+    process: function(possibleId) {
+      var id, dependencies, callback;
+      
+      if (typeof possibleId !== 'string') {
         id = this.id;
+        dependencies = arguments[0];
+        callback = arguments[1];
+      }
+      else {
+        id = arguments[0];
+        dependencies = arguments[1];
+        callback = arguments[2];
       }
       
       var root = new TreeNode();
@@ -356,7 +363,7 @@ var RequireContext = Fiber.extend(function () {
             resolveCount();
             continue;
           }
-          else if (Executor.getModule(RequireContext.qualifiedId(node))) {
+          else if (Executor.getModule(RequireContext.qualifiedId(RulesEngine.resolveModule(node.data.originalId, root.data.resolvedId), node))) {
             resolveCount();
             continue;
           }
