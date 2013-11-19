@@ -209,6 +209,7 @@ module.exports = function (grunt) {
         },
         src: [
           './src/lib/lscache.js',
+          './src/xd/postmessage.js',
           './src/xd/relay.js'
         ]
       }

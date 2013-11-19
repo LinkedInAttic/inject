@@ -1,3 +1,20 @@
+/*
+Inject
+Copyright 2011 LinkedIn
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing,
+software distributed under the License is distributed on an "AS
+IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+express or implied.   See the License for the specific language
+governing permissions and limitations under the License.
+*/
+
 /**
  * The relay.html file's purpose is to sit on the remote location
  * (such as a CDN) and make XHR requests on behalf of the parent
@@ -65,16 +82,6 @@ listenFor(window, 'message', function(e) {
     throw new Error('unsupported: ' + command);
   }
 });
-
-/**
- * trim a provided string down to its hostname and port
- * @function
- * @param {string} host - the host to trim down
- * @returns a string minus path information and protocol
- */
-function trimHost(host) {
-  return host.replace(hostPrefixRegex, "").replace(hostSuffixRegex, "$1");
-}
 
 /*
  * Write file contents to local storage

@@ -12,10 +12,6 @@
  * Copyright (c) 2011 Jerome Etienne
  * MIT License (see below)
  *
- * xdomain
- * Copyright (c) 2013 Jaime Pillora
- * MIT License (see below)
- *
  * APACHE SOFTWARE LICENSE 2.0
  * ===
  * Licensed under the Apache License, Version 2.0 (the "License");
