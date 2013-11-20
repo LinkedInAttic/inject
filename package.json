@@ -44,7 +44,8 @@
     "grunt-shell": "~0.2.1",
     "grunt-express": "~0.2.0",
     "express": "~3.0.0",
-    "grunt-conventional-changelog": "~1.0.0"
+    "grunt-conventional-changelog": "~1.0.0",
+    "grunt-bumpup": "~0.4.2"
   },
   "dependencies": {},
   "engine": "node >= 0.8.10"

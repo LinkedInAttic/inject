@@ -352,6 +352,21 @@ module.exports = function (grunt) {
         version: '<%= version_string %>'
       }
     },
+    
+    bumpup: {
+      options: {
+        dateformat: 'YYYY-MM-DD HH:mm'
+      },
+      setters: {
+        version: function (old, releaseType, options) {
+          return grunt.config.get('version_string');
+        }
+      },
+      files: [
+        'package.json',
+        'bower.json'
+      ]
+    },
 
     versionFromParam: {},
     noop: {},
@@ -369,6 +384,7 @@ module.exports = function (grunt) {
   grunt.loadNpmTasks('grunt-shell');
   grunt.loadNpmTasks('grunt-express');
   grunt.loadNpmTasks('grunt-conventional-changelog');
+  grunt.loadNpmTasks('grunt-bumpup');
   
   grunt.registerMultiTask('log', 'Print some messages', function() {
     grunt.log.writeln(this.data.options.message);
@@ -427,6 +443,7 @@ module.exports = function (grunt) {
     'compress:release',
     'log:release',
     (grunt.option('as')) ? 'genlog' : 'noop',
+    (grunt.option('as')) ? 'setversion' : 'noop',
     (grunt.option('as')) ? 'tagit' : 'noop'
   ]);
   
@@ -434,6 +451,12 @@ module.exports = function (grunt) {
     (grunt.option('as')) ? 'versionFromParam' : 'noop',
     (grunt.option('as')) ? 'noop' : 'autofail',
     'changelog'
+  ]);
+  
+  grunt.registerTask('setversion', [
+    (grunt.option('as')) ? 'versionFromParam' : 'noop',
+    (grunt.option('as')) ? 'noop' : 'autofail',
+    'bumpup'
   ]);
   
   grunt.registerTask('tagit', [
