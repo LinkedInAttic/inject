@@ -101,7 +101,7 @@ module.exports = function (grunt) {
           }
         }
       },
-      git_commit_tag: {
+      git_tag_release: {
         command: 'get tag -a <%= version_string %> -m "Release <%= version_string %> (via grunt)"',
         options: {
           callback: function(err, stdout, stderr, next) {
@@ -323,7 +323,7 @@ module.exports = function (grunt) {
             'pushing with the --tags flag.',
             '',
             'Release version: <%= version_string %>'
-          ].join('\n');
+          ].join('\n')
         }
       }
     },
@@ -416,13 +416,13 @@ module.exports = function (grunt) {
     'copy:recent_to_release',
     'compress:release',
     'log:release',
-    (grunt.option('as')) ? 'tagit' : 'noop',
+    (grunt.option('as')) ? 'tagit' : 'noop'
   ]);
   
   grunt.registerTask('tagit', [
     'shell:git_add',
-    'shell:git_commit',
-    'shell:git_tag',
+    'shell:git_commit_release',
+    'shell:git_tag_release',
     'log:pushInstructions'
   ]);
 
