@@ -10,6 +10,7 @@ module.exports = function (grunt) {
     var foot = grunt.config.get('anonymous_footer');
     var output_files = grunt.config.get('output_files');
     var zip_locations = grunt.config.get('zip_locations');
+    var version_string = grunt.config.get('version_string');
     var file;
     var type;
 
@@ -19,6 +20,7 @@ module.exports = function (grunt) {
 
     // set the inject version everywhere we need to
     grunt.config.set('anonymous_footer', addVersion(foot));
+    grunt.config.set('version_string', addVersion(version_string));
     for (type in output_files) {
       file = grunt.config.get('output_files.'+type);
       grunt.config.set('output_files.'+type, addVersion(file));
@@ -27,22 +29,6 @@ module.exports = function (grunt) {
       file = grunt.config.get('zip_locations.'+type);
       grunt.config.set('zip_locations.'+type, addVersion(file));
     }
-  }
-  
-  function setDynamicFileNames() {
-    // dynamic assignments
-    cfg = {};
-    cfg[genFileName('uglify', 'main')] = genFileName('concat', 'main');
-    grunt.config.set('uglify.main.files', cfg);
-
-    cfg = {};
-    cfg[genFileName('uglify', 'plugins')] = genFileName('concat', 'plugins');
-    grunt.config.set('uglify.plugins.files', cfg);
-
-    grunt.config.set('concat.main.dest', genFileName('concat', 'main'));
-    grunt.config.set('concat.noxd.dest', genFileName('concat', 'noxd'));
-    grunt.config.set('concat.plugins.dest', genFileName('concat', 'plugins'));
-    grunt.config.set('concat.relayHtml.dest', genFileName('concat', 'relayHtml'));
   }
 
   // the workhorse of the grunt file
@@ -56,6 +42,8 @@ module.exports = function (grunt) {
     anonymous_footer: '\n;context.Inject.version = "__INJECT__VERSION__";\n})(this);',
     relay_html_header: '<!DOCTYPE html>\n<html><head>\n<script type="text/javascript">',
     relay_html_footer: '\n</script>\n</body>\n</html>',
+    
+    version_string: '__INJECT__VERSION__',
 
     // these are the possible output files when done
     output_files: {
@@ -87,12 +75,36 @@ module.exports = function (grunt) {
      * shell: run shell commands. We use this to get the "tag" for generating temporary releases
      */
     shell: {
-      tag: {
+      versionFromTag: {
         command: 'git describe HEAD',
         options: {
           callback: function (err, stdout, stderr, next) {
             var version = stdout.replace(/[\s]/g, '');
             setVersion(version);
+            next();
+          }
+        }
+      },
+      git_add: {
+        command: 'git add -A',
+        options: {
+          callback: function(err, stdout, stderr, next) {
+            next();
+          }
+        }
+      },
+      git_commit_release: {
+        command: 'git commit -m "chore(*): Release of Inject <%= version_string %> (via grunt)"',
+        options: {
+          callback: function(err, stdout, stderr, next) {
+            next();
+          }
+        }
+      },
+      git_commit_tag: {
+        command: 'get tag -a <%= version_string %> -m "Release <%= version_string %> (via grunt)"',
+        options: {
+          callback: function(err, stdout, stderr, next) {
             next();
           }
         }
@@ -291,6 +303,28 @@ module.exports = function (grunt) {
             'simulation in examples'
           ].join('\n')
         }
+      },
+      release: {
+        options: {
+          message: [
+            '',
+            'Release is currently using <%= version_string %>',
+            'to release as a specific version, use the --as=[version]',
+            'flag.'
+          ].join('\n')
+        }
+      },
+      pushInstructions: {
+        options: {
+          message: [
+            '',
+            'A release has been made and auto-commited to your current branch. To',
+            'push this release, please push this branch upstream, followed by',
+            'pushing with the --tags flag.',
+            '',
+            'Release version: <%= version_string %>'
+          ].join('\n');
+        }
       }
     },
 
@@ -310,6 +344,12 @@ module.exports = function (grunt) {
           }
         ]
       }
+    },
+    versionFromParam: {
+      all: {}
+    },
+    noop: {
+      all: {}
     }
   });
 
@@ -328,14 +368,18 @@ module.exports = function (grunt) {
     grunt.log.writeln(this.data.options.message);
   });
   
-  grunt.registerMultiTask('noop', 'Do nothing!', function() {});
+  grunt.registerMultiTask('versionFromParam', 'Use the version from a parameter --as', function() {
+    setVersion(grunt.option('as'));
+  });
+  
+  grunt.registerMultiTask('noop', 'Does nothing', function() {});
 
   // set up grunt task options
   grunt.registerTask('default', ['build']);
   
   grunt.registerTask('build', [
     'jshint',
-    (grunt.option('version')) ? 'noop' : 'shell:tag',
+    (grunt.option('as')) ? 'versionFromParam' : 'shell:versionFromTag',
 
     // build the main file
     'concat:main',
@@ -370,7 +414,16 @@ module.exports = function (grunt) {
   grunt.registerTask('release', [
     'build',
     'copy:recent_to_release',
-    'compress:release'
+    'compress:release',
+    'log:release',
+    (grunt.option('as')) ? 'tagit' : 'noop',
+  ]);
+  
+  grunt.registerTask('tagit', [
+    'shell:git_add',
+    'shell:git_commit',
+    'shell:git_tag',
+    'log:pushInstructions'
   ]);
 
   grunt.registerTask('test', [
