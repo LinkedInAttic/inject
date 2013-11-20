@@ -345,12 +345,17 @@ module.exports = function (grunt) {
         ]
       }
     },
-    versionFromParam: {
-      all: {}
+
+    changelog: {
+      options: {
+        github: 'linkedin/inject',
+        version: '<%= version_string %>'
+      }
     },
-    noop: {
-      all: {}
-    }
+
+    versionFromParam: {},
+    noop: {},
+    autofail: {}
   });
 
   // load NPM tasks
@@ -363,16 +368,21 @@ module.exports = function (grunt) {
   grunt.loadNpmTasks('grunt-contrib-compress');
   grunt.loadNpmTasks('grunt-shell');
   grunt.loadNpmTasks('grunt-express');
+  grunt.loadNpmTasks('grunt-conventional-changelog');
   
   grunt.registerMultiTask('log', 'Print some messages', function() {
     grunt.log.writeln(this.data.options.message);
   });
   
-  grunt.registerMultiTask('versionFromParam', 'Use the version from a parameter --as', function() {
+  grunt.registerTask('versionFromParam', 'Use the version from a parameter --as', function() {
     setVersion(grunt.option('as'));
   });
   
-  grunt.registerMultiTask('noop', 'Does nothing', function() {});
+  grunt.registerTask('noop', 'Does nothing', function() {});
+  
+  grunt.registerTask('autofail', 'Automatically stops a build', function() {
+    throw new Error('Build halted');
+  });
 
   // set up grunt task options
   grunt.registerTask('default', ['build']);
@@ -416,10 +426,19 @@ module.exports = function (grunt) {
     'copy:recent_to_release',
     'compress:release',
     'log:release',
+    (grunt.option('as')) ? 'genlog' : 'noop',
     (grunt.option('as')) ? 'tagit' : 'noop'
   ]);
   
+  grunt.registerTask('genlog', [
+    (grunt.option('as')) ? 'versionFromParam' : 'noop',
+    (grunt.option('as')) ? 'noop' : 'autofail',
+    'changelog'
+  ]);
+  
   grunt.registerTask('tagit', [
+    (grunt.option('as')) ? 'versionFromParam' : 'noop',
+    (grunt.option('as')) ? 'noop' : 'autofail',
     'shell:git_add',
     'shell:git_commit_release',
     'shell:git_tag_release',
