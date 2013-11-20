@@ -102,7 +102,7 @@ module.exports = function (grunt) {
         }
       },
       git_tag_release: {
-        command: 'get tag -a <%= version_string %> -m "Release <%= version_string %> (via grunt)"',
+        command: 'git tag -a <%= version_string %> -m "Release <%= version_string %> (via grunt)"',
         options: {
           callback: function(err, stdout, stderr, next) {
             next();
