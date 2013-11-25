@@ -2,9 +2,6 @@
 var path = require('path');
 
 module.exports = function (grunt) {
-
-  // a generic config object used for dynamic filename assignment
-  var cfg = {};
   
   function setVersion(version) {
     var foot = grunt.config.get('anonymous_footer');
