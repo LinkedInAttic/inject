@@ -120,19 +120,33 @@ var TreeRunner = Fiber.extend(function () {
         });
       };
       
-      if (fetchRules.length > 0) {
-        communicatorGet = function(name, path, cb) {
-          commFlow.seq(function(next) {
-            next(null, '');
-          });
-          for (var i = 0, len = fetchRules.length; i < len; i++) {
-            addComm(fetchRules[i]);
-          }
-          commFlow.seq(function (next, error, contents) {
-            // If AMD is enabled, and it has a new ID, then assign that
-            cb(contents);
-          });
+      // is this module already available? If so, don't redownload. This happens often when
+      // there was an inline define() on the page
+      if (Executor.getModule(root.data.resolvedId)) {
+        communicatorGet = function(a, b, cb) {
+          cb('');
         };
+      }
+      else if(Executor.getModule(RequireContext.qualifiedId(root))) {
+        communicatorGet = function(a, b, cb) {
+          cb('');
+        };
+      }
+      else {
+        if (fetchRules.length > 0) {
+          communicatorGet = function(name, path, cb) {
+            commFlow.seq(function(next) {
+              next(null, '');
+            });
+            for (var i = 0, len = fetchRules.length; i < len; i++) {
+              addComm(fetchRules[i]);
+            }
+            commFlow.seq(function (next, error, contents) {
+              // If AMD is enabled, and it has a new ID, then assign that
+              cb(contents);
+            });
+          };
+        }
       }
       
       // download the file via communicator, get back contents
@@ -208,7 +222,7 @@ var TreeRunner = Fiber.extend(function () {
               });
             };
 
-            if (requires.length === 0) {
+            if (!requires.length) {
               return downloadComplete();
             }
 

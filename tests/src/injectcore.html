@@ -90,8 +90,7 @@ governing permissions and limitations under the License.
     test("Passthrough and config", function() {
       InjectCore.setModuleRoot("http://testok.com");
       InjectCore.setCrossDomain({
-        relayFile: "http://testok-relay.com",
-        relaySwf: "http://testok-swf.com"
+        relayFile: "http://testok-relay.com"
       });
       InjectCore.setExpires(987654);
       InjectCore.setUseSuffix(true);
@@ -99,7 +98,6 @@ governing permissions and limitations under the License.
       // test userConfig
       equal(userConfig.moduleRoot, "http://testok.com", "moduleRoot");
       equal(userConfig.xd.relayFile, "http://testok-relay.com", "relayFile");
-      equal(userConfig.xd.relaySwf, "http://testok-swf.com", "relaySwf");
       equal(userConfig.fileExpires, 987654, "fileExpires");
       equal(userConfig.useSuffix, true, "useSuffix");
     });
