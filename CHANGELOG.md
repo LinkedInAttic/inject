@@ -1,11 +1,14 @@
 <a name="v0.6.0-rc1"></a>
 ### v0.6.0-rc1 (2013-12-02)
 
+#### Breaking Changes
+* easyXDM has been removed from the Inject builds as of 0.6.0. As a result, IE7 requires the external inclusion of easyXDM as a Fetch Rule in order to function. This is done to reduce the total library size for the majority of users. 0.6.0 final will come with instructions for how to bring easyXDM in CORS mode for IE7 support if required.
 
 #### Bug Fixes
 
 * **server.js:** Inject examples now served using /recent ([ce8575ea](http://github.com/linkedin/inject/commit/ce8575ea5a85873bb47f39b9c16eeff65bc8ddf0))
-
+* **Tests, AMD:Plugins** Fixes normalize to use a proper ID ([79568334](http://github.com/linkedin/inject/commit/79568334fc4b0bc12556c143b6ce3d8219d0d442))
+* **RequireContext, TreeRunner** Improve handling of inline AMD ([ba85df40](http://github.com/linkedin/inject/commit/ba85df40b78e9dcbe2be54f2d1906114d1eefdc7))
 
 #### Features
 
@@ -13,7 +16,7 @@
   * Adds version bumping to release ([8bbbf1a6](http://github.com/linkedin/inject/commit/8bbbf1a6734badee76fe6090177f7d091c902df5))
   * Enables changelog generation support ([15d14fab](http://github.com/linkedin/inject/commit/15d14fab28af44f15dcded6862f8cae56813cdae))
   * adds changelog generation to the grunt environment ([85d99c03](http://github.com/linkedin/inject/commit/85d99c0367c87bfc39f02a17bfabc62a7e9da4cd))
-* **gruntfile:** Creates grunt release task ([5504b7fa](http://github.com/linkedin/inject/commit/5504b7fa42b08aac02e789f6e8c908007663fdd9))
+  * Creates grunt release task ([5504b7fa](http://github.com/linkedin/inject/commit/5504b7fa42b08aac02e789f6e8c908007663fdd9))
 
 <a name="v0.5.2"></a>
 ### 0.5.2 (2013-11-05)
@@ -35,7 +38,7 @@
 <a name="v0.5.0"></a>
 ## 0.5.0 (2013-08-05)
 
-#### Breaks Backwards Compatibility
+#### Breaking Changes
 * \#246 **pointcuts.before and pointcuts.after are removed:** Instead of using the before/after pointcuts, we encourage the use of the new addRule replacement methods. The afterFetch pointcut is still supported, although addRule itself is now deprecated. We encourage everyone to move to the new addXXRule methods.
 
 #### Bug Fixes
@@ -85,7 +88,7 @@
 <a name="v0.4.0"></a>
 ## 0.4.0 (2013-10-26)
 
-#### Breaks Backwards Compatibility
+#### Breaking Changes
 * The new Cross Domain library (easyXDM) requires a new configuration
 * Public API Cleanup
 
@@ -112,7 +115,7 @@
 <a name="v0.3.0"></a>
 ## 0.3.0 (2013-06-13)
 
-#### Breaks Backwards Compatibility
+#### Breaking Changes
 * jQuery automatic AMD support removed
 
 #### Bug Fixes
@@ -173,7 +176,7 @@
 <a name="v0.2.0"></a>
 ## 0.2.0 (2011-11-15)
 
-#### Breaks Backwards Compatibility
+#### Breaking Changes
 * Externalization of JSON Shim - the new JSON shim is in an external file
 
 #### Bug Fixes
