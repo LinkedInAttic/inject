@@ -15,3 +15,172 @@
   * adds changelog generation to the grunt environment ([85d99c03](http://github.com/linkedin/inject/commit/85d99c0367c87bfc39f02a17bfabc62a7e9da4cd))
 * **gruntfile:** Creates grunt release task ([5504b7fa](http://github.com/linkedin/inject/commit/5504b7fa42b08aac02e789f6e8c908007663fdd9))
 
+<a name="v0.5.2"></a>
+### 0.5.2 (2013-11-05)
+
+#### Bug Fixes
+* **security**: A security issue that affects the inclusion of relay.swf from relay.html has been closed. Users who did not keep their relay.html and relay.swf files in the same directory will need to remediate using the following strategy: the new relay.html file contains a `ALTERNATE_SWF_LOCATION` parameter, which can be used to specify the location of the SWF file. This will need to be done as part of the upgrade of the relay files are in different locations.
+
+<a name="v0.5.1"></a>
+### 0.5.1 (2013-10-28)
+
+#### Bug Fixes
+* (unreported) Deep nested AMD modules are returning an exports of `{}` instead of their contents
+
+#### Features
+* \#284 removed LinkJS and reverted to Regex to improve performance
+* \#282 easyXDM Upgraded to latest version
+* \#258 Stack traces are improved when JS errors are encounted
+
+<a name="v0.5.0"></a>
+## 0.5.0 (2013-08-05)
+
+#### Breaks Backwards Compatibility
+* \#246 **pointcuts.before and pointcuts.after are removed:** Instead of using the before/after pointcuts, we encourage the use of the new addRule replacement methods. The afterFetch pointcut is still supported, although addRule itself is now deprecated. We encourage everyone to move to the new addXXRule methods.
+
+#### Bug Fixes
+* \#255 setExpires(0) was treated as "always cache" instead of "never cache"
+* \#256 CSS plugin attaches properly in IE7
+
+#### New Features
+* \#254 **new rules to replace addRule:** addModuleRule, addFileRule, addContentRule, addFetchRule, addPackage. This collection of rules gives the developer much greater control of the loading system, allowing any or many parts of the module loader to be circumvented. Additionally, packages can be regstered globally using addPackage.
+* \#244 **run Inject alongside script tags:** Unlike traditional AMD loaders, you are able to run Inject alongside code that checks for define and define.amd. A new method Inject.setGlobalAMD(false) allows the global define.amd to be disabled. The define.amd variable will still be available within the sandbox context. This is an incredibly useful feature if you have both script tags and Inject on your page.
+* \#217 **remote localStorage:** to improve security, when using a CDN, the remote localStorage location will be used as opposed to the primary hosting domain. This frees up the main URLs localStorage for other storage operations.
+* \#213 Bower Support available as the package "inject"
+* \#254 addRule is now deprecated
+* \#248 "grunt release" available for creating the release .tgz file
+
+<a name="v0.4.2"></a>
+### 0.4.2 (2013-03-27)
+
+#### Bug Fixes
+* \#245 protect against getCurrentAMD returning null
+* \#216 fixed issues with parsing more complex JS
+
+#### Features
+* \#239 Using new AMD testing infrastructure
+* \#219 Removed random Travis-CI failures
+* \# Link.JS upgrade
+* \# easyXDM upgrade
+* \# upgraded from Class.js to Fiber.js
+
+<a name="v0.4.1"></a>
+### 0.4.1 (2013-01-04)
+
+#### Bug Fixes
+* \#176 test for line offset is relegated to just Firefox (remove unneeded fake-error utility)
+* \#177 improved detection of dependencies
+* \#194 addRule regex fixes for Chrome 12
+* \#196 Relative paths do not resolve to correct absolute paths beyond immediate peer
+
+#### Features
+* Introduces the afterFetch pointcut, allowing for mutation of a file before it is executed. This collapses the before/after pointcuts under one umbrella.
+* AMD and Inject Plugins: We can now load plugins with a `plugin!` prefix, where "plugin" is a supported plugin. We're launching with text, json, and css. We also support AMD loader plugins
+* Massive push for end-user documentation: The gh-pages branch (soon to be www.injectjs.com)
+* AMD tests are now external to the repository to ensure maximum compliance
+* CJS tests are now external to the repository to ensure maximum compliance
+* link.js used for AST integration
+* added a simple flow control library to allow us to create an asynchronous queue (For things like the afterFetch pointcuts)
+
+<a name="v0.4.0"></a>
+## 0.4.0 (2013-10-26)
+
+#### Breaks Backwards Compatibility
+* The new Cross Domain library (easyXDM) requires a new configuration
+* Public API Cleanup
+
+#### Bug Fixes
+* \#171 Query string problems in relative URLs  
+* \#170 setModuleRoot and IE9 compatibility  
+* \#164 IE Compatibility w/ Executor  
+
+#### Features
+* Inject.setUseSuffix available for toggling automatic suffix appending
+* setCacheKey now allows you to upgrade files and not run into localStorage conflicts
+* JSDoc implemented as our standard commenting format (and now it's all commented)
+* Pure JavaScript Release (no CoffeeScript)
+* New Build System (node makefile.js)
+* Change of internal library from Porthole to EasyXDM
+* Change from Google Closure to UglifyJS
+
+<a name="v0.3.1"></a>
+### 0.3.1 (2012-07-01)
+
+#### Bug Fixes
+* \#133 Minified asset had syntax error due to compression  
+
+<a name="v0.3.0"></a>
+## 0.3.0 (2013-06-13)
+
+#### Breaks Backwards Compatibility
+* jQuery automatic AMD support removed
+
+#### Bug Fixes
+* \#124 Resolution of debugging sourceURLs issues introduced in 0.2.4
+* \#116 applyRules (Rules Engine) now lets adjusted rules continue through the stack
+* \#118 requiring a file via different module paths misses cache  
+* \#117 require.ensure mandates the first parameter is an array  
+* \#115 require.clearCache fixes  
+
+#### Features
+* lscache upgraded to latest version
+
+<a name="v0.2.4"></a>
+### 0.2.4 (2012-04-11)
+
+#### Bug Fixes
+* \#92 Syntax Errors in Minified Source  
+* \#91 setExports needs to accept a function  
+* \#86 Relative module IDs resolve properly (compliance w/ AMD)  
+* \#82 Require.manifest handles string values properly  
+
+<a name="v0.2.3"></a>
+### 0.2.3 (2011-12-13)
+
+#### Bug Fixes
+* \#78 AMD Circular Test passes  
+* \#71 Executor properly returning line numbers on errors  
+* \#69 Improvements in localStorage Shim  
+
+#### Features
+* AMD Compliance (100%)
+* Modules 1.1.1 Compliance
+* Official release of the IE 6/7 Shim
+* CJS Modules 1.0, 1.1, 1.1.1 tests
+
+<a name="v0.2.2"></a>
+### 0.2.2 (2011-12-06)
+
+#### Bug Fixes
+* \#59 require() in comments no longer bring picked up  
+* \#57 requiring with cache hits is storing the full module contents  
+* \#56 overlapping dependencies with require.ensure only invoked once  
+* \#33 Improved dependency extraction  
+
+#### Features
+* define() globally available
+* Improvements to Paperboy for static content
+* New command line options to build IE7 support and easyXDM support
+
+<a name="v0.2.1"></a>
+### 0.2.1 (2011-11-21)
+
+#### Features
+* module.setExports() support
+* Asynchronous Module Definition (AMD) support
+* lscache supports an LRU
+
+<a name="v0.2.0"></a>
+## 0.2.0 (2011-11-15)
+
+#### Breaks Backwards Compatibility
+* Externalization of JSON Shim - the new JSON shim is in an external file
+
+#### Bug Fixes
+* \#3 Resolution of localStorage limit  
+* \#2 "this" scoped to module object 
+
+#### Features
+* Released under Apache Software License 2.0
+* Pointcuts - the ability to inject custom code that runs before and after a given module. Enables support of non CJS modules
+* localStorage expiration - a file can now be requested to expire out of localStorage after a specified number of seconds
