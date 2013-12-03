@@ -3,7 +3,11 @@ layout: download
 title : Downloads
 ---
 
-View the [Changelog](/download/changelog) to see what changed between versions.
+View the [Changelog](https://github.com/linkedin/inject/blob/master/CHANGELOG.md) to see what changed between versions.
+
+# 0.6.x
+
+* 0.6.0 - [rc1](0.6.x/inject-0.6.0-rc1.tgz)
 
 # 0.5.x
 
