@@ -21,15 +21,6 @@ function getDomainName(url) {
   return url.match(reURI)[3];
 }
 
-function listenFor(obj, evt, fn) {
-  if (obj.addEventListener) {
-    obj.addEventListener(evt, fn);
-  }
-  else {
-    obj.attachEvent('on' + evt, fn);
-  }
-}
-
 function sendMessage(target, targetsUrl, command, params) {
   if (!params) {
     params = {};

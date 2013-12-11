@@ -10,7 +10,7 @@ var TreeRunner = Fiber.extend(function () {
    * @private
    * @param {Function} fn - the function to call on the next tick
    */
-  var nextTick = (function () {
+  var nextTick = (function() {
     var queue = [],
         hasPostMessage = !!window.postMessage,
         messageName = 'inject-nexttick',
@@ -39,12 +39,17 @@ var TreeRunner = Fiber.extend(function () {
     if (hasPostMessage) {
       trigger = function () { window.postMessage(messageName, '*'); };
       processQueue = function (event) {
-        if (event.source === window && event.data === messageName) {
-          event.stopPropagation();
+        if (event.source == window && event.data === messageName) {
+          if (event.stopPropagation) {
+            event.stopPropagation();
+          }
+          else {
+            event.returnValue = false;
+          }
           flushQueue();
         }
       };
-      nextTick.listener = window.addEventListener('message', processQueue, true);
+      nextTick.listener = addListener(window, 'message', processQueue, true);
     }
     else {
       trigger = function () { window.setTimeout(function () { processQueue(); }, 0); };
@@ -52,11 +57,129 @@ var TreeRunner = Fiber.extend(function () {
     }
 
     nextTick.removeListener = function () {
-      window.removeEventListener('message', processQueue, true);
+      removeListener(window, 'message', processQueue, true);
     };
 
     return nextTick;
   }());
+
+  /**
+   * Build a communcator function. If there are fetch rules, create a flow control
+   * to handle communication (as opposed to the internal communicator).
+   *
+   * @private
+   * @param  {TreeNode} node      The TreeNode you're building the communicator for.
+   * @return {Function}           The built communicator method.
+   */
+  function buildCommunicator(node) {
+
+    var nodeData = node.data,
+        parentData = node.getParent() ? node.getParent().data : null,
+        fetchRules = RulesEngine.getFetchRules(nodeData.resolvedId),
+        commFlow = new Flow(),
+
+        commFlowResolver = {
+          module: function() { return RulesEngine.resolveModule.apply(RulesEngine, arguments); },
+          url: function() { return RulesEngine.resolveFile.apply(RulesEngine, arguments); }
+        },
+
+        commFlowCommunicator = {
+          get: function() { return Communicator.get.apply(Communicator, arguments); }
+        },
+
+        addComm = function(fn) {
+          commFlow.seq(function(next, error, contents) {
+            fn(next, contents, commFlowResolver, commFlowCommunicator, {
+              moduleId: nodeData.originalId,
+              parentId: (parentData) ? parentData.originalId : '',
+              parentUrl: (parentData) ? parentData.resolvedUrl : ''
+            });
+          });
+        };
+    
+    // is this module already available? If so, don't redownload. This happens often when
+    // there was an inline define() on the page
+    if (Executor.getModule(nodeData.resolvedId)) {
+      return function(a, b, cb) {
+        cb('');
+      };
+    }
+
+    else if (Executor.getModule(RequireContext.qualifiedId(node))) {
+      return function(a, b, cb) {
+        cb('');
+      };
+    }
+
+    else if (fetchRules.length > 0) {
+      return function(name, path, cb) {
+        var i = 0,
+            len = fetchRules.length;
+        commFlow.seq(function(next) {
+          next(null, '');
+        });
+        for (i; i < len; i++) {
+          addComm(fetchRules[i]);
+        }
+        commFlow.seq(function (next, error, contents) {
+          // If AMD is enabled, and it has a new ID, then assign that
+          cb(contents);
+        });
+      };
+    }
+
+    return Communicator.get;
+  }
+
+  /**
+   * Fetch dependencies from child nodes and kick off downloads.
+   *
+   * @private
+   * @param  {TreeNode}   node    The children's parent node.
+   * @param  {Function} callback  A method to call when the downloading is complete.
+   */
+  function downloadDependencies(node, callback) {
+
+    var requires = Analyzer.extractRequires(node.data.file),
+        children = requires.length,
+        i = 0,
+        len = children,
+        child,
+        runner,
+    
+        childDone = function() {
+          children--;
+          if (children === 0) {
+            callback();
+          }
+        },
+    
+        childRunner = function(r) {
+          nextTick(function() {
+            r.download(childDone);
+          });
+        };
+
+    if (!requires.length) {
+      return callback();
+    }
+
+    for (i; i < len; i++) {
+      child = new TreeNode();
+      child.data.originalId = requires[i];
+      node.addChild(child);
+      
+      if (Executor.getModule(requires[i]) && Executor.getModule(requires[i]).exec) {
+        // we have it
+        childDone();
+      }
+      else {
+        // go get it
+        runner = new TreeRunner(child);
+        childRunner(runner);
+      }
+    }
+  }
   
   return {
     /**
@@ -77,7 +200,12 @@ var TreeRunner = Fiber.extend(function () {
      * @param {Function} downloadComplete - a callback executed when the download is done
      */
     download: function(downloadComplete) {
-      var root = this.root;
+
+      var root = this.root,
+          rootData = root.data,
+          rootParent = root.getParent(),
+          communicatorGet;
+
       // given original id & parent resolved id, create resolved id
       // given resolved id & parent resolved url, create resolved url
       // build a communicator
@@ -90,96 +218,57 @@ var TreeRunner = Fiber.extend(function () {
       // -- in a next-tick, create a new TreeDownloader at the new child (async)
       // -- -- on complete, decrement children count by 1
       // -- -- when children count hits 0, call downloadComplete()
-      if (root.getParent()) {
-        root.data.resolvedId = RulesEngine.resolveModule(root.data.originalId, root.getParent().data.resolvedId);
+      if (rootParent) {
+        rootData.resolvedId = RulesEngine.resolveModule(rootData.originalId, rootParent.data.resolvedId);
       }
       else {
-        root.data.resolvedId = RulesEngine.resolveModule(root.data.originalId, '');
+        rootData.resolvedId = RulesEngine.resolveModule(rootData.originalId, '');
       }
-      root.data.resolvedUrl = RulesEngine.resolveFile(root.data.resolvedId);
-      
-      // select a communcator function. If there are fetch rules, create a flow control
-      // to handle communication (as opposed to the internal communicator)
-      var communicatorGet = Communicator.get;
-      var fetchRules = RulesEngine.getFetchRules(root.data.resolvedId);
-      var commFlow = new Flow();
-      var commFlowResolver = {
-        module: function() { return RulesEngine.resolveModule.apply(RulesEngine, arguments); },
-        url: function() { return RulesEngine.resolveFile.apply(RulesEngine, arguments); }
-      };
-      var commFlowCommunicator = {
-        get: function() { return Communicator.get.apply(Communicator, arguments); }
-      };
-      var addComm = function(fn) {
-        commFlow.seq(function(next, error, contents) {
-          fn(next, contents, commFlowResolver, commFlowCommunicator, {
-            moduleId: root.data.originalId,
-            parentId: (root.getParent()) ? root.getParent().data.originalId : '',
-            parentUrl: (root.getParent()) ? root.getParent().data.resolvedUrl : ''
-          });
-        });
-      };
-      
-      // is this module already available? If so, don't redownload. This happens often when
-      // there was an inline define() on the page
-      if (Executor.getModule(root.data.resolvedId)) {
-        communicatorGet = function(a, b, cb) {
-          cb('');
-        };
-      }
-      else if(Executor.getModule(RequireContext.qualifiedId(root))) {
-        communicatorGet = function(a, b, cb) {
-          cb('');
-        };
-      }
-      else {
-        if (fetchRules.length > 0) {
-          communicatorGet = function(name, path, cb) {
-            commFlow.seq(function(next) {
-              next(null, '');
-            });
-            for (var i = 0, len = fetchRules.length; i < len; i++) {
-              addComm(fetchRules[i]);
-            }
-            commFlow.seq(function (next, error, contents) {
-              // If AMD is enabled, and it has a new ID, then assign that
-              cb(contents);
-            });
-          };
-        }
-      }
-      
-      // download the file via communicator, get back contents
-      communicatorGet(root.data.originalId, root.data.resolvedUrl, function(content) {
+      rootData.resolvedUrl = RulesEngine.resolveFile(rootData.resolvedId);
+
+      // Build a communicator.
+      communicatorGet = buildCommunicator(root);
+
+      // Download the file via communicator, get back contents
+      communicatorGet(rootData.originalId, rootData.resolvedUrl, function(content) {
+
         // build a flow control to adjust the contents based on rules
-        var pointcuts = RulesEngine.getContentRules(root.data.resolvedUrl);
-        var contentFlow = new Flow();
-        var addContent = function(fn) {
-          contentFlow.seq(function (next, error, contents) {
-            fn(next, contents);
-          });
-        };
+        var pointcuts = RulesEngine.getContentRules(rootData.resolvedUrl),
+            contentFlow = new Flow(),
+            i = 0,
+            len = pointcuts.length;
+
+            addContent = function(fn) {
+              contentFlow.seq(function (next, error, contents) {
+                fn(next, contents);
+              });
+            };
+
         contentFlow.seq(function (next) {
           next(null, content);
         });
-        for (var i = 0, len = pointcuts.length; i < len; i++) {
+
+        for (i; i < len; i++) {
           addContent(pointcuts[i]);
         }
+
         contentFlow.seq(function (next, error, contents) {
+
+          var circular = false,
+              searchIndex = {},
+              parent = rootParent,
+              module,
+              qualifiedId;
+
           if (typeof contents === 'string') {
-            root.data.file = contents;
+            rootData.file = contents;
           }
           else {
-            root.data.exports = contents;
+            rootData.exports = contents;
           }
 
           // determine if this is circular
-          var circular = false;
-          var searchIndex = {};
-          var parent = root.getParent();
-          var module;
-          var qualifiedId;
-          searchIndex[root.data.originalId] = true;
+          searchIndex[rootData.originalId] = true;
           while(parent && !circular) {
             if (searchIndex[parent.data.originalId]) {
               circular = true;
@@ -189,58 +278,25 @@ var TreeRunner = Fiber.extend(function () {
               parent = parent.getParent();
             }
           }
-          root.data.circular = circular;
+          rootData.circular = circular;
 
           // kick off its children
-          if (root.data.exports) {
+          if (rootData.exports) {
             // when there are exports available, then we prematurely resolve this module
             // this can happen when the an external rule for the communicator has resolved
             // the export object for us
-            module = Executor.createModule(root.data.resolvedId, RequireContext.qualifiedId(root), root.data.resolvedUrl);
+            module = Executor.createModule(rootData.resolvedId, RequireContext.qualifiedId(root), rootData.resolvedUrl);
             module.exec = true;
             module.exports = contents;
             downloadComplete();
           }
-          else if (root.data.circular) {
+          else if (rootData.circular) {
             // circular nodes do not need to download their children (again)
             downloadComplete();
           }
           else {
-            // analyze the file for depenencies, kick off a child download for each one
-            var requires = Analyzer.extractRequires(root.data.file);
-            var children = requires.length;
-            var childDone = function() {
-              children--;
-              if (children === 0) {
-                downloadComplete();
-              }
-            };
-            
-            var childRunner = function(r) {
-              nextTick(function() {
-                r.download(childDone);
-              });
-            };
-
-            if (!requires.length) {
-              return downloadComplete();
-            }
-
-            for (var i = 0, len = requires.length; i < len; i++) {
-              var node = new TreeNode();
-              node.data.originalId = requires[i];
-              root.addChild(node);
-              
-              if (Executor.getModule(requires[i]) && Executor.getModule(requires[i]).exec) {
-                // we have it
-                childDone();
-              }
-              else {
-                // go get it
-                var runner = new TreeRunner(node);
-                childRunner(runner);
-              }
-            }
+            // Analyze the file for depenencies and kick off a child download for each one.
+            downloadDependencies(root, downloadComplete);
           }
         });
       });
@@ -257,42 +313,48 @@ var TreeRunner = Fiber.extend(function () {
      * @param {Function} executeComplete - a callback function ran when all execution is done
      */
     execute: function(executeComplete) {
-      var nodes = this.root.postOrder();
+
+      var nodes = this.root.postOrder(),
+          len = nodes.length,
+          i = 0,
       
-      var runNode = function(node) {
-        if (!node.data.resolvedId) {
-          return;
-        }
-        var module;
-        var result;
-        
-        // executor: create a module
-        // if not circular, executor: run module (otherwise, the circular reference begins as empty exports)
-        module = Executor.createModule(node.data.resolvedId, RequireContext.qualifiedId(node), node.data.resolvedUrl);
-        node.data.module = module;
-        
-        if (module.exec) {
-          return;
-        }
-        
-        if (!node.data.circular) {
-          if (node.data.exports) {
-            // exports came pre set
-            module.exports = node.data.exports;
-            module.exec = true;
-          }
-          else if (typeof node.data.file === 'string') {
-            Executor.runModule(module, node.data.file);
-            module.exec = true;
-            // if this is an AMD module, it's exports are coming from define()
-            if (!module.amd) {
-              node.data.exports = module.exports;
+          runNode = function(node) {
+
+            var nodeData = node.data,
+                module,
+                result;
+
+            if (!nodeData.resolvedId) {
+              return;
             }
-          }
-        }
-      };
+            
+            // executor: create a module
+            // if not circular, executor: run module (otherwise, the circular reference begins as empty exports)
+            module = Executor.createModule(nodeData.resolvedId, RequireContext.qualifiedId(node), nodeData.resolvedUrl);
+            nodeData.module = module;
+            
+            if (module.exec) {
+              return;
+            }
+            
+            if (!nodeData.circular) {
+              if (nodeData.exports) {
+                // exports came pre set
+                module.exports = nodeData.exports;
+                module.exec = true;
+              }
+              else if (typeof nodeData.file === 'string') {
+                Executor.runModule(module, nodeData.file);
+                module.exec = true;
+                // if this is an AMD module, it's exports are coming from define()
+                if (!module.amd) {
+                  nodeData.exports = module.exports;
+                }
+              }
+            }
+          };
       
-      for (var i = 0, len = nodes.length; i < len; i++) {
+      for (i; i < len; i++) {
         runNode(nodes[i]);
       }
       
