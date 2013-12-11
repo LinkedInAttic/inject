@@ -68,8 +68,8 @@ var TreeRunner = Fiber.extend(function () {
    * to handle communication (as opposed to the internal communicator).
    *
    * @private
-   * @param  {[type]} node       [description]
-   * @return {[type]}              [description]
+   * @param  {TreeNode} node      The TreeNode you're building the communicator for.
+   * @return {Function}           The built communicator method.
    */
   function buildCommunicator(node) {
 
@@ -131,6 +131,13 @@ var TreeRunner = Fiber.extend(function () {
     return Communicator.get;
   }
 
+  /**
+   * Fetch dependencies from child nodes and kick off downloads.
+   *
+   * @private
+   * @param  {TreeNode}   node    The children's parent node.
+   * @param  {Function} callback  A method to call when the downloading is complete.
+   */
   function downloadDependencies(node, callback) {
 
     var requires = Analyzer.extractRequires(node.data.file),
