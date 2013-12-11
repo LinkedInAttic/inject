@@ -130,3 +130,32 @@ var debugLog = function () {};
     debugLog = doLog;
   }
 })();
+
+/**
+    Methods to add and remove events based on browser capabilities.
+    @param {Object} obj A target object to add or remove a listener.
+    @param {String} evt The event type.
+    @param {Function} fn The target function to add or remove.
+    @param {Boolean} capture Use capturing if supported.
+    @function
+    @global
+ */
+var addListener, removeListener;
+(function(win) {
+  if (win.addEventListener) {
+    addListener = function(el, evt, fn, capture) {
+      el.addEventListener(evt, fn, capture || false);
+    };
+    removeListener = function(el, evt, fn, capture) {
+      el.removeEventListener(evt, fn, capture || false);
+    };
+  }
+  else {
+    addListener = function(el, evt, fn) {
+      el.attachEvent('on' + evt, fn);
+    };
+    removeListener = function(el, evt, fn) {
+      el.detachEvent('on' + evt, fn);
+    };
+  }
+}(window));

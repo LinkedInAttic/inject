@@ -44,7 +44,7 @@ var TreeRunner = Fiber.extend(function () {
           flushQueue();
         }
       };
-      nextTick.listener = window.addEventListener('message', processQueue, true);
+      nextTick.listener = addListener(window, 'message', processQueue, true);
     }
     else {
       trigger = function () { window.setTimeout(function () { processQueue(); }, 0); };
@@ -52,7 +52,7 @@ var TreeRunner = Fiber.extend(function () {
     }
 
     nextTick.removeListener = function () {
-      window.removeEventListener('message', processQueue, true);
+      removeListener(window, 'message', processQueue, true);
     };
 
     return nextTick;

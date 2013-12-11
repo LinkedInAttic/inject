@@ -32,7 +32,7 @@ window.setTimeout(function() {
   });
 });
 
-listenFor(window, 'message', function(e) {
+addListener(window, 'message', function(e) {
   var commands, command, params, xhr, cachedFile;
   
   if (getDomainName(e.origin) !== getDomainName(returnUrl)) {
