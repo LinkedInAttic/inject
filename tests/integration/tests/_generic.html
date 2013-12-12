@@ -48,7 +48,10 @@ governing permissions and limitations under the License.
     module(q.test);
 
     Inject.reset();
-    Inject.setModuleRoot('/tests/integration/tests/'+q.test);
+    
+    if (q.test != 'inline_define_no_config') {
+      Inject.setModuleRoot('/tests/integration/tests/'+q.test);
+    }
 
     var scr = document.createElement('script');
     scr.type = "text/javascript";
