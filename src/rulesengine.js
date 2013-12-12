@@ -422,8 +422,8 @@ var RulesEngine;
         }
 
         // if no module root, freak out
-        if (!userConfig.moduleRoot) {
-          throw new Error('module root needs to be defined for resolving URLs');
+        if (!userConfig.moduleRoot && typeof console != 'undefined' && typeof console.log == 'function') {
+          console.log('Without moduleRoot defined, Inject will default to the URL of the current page. This may cause unexpected behavior');
         }
 
         if (!lastPath) {
@@ -451,8 +451,11 @@ var RulesEngine;
         else if (relativeTo) {
           relativeTo = userConfig.baseDir(relativeTo);
         }
-        else {
+        else if (userConfig.moduleRoot) {
           relativeTo = userConfig.moduleRoot;
+        }
+        else {
+          relativeTo = location.pathname;
         }
 
         // exit early on resolved http URL
