@@ -436,6 +436,7 @@ module.exports = function (grunt) {
   
   grunt.registerTask('release', [
     'build',
+    'test',
     'copy:recent_to_release',
     'compress:release',
     'log:release',
