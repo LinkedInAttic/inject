@@ -4225,5 +4225,5 @@ context.require = context.Inject.require;
     @public
  */
 context.define = context.Inject.define;
-;context.Inject.version = "0.6.0-rc1-6-g9aa30ed";
+;context.Inject.version = "0.6.0-rc1-9-g4451a5a";
 })(this);

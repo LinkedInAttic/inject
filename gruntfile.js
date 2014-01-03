@@ -436,7 +436,7 @@ module.exports = function (grunt) {
   
   grunt.registerTask('release', [
     'build',
-    'test',
+    'releasetest',
     'copy:recent_to_release',
     'compress:release',
     'log:release',
@@ -468,6 +468,13 @@ module.exports = function (grunt) {
 
   grunt.registerTask('test', [
     'build',
+    'express:generic',
+    'express:alternate',
+    'qunit',
+    'express-stop'
+  ]);
+  
+  grunt.registerTask('releasetest', [
     'express:generic',
     'express:alternate',
     'qunit',
