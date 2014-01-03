@@ -7,7 +7,7 @@ View the [Changelog](https://github.com/linkedin/inject/blob/master/CHANGELOG.md
 
 # 0.6.x
 
-* 0.6.0 - [rc1](0.6.x/inject-0.6.0-rc1.tgz)
+* 0.6.0 - [rc2](0.6.x/inject-0.6.0-rc2.tgz), [rc1](0.6.x/inject-0.6.0-rc1.tgz)
 
 # 0.5.x
 
