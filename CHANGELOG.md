@@ -1,3 +1,11 @@
+<a name="v0.6.0-rc2"></a>
+### v0.6.0-rc2 (2014-01-03)
+
+
+#### Bug Fixes
+
+* **RulesEngine:** Adds support for calling define() with no base URL ([99ff467b](http://github.com/linkedin/inject/commit/99ff467bf67462a6cfe787a56ac97821597057b1))
+
 <a name="v0.6.0-rc1"></a>
 ### v0.6.0-rc1 (2013-12-02)
 
