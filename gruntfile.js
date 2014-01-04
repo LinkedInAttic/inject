@@ -1,4 +1,19 @@
-// gruntfile
+/*
+Inject
+Copyright 2013 LinkedIn
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing,
+software distributed under the License is distributed on an "AS
+IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+express or implied.   See the License for the specific language
+governing permissions and limitations under the License.
+*/
 var path = require('path');
 
 module.exports = function (grunt) {
@@ -28,48 +43,36 @@ module.exports = function (grunt) {
     }
   }
 
-  // the workhorse of the grunt file
   grunt.initConfig({
-    // inject specific header
-    inject_header: grunt.file.read('./src/includes/copyright-lic-min.js'),
-
-    // we use a special header/footer instead of the normal
-    // grunt anonymize
-    anonymous_header: '!(function(context, undefined){\n',
-    anonymous_footer: '\n;context.Inject.version = "__INJECT__VERSION__";\n})(this);',
-    relay_html_header: '<!DOCTYPE html>\n<html><head>\n<script type="text/javascript">',
-    relay_html_footer: '\n</script>\n</body>\n</html>',
-    
-    version_string: '__INJECT__VERSION__',
-
-    // these are the possible output files when done
     output_files: {
       main:         './dist/recent/inject.js',
       main_min:     './dist/recent/inject.min.js',
-      plugins:      './dist/recent/inject-plugins.js',
-      plugins_min:  './dist/recent/inject-plugins.min.js',
       license:      './dist/recent/LICENSE',
-      readme:       './dist/recent/README.markdown',
-      relayHtml:    './dist/recent/relay.html',
+      readme:       './dist/recent/README.md',
+      plugins:      './dist/recent/plugins/',
+      relay:        './dist/recent/relay.html',
       release:      'dist/inject-__INJECT__VERSION__/'
     },
-
-    // what are the zip locations named?
     zip_locations: {
       archive:      'inject-__INJECT__VERSION__.tgz',
       path:         'inject-__INJECT__VERSION__'
     },
+    version_string: '__INJECT__VERSION__',
+    anonymous_header: '',
+    anonymous_footer: '',
+    relay_html_header: '<!DOCTYPE html>\n<html><head>\n<script type="text/javascript">',
+    relay_html_footer: '\n</script>\n</body>\n</html>',
 
     /**
      * clean: clean up temp and artifact directories
      */
     clean: {
       tmp: ['./tmp'],
-      artifacts: ['./dist/inject-*']
+      dist: ['./dist/inject-*']
     },
 
     /**
-     * shell: run shell commands. We use this to get the "tag" for generating temporary releases
+     * shell: run shell commands. We use this for git ops
      */
     shell: {
       versionFromTag: {
@@ -105,26 +108,42 @@ module.exports = function (grunt) {
             next();
           }
         }
+      },
+      venus_automated: {
+        command: 'node ./node_modules/venus/bin/venus "tests/" -e ghost',
+        options: {
+          stdout: true
+        }
+
+      },
+      venus_browser: {
+        command: 'node ./node_modules/venus/bin/venus run -t "tests/"',
+        options: {
+          stdout: true
+        }
       }
     },
 
     /**
-     * copy: copy files from one place to another
-     * we use this both to copy our final files, but to also move items from generic input to
-     * generic output locations
+     * copy: copy files that need no modification
      */
     copy: {
-      concat_to_uglify: {
-        files: {
-          // dest: src
-          './tmp/uglify.in': './tmp/concat.out'
-        }
-      },
-      uglify_to_final: {
-        files: {'./tmp/final.out': './tmp/uglify.out'}
-      },
       concat_to_final: {
         files: {'./tmp/final.out': './tmp/concat.out'}
+      },
+      fiber_to_tmp: {
+        files: [
+          {src: ['./node_modules/fiber/src/fiber.js'], dest: './tmp/lib/fiber/fiber.js', filter: 'isFile'}
+        ]
+      },
+      inject_to_uglify: {
+        files: {
+          // dest: src
+          './tmp/uglify.in': './tmp/inject.js'
+        }
+      },
+      inject_to_final: {
+        files: {'./tmp/final.out': './tmp/inject.js'}
       },
       final_to_main: {
         files: [{src: './tmp/final.out', dest: '<%= output_files.main %>', filter: 'isFile'}]
@@ -132,114 +151,30 @@ module.exports = function (grunt) {
       final_to_main_min: {
         files: [{src: './tmp/final.out', dest: '<%= output_files.main_min %>', filter: 'isFile'}]
       },
-      final_to_plugins: {
-        files: [{src: './tmp/final.out', dest: '<%= output_files.plugins %>', filter: 'isFile'}]
-      },
-      final_to_plugins_min: {
-        files: [{src: './tmp/final.out', dest: '<%= output_files.plugins_min %>', filter: 'isFile'}]
-      },
       final_to_relay: {
-        files: [{src: './tmp/final.out', dest: '<%= output_files.relayHtml %>', filter: 'isFile'}]
+        files: [{src: './tmp/final.out', dest: '<%= output_files.relay %>', filter: 'isFile'}]
       },
       legal_to_legal: {
         files:[
           {src: ['./LICENSE'], dest: '<%= output_files.license %>', filter: 'isFile'},
-          {src: ['./README.markdown'], dest: '<%= output_files.readme %>', filter: 'isFile'}
+          {src: ['./README.md'], dest: '<%= output_files.readme %>', filter: 'isFile'}
         ]
+      },
+      plugins_to_plugins: {
+        files: [{expand: true, cwd: './src/plugins/', src: ['**'], dest: '<%= output_files.plugins %>'}]
       },
       recent_to_release: {
         expand: true,
         cwd: 'dist/recent',
         src: '*',
         dest: '<%= output_files.release %>'
-      }
-    },
-
-    /**
-     * jshint: perform jshint operations on the code base
-     */
-    jshint: {
-      all: {
-        files: {
-          src: [
-            './gruntfile.js',
-            './src/*.js',
-            './src/compat/localstorage-shim.js',
-            './src/includes/*.js',
-            './src/plugins/*.js',
-            './src/xd/*.js'
-          ]
-        },
-        jshintrc: './.jshintrc'
-      }
-    },
-
-    /**
-     * uglify: compress code while preserving key identifiers
-     */
-    uglify: {
-      options: {
-        banner: '<%= inject_header %>\n',
-        mangle: {
-          except: ['require', 'define', 'easyxdm', 'localstorage', 'undefined']
-        }
       },
-      file: {
-        files: {
-          // output: from input
-          './tmp/uglify.out': './tmp/uglify.in'
-        }
+      uglify_to_final: {
+        files: {'./tmp/final.out': './tmp/uglify.out'}
       }
     },
-
-    /**
-     * concat: build a payload, putting together source files
-     */
+    
     concat: {
-      options: {
-        separator: ';',
-        banner: '<%= inject_header %>\n<%= anonymous_header %>',
-        footer: '<%= anonymous_footer %>'
-      },
-      main: {
-        dest: './tmp/concat.out',
-        options: {
-          separator: ';'
-        },
-        src: [
-          './src/includes/constants.js',
-          './src/includes/globals.js',
-          './src/includes/commonjs.js',
-          './src/lib/fiber.js',
-          './src/lib/fiber.post.js',
-          './src/lib/flow.js',
-          './src/lib/lscache.js',
-          './src/lib/lscache.post.js',
-          './src/xd/postmessage.js',
-          './src/analyzer.js',
-          './src/communicator.js',
-          './src/executor.js',
-          './src/injectcore.js',
-          './src/requirecontext.js',
-          './src/rulesengine.js',
-          './src/treerunner.js',
-          './src/treenode.js',
-          './src/includes/context.js'
-        ]
-      },
-      plugins: {
-        dest: './tmp/concat.out',
-        options: {
-          separator: ';',
-          banner: '',
-          footer: ''
-        },
-        src: [
-          './src/plugins/css.js',
-          './src/plugins/text.js',
-          './src/plugins/json.js'
-        ]
-      },
       relayHtml: {
         dest: './tmp/concat.out', // placeholder
         options: {
@@ -254,34 +189,92 @@ module.exports = function (grunt) {
         ]
       }
     },
-
+    
     /**
-     * qunit: runs our test suite via phantomjs
+     * Do a bower install of browser-ready components Atomic needs
      */
-    qunit: {
-      all: {
+    bower: {
+      install: {
         options: {
-          timeout: 20000,
-          urls: [
-            'http://localhost:4000/tests/index.html'
-          ]
+          targetDir: './tmp/lib',
+          layout: 'byComponent',
+          install: true,
+          verbose: false,
+          cleanTargetDir: true,
+          cleanBowerDir: true
         }
       }
     },
 
     /**
-     * express: run our express server for handling tests and examples
+     * jshint: perform jshint operations on the code base
+     */
+    jshint: {
+      all: {
+        files: {
+          src: [
+            './gruntfile.js',
+            './src/*.js',
+            './src/includes/*.js',
+            './src/xd/*.js',
+            './plugins/**/*.js',
+            './tests/src/**/*.js',
+            './server.js'
+          ]
+        },
+        jshintrc: './.jshintrc'
+      }
+    },
+
+    /**
+     * uglify: compress code while preserving key identifiers
+     */
+    uglify: {
+      options: {
+        mangle: {
+          except: ['require', 'define', 'Fiber', 'undefined']
+        }
+      },
+      file: {
+        files: {
+          // output: from input
+          './tmp/uglify.out': './tmp/uglify.in'
+        }
+      }
+    },
+
+    /**
+     * includereplace: replace segments of a file with contents of another
+     */
+    includereplace: {
+      inject: {
+        options: {
+          globals: {
+            INJECT_VERSION: '<%= version_string %>'
+          },
+          prefix: '\/\/@@',
+          suffix: ''
+        },
+        src: './src/inject.js',
+        dest: './tmp'
+      }
+    },
+
+    /**
+     * express: runs our server for examples
      */
     express: {
-      generic: {
+      server: {
         options: {
           port: 4000,
+          debug: true,
           server: path.resolve('./server.js')
         }
       },
       alternate: {
         options: {
           port: 4001,
+          debug: true,
           server: path.resolve('./server.js')
         }
       }
@@ -292,12 +285,7 @@ module.exports = function (grunt) {
         options: {
           message: [
             '',
-            'SERVER RUNNING:',
-            'examples: http://localhost:4000/examples',
-            'tests: http://localhost:4000/tests',
-            '',
-            'an identical server is running on port 4001 for cross-domain',
-            'simulation in examples'
+            'Server started at http://localhost:4000'
           ].join('\n')
         }
       },
@@ -342,10 +330,10 @@ module.exports = function (grunt) {
         ]
       }
     },
-
+    
     changelog: {
       options: {
-        github: 'linkedin/inject',
+        github: 'jakobo/atomic',
         version: '<%= version_string %>'
       }
     },
@@ -371,17 +359,19 @@ module.exports = function (grunt) {
   });
 
   // load NPM tasks
-  grunt.loadNpmTasks('grunt-contrib-jshint');
+  grunt.loadNpmTasks('grunt-bower-task');
+  grunt.loadNpmTasks('grunt-bumpup');
+  grunt.loadNpmTasks('grunt-contrib-clean');
+  grunt.loadNpmTasks('grunt-contrib-compress');
   grunt.loadNpmTasks('grunt-contrib-concat');
   grunt.loadNpmTasks('grunt-contrib-copy');
-  grunt.loadNpmTasks('grunt-contrib-uglify');
-  grunt.loadNpmTasks('grunt-contrib-clean');
+  grunt.loadNpmTasks('grunt-contrib-jshint');
   grunt.loadNpmTasks('grunt-contrib-qunit');
-  grunt.loadNpmTasks('grunt-contrib-compress');
-  grunt.loadNpmTasks('grunt-shell');
-  grunt.loadNpmTasks('grunt-express');
+  grunt.loadNpmTasks('grunt-contrib-uglify');
   grunt.loadNpmTasks('grunt-conventional-changelog');
-  grunt.loadNpmTasks('grunt-bumpup');
+  grunt.loadNpmTasks('grunt-express');
+  grunt.loadNpmTasks('grunt-include-replace');
+  grunt.loadNpmTasks('grunt-shell');
   
   grunt.registerMultiTask('log', 'Print some messages', function() {
     grunt.log.writeln(this.data.options.message);
@@ -401,35 +391,29 @@ module.exports = function (grunt) {
   grunt.registerTask('default', ['build']);
   
   grunt.registerTask('build', [
+    'bower:install',
+    'copy:fiber_to_tmp', // fiber is in NPM, not bower, so copy it over
     'jshint',
     (grunt.option('as')) ? 'versionFromParam' : 'shell:versionFromTag',
-
-    // build the main file
-    'concat:main',
-    'copy:concat_to_final',
+    
+    // create the inject.js file and it's min version
+    'includereplace:inject',
+    'copy:inject_to_final',
     'copy:final_to_main',
-    'copy:concat_to_uglify',
+    'copy:inject_to_uglify',
     'uglify:file',
     'copy:uglify_to_final',
     'copy:final_to_main_min',
-
-    // build the plugin file
-    'concat:plugins',
-    'copy:concat_to_final',
-    'copy:final_to_plugins',
-    'copy:concat_to_uglify',
-    'uglify:file',
-    'copy:uglify_to_final',
-    'copy:final_to_plugins_min',
-  
-    // build the relay file
+    
+    // copy the support files
+    'copy:legal_to_legal',
+    'copy:plugins_to_plugins',
+    
+    // create the relay file
     'concat:relayHtml',
     'copy:concat_to_final',
     'copy:final_to_relay',
-  
-    // copy the legal files over
-    'copy:legal_to_legal',
-  
+    
     // clean up
     'clean:tmp'
   ]);
@@ -465,10 +449,10 @@ module.exports = function (grunt) {
     'shell:git_tag_release',
     'log:pushInstructions'
   ]);
-
+  
   grunt.registerTask('test', [
     'build',
-    'express:generic',
+    'express:server',
     'express:alternate',
     'qunit',
     'express-stop'
@@ -481,8 +465,13 @@ module.exports = function (grunt) {
     'express-stop'
   ]);
   
+  grunt.registerTask('itest', [
+    'build',
+    'server'
+  ]);
+
   grunt.registerTask('server', [
-    'express:generic',
+    'express:server',
     'express:alternate',
     'log:server',
     'express-keepalive'

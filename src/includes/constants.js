@@ -17,14 +17,9 @@ express or implied.   See the License for the specific language
 governing permissions and limitations under the License.
 */
 
-/**
- * a test to determine if this is the IE engine (needed
- * for source in eval commands)
- * @constant
- */
-var IS_IE = eval('/*@cc_on!@*/false');
-
 // sniffs and assigns UA tests
+var IS_IE = eval('/*@cc_on!@*/false');
+var IS_GK = false;
 (function () {
   var ua = navigator.userAgent.toLowerCase();
   if (ua.indexOf('gecko') !== -1) {
@@ -55,19 +50,6 @@ var LSCACHE_SCHEMA_VERSION_STRING = '!version';
  * @constant
  */
 var LSCACHE_APP_KEY_STRING = '!appCacheKey';
-
-/**
- * AMD modules that are deferred have this set
- * as their "arg[0]" as a way to flag
- * @constant
- */
-var AMD_DEFERRED = '###DEFERRED###';
-
-/**
- * the namespace for inject() that is publicly reachable
- * @constant
- */
-var NAMESPACE = 'Inject';
 
 /**
  * Regex for identifying things that end in *.js or *.txt
@@ -257,3 +239,8 @@ var HAS_LOCAL_STORAGE = (function () {
   }
 })();
 
+/**
+ * this regex is used to strip leading slashes
+ * @constant
+ */
+var LEADING_SLASHES_REGEX = /^\/+/g;

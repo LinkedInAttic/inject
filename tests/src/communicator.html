@@ -31,43 +31,51 @@ governing permissions and limitations under the License.
   <script type="text/javascript" src="../../src/includes/constants.js"></script>
   <script type="text/javascript" src="../../src/includes/globals.js"></script>
   <script type="text/javascript" src="../../src/xd/postmessage.js"></script>
-  <script type="text/javascript" src="../../src/lib/fiber.js"></script>
+  <script type="text/javascript" src="../resources/fiber.js"></script>
   <script type="text/javascript" src="../../src/communicator.js"></script>
   <script type="text/javascript">
-    var lscache;
-    var Executor;
-
-    module("Communicator", {
-      setup: function() {
-        userConfig.fileExpires = 1000;
-        lscache = {
-          setBucket: function() {},
-          flush: function() {},
-          set: sinon.stub(),
-          get: sinon.stub()
-        };
-        Executor = {
-          flagModuleAsBroken: function() {}
-        };
-
-        lscache.get.returns('foo');
+    function makeLscache() {
+      return {
+        setBucket: function() {},
+        flush: function() {},
+        set: sinon.stub(),
+        get: sinon.stub()
+      };
+    }
+    function makeConfig() {
+      return {
+        relayFile: null,
+        expires: 1234
       }
-    });
+    }
+
+    module("Communicator");
 
     test("Scaffolding", function() {
-      ok(typeof(Communicator) === "object", "object exists");
+      ok(typeof(Communicator) === "function", "can instantiate");
     });
 
     asyncTest("Simple Get", 1, function() {
-      Communicator.get("sampleModule", location.href, function(results) {
+      var lscache = makeLscache();
+      lscache.get.returns('foo');
+      var c = new Communicator({
+        config: makeConfig(),
+        lscache: lscache
+      });
+      c.get("sampleModule", location.href, function(results) {
         ok(results, "got results from communicator");
         start();
       });
     });
 
     asyncTest("Get uses lscache", 2, function() {
+      var lscache = makeLscache();
       lscache.get.returns(null);
-      Communicator.get("sampleModule", location.href, function(results) {
+      var c = new Communicator({
+        config: makeConfig(),
+        lscache: lscache
+      });
+      c.get("sampleModule", location.href, function(results) {
         ok(lscache.get.called, "lscache get called");
         ok(lscache.set.called, "lscache set called");
         start();
@@ -75,9 +83,14 @@ governing permissions and limitations under the License.
     });
 
     asyncTest("in lscache doesn't redownload", 2, function() {
+      var lscache = makeLscache();
       lscache.get.withArgs(location.href).returns("content");
+      var c = new Communicator({
+        config: makeConfig(),
+        lscache: lscache
+      });
 
-      Communicator.get("sampleModule", location.href, function(results) {
+      c.get("sampleModule", location.href, function(results) {
         ok(lscache.get.called, "lscache get called");
         ok(!lscache.set.called, "lscache set not called");
         start();
@@ -85,8 +98,15 @@ governing permissions and limitations under the License.
     });
 
     asyncTest("setExpires 0 means lscache is never called", 2, function() {
-      userConfig.fileExpires = 0;
-      Communicator.get("sampleModule", location.href, function(results) {
+      var config = makeConfig();
+      var lscache = makeLscache();
+      config.expires = 0;
+      var c = new Communicator({
+        config: config,
+        lscache: lscache
+      });
+
+      c.get("sampleModule", location.href, function(results) {
         ok(!lscache.get.called, "lscache get never called");
         ok(!lscache.set.called, "lscache set never called");
         start();

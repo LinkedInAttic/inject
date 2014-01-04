@@ -1,5 +1,5 @@
 // source-mapping
 asyncTest("Enable Source Map (if supported)", 1, function() {
-  Inject.enableDebug("sourceMap");
+  Inject.enableSourceUrls();
   require.run("sourcemap");
 });

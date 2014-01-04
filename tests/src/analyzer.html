@@ -29,7 +29,8 @@ governing permissions and limitations under the License.
 <body>
   <div id="qunit"></div>
   <script type="text/javascript" src="../../src/includes/constants.js"></script>
-  <script type="text/javascript" src="../../src/lib/fiber.js"></script>
+  <script type="text/javascript" src="../../src/includes/globals.js"></script>
+  <script type="text/javascript" src="../resources/fiber.js"></script>
   <script type="text/javascript" src="../../src/analyzer.js"></script>
   <script type="text/javascript">
     module("Analyzer");
@@ -57,11 +58,12 @@ governing permissions and limitations under the License.
     var sampleFunction = "function foo(one, two, three) {};";
 
     test("Scaffolding", function() {
-      ok(typeof(Analyzer) === "object", "object exists");
+      ok(typeof(Analyzer) === "function", "object exists");
     });
 
     test("extraction", function() {
-      var result = Analyzer.extractRequires(requireSampleCode);
+      var analyzer = new Analyzer({});
+      var result = analyzer.extractRequires(requireSampleCode);
       var item;
 
       var okRegex = /expected/g;
@@ -85,7 +87,8 @@ governing permissions and limitations under the License.
     });
 
     test("#177 define syntax messes up with arrays", function() {
-      var result = Analyzer.extractRequires(requireSampleCode_177);
+      var analyzer = new Analyzer({});
+      var result = analyzer.extractRequires(requireSampleCode_177);
       equal(result.length, 3, "only three modules identified");
     });
   </script>

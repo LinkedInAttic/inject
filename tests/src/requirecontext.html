@@ -30,61 +30,87 @@ governing permissions and limitations under the License.
   <div id="qunit"></div>
   <script type="text/javascript" src="../../src/includes/constants.js"></script>
   <script type="text/javascript" src="../../src/includes/globals.js"></script>
-  <script type="text/javascript" src="../../src/lib/fiber.js"></script>
-  <script type="text/javascript" src="../../src/treenode.js"></script>
+  <script type="text/javascript" src="../resources/fiber.js"></script>
   <script type="text/javascript" src="../../src/requirecontext.js"></script>
   <script type="text/javascript">
-    var Analyzer = null;
-    var Executor = null;
-    var TreeRunner = null;
-    var RulesEngine = null;
-    module('RequireContext', {
-      teardown : function() {
-        Executor = null;
-        Analyzer = null;
-      }
-    });
+  
+    function makeConfig() {
+      return {
+        moduleRoot: null
+      };
+    }
+    
+    function makeRulesEngine() {
+      return {
+        resolveModule: sinon.stub(),
+        resolveFile: sinon.stub()
+      };
+    }
+    
+    function makeRequireContext() {
+      return {
+        qualifiedId: sinon.stub(),
+        createRequire: sinon.stub()
+      };
+    }
+    
+    function makeExecutor() {
+      var ex = {
+        getModule: sinon.stub(),
+        getCurrentExecutingAMD: sinon.stub(),
+        createModule: sinon.stub()
+      };
+      ex.createModule.returns({});
+      return ex;
+    }
+    
+    function makeAnalyzer() {
+      return {
+        stripBuiltins: sinon.stub()
+      };
+    }
+    
+    function makeTreeNode() {
+      var tn = function() {
+        this.data = {};
+        this.addChild = sinon.stub();
+        this.parents = sinon.stub();
+      };
+      return tn;
+    }
+    
+    function makeTreeRunner() {
+      var tr = function() {
+        this.execute = sinon.stub();
+        this.download = sinon.stub();
+        
+        this.execute.callsArg(0);
+        this.download.callsArg(0);
+      };
+      return tr;
+    }
+  
+    module('RequireContext');
 
     test("Scaffolding", function() {
       ok( typeof (RequireContext) === "function", "object exists as instantiable");
     });
 
-    test("#234: CommonJS scan does not occur if dependencies are set", function() {
-      Analyzer = {
-        extractRequires : sinon.spy(),
-      };
-      Executor = {
-        isModuleDefined : sinon.stub().returns(false),
-        flagModuleAsDefined : sinon.stub()
-      };
-      TreeRunner = function() {};
-      TreeRunner.prototype = {
-        download: sinon.stub(),
-        execute: sinon.stub()
-      };
-      RulesEngine = {
-        resolveFile: sinon.stub(),
-        resolveModule: sinon.stub()
-      };
-
-      var rq = new RequireContext();
-      sinon.stub(rq, "ensure").returns(true);
-
-      rq.define("foo", [], function() {
-        var fooName = 'foo';
-
-        // the bar module should not be loaded per the AMD spec
-        try {
-          fooName = require('bar').name;
-        } catch(e) {
-        }
-
-        return {
-          name : fooName
-        };
+    test("define() sanity check", function() {
+      var analyzer = makeAnalyzer();
+      var rc = new RequireContext({
+        TreeRunner: makeTreeRunner(),
+        TreeNode: makeTreeNode(),
+        analyzer: analyzer,
+        executor: makeExecutor(),
+        requireContext: makeRequireContext(),
+        rulesEngine: makeRulesEngine(),
+        config: makeConfig()
       });
-
-      ok(!Analyzer.extractRequires.called, 'extractRequires is not called');
+      
+      rc.define('foo', [], function() {
+        ok(true, 'able to run callback for a defined module');
+      });
     });
   </script>
 </body>
