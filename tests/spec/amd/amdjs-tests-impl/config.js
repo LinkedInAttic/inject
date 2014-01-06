@@ -5,7 +5,9 @@ Either clear the browser cookies or programatically run localStorage.clear();
 */
 function config(pathObj) {
   for(var key in pathObj.paths) {
-    Inject.addRule(key, {path:pathObj.paths[key]});
+    Inject.addFileRule(key, function() {
+      return pathObj.paths[key] + '/';
+    });
   }
 }
 

@@ -19,10 +19,9 @@ governing permissions and limitations under the License.
 /**
  * Below are the "sandboxing" wrappers for our commonJS implementation
  * we reach in to the inject namespace (default "Inject"), into the
- * INTERNAL object, which contains methods reachable during the eval.
+ * _ object, which contains methods reachable during the eval.
  * Markers in the file for dynamic content are identified with
- * __DOUBLE_UNDERSCORES__, while internal variables are marked with
- * __singleUnderscores
+ * __DOUBLE_UNDERSCORES__
  * @file This file contains the commonJS header and footers
 **/
 
@@ -33,13 +32,13 @@ governing permissions and limitations under the License.
     @global
 */
 var commonJSHeader = (['',
-  '__INJECT_NS__.INTERNAL.executor.__FUNCTION_ID__.fn = function() {',
+  '__REACHABLE_PATH__.fn = function() {',
   '  with (window) {',
-  '    __INJECT_NS__.INTERNAL.executor.__FUNCTION_ID__.innerFn = function() {',
+  '    __REACHABLE_PATH__.innerFn = function() {',
   '      // id: __MODULE_ID__ uri: __MODULE_URI__',
-  '      var module = __INJECT_NS__.INTERNAL.executor.__FUNCTION_ID__.module,',
-  '          require = __INJECT_NS__.INTERNAL.executor.__FUNCTION_ID__.require,',
-  '          define = __INJECT_NS__.INTERNAL.executor.__FUNCTION_ID__.define,',
+  '      var module = __REACHABLE_PATH__.module,',
+  '          require = __REACHABLE_PATH__.require,',
+  '          define = __REACHABLE_PATH__.define,',
   '          exports = module.exports;',  
   '      try{module.undefined_function();}catch(e){module.__error_line = e;}' // NOTE: Must be on one line for clean error reporting
   ]).join('\n');
@@ -51,16 +50,16 @@ var commonJSHeader = (['',
     @global
 */
 var commonJSFooter = (['',
-  '      __INJECT_NS__.INTERNAL.executor.__FUNCTION_ID__.module = module;',
+  '      __REACHABLE_PATH__.module = module;',
   '    };',
-  '    __INJECT_NS__.INTERNAL.defineExecutingModuleAs("__MODULE_ID__", "__MODULE_URI__");',
+  '    __REACHABLE_PATH__.defineExecutingModuleAs("__MODULE_ID__", "__MODULE_URI__");',
   '    try {',
-  '      __INJECT_NS__.INTERNAL.executor.__FUNCTION_ID__.innerFn.call(__INJECT_NS__.INTERNAL.executor.__FUNCTION_ID__.module);',
+  '      __REACHABLE_PATH__.innerFn.call(__REACHABLE_PATH__.module);',
   '    }',
   '    catch (__EXCEPTION__) {',
-  '      __INJECT_NS__.INTERNAL.executor.__FUNCTION_ID__.module.__error = __EXCEPTION__;',
+  '      __REACHABLE_PATH__.module.__error = __EXCEPTION__;',
   '    }',
-  '    __INJECT_NS__.INTERNAL.undefineExecutingModule();',
+  '    __REACHABLE_PATH__.undefineExecutingModule();',
   '  }',
   '};',
   '']).join('\n');

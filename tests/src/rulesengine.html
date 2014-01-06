@@ -30,29 +30,32 @@ governing permissions and limitations under the License.
   <div id="qunit"></div>
   <script type="text/javascript" src="../../src/includes/constants.js"></script>
   <script type="text/javascript" src="../../src/includes/globals.js"></script>
-  <script type="text/javascript" src="../../src/lib/fiber.js"></script>
+  <script type="text/javascript" src="../resources/fiber.js"></script>
   <script type="text/javascript" src="../../src/rulesengine.js"></script>
   <script type="text/javascript">
 
-    module("RulesEngine", {
-      setup: function() {
-        RulesEngine.clearRules();
-        userConfig = {
-          moduleRoot: "http://example.com/",
-          useSuffix: true
-        };
-      }
-    });
+    function makeConfig() {
+      return {
+        moduleRoot: null,
+        baseDir: null, // (unused)
+        suffixes: true
+      };
+    }
+
+    module("RulesEngine");
 
     test("Scaffolding", function() {
-      ok(typeof(RulesEngine) === "object", "object exists");
+      ok(typeof(RulesEngine) === "function", "can instantiate");
     });
 
     test("Identifier Resolution", function() {
-      equal(RulesEngine.resolveModule("foo", "one/two/three/four/five"), "foo", "resolves to root");
-      equal(RulesEngine.resolveModule("./foo", "one/two/three/four/five"), "one/two/three/four/foo", "./ is same dir as five");
-      equal(RulesEngine.resolveModule("../foo", "one/two/three/four/five"), "one/two/three/foo", "../ is same dir as four");
-      equal(RulesEngine.resolveModule("/foo", "one/two/three/four/five"), "foo", "/ resolves to foo (cannot use leading slash in module paths)");
+      var re = new RulesEngine({
+        config: makeConfig()
+      })
+      equal(re.resolveModule("foo", "one/two/three/four/five"), "foo", "resolves to root");
+      equal(re.resolveModule("./foo", "one/two/three/four/five"), "one/two/three/four/foo", "./ is same dir as five");
+      equal(re.resolveModule("../foo", "one/two/three/four/five"), "one/two/three/foo", "../ is same dir as four");
+      equal(re.resolveModule("/foo", "one/two/three/four/five"), "foo", "/ resolves to foo (cannot use leading slash in module paths)");
 
     });
 
@@ -62,39 +65,45 @@ governing permissions and limitations under the License.
       var baseUL    = "http://example.com/a/b/c/d/";
       var baseUUL   = "http://example.com/a/b/c/";
       var baseSlash = "http://example.com/a/b/c/d/e/";
+      
+      var config = makeConfig();
+      config.moduleRoot = rootUrl;
+      var re = new RulesEngine({
+        config: config
+      });
 
-      RulesEngine.addRule("one", "ONE");
-      RulesEngine.addRule(/two/, "TWO");
-      RulesEngine.addRule(/three/, {
+      re.addRule("one", "ONE");
+      re.addRule(/two/, "TWO");
+      re.addRule(/three/, {
         path: "THREE"
       });
-      RulesEngine.addRule(/four/, {
+      re.addRule(/four/, {
         path: function(path) {
           return path.toUpperCase();
         }
       });
-      RulesEngine.addRule(/match/, {
+      re.addRule(/match/, {
         path: function(path) {
           return path.replace(/match/g, "MATCH");
         }
       });
 
-      equal(RulesEngine.resolveFile("one"), rootUrl+"ONE.js");
-      equal(RulesEngine.resolveFile("two"), rootUrl+"TWO.js");
-      equal(RulesEngine.resolveFile("three"), rootUrl+"THREE.js");
-      equal(RulesEngine.resolveFile("four"), rootUrl+"FOUR.js");
+      equal(re.resolveFile("one"), rootUrl+"ONE.js");
+      equal(re.resolveFile("two"), rootUrl+"TWO.js");
+      equal(re.resolveFile("three"), rootUrl+"THREE.js");
+      equal(re.resolveFile("four"), rootUrl+"FOUR.js");
 
-      equal(RulesEngine.resolveFile("http://absolute.com"), "http://absolute.com");
+      equal(re.resolveFile("http://absolute.com"), "http://absolute.com");
 
-      equal(RulesEngine.resolveFile("./match", baseUrl), baseUL+"MATCH.js");
-      equal(RulesEngine.resolveFile("../match", baseUrl), baseUUL+"MATCH.js");
+      equal(re.resolveFile("./match", baseUrl), baseUL+"MATCH.js");
+      equal(re.resolveFile("../match", baseUrl), baseUUL+"MATCH.js");
 
       // tests two rules at once
-      equal(RulesEngine.resolveFile("./match", baseSlash), baseSlash+"MATCH.js", 'base with a slash');
+      equal(re.resolveFile("./match", baseSlash), baseSlash+"MATCH.js", 'base with a slash');
 
       // disable the auto-extension
-      userConfig.useSuffix = false;
-      equal(RulesEngine.resolveFile("one"), rootUrl+"ONE");
+      config.suffixes = false;
+      equal(re.resolveFile("one"), rootUrl+"ONE");
 
     });
 
@@ -102,30 +111,49 @@ governing permissions and limitations under the License.
       var root = "http://resolved.com/src/to/modules/foo.js";
       var baseDir = "http://resolved.com/src/to/modules";
 
-      userConfig.moduleRoot = root;
+      var config = makeConfig();
+      config.moduleRoot = root;
+      var re = new RulesEngine({
+        config: config
+      });
 
-      equal(RulesEngine.resolveFile("sample", root), baseDir+"/sample.js", "basic URL resolution");
-      equal(RulesEngine.resolveFile("http://absolutepath.com/absolute/path.js", root), "http://absolutepath.com/absolute/path.js", "absolute path resolution");
-      equal(RulesEngine.resolveFile("../a/b", baseDir+"/one/two/foo.js"), baseDir+"/one/a/b.js", "relative path resolution");
+      equal(re.resolveFile("sample", root), baseDir+"/sample.js", "basic URL resolution");
+      equal(re.resolveFile("http://absolutepath.com/absolute/path.js", root), "http://absolutepath.com/absolute/path.js", "absolute path resolution");
+      equal(re.resolveFile("../a/b", baseDir+"/one/two/foo.js"), baseDir+"/one/a/b.js", "relative path resolution");
     });
 
     test("#169 moduleRoot shouldn't force a slash", function() {
-      root = "http://example.com?file=";
+      var root = "http://example.com?file=";
+      
+      var config = makeConfig();
+      config.moduleRoot = root;
+      var re = new RulesEngine({
+        config: config
+      });
 
-      equal(RulesEngine.resolveFile("sample", root), "http://example.com?file=sample.js", "no auto-slash insertion with query strings");
+      equal(re.resolveFile("sample", root), "http://example.com?file=sample.js", "no auto-slash insertion with query strings");
     });
 
     test("#167 useSuffix config needs to be respected", function() {
-      userConfig.moduleRoot = "http://example.com?file=";
-      userConfig.useSuffix = false;
+      var root = "http://example.com?file=";
+      var config = makeConfig();
+      config.moduleRoot = root;
+      config.suffixes = false;
+      var re = new RulesEngine({
+        config: config
+      });
 
-      equal(RulesEngine.resolveFile("sample", root), "http://example.com?file=sample", "no auto suffix insertion");
+      equal(re.resolveFile("sample", root), "http://example.com?file=sample", "no auto suffix insertion");
     });
 
     test("addRule weights respected", function() {
       var order = ["one", "two", "three"];
+      
+      var re = new RulesEngine({
+        config: makeConfig()
+      });
 
-      RulesEngine.addRule("example", {
+      re.addRule("example", {
         weight: 100,
         path: function() {
           order.shift(); // two, three
@@ -133,7 +161,7 @@ governing permissions and limitations under the License.
         }
       });
 
-      RulesEngine.addRule("example", {
+      re.addRule("example", {
         weight: 23,
         path: function() {
           // if right: four, three
@@ -143,7 +171,7 @@ governing permissions and limitations under the License.
         }
       });
 
-      RulesEngine.addRule("example", {
+      re.addRule("example", {
         weight: 67,
         path: function() {
           order.shift(); // three
@@ -151,57 +179,64 @@ governing permissions and limitations under the License.
         }
       });
 
-      RulesEngine.resolveFile("example");
+      re.resolveFile("example");
       equal(order.join(', '), "four, three", "rules were ran in weight order: 100, 67, 23");
     });
 
     test("URL Resolution using addFileRule", function() {
+      var config = makeConfig();
+      var re = new RulesEngine({
+        config: config
+      });
+      
       var rootUrl   = "http://example.com/";
       var baseUrl   = "http://example.com/a/b/c/d/e";
       var baseUL    = "http://example.com/a/b/c/d/";
       var baseUUL   = "http://example.com/a/b/c/";
       var baseSlash = "http://example.com/a/b/c/d/e/";
+      
+      config.moduleRoot = rootUrl;
 
-      RulesEngine.addFileRule("one", "ONE");
-      RulesEngine.addFileRule(/two/, "TWO");
-      RulesEngine.addFileRule(/three/, "THREE");
-      RulesEngine.addFileRule(/four/, function(path) {
+      re.addFileRule("one", "ONE");
+      re.addFileRule(/two/, "TWO");
+      re.addFileRule(/three/, "THREE");
+      re.addFileRule(/four/, function(path) {
         return path.toUpperCase();
       });
-      RulesEngine.addFileRule(/match/, function(path) {
+      re.addFileRule(/match/, function(path) {
         return path.replace(/match/g, "MATCH");
       });
 
-      equal(RulesEngine.resolveFile("one"), rootUrl+"ONE.js");
-      equal(RulesEngine.resolveFile("two"), rootUrl+"TWO.js");
-      equal(RulesEngine.resolveFile("three"), rootUrl+"THREE.js");
-      equal(RulesEngine.resolveFile("four"), rootUrl+"FOUR.js");
+      equal(re.resolveFile("one"), rootUrl+"ONE.js");
+      equal(re.resolveFile("two"), rootUrl+"TWO.js");
+      equal(re.resolveFile("three"), rootUrl+"THREE.js");
+      equal(re.resolveFile("four"), rootUrl+"FOUR.js");
 
-      equal(RulesEngine.resolveFile("http://absolute.com"), "http://absolute.com");
+      equal(re.resolveFile("http://absolute.com"), "http://absolute.com");
 
-      equal(RulesEngine.resolveFile("./match", baseUrl), baseUL+"MATCH.js");
-      equal(RulesEngine.resolveFile("../match", baseUrl), baseUUL+"MATCH.js");
+      equal(re.resolveFile("./match", baseUrl), baseUL+"MATCH.js");
+      equal(re.resolveFile("../match", baseUrl), baseUUL+"MATCH.js");
 
       // tests two rules at once
-      equal(RulesEngine.resolveFile("./match", baseSlash), baseSlash+"MATCH.js", 'base with a slash');
-
-      // disable the auto-extension
-      userConfig.useSuffix = false;
-      equal(RulesEngine.resolveFile("one"), rootUrl+"ONE");
+      equal(re.resolveFile("./match", baseSlash), baseSlash+"MATCH.js", 'base with a slash');
     });
 
 
     test("weights respected in addFileRule", function() {
+      var re = new RulesEngine({
+        config: makeConfig()
+      });
+      
       var order = ["one", "two", "three"];
 
-      RulesEngine.addFileRule("example", function() {
+      re.addFileRule("example", function() {
         order.shift(); // two, three
         return "example";
       }, {
         weight: 100
       });
 
-      RulesEngine.addFileRule("example", function() {
+      re.addFileRule("example", function() {
         // if right: four, three
         // if wrong: four, two, three
         order.unshift("four");
@@ -209,22 +244,26 @@ governing permissions and limitations under the License.
         weight: 23
       });
 
-      RulesEngine.addFileRule("example", function() {
+      re.addFileRule("example", function() {
         order.shift(); // three
         return "example";
       }, {
         weight: 67
       });
 
-      RulesEngine.resolveFile("example");
+      re.resolveFile("example");
       equal(order.join(', '), "four, three", "rules were ran in weight order: 100, 67, 23");
     });
 
     test("Adding Package Aliases", function() {
-      RulesEngine.addPackage('foo/main', 'foo');
-      RulesEngine.addPackage('foo/main', 'bar');
-      equal(RulesEngine.getOriginalName('foo'), 'foo/main', 'able to retrieve alias');
-      equal(RulesEngine.getAliases('foo/main').join(', '), 'foo, bar', 'original mappings are stored');
+      var re = new RulesEngine({
+        config: makeConfig()
+      });
+      
+      re.addPackage('foo/main', 'foo');
+      re.addPackage('foo/main', 'bar');
+      equal(re.getOriginalName('foo'), 'foo/main', 'able to retrieve alias');
+      equal(re.getAliases('foo/main').join(', '), 'foo, bar', 'original mappings are stored');
     });
   </script>
 </body>

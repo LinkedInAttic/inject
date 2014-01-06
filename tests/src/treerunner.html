@@ -30,153 +30,163 @@ governing permissions and limitations under the License.
   <div id="qunit"></div>
   <script type="text/javascript" src="../../src/includes/constants.js"></script>
   <script type="text/javascript" src="../../src/includes/globals.js"></script>
-  <script type="text/javascript" src="../../src/lib/fiber.js"></script>
+  <script type="text/javascript" src="../resources/fiber.js"></script>
   <script type="text/javascript" src="../../src/lib/flow.js"></script>
   <script type="text/javascript" src="../../src/lib/lscache.js"></script>
   <script type="text/javascript" src="../../src/treenode.js"></script>
   <script type="text/javascript" src="../../src/treerunner.js"></script>
   <script type="text/javascript">
-    var Executor;
-    var RulesEngine;
-    var Communicator;
-    var Analyzer;
-    var RequireContext;
+    var executorModules = {};
+
+    function makeRulesEngine() {
+      return {
+        resolveModule: sinon.stub(),
+        resolveFile: sinon.stub(),
+        getContentRules: sinon.stub(),
+        getFetchRules: sinon.stub()
+      };
+    }
+    
+    function makeExecutor() {
+      return {
+        createModule: sinon.stub(),
+        runModule: sinon.stub(),
+        getModule: sinon.stub()
+      };
+    }
+    
+    function makeRequireContext() {
+      return {
+        qualifiedId: sinon.stub()
+      };
+    }
+    
+    function makeCommunicator() {
+      return {
+        get: sinon.stub()
+      };
+    }
+    
+    function makeAnalyzer() {
+      return {
+        extractRequires: sinon.stub()
+      };
+    }
+    
+    function makeTreeRunner() {
+      return TreeRunner;
+    }
+    
+    function makeExecutorModule(name) {
+      executorModules[name] = {
+        exports: {}
+      };
+      return executorModules[name];
+    }
+    
+    function getExecutorModule(name) {
+      return executorModules[name];
+    }
+    
+    function clearExecutorModules() {
+      executorModules = {};
+    }
+    
+    function makeDefaultTreeEnv() {
+      /* Sample Tree To Build
+              root
+              /  \
+             A    B
+            / \   |
+           B   C  D
+           |      |
+           D      A
+           |     / \
+          (A)  (B)  C
+
+        ["(a)", "d", "b", "c", "a", "(b)", "c", "a", "d", "b", "ROOT"]
+      */
+      var rootJS = "root.js contents";
+      var rootUrl = "http://example.com/root.js";
+      var rootRequires = ["a", "b"];
+
+      var aJS = "a.js contents";
+      var aUrl = "http://example.com/a.js";
+      var aRequires = ["b", "c"];
+
+      var bJS = "b.js contents";
+      var bUrl = "http://example.com/b.js";
+      var bRequires = ["d"];
+
+      var cJS = "c.js contents";
+      var cUrl = "http://example.com/c.js";
+      var cRequires = [];
+
+      var dJS = "d.js contents";
+      var dUrl = "http://example.com/d.js";
+      var dRequires = ["a"];
+      
+      var env = {};
+      
+      var analyzer = makeAnalyzer();
+      analyzer.extractRequires.withArgs(rootJS).returns(rootRequires);
+      analyzer.extractRequires.withArgs(aJS).returns(aRequires);
+      analyzer.extractRequires.withArgs(bJS).returns(bRequires);
+      analyzer.extractRequires.withArgs(cJS).returns(cRequires);
+      analyzer.extractRequires.withArgs(dJS).returns(dRequires);
+      env.analyzer = analyzer;
+
+      var communicator = makeCommunicator();
+      communicator.get.withArgs("root", rootUrl).callsArgWith(2, rootJS);
+      communicator.get.withArgs("a", aUrl).callsArgWith(2, aJS);
+      communicator.get.withArgs("b", bUrl).callsArgWith(2, bJS);
+      communicator.get.withArgs("c", cUrl).callsArgWith(2, cJS);
+      communicator.get.withArgs("d", dUrl).callsArgWith(2, dJS);
+      env.communicator = communicator;
+      
+      var executor = makeExecutor();
+      executor.createModule.withArgs('root').returns(makeExecutorModule('root'));
+      executor.createModule.withArgs('a').returns(makeExecutorModule('a'));
+      executor.createModule.withArgs('b').returns(makeExecutorModule('b'));
+      executor.createModule.withArgs('c').returns(makeExecutorModule('c'));
+      executor.createModule.withArgs('d').returns(makeExecutorModule('d'));
+      executor.getModule.returns(null);
+      executor.runModule.returns({});
+      env.executor = executor;
+
+      var requireContext = makeRequireContext();
+      requireContext.qualifiedId.returns('');
+      env.requireContext = requireContext;
+      
+      var rulesEngine = makeRulesEngine();
+      rulesEngine.resolveModule.withArgs("root").returns("root");
+      rulesEngine.resolveModule.withArgs("a").returns("a");
+      rulesEngine.resolveModule.withArgs("b").returns("b");
+      rulesEngine.resolveModule.withArgs("c").returns("c");
+      rulesEngine.resolveModule.withArgs("d").returns("d");
+      rulesEngine.resolveFile.withArgs("root").returns(rootUrl);
+      rulesEngine.resolveFile.withArgs("a").returns(aUrl);
+      rulesEngine.resolveFile.withArgs("b").returns(bUrl);
+      rulesEngine.resolveFile.withArgs("c").returns(cUrl);
+      rulesEngine.resolveFile.withArgs("d").returns(dUrl);
+      rulesEngine.getFetchRules.returns([]);
+      rulesEngine.getContentRules.returns([]);
+      env.rulesEngine = rulesEngine;
+      
+      var treeRunner = makeTreeRunner();
+      env.TreeRunner = treeRunner;
+      
+      return env;
+    }
 
     module("TreeRunner", {
       setup: function() {
-        /* Sample Tree To Build
-                root
-                /  \
-               A    B
-              / \   |
-             B   C  D
-             |      |
-             D      A
-             |     / \
-            (A)  (B)  C
-
-          ["(a)", "d", "b", "c", "a", "(b)", "c", "a", "d", "b", "ROOT"]
-        */
-
-        var rootJS = "root.js contents";
-        var rootUrl = "http://example.com/root.js";
-        var rootRequires = ["a", "b"];
-
-        var aJS = "a.js contents";
-        var aUrl = "http://example.com/a.js";
-        var aRequires = ["b", "c"];
-
-        var bJS = "b.js contents";
-        var bUrl = "http://example.com/b.js";
-        var bRequires = ["d"];
-
-        var cJS = "c.js contents";
-        var cUrl = "http://example.com/c.js";
-        var cRequires = [];
-
-        var dJS = "d.js contents";
-        var dUrl = "http://example.com/d.js";
-        var dRequires = ["a"];
-
-        // stub our rules engine
-        var stubResolveModule = sinon.stub();
-        var stubResolveFile = sinon.stub();
-        var stubGetFetchRules = sinon.stub();
-        var stubGetContentRules = sinon.stub();
-        
-        stubResolveModule.withArgs("root").returns("root");
-        stubResolveModule.withArgs("a").returns("a");
-        stubResolveModule.withArgs("b").returns("b");
-        stubResolveModule.withArgs("c").returns("c");
-        stubResolveModule.withArgs("d").returns("d");
-
-        stubResolveFile.withArgs("root").returns(rootUrl);
-        stubResolveFile.withArgs("a").returns(aUrl);
-        stubResolveFile.withArgs("b").returns(bUrl);
-        stubResolveFile.withArgs("c").returns(cUrl);
-        stubResolveFile.withArgs("d").returns(dUrl);
-
-        stubGetFetchRules.returns([]);
-
-        stubGetContentRules.returns([]);
-        
-        RulesEngine = {
-          resolveModule: stubResolveModule,
-          resolveFile: stubResolveFile,
-          getFetchRules: stubGetFetchRules,
-          getContentRules: stubGetContentRules
-        };
-
-        // stub our communicator calls
-        var stubGet = sinon.stub();
-        stubGet.withArgs("root", rootUrl).callsArgWith(2, rootJS);
-        stubGet.withArgs("a", aUrl).callsArgWith(2, aJS);
-        stubGet.withArgs("b", bUrl).callsArgWith(2, bJS);
-        stubGet.withArgs("c", cUrl).callsArgWith(2, cJS);
-        stubGet.withArgs("d", dUrl).callsArgWith(2, dJS);
-        Communicator = {
-          get: stubGet
-        };
-
-        // stub our analyzer calls
-        var stubExtractRequires = sinon.stub();
-        stubExtractRequires.withArgs(rootJS).returns(rootRequires);
-        stubExtractRequires.withArgs(aJS).returns(aRequires);
-        stubExtractRequires.withArgs(bJS).returns(bRequires);
-        stubExtractRequires.withArgs(cJS).returns(cRequires);
-        stubExtractRequires.withArgs(dJS).returns(dRequires);
-        Analyzer = {
-          extractRequires: stubExtractRequires
-        };
-        
-        // stub the require context
-        var stubQualifiedId = sinon.stub();
-        stubQualifiedId.returns('');
-        RequireContext = {
-          qualifiedId: stubQualifiedId
-        };
-        
-        // stub our executor calls
-        var stubCreateModule = sinon.stub();
-        var stubGetModule = sinon.stub();
-        var stubSetModule = sinon.stub();
-        var stubRunModule = sinon.stub();
-
-        stubCreateModule.withArgs('root').returns({
-          exports: {}
-        });
-        stubCreateModule.withArgs('a').returns({
-          exports: {}
-        });
-        stubCreateModule.withArgs('b').returns({
-          exports: {}
-        });
-        stubCreateModule.withArgs('c').returns({
-          exports: {}
-        });
-        stubCreateModule.withArgs('d').returns({
-          exports: {}
-        });
-        
-        stubGetModule.returns(null);
-
-        stubRunModule.returns({
-          exports: {}
-        });
-        
-        Executor = {
-          createModule: stubCreateModule,
-          getModule: stubGetModule,
-          runModule: stubRunModule
-        };
-      },
-      teardown: function() {
-        RulesEngine = Analyzer = Communicator = Executor = RequireContext = null;
+        clearExecutorModules();
       }
     });
 
     test("Scaffolding", function() {
-      ok(typeof(TreeRunner) === "function", "object exists");
+      ok(typeof(TreeRunner) === "function", "can instantiate");
     });
 
     asyncTest("Download a Tree", 1, function() {
@@ -187,7 +197,7 @@ governing permissions and limitations under the License.
       root.data.resolvedId = '';
       root.data.resolvedUrl = '';
 
-      var tr = new TreeRunner(root);
+      var tr = new TreeRunner(makeDefaultTreeEnv(), root);
       tr.download(function() {
         var items = root.postOrder();
         var output = [];
@@ -211,15 +221,17 @@ governing permissions and limitations under the License.
       var runCount = 5; // one per unique module
       var root = new TreeNode();
 
+      var env = makeDefaultTreeEnv();
+
       root.data.originalId = 'root';
       root.data.resolvedId = '';
       root.data.resolvedUrl = '';
 
-      var tr = new TreeRunner(root);
+      var tr = new TreeRunner(env, root);
       tr.download(function() {
         tr.execute(function() {
-          equal(Executor.createModule.callCount, defaultCount, 'createModule tried once for every module');
-          equal(Executor.runModule.callCount, runCount, 'runModule invoked only for non-circular items');
+          equal(env.executor.createModule.callCount, defaultCount, 'createModule tried once for every module');
+          equal(env.executor.runModule.callCount, runCount, 'runModule invoked only for non-circular items');
           start();
         });
       });
