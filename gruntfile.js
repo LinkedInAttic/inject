@@ -259,6 +259,20 @@ module.exports = function (grunt) {
         dest: './tmp'
       }
     },
+    
+    /**
+     * qunit: runs our test suite via phantomjs
+     */
+    qunit: {
+      all: {
+        options: {
+          timeout: 20000,
+          urls: [
+            'http://localhost:4000/tests/index.html'
+          ]
+        }
+      }
+    },
 
     /**
      * express: runs our server for examples
