@@ -1,0 +1,2 @@
+exports.Foo = function () {
+};

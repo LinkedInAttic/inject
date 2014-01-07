@@ -1,0 +1,15 @@
+Yep, coming soon
+
+Front Matter Explained:
+
+version - identifies what version of the docs these are for
+if the latest version (global) doesn't match, we can attempt to take them
+to the latest documentation
+version: 0.4.x
+
+injectOnly - identifies this API as inject only. Useful for separating
+what is a spec and what isn't
+injectOnly: true
+
+spec - identify a specification this adhears to
+spec: CommonJS

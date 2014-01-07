@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+
+<html>
+
+  <head>
+
+    <title>
+      
+        Building Inject From Source | Inject
+      
+    </title>
+
+    <link rel="stylesheet" href="/assets/css/main.css" type="text/css" />
+    
+
+    
+    <meta property="og:title" content="Building Inject From Source | Inject"/>
+    <meta name="title" content="Building Inject From Source | Inject" />
+    
+
+    
+    <meta property="og:description" content="CommonJS and AMD dependency management designed for the browser."/>
+    <meta name="description" content="CommonJS and AMD dependency management designed for the browser." />
+    
+
+    
+
+    <link rel="shortcut icon" type="image/ico" href="/assets/images/favicon_v3.ico">
+
+    <!-- tracking -->
+    <!-- todo: use LinkedIn GA Tracking -->
+    
+    <!-- google custom search engine -->
+    <script>
+      (function() {
+        var cx = '007454891895213570750:rm0mkbrbrmi';
+        var gcse = document.createElement('script'); gcse.type = 'text/javascript'; gcse.async = true;
+        gcse.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') +
+            '//www.google.com/cse/cse.js?cx=' + cx;
+        var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(gcse, s);
+      })();
+    </script>
+    <!-- end google custom search engine -->
+    
+  </head>
+
+  <body>
+
+    <div class="global-header">
+
+      <div class="top-nav">
+        <div class="wrapper">
+          <h2 class="logo">
+            <a title="Home" href="http://www.injectjs.com">&nbsp;</a>
+          </h2>
+          <h2 class="head-title">
+            Inject
+          </h2>
+        </div>
+      </div>
+
+      <div class="bottom-nav">
+
+        <div class="wrapper">
+
+          <ul class="nav" role="navigation">
+            <li class="tab ">
+              <a href="/" class="tab-name"><span>Home</span></a>
+            </li>
+            <li class="tab ">
+              <a href="/download" class="tab-name"><span>Download</span></a>
+            </li>
+            <li class="tab selected">
+              <a href="/docs" class="tab-name"><span>Documentation</span></a>
+            </li>
+            <li class="tab ">
+              <a href="/news" class="tab-name"><span>News</span></a>
+            </li>
+            <li class="tab">
+              <a href="http://github.com/linkedin/inject" class="tab-name"><span>GitHub</span></a>
+            </li>
+          </ul>
+
+          <div class="global-search">
+            <div class="gcse">
+              <gcse:searchbox-only></gcse:searchbox-only>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+
+    <div class="content">
+
+      
+      <div class="row">
+        <div id="content-header" class="full">
+          <div class="desc">
+            <div class="source">
+              <a class="button" href="/download/0.5.x/inject-0.5.0.tgz">Download Inject v0.5.0</a>
+              <div><a href="/download">See all versions</a></div>
+            </div>
+            <span class='short'>Dependency Management Got Awesome</span>
+            <span class='long'>CommonJS and AMD Compliant dependency loader for modern web apps</span>
+          </div>
+        </div>
+      </div>
+      
+
+      
+
+<div class="row">
+  <div id="content-main" class="grid16 first">
+    <div class="pad">
+      
+        <div class="markdown-body">
+          <h1>Building Inject From Source</h1>
+          
+            <div class="doc_version">0.4.0, 0.4.1</div>
+          
+          <hr>
+
+          
+            
+          
+            
+          
+          
+          
+          
+          <p>Want to build your very own copy of Inject? Perhaps you&rsquo;d like to contribute to the project or maybe just tinker around under the hood. Whatever the reason, these steps will get you started quickly.</p>
+
+<h3 id="grab-a-copy-of-the-source">1. Grab a Copy of the Source</h3>
+
+<p>Clone or fork Inject from GitHub:</p>
+
+<p><a href="https://github.com/linkedin/inject">https://github.com/linkedin/inject</a></p>
+
+<h3 id="install-dependencies">2. Install Dependencies</h3>
+
+<p>You&rsquo;ll need to gather a few npm packages and submodules to build and test successfully. Before we begin, install Node.js and npm if you don&rsquo;t have them already:</p>
+
+<ul>
+  <li><a href="http://nodejs.org/">Node.js</a></li>
+  <li><a href="http://npmjs.org/">npm</a></li>
+</ul>
+
+<p>Now you can install the required dependencies. Navigate to the root directory and issue this command to install the necessary npm packages:</p>
+
+<div class="highlight"><pre><code class="sh">npm install
+</code></pre></div>
+
+<p>To properly test your Inject build, you&rsquo;ll need to install a few submodules. While still in the root directory:</p>
+
+<div class="highlight"><pre><code class="sh">git submodule init
+git submodule update
+</code></pre></div>
+
+<h3 id="build">3. Build</h3>
+
+<p>After all the dependencies have been successfully installed, you&rsquo;re ready to build Inject. Simply run this command:</p>
+
+<div class="highlight"><pre><code class="sh">node makefile.js build
+</code></pre></div>
+
+<p>To customize your build, these options are available:</p>
+
+<div class="highlight"><pre><code class="sh">--noxd
+Disables cross domain support <span class="o">(</span>default is <span class="nb">false</span><span class="o">)</span>
+
+--nolegacy
+Disables ie7 support <span class="o">(</span>default is <span class="nb">false</span><span class="o">)</span>
+
+--output
+Set an output directory <span class="o">(</span>default is ./artifacts<span class="o">)</span>
+</code></pre></div>
+
+<h3 id="viewing-examples-and-testing-your-build">4. Viewing Examples and Testing Your Build</h3>
+
+<p>The Inject source package includes a collection of usage examples and a suit of tests that cover Inject-specific integration, the CommonJS specification, and the AMD tests. These can be accessed by starting the server:</p>
+
+<div class="highlight"><pre><code class="sh">node makefile.js server
+</code></pre></div>
+
+<p>Hit http://localhost:4000/tests/ to run the test suite. It&rsquo;s a good idea to run the tests after building to verify your copy is in working order.</p>
+
+<h3 id="integrating-with-travis-ci">5. Integrating with Travis CI</h3>
+
+<p><a href="http://travis-ci.org">Travis-CI</a> is a continuous integration server that works with GitHub. Every time you push to &ldquo;origin&rdquo;, a build can be kicked off to validate your code is working as expected. Set up Travis-CI as follows:</p>
+
+<ol>
+  <li>Visit http://travis-ci.org in your browser.</li>
+  <li>Sign in with your GitHub credentials and authorize Travis-CI.</li>
+  <li>Visit <a href="http://travis-ci.org/profile">your Travis-CI Profile</a>.</li>
+  <li>If none of your repositories are listed, click &ldquo;Sync now&rdquo;.</li>
+  <li>In the list of your repositories, flip the on/off switch for <em>yourname/inject</em>.</li>
+  <li>Click the wrench to configure your service hook and verify everything looks good (you can use our .travis.yml file).</li>
+  <li>From the settings page, give the &ldquo;Test Hook&rdquo; a click. It will kick off a Travis-CI build for you and you can verify things are behaving correctly. Anything comes up, open an issue and we&rsquo;ll try and get things working for you.</li>
+</ol>
+
+        </div>
+        
+          
+        
+          
+        
+      
+    </div>
+  </div>
+
+  <div id="content-sidebar" class="grid8">
+    <div class="pad">
+      
+        
+      
+        
+      
+      <div class="block">
+        <p>
+          Other Versions:<br/>
+          
+            
+              [<a href="/docs/0.5.0/index.html">0.5.0</a>]
+            
+          
+            
+              [<a href="/docs/0.4.x/index.html">0.4.x</a>]
+            
+          
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+    </div>
+
+    <div class="global-footer">
+      <div class="wrapper">
+        <div class="footer">
+          &copy; 2013 LinkedIn Corporation
+        </div>
+      </div>
+    </div>
+
+    
+
+  </body>
+
+</html>

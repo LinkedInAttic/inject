@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>AMD Test Suite</title>
+  <link rel="stylesheet" href="/util/all.css" />
+</head>
+<body class="{{HASTESTS}}">
+  <p>To run, select an implementation library from the list:</p>
+  <select id="select-framework">
+    <option value="">Select a Framework</option>
+    {{FRAMEWORK_OPTIONS}}
+  </select>
+  <span class="or">or</span>
+  <button id="run-tests">Run {{FRAMEWORK}} Tests</button>
+
+  {{FRAMEWORK_LIB}}
+  {{FRAMEWORK_CONFIG}}
+
+  <h2>Tests <span class="or">for {{FRAMEWORK}}</span></h2>
+
+  <ul id="tests">
+    <li>Anonymous Tests
+      <ul>
+        <li class="anon" id="anon_circular"><a href="/{{FRAMEWORK}}/anon_circular/test.html">
+          anon_circular: test for circular references in anonymous modules
+        </a></li>
+        <li class="anon" id="anon_relative"><a href="/{{FRAMEWORK}}/anon_relative/test.html">
+          anon_relative: test for relative module ids in anonymous modules
+        </a></li>
+        <li class="anon" id="anon_simple"><a href="/{{FRAMEWORK}}/anon_simple/test.html">
+          anon_simple: basic AMD functionality for anonymous modules
+        </a></li>
+      </ul>
+    </li>
+
+    <li>Basic Tests
+      <ul>
+        <li class="basic" id="basic_circular"><a href="/{{FRAMEWORK}}/basic_circular/test.html">
+          basic_circular: basic AMD functionality for named AMD modules
+        </a></li>
+        <li class="basic" id="basic_define"><a href="/{{FRAMEWORK}}/basic_define/test.html">
+          basic_define: ensure define and define.amd are working properly
+        </a></li>
+        <li class="basic" id="basic_require"><a href="/{{FRAMEWORK}}/basic_require/test.html">
+          basic_require: ensure the AMD require() interface is working properly
+        </a></li>
+        <li class="basic" id="basic_simple"><a href="/{{FRAMEWORK}}/basic_simple/test.html">
+          basic_simple: amd simple includes for named AMD modules
+        </a></li>
+      </ul>
+    </li>
+
+    <li>funcString and CommonJS
+      <ul>
+        <li class="funcString" id="cjs_define"><a href="/{{FRAMEWORK}}/cjs_define/test.html">
+          cjs_define: tests for anonymous wrapped CommonJS Modules
+        </a></li>
+      </ul>
+    </li>
+
+    <li>named define() and CommonJS
+      <ul>
+        <li class="namedWrapped" id="cjs_named"><a href="/{{FRAMEWORK}}/cjs_named/test.html">
+          cjs_named: tests for named wrapped CommonJS Modules
+        </a></li>
+      </ul>
+    </li>
+
+    <li>"map" in config (DRAFT)
+      <ul>
+        <li class="mapConfig" id="config_map"><a href="/{{FRAMEWORK}}/config_map/test.html">
+          config_map: test for the "map" functionality of Common Config
+        </a></li>
+        <li class="mapConfig" id="config_map_star"><a href="/{{FRAMEWORK}}/config_map_star/test.html">
+          config_map_star: test for the "map" functionality of Common Config with wildcards
+        </a></li>
+        <li class="mapConfig" id="config_map_star_adapter"><a href="/{{FRAMEWORK}}/config_map_star_adapter/test.html">
+          config_map_star_adapter: test for the "map" functionality of Common Config with wildcards and adapters
+        </a></li>
+      </ul>
+    </li>
+
+    <li>"module" in config (DRAFT)
+      <ul>
+        <li class="moduleConfig" id="config_module"><a href="/{{FRAMEWORK}}/config_module/test.html">
+          config_module: test for the "module" functionality of Common Config with module
+        </a></li>
+      </ul>
+    </li>
+
+    <li>"packages" in config (DRAFT)
+      <ul>
+        <li class="packagesConfig" id="config_packages"><a href="/{{FRAMEWORK}}/config_packages/test.html">
+          config_packages: test for the "packages" functionality of Common Config
+        </a></li>
+      </ul>
+    </li>
+
+    <li>"paths" in config (DRAFT)
+      <ul>
+        <li class="pathsConfig" id="config_paths"><a href="/{{FRAMEWORK}}/config_paths/test.html">
+          config_paths: test for the "path" functionality of Common Config
+        </a></li>
+      </ul>
+    </li>
+
+    <li>"shim" in config (DRAFT)
+      <ul>
+        <li class="shimConfig" id="config_shim"><a href="/{{FRAMEWORK}}/config_shim/test.html">
+          config_shim: test for the "shim" functionality of Common Config
+        </a></li>
+      </ul>
+    </li>
+
+    <li>Plugin Support
+      <ul>
+        <li class="plugins" id="plugin_double"><a href="/{{FRAMEWORK}}/plugin_double/test.html">
+          plugin_double: test the double include of plugins
+        </a></li>
+        <li class="plugins" id="plugin_normalize"><a href="/{{FRAMEWORK}}/plugin_normalize/test.html">
+          plugin_normalize: test the normalization rules for AMD plugins
+        </a></li>
+      </ul>
+    </li>
+
+    <li>Dynamic Plugin Support
+      <ul>
+        <li class="pluginsDynamic" id="plugin_dynamic"><a href="/{{FRAMEWORK}}/plugin_dynamic/test.html">
+          plugin_dynamic: test the include of plugins that are designed to be dynamic (non-cached)
+        </a></li>
+        <li class="pluginsDynamic" id="plugin_dynamic_string"><a href="/{{FRAMEWORK}}/plugin_dynamic_string/test.html">
+          plugin_dynamic_string: test the include of plugins that are dynamic (non-cached) and also pulled in from a require()
+        </a></li>
+        <li class="pluginsDynamic" id="plugin_fromtext"><a href="/{{FRAMEWORK}}/plugin_fromtext/test.html">
+          plugin_fromtext: test the "fromText" functionality of the AMD plugin
+        </a></li>
+      </ul>
+    </li>
+  </ul>
+
+  <script src="/util/all.js"></script>
+</body>
+</html>

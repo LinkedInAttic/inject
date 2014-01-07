@@ -1,0 +1,12 @@
+Test Analyzer directly:
+  "( define('bar', [], function(bar) { require('bar') }) )"
+
+RequireContext
+  if dependencies was explicitly set to [], don't call extractRequires
+
+Analyzer
+  + isAMD(string)
+
+TreeDownloader
+  Only extract and use requires if !amd
+

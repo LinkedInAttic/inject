@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+
+<html>
+
+  <head>
+
+    <title>
+      
+        Accouncing Inject 0.4.2 | Inject
+      
+    </title>
+
+    <link rel="stylesheet" href="/assets/css/main.css" type="text/css" />
+    
+
+    
+    <meta property="og:title" content="Accouncing Inject 0.4.2 | Inject"/>
+    <meta name="title" content="Accouncing Inject 0.4.2 | Inject" />
+    
+
+    
+    <meta property="og:description" content="CommonJS and AMD dependency management designed for the browser."/>
+    <meta name="description" content="CommonJS and AMD dependency management designed for the browser." />
+    
+
+    
+
+    <link rel="shortcut icon" type="image/ico" href="/assets/images/favicon_v3.ico">
+
+    <!-- tracking -->
+    <!-- todo: use LinkedIn GA Tracking -->
+    
+    <!-- google custom search engine -->
+    <script>
+      (function() {
+        var cx = '007454891895213570750:rm0mkbrbrmi';
+        var gcse = document.createElement('script'); gcse.type = 'text/javascript'; gcse.async = true;
+        gcse.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') +
+            '//www.google.com/cse/cse.js?cx=' + cx;
+        var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(gcse, s);
+      })();
+    </script>
+    <!-- end google custom search engine -->
+    
+  </head>
+
+  <body>
+
+    <div class="global-header">
+
+      <div class="top-nav">
+        <div class="wrapper">
+          <h2 class="logo">
+            <a title="Home" href="http://www.injectjs.com">&nbsp;</a>
+          </h2>
+          <h2 class="head-title">
+            Inject
+          </h2>
+        </div>
+      </div>
+
+      <div class="bottom-nav">
+
+        <div class="wrapper">
+
+          <ul class="nav" role="navigation">
+            <li class="tab ">
+              <a href="/" class="tab-name"><span>Home</span></a>
+            </li>
+            <li class="tab ">
+              <a href="/download" class="tab-name"><span>Download</span></a>
+            </li>
+            <li class="tab ">
+              <a href="/docs" class="tab-name"><span>Documentation</span></a>
+            </li>
+            <li class="tab selected">
+              <a href="/news" class="tab-name"><span>News</span></a>
+            </li>
+            <li class="tab">
+              <a href="http://github.com/linkedin/inject" class="tab-name"><span>GitHub</span></a>
+            </li>
+          </ul>
+
+          <div class="global-search">
+            <div class="gcse">
+              <gcse:searchbox-only></gcse:searchbox-only>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+
+    <div class="content">
+
+      
+      <div class="row">
+        <div id="content-header" class="full">
+          <div class="desc">
+            <div class="source">
+              <a class="button" href="/download/0.5.x/inject-0.5.0.tgz">Download Inject v0.5.0</a>
+              <div><a href="/download">See all versions</a></div>
+            </div>
+            <span class='short'>Dependency Management Got Awesome</span>
+            <span class='long'>CommonJS and AMD Compliant dependency loader for modern web apps</span>
+          </div>
+        </div>
+      </div>
+      
+
+      
+
+<div class="row">
+  <div id="content-main" class="grid16 first news">
+    <div class="pad">
+      
+        <div class="markdown-body author">
+          
+<div class="author_pic">
+  <a href="http://github.com/mattpowell" title="See Matt Powell on Github">
+    <img src="https://m1-s.licdn.com/mpr/mpr/shrink_60_60/p/3/000/095/332/3c93849.jpg">
+  </a>
+</div>
+
+
+          
+          
+<h1>Accouncing Inject 0.4.2 </h1>
+
+
+
+<p class="post-details"><span class="dtstart"><span class="value-title" title="2013-04-08T00:00:00-07:00"></span>08 April 2013</span>  &bull; By: Matt Powell</p>
+
+
+          <p>Get this release over at the <a href="/download">downloads</a> page</p>
+
+<h2 id="overview">Overview</h2>
+<p>0.4.2 is a library upgrade and bug fix release. This release improves stability, performance, and security. It also includes updates to the build system and testing infrastructure.</p>
+
+<h2 id="new-features">New Features</h2>
+<ul>
+  <li>No new features</li>
+</ul>
+
+<h2 id="dev-changes">Dev Changes</h2>
+<ul>
+  <li>Inject was converted to <a href="http://gruntjs.com/">Grunt.js</a> for build tasks. The new system doesn&rsquo;t rely on a custom makefile or tasks anymore. The <a href="http://www.injectjs.com/docs/0.4.x/howto/build_from_source.html">build-from-source</a> how-to was updated with the latest instructions.</li>
+  <li>The AMD JS Tests are now converted to a system similar to the CommonJS compliance tests. This reduces total test execution time, and allows all tests to be ran in a single framework.</li>
+  <li>Travis-CI runs are more stable as a result of the conversion to Grunt and the new AMD tests.</li>
+</ul>
+
+<h2 id="tickets-from-this-release">Tickets From This Release</h2>
+<ul>
+  <li><a href="https://github.com/linkedin/inject/pull/240">#240</a> Bug fix for undefined/null return value of Executor.getCurrentExecutingAMD</li>
+  <li><a href="https://github.com/linkedin/inject/issues/245">#245</a> undefined/null return value of Executor.getCurrentExecutingAMD</li>
+  <li><a href="https://github.com/linkedin/inject/pull/239">#239</a> Convert AMDJS Unit Tests to New Format</li>
+  <li><a href="https://github.com/linkedin/inject/issues/219">#219</a> Travis CI Failing in Master for Unknown Reason</li>
+  <li><a href="https://github.com/linkedin/inject/issues/218">#218</a> Upgrade Link.JS to Latest Version</li>
+  <li><a href="https://github.com/linkedin/inject/issues/216">#216</a> Issues parsing coffee-script.js and xregexp-all.js</li>
+  <li><a href="https://github.com/linkedin/inject/issues/203">#203</a> easyXDM Upgrade</li>
+  <li><a href="https://github.com/linkedin/inject/issues/158">#158</a> Upgrade Class.js to Fiber.js</li>
+</ul>
+
+        </div>
+        <hr />
+        <p>We welcome feedback and discussion on all news items on our <a href="https://groups.google.com/forum/#!forum/injectjs">Google Groups Mailing List</a></p>
+      
+    </div>
+  </div>
+
+  <div id="content-sidebar" class="grid8">
+    <div class="pad">
+      <div class="block">
+        <h3>Recent Posts</h3>
+        
+        
+        
+  
+    
+  
+  
+    
+  
+  <ul class="articles-list">
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+
+    
+      
+        
+          
+          <li>
+            <a href="/news/2013/08/05/inject_0_5_0_released.html">
+              Accouncing Inject 0.5.0
+              
+            </a>
+          </li>
+        
+      
+    
+      
+        
+          
+          <li>
+            <a href="/news/2013/04/08/inject_0_4_2_released.html" class="page-current">
+              Accouncing Inject 0.4.2
+              
+            </a>
+          </li>
+        
+      
+    
+      
+        
+          
+          <li>
+            <a href="/news/2013/01/31/inject_0_4_1_released.html">
+              Inject 0.4.1 Available
+              
+            </a>
+          </li>
+        
+      
+    
+      
+        
+          
+          <li>
+            <a href="/news/2013/01/04/inject_0_4_1rc3_available.html">
+              Inject 0.4.1rc3 available
+              
+            </a>
+          </li>
+        
+      
+    
+      
+        
+          
+          <li>
+            <a href="/news/2012/12/19/inject-0_4_1rc2_available.html">
+              Inject 0.4.1rc2 available
+              
+            </a>
+          </li>
+        
+      
+    
+  </ul>
+
+
+
+
+
+
+      </div>
+    </div>
+  </div>
+</div>
+
+
+    </div>
+
+    <div class="global-footer">
+      <div class="wrapper">
+        <div class="footer">
+          &copy; 2013 LinkedIn Corporation
+        </div>
+      </div>
+    </div>
+
+    
+
+  </body>
+
+</html>

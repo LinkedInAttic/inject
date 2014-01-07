@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+
+<html>
+
+  <head>
+
+    <title>
+      
+        How Inject Works | Inject
+      
+    </title>
+
+    <link rel="stylesheet" href="/assets/css/main.css" type="text/css" />
+    
+
+    
+    <meta property="og:title" content="How Inject Works | Inject"/>
+    <meta name="title" content="How Inject Works | Inject" />
+    
+
+    
+    <meta property="og:description" content="CommonJS and AMD dependency management designed for the browser."/>
+    <meta name="description" content="CommonJS and AMD dependency management designed for the browser." />
+    
+
+    
+
+    <link rel="shortcut icon" type="image/ico" href="/assets/images/favicon_v3.ico">
+
+    <!-- tracking -->
+    <!-- todo: use LinkedIn GA Tracking -->
+    
+    <!-- google custom search engine -->
+    <script>
+      (function() {
+        var cx = '007454891895213570750:rm0mkbrbrmi';
+        var gcse = document.createElement('script'); gcse.type = 'text/javascript'; gcse.async = true;
+        gcse.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') +
+            '//www.google.com/cse/cse.js?cx=' + cx;
+        var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(gcse, s);
+      })();
+    </script>
+    <!-- end google custom search engine -->
+    
+  </head>
+
+  <body>
+
+    <div class="global-header">
+
+      <div class="top-nav">
+        <div class="wrapper">
+          <h2 class="logo">
+            <a title="Home" href="http://www.injectjs.com">&nbsp;</a>
+          </h2>
+          <h2 class="head-title">
+            Inject
+          </h2>
+        </div>
+      </div>
+
+      <div class="bottom-nav">
+
+        <div class="wrapper">
+
+          <ul class="nav" role="navigation">
+            <li class="tab ">
+              <a href="/" class="tab-name"><span>Home</span></a>
+            </li>
+            <li class="tab ">
+              <a href="/download" class="tab-name"><span>Download</span></a>
+            </li>
+            <li class="tab selected">
+              <a href="/docs" class="tab-name"><span>Documentation</span></a>
+            </li>
+            <li class="tab ">
+              <a href="/news" class="tab-name"><span>News</span></a>
+            </li>
+            <li class="tab">
+              <a href="http://github.com/linkedin/inject" class="tab-name"><span>GitHub</span></a>
+            </li>
+          </ul>
+
+          <div class="global-search">
+            <div class="gcse">
+              <gcse:searchbox-only></gcse:searchbox-only>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+
+    <div class="content">
+
+      
+      <div class="row">
+        <div id="content-header" class="full">
+          <div class="desc">
+            <div class="source">
+              <a class="button" href="/download/0.5.x/inject-0.5.0.tgz">Download Inject v0.5.0</a>
+              <div><a href="/download">See all versions</a></div>
+            </div>
+            <span class='short'>Dependency Management Got Awesome</span>
+            <span class='long'>CommonJS and AMD Compliant dependency loader for modern web apps</span>
+          </div>
+        </div>
+      </div>
+      
+
+      
+
+<div class="row">
+  <div id="content-main" class="grid16 first">
+    <div class="pad">
+      
+        <div class="markdown-body">
+          <h1>How Inject Works</h1>
+          
+            <div class="doc_version">0.4.x</div>
+          
+          <hr>
+
+          
+            
+          
+            
+          
+          
+          
+          
+          <p>This is a guide that explains the various components of Inject, how they relate to each other, and what exactly happens when you type <code>require</code>, <code>require.ensure</code>, or many other Inject invocations into your JavaScript.</p>
+
+<h3 id="entry-points">Entry Points</h3>
+
+<p>The CommonJS and AMD specifications set up a series of global functions that dictate ways to &ldquo;include&rdquo; modules. These &ldquo;entry points&rdquo; are by default in the browser:</p>
+
+<ul>
+  <li>require(&lsquo;moduleName&rsquo;)</li>
+  <li>require.ensure([dependencies], callback(require) {})</li>
+  <li>require.run(&lsquo;moduleName&rsquo;)</li>
+  <li>define(&lsquo;moduleName&rsquo;, [dependencies], callback([dependencies]&hellip;) {})</li>
+</ul>
+
+<p>The most common use case is to start your program. We recommend the use of either <code>require.ensure</code> or <code>define</code>, depending on if your framework is mostly CommonJS or AMD. Chances are, if you haven&rsquo;t heard of AMD and are coming from Node.JS, you&rsquo;ll want to just use <code>require.ensure</code></p>
+
+<div class="highlight"><pre><code class="js"><span class="nx">require</span><span class="p">.</span><span class="nx">ensure</span><span class="p">([</span><span class="s1">&#39;lib/jquery&#39;</span><span class="p">,</span> <span class="s1">&#39;lib/backbone&#39;</span><span class="p">,</span> <span class="s1">&#39;myapp&#39;</span><span class="p">],</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">require</span><span class="p">)</span> <span class="p">{</span>
+  <span class="kd">var</span> <span class="nx">$</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;jquery&#39;</span><span class="p">);</span>
+  <span class="kd">var</span> <span class="nx">BB</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;backbone&#39;</span><span class="p">).</span><span class="nx">Backbone</span><span class="p">;</span>
+  <span class="kd">var</span> <span class="nx">app</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;myapp&#39;</span><span class="p">);</span>
+<span class="p">});</span>
+</code></pre></div>
+
+<p>What just happened? Inject looked at the dependencies listed in <code>require.ensure</code>, downloaded them, executed them, and made them available to your callback function (the second parameter). You can then ask for those dependencies by saying <code>require('moduleName')</code> and store the variable locally.</p>
+
+<p>In this example, there is no global jQuery, no global Backbone&hellip; everything is self contained. There&rsquo;s no variable leakage and the world of Browser based JavaScript just got a little bit better.</p>
+
+<p>If this was all you were hoping for to sleep a bit better at night, I recommend jumping back to the <a href="/docs/0.4.x/howto/quick_start.html">Quick Start Guide</a>. If you&rsquo;re wanting to know more about Inject&rsquo;s internals and how your request is formed, keep reading.</p>
+
+<h3 id="how-a-request-flows-through-inject">How A Request Flows Through Inject</h3>
+
+<p>Starting from the Entry Points listed above, Inject will</p>
+
+<ol>
+  <li>Look for your list of dependencies</li>
+  <li>Convert the dependencies into fully qualified Module Identifiers</li>
+  <li>Turn those same Module Identifiers into URLs</li>
+  <li>Download the contents of those URLs</li>
+  <li>Apply any pointcuts to the resulting contents</li>
+  <li>When all contents have been downloaded and massaged, execute the JavaScript we have, starting at the lowest level dependency</li>
+  <li>Return control back to your calling code</li>
+</ol>
+
+<p>The remainder of this article breaks down these 7 steps, the <code>Objects</code> in play, and the roles they serve.</p>
+
+<h3 id="your-entry-point-is-actually-a-requirecontext">Your Entry Point is Actually a RequireContext</h3>
+
+<p>The <code>RequireContext</code> is actually the touch point whenever you use an Entry Point function. A context defines your current location in your module heirarchy. This is because <a href="/docs/0.4.x/howto/resolve_modules.html">module identifiers must resolve relative to their parents</a>. When you first touch an entry point, the Module Identifier is <code>null</code>.</p>
+
+<p>Invoking an entry point starts the creation of a Tree, expressed by our <code>TreeDownloader</code> and <code>TreeNode</code>. In Inject, we must construct a list of dependencies so that we know both what must be downloaded and what must be executed.</p>
+
+<h3 id="treedownloader-and-the-loop">TreeDownloader and &ldquo;The Loop&rdquo;</h3>
+
+<p><code>TreeDownloader</code> is a bit of a misnomer. It&rsquo;s really the &ldquo;TreeController&rdquo;, but it hasn&rsquo;t been renamed yet. The <code>TreeDownloader</code> is a very sequential piece of code.</p>
+
+<ol>
+  <li>Given a node&hellip;</li>
+  <li>Ask the <code>RulesEngine</code> to convert this node&rsquo;s ID into a Module Identifier</li>
+  <li>Ask the <code>RulesEngine</code> to convert this Module Identifier into a URL</li>
+  <li>Ask the <code>Communicator</code> to download the URL (async)</li>
+  <li>(onComplete) ask the <code>RulesEngine</code> for a collection of pointcuts</li>
+  <li>Apply these pointcuts to the contents</li>
+  <li>Ask the <code>Analyzer</code> to provide a list of dependencies</li>
+  <li>For each dependency&hellip;</li>
+  <li>Create a new <code>TreeNode</code> for the dependency</li>
+  <li>Return to (1) &ldquo;Given a node&hellip;&rdquo; to resolve that branch of the tree</li>
+  <li>When all dependencies are resolved</li>
+  <li>Ask <code>Executor</code> to Execute a given collection of <code>TreeNodes</code></li>
+  <li>(onComplete) fire the requested callback</li>
+</ol>
+
+<p>The ultimate artifact that comes out of <code>TreeDownloader</code> is a complete Tree:</p>
+
+<p><img src="/docs/0.4.x/howto/how_inject_works/tree.png" alt="A Dependency Tree" title="A Dependency Tree" /></p>
+
+<p>In the above tree, we&rsquo;ve built out all our dependencies and downloaded all the code. When <code>TreeDownloader</code> encountered &ldquo;B&rdquo; for the second time, it traversed parents and found that it was &ldquo;Circular&rdquo;. Circular nodes won&rsquo;t execute their first time through (or else you&rsquo;d be caught in a perpetual execution loop), and they are automatically assigned zero dependencies (or else you&rsquo;d be downloading forever).</p>
+
+<h3 id="post-download-the-executor">Post-Download, the Executor</h3>
+
+<p>The <code>Executor</code> does the heavy lifting of running code for Inject. It receives a <code>TreeNode</code> with children from the <code>TreeDownloader</code>, and must:</p>
+
+<ol>
+  <li>Get a post-order traversal of the tree</li>
+  <li>Starting with the lowest level dependencies, wrap the code in a sandbox</li>
+  <li>Write out and execute the JavaScript</li>
+  <li>Collect the exports</li>
+  <li>When the tree is executed, fire the callback</li>
+</ol>
+
+<p>A <a href="http://en.wikipedia.org/wiki/Tree_traversal#Example">Post-Order Traversal</a> allows us to walk the tree in array form, starting from the lowest level dependencies. An item with zero dependencies is safe to run, whereas an item with &gt; 0 dependencies must have all dependencies executed before using it.</p>
+
+<p>The sandboxing code is a template that puts in place a CommonJS scaffold:</p>
+
+<ul>
+  <li>expose a global &ldquo;module&rdquo; and &ldquo;exports&rdquo; object</li>
+  <li>create a &ldquo;require&rdquo; function that uses <code>RequireContext</code> to ensure relative modules resolve properly</li>
+  <li>wrap the code in a function to prevent variable leakage</li>
+  <li>test for syntax errors</li>
+  <li>Run the code within the scope of the &ldquo;module&rdquo; object via a <code>fn.call()</code> invocation</li>
+</ul>
+
+<p>Once <code>eval()</code> runs over the newly sandboxed code, the module (and its exports) can be retrieved from the sandbox. These results are cached in the <code>Executor</code> for later, and are supplied on demand when there is a call to <code>require()</code> from within a <code>RequireContext</code>.</p>
+
+<h3 id="rules-and-the-rulesengine">Rules and the RulesEngine</h3>
+
+<p>The <code>RulesEngine</code> is the storage location for rules, and contains methods for applying those rules to either a Module Identifier or a URL. It currently contains:</p>
+
+<ul>
+  <li>A method that lets you add more rules to the engine</li>
+  <li>The ability to sort the rules based on weight</li>
+  <li>Functionality to convert a Module Identifier into a Resolved Module Identifier (with relative paths solved)</li>
+  <li>The ability to convert a Resolved Module Identifier into a URL</li>
+</ul>
+
+<p>It doesn&rsquo;t depend on any additional modules.</p>
+
+<h3 id="the-analyzer">The Analyzer</h3>
+
+<p>The <code>Analyzer</code> serves as an adaptor for the <a href="https://github.com/calyptus/link.js">Link.JS</a> library. It can extract a set of dependencies from a given text string (a file). It is also able to remove &ldquo;builtin&rdquo; globals such as <code>require</code>, <code>module</code>, and <code>exports</code> from a list of dependencies.</p>
+
+<p>Originally, <code>Analyzer</code> contained the regexes needed to parse out the dependencies. Given the brittle nature of these regexes, they were replaced with Link.JS in 0.4.1 and the object exists for organizational purposes.</p>
+
+<h3 id="the-communicator">The Communicator</h3>
+
+<p>The <code>Communicator</code> is responsible for the retrival and (possible) downloading of files. It is asynchronous in nature. It makes use of two libraries:</p>
+
+<ul>
+  <li><a href="http://easyxdm.net/">easyXDM</a> for cross-domain communication</li>
+  <li><a href="https://github.com/pamelafox/lscache">lscache</a> to provide a simple LRU on top of localStorage</li>
+</ul>
+
+<p>The <code>Communicator</code> is the authority on a file&rsquo;s content. When asked to retrieve a URL, it will first check within localStorage. If there is no file in localStorage, it will then check if the request is cross-domain. If the request is <strong>not</strong> cross-domain, it will make a local xmlHttpRequest for the file&rsquo;s contents and return that. Otherwise, it will use easyXDM to establish a cross-domain channel to the remote server for downloading the file.</p>
+
+<p>easyXDM requires two pieces: an html file on the remote server and a SWF file on the remote server in a known location. Both of these dependencies are solved by using the <a href="/docs/0.4.x/api/inject.setcrossdomain.html">Inject.setCrossDomain</a> method.</p>
+
+<h3 id="injectcores-purpose">InjectCore&rsquo;s Purpose</h3>
+
+<p>The <code>InjectCore</code> object is primarily used for configuration. Most global methods under the <code>Inject.*</code> namespace reference methods in <code>InjectCore</code>. It may also reach in to configure specific libraries such as easyXDM and lscache.</p>
+
+<h3 id="other-files">Other Files</h3>
+
+<p>There are other files that play in to inject. This serves as a partial reference to those files:</p>
+
+<ul>
+  <li><strong>compat/___</strong>: Contains the IE7 compatibility layer files. A localStorage emulator using UserData, a set of shimmable content for IE, and &ldquo;the smallest image resource ever&rdquo;. Also includes a copy of JSON for browsers that don&rsquo;t have the support.</li>
+  <li><strong>includes/___</strong>: Contains constants, global variables, configuration for libraries, and licenses</li>
+  <li><strong>lib/___</strong>: Our libraries</li>
+  <li><strong>plugins/__</strong>: Sample plugins we ship with</li>
+  <li><strong>xd/__</strong>: The files needed by the <code>Communicator</code> if you are using the cross-domain functionality</li>
+</ul>
+
+        </div>
+        
+          
+        
+          
+            
+              <div id="disqus_thread"></div>
+              <script type="text/javascript">
+                  /* * * CONFIGURATION VARIABLES: EDIT BEFORE PASTING INTO YOUR WEBPAGE * * */
+                  var disqus_shortname = 'injectjs';
+                  var disqus_developer = 0;
+                  var disqus_identifier = '/docs/0.4.x/howto/how_inject_works';
+                  var disqus_url = 'http://www.injectjs.com/docs/0.4.x/howto/how_inject_works.html';
+
+                  
+                  var disqus_title = 'Inject v0.4.x documentation: How Inject Works';
+                  
+
+                  /* * * DON'T EDIT BELOW THIS LINE * * */
+                  (function() {
+                      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                      dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+                  })();
+              </script>
+              <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+              <a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            
+          
+        
+      
+    </div>
+  </div>
+
+  <div id="content-sidebar" class="grid8">
+    <div class="pad">
+      
+        
+      
+        
+          <div class="block">
+            <ul>
+              
+                <li><b>API</b>
+                  <ul>
+                    
+                      
+                        
+                          <li><a href="/docs/0.4.x/api/define.html" style="font-weight:normal">define</a></li>
+                        
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                        
+                          <li><a href="/docs/0.4.x/api/inject.addrule.html" style="font-weight:normal">Inject.addRule</a></li>
+                        
+                      
+                    
+                      
+                    
+                      
+                        
+                          <li><a href="/docs/0.4.x/api/inject.clearcache.html" style="font-weight:normal">Inject.clearCache</a></li>
+                        
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                        
+                          <li><a href="/docs/0.4.x/api/inject.plugin.html" style="font-weight:normal">Inject.plugin</a></li>
+                        
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                        
+                          <li><a href="/docs/0.4.x/api/inject.reset.html" style="font-weight:normal">Inject.reset</a></li>
+                        
+                      
+                    
+                      
+                    
+                      
+                        
+                          <li><a href="/docs/0.4.x/api/inject.setcrossdomain.html" style="font-weight:normal">Inject.setCrossDomain</a></li>
+                        
+                      
+                    
+                      
+                    
+                      
+                        
+                          <li><a href="/docs/0.4.x/api/inject.setExpires.html" style="font-weight:normal">Inject.setExpires</a></li>
+                        
+                      
+                    
+                      
+                        
+                          <li><a href="/docs/0.4.x/api/inject.setmoduleroot.html" style="font-weight:normal">Inject.setModuleRoot</a></li>
+                        
+                      
+                    
+                      
+                    
+                      
+                        
+                          <li><a href="/docs/0.4.x/api/require.html" style="font-weight:normal">require</a></li>
+                        
+                      
+                    
+                      
+                        
+                          <li><a href="/docs/0.4.x/api/require.ensure.html" style="font-weight:normal">require.ensure</a></li>
+                        
+                      
+                    
+                      
+                        
+                          <li><a href="/docs/0.4.x/api/require.run.html" style="font-weight:normal">require.run</a></li>
+                        
+                      
+                    
+                      
+                    
+                  </ul>
+                </li>
+              
+                <li><b>How To</b>
+                  <ul>
+                    
+                      
+                        
+                          <li><a href="/docs/0.4.x/howto/amd.html" style="font-weight:normal">AMD and Inject</a></li>
+                        
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                        
+                          <li><a href="/docs/0.4.x/howto/build_from_source.html" style="font-weight:normal">Building Inject From Source</a></li>
+                        
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                        
+                          <li><a href="/docs/0.4.x/howto/cross_domain.html" style="font-weight:normal">Using Inject on Multiple Domains</a></li>
+                        
+                      
+                    
+                      
+                    
+                      
+                        
+                          <li class="current"><a href="/docs/0.4.x/howto/how_inject_works.html" style="font-weight:normal">How Inject Works</a></li>
+                        
+                      
+                    
+                      
+                    
+                      
+                        
+                          <li><a href="/docs/0.4.x/howto/inject_and_libraries.html" style="font-weight:normal">Using Inject With Your Favorite Library</a></li>
+                        
+                      
+                    
+                      
+                        
+                          <li><a href="/docs/0.4.x/howto/quick_start.html" style="font-weight:normal">Quick Start Guide</a></li>
+                        
+                      
+                    
+                      
+                    
+                      
+                        
+                          <li><a href="/docs/0.4.x/howto/resolving_modules.html" style="font-weight:normal">How Modules are Resolved</a></li>
+                        
+                      
+                    
+                      
+                    
+                      
+                        
+                          <li><a href="/docs/0.4.x/howto/using_minifiers.html" style="font-weight:normal">Using Minifiers</a></li>
+                        
+                      
+                    
+                      
+                        
+                          <li><a href="/docs/0.4.x/howto/using_plugins.html" style="font-weight:normal">Using Plugins, Extending Functionality</a></li>
+                        
+                      
+                    
+                      
+                    
+                      
+                        
+                          <li><a href="/docs/0.4.x/howto/writing_a_commonjs_module.html" style="font-weight:normal">Writing a CommonJS Module</a></li>
+                        
+                      
+                    
+                  </ul>
+                </li>
+              
+            </ul>
+          </div>
+        
+      
+      <div class="block">
+        <p>
+          Other Versions:<br/>
+          
+            
+              [<a href="/docs/0.5.0/index.html">0.5.0</a>]
+            
+          
+            
+          
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+    </div>
+
+    <div class="global-footer">
+      <div class="wrapper">
+        <div class="footer">
+          &copy; 2013 LinkedIn Corporation
+        </div>
+      </div>
+    </div>
+
+    
+
+  </body>
+
+</html>

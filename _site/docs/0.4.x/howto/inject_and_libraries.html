@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+
+<html>
+
+  <head>
+
+    <title>
+      
+        Using Inject With Your Favorite Library | Inject
+      
+    </title>
+
+    <link rel="stylesheet" href="/assets/css/main.css" type="text/css" />
+    
+
+    
+    <meta property="og:title" content="Using Inject With Your Favorite Library | Inject"/>
+    <meta name="title" content="Using Inject With Your Favorite Library | Inject" />
+    
+
+    
+    <meta property="og:description" content="CommonJS and AMD dependency management designed for the browser."/>
+    <meta name="description" content="CommonJS and AMD dependency management designed for the browser." />
+    
+
+    
+
+    <link rel="shortcut icon" type="image/ico" href="/assets/images/favicon_v3.ico">
+
+    <!-- tracking -->
+    <!-- todo: use LinkedIn GA Tracking -->
+    
+    <!-- google custom search engine -->
+    <script>
+      (function() {
+        var cx = '007454891895213570750:rm0mkbrbrmi';
+        var gcse = document.createElement('script'); gcse.type = 'text/javascript'; gcse.async = true;
+        gcse.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') +
+            '//www.google.com/cse/cse.js?cx=' + cx;
+        var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(gcse, s);
+      })();
+    </script>
+    <!-- end google custom search engine -->
+    
+  </head>
+
+  <body>
+
+    <div class="global-header">
+
+      <div class="top-nav">
+        <div class="wrapper">
+          <h2 class="logo">
+            <a title="Home" href="http://www.injectjs.com">&nbsp;</a>
+          </h2>
+          <h2 class="head-title">
+            Inject
+          </h2>
+        </div>
+      </div>
+
+      <div class="bottom-nav">
+
+        <div class="wrapper">
+
+          <ul class="nav" role="navigation">
+            <li class="tab ">
+              <a href="/" class="tab-name"><span>Home</span></a>
+            </li>
+            <li class="tab ">
+              <a href="/download" class="tab-name"><span>Download</span></a>
+            </li>
+            <li class="tab selected">
+              <a href="/docs" class="tab-name"><span>Documentation</span></a>
+            </li>
+            <li class="tab ">
+              <a href="/news" class="tab-name"><span>News</span></a>
+            </li>
+            <li class="tab">
+              <a href="http://github.com/linkedin/inject" class="tab-name"><span>GitHub</span></a>
+            </li>
+          </ul>
+
+          <div class="global-search">
+            <div class="gcse">
+              <gcse:searchbox-only></gcse:searchbox-only>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+
+    <div class="content">
+
+      
+      <div class="row">
+        <div id="content-header" class="full">
+          <div class="desc">
+            <div class="source">
+              <a class="button" href="/download/0.5.x/inject-0.5.0.tgz">Download Inject v0.5.0</a>
+              <div><a href="/download">See all versions</a></div>
+            </div>
+            <span class='short'>Dependency Management Got Awesome</span>
+            <span class='long'>CommonJS and AMD Compliant dependency loader for modern web apps</span>
+          </div>
+        </div>
+      </div>
+      
+
+      
+
+<div class="row">
+  <div id="content-main" class="grid16 first">
+    <div class="pad">
+      
+        <div class="markdown-body">
+          <h1>Using Inject With Your Favorite Library</h1>
+          
+            <div class="doc_version">0.4.x</div>
+          
+          <hr>
+
+          
+            
+          
+            
+          
+          
+          
+          
+          <p>Many libraries can be &ldquo;shimmed&rdquo; to work with Inject, even if they don&rsquo;t support a CommonJS or AMD system. These are uses of <a href="/docs/0.4.x/api/inject.addrule.html">Inject.addRule</a> to change the code within the scope of Inject, while leaving the default library unaltered.</p>
+
+<p>We&rsquo;re always up for adding more recepies for peoples&rsquo; favorite libraries.</p>
+
+<h3 id="jquery">jQuery</h3>
+
+<p>In <a href="http://jquery.com/">jQuery</a>, we modify the code to assign <code>jQuery.noConflict()</code> into <code>module.exports</code>.</p>
+
+<div class="highlight"><pre><code class="js"><span class="c1">// &lt;= 0.4.0</span>
+<span class="nx">Inject</span><span class="p">.</span><span class="nx">addRule</span><span class="p">(</span><span class="sr">/^jquery$/</span><span class="p">,</span> <span class="p">{</span>
+  <span class="nx">path</span><span class="o">:</span> <span class="s1">&#39;/path/to/jquery.js&#39;</span><span class="p">,</span>
+  <span class="nx">useSuffix</span><span class="o">:</span> <span class="kc">false</span><span class="p">,</span>
+  <span class="nx">pointcuts</span><span class="o">:</span> <span class="p">{</span>
+    <span class="nx">after</span><span class="o">:</span> <span class="kd">function</span> <span class="p">()</span> <span class="p">{</span>
+      <span class="nx">module</span><span class="p">.</span><span class="nx">exports</span> <span class="o">=</span> <span class="nx">jQuery</span><span class="p">.</span><span class="nx">noConflict</span><span class="p">();</span>
+    <span class="p">}</span>
+  <span class="p">}</span>
+<span class="p">});</span>
+
+<span class="c1">// &gt;= 0.4.1</span>
+<span class="nx">Inject</span><span class="p">.</span><span class="nx">addRule</span><span class="p">(</span><span class="sr">/^jquery$/</span><span class="p">,</span> <span class="p">{</span>
+  <span class="nx">path</span><span class="o">:</span> <span class="s1">&#39;/path/to/jquery.js&#39;</span><span class="p">,</span>
+  <span class="nx">useSuffix</span><span class="o">:</span> <span class="kc">false</span><span class="p">,</span>
+  <span class="nx">pointcuts</span><span class="o">:</span> <span class="p">{</span>
+    <span class="nx">afterFetch</span><span class="o">:</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">next</span><span class="p">,</span> <span class="nx">text</span><span class="p">)</span> <span class="p">{</span>
+      <span class="nx">next</span><span class="p">(</span><span class="kc">null</span><span class="p">,</span> <span class="p">[</span>
+        <span class="nx">text</span><span class="p">,</span>
+        <span class="s1">&#39;module.exports = jQuery.noConflict();&#39;</span>
+      <span class="p">].</span><span class="nx">join</span><span class="p">(</span><span class="s1">&#39;\n&#39;</span><span class="p">));</span>
+    <span class="p">}</span>
+  <span class="p">}</span>
+<span class="p">});</span>
+</code></pre></div>
+
+<h3 id="jquery-ui">jQuery UI</h3>
+
+<p><a href="http://jqueryui.com/">jQuery UI</a> requires two changes. The first affects all jQuery UI modules. They all explicitly require jQuery, and then record jQuery as their module.exports. This sharing ensures you can always say <code>$ = require('jquery.ui.component')</code> and get a working jQuery object with the plugin loaded. The second <code>addRule</code> call enables you to specify dependencies using the same <code>afterFetch</code> pointcut. The below example shows how you might specify jQuery and jQuery UI.</p>
+
+<div class="highlight"><pre><code class="js"><span class="c1">// this is most effective &gt; 0.4.1</span>
+<span class="nx">Inject</span><span class="p">.</span><span class="nx">addRule</span><span class="p">(</span><span class="sr">/jquery\.ui/</span><span class="p">,</span> <span class="p">{</span>
+  <span class="nx">path</span><span class="o">:</span> <span class="kd">function</span><span class="p">(</span><span class="nx">module</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">return</span> <span class="s1">&#39;/jqueryui/&#39;</span> <span class="o">+</span> <span class="nx">module</span> <span class="o">+</span> <span class="s1">&#39;.min.js&#39;</span>
+  <span class="p">},</span>
+  <span class="nx">last</span><span class="o">:</span> <span class="kc">true</span><span class="p">,</span>
+  <span class="nx">pointcuts</span><span class="o">:</span> <span class="p">{</span>
+    <span class="nx">afterFetch</span><span class="o">:</span> <span class="kd">function</span><span class="p">(</span><span class="nx">next</span><span class="p">,</span> <span class="nx">text</span><span class="p">)</span> <span class="p">{</span>
+      <span class="nx">next</span><span class="p">(</span><span class="kc">null</span><span class="p">,</span> <span class="p">[</span>
+        <span class="s1">&#39;var jQuery = require(&quot;jquery&quot;);&#39;</span><span class="p">,</span>
+        <span class="nx">text</span><span class="p">,</span>
+        <span class="s1">&#39;module.setExports(jQuery);&#39;</span><span class="p">,</span>
+      <span class="s1">&#39;&#39;</span><span class="p">].</span><span class="nx">join</span><span class="p">(</span><span class="s1">&#39;\n&#39;</span><span class="p">));</span>
+    <span class="p">}</span>
+  <span class="p">}</span>
+<span class="p">});</span>
+
+<span class="c1">// button depends on core and widget</span>
+<span class="nx">Inject</span><span class="p">.</span><span class="nx">addRule</span><span class="p">(</span><span class="sr">/jquery\.ui\.button/</span><span class="p">,</span> <span class="p">{</span>
+  <span class="nx">weight</span><span class="o">:</span> <span class="mi">500</span><span class="p">,</span>
+  <span class="nx">pointcuts</span><span class="o">:</span> <span class="p">{</span>
+    <span class="nx">afterFetch</span><span class="o">:</span> <span class="kd">function</span><span class="p">(</span><span class="nx">next</span><span class="p">,</span> <span class="nx">text</span><span class="p">)</span> <span class="p">{</span>
+      <span class="nx">next</span><span class="p">(</span><span class="kc">null</span><span class="p">,</span> <span class="p">[</span>
+        <span class="s1">&#39;require(&quot;jquery.ui.core&quot;);&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;require(&quot;jquery.ui.widget&quot;);&#39;</span><span class="p">,</span>
+        <span class="nx">text</span><span class="p">,</span>
+      <span class="s1">&#39;&#39;</span><span class="p">].</span><span class="nx">join</span><span class="p">(</span><span class="s1">&#39;\n&#39;</span><span class="p">));</span>
+    <span class="p">}</span>
+  <span class="p">}</span>
+<span class="p">});</span>
+</code></pre></div>
+
+<h3 id="modernizr">Modernizr</h3>
+
+<p><a href="http://modernizr.com/">Modernizr</a> requires the existence of a document object. Since it traditionally runs in the <code>window</code> scope, we need to inform it about <code>this.document</code> and associate it with the <code>window.document</code> object. We can then assign exports and clean up the window object as required.</p>
+
+<div class="highlight"><pre><code class="js"><span class="c1">// &lt;= 0.4.0</span>
+<span class="nx">Inject</span><span class="p">.</span><span class="nx">addRule</span><span class="p">(</span><span class="sr">/^modernizr$/i</span><span class="p">,</span> <span class="p">{</span>
+  <span class="nx">path</span><span class="o">:</span> <span class="s2">&quot;/path/to/modernizr.js&quot;</span><span class="p">,</span>
+  <span class="nx">pointcuts</span><span class="o">:</span> <span class="p">{</span>
+    <span class="c1">// before: localize window.document for sandbox</span>
+    <span class="nx">before</span><span class="o">:</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+      <span class="k">this</span><span class="p">.</span><span class="nb">document</span> <span class="o">=</span> <span class="nb">window</span><span class="p">.</span><span class="nb">document</span><span class="p">;</span>
+    <span class="p">},</span>
+    <span class="c1">// after: capture exports as object, delete from global scope</span>
+    <span class="nx">after</span><span class="o">:</span> <span class="kd">function</span> <span class="p">()</span> <span class="p">{</span>
+      <span class="nx">module</span><span class="p">.</span><span class="nx">setExports</span><span class="p">(</span><span class="nb">window</span><span class="p">.</span><span class="nx">Modernizr</span><span class="p">);</span>
+      <span class="k">delete</span> <span class="nb">window</span><span class="p">[</span><span class="s2">&quot;Modernizr&quot;</span><span class="p">];</span>
+    <span class="p">}</span>
+  <span class="p">}</span>
+<span class="p">});</span>
+
+<span class="c1">// &gt;= 0.4.1</span>
+<span class="nx">Inject</span><span class="p">.</span><span class="nx">addRule</span><span class="p">(</span><span class="sr">/^modernizr$/i</span><span class="p">,</span> <span class="p">{</span>
+  <span class="nx">path</span><span class="o">:</span> <span class="s2">&quot;/path/to/modernizr.js&quot;</span><span class="p">,</span>
+  <span class="nx">pointcuts</span><span class="o">:</span> <span class="p">{</span>
+    <span class="nx">afterFetch</span><span class="o">:</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">next</span><span class="p">,</span> <span class="nx">text</span><span class="p">)</span> <span class="p">{</span>
+      <span class="nx">next</span><span class="p">(</span><span class="kc">null</span><span class="p">,</span> <span class="p">[</span>
+        <span class="s1">&#39;this.document = window.document;&#39;</span><span class="p">,</span>
+        <span class="nx">text</span><span class="p">,</span>
+        <span class="s1">&#39;module.setExports(window.Modernizr);&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;delete this[&quot;document&quot;]&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;delete window[&quot;Modernizr&quot;];&#39;</span>
+      <span class="p">].</span><span class="nx">join</span><span class="p">(</span><span class="s1">&#39;\n&#39;</span><span class="p">));</span>
+    <span class="p">}</span>
+  <span class="p">}</span>
+<span class="p">});</span>
+</code></pre></div>
+
+
+        </div>
+        
+          
+        
+          
+            
+              <div id="disqus_thread"></div>
+              <script type="text/javascript">
+                  /* * * CONFIGURATION VARIABLES: EDIT BEFORE PASTING INTO YOUR WEBPAGE * * */
+                  var disqus_shortname = 'injectjs';
+                  var disqus_developer = 0;
+                  var disqus_identifier = '/docs/0.4.x/howto/inject_and_libraries';
+                  var disqus_url = 'http://www.injectjs.com/docs/0.4.x/howto/inject_and_libraries.html';
+
+                  
+                  var disqus_title = 'Inject v0.4.x documentation: Using Inject With Your Favorite Library';
+                  
+
+                  /* * * DON'T EDIT BELOW THIS LINE * * */
+                  (function() {
+                      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                      dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+                  })();
+              </script>
+              <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+              <a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            
+          
+        
+      
+    </div>
+  </div>
+
+  <div id="content-sidebar" class="grid8">
+    <div class="pad">
+      
+        
+      
+        
+          <div class="block">
+            <ul>
+              
+                <li><b>API</b>
+                  <ul>
+                    
+                      
+                        
+                          <li><a href="/docs/0.4.x/api/define.html" style="font-weight:normal">define</a></li>
+                        
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                        
+                          <li><a href="/docs/0.4.x/api/inject.addrule.html" style="font-weight:normal">Inject.addRule</a></li>
+                        
+                      
+                    
+                      
+                    
+                      
+                        
+                          <li><a href="/docs/0.4.x/api/inject.clearcache.html" style="font-weight:normal">Inject.clearCache</a></li>
+                        
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                        
+                          <li><a href="/docs/0.4.x/api/inject.plugin.html" style="font-weight:normal">Inject.plugin</a></li>
+                        
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                        
+                          <li><a href="/docs/0.4.x/api/inject.reset.html" style="font-weight:normal">Inject.reset</a></li>
+                        
+                      
+                    
+                      
+                    
+                      
+                        
+                          <li><a href="/docs/0.4.x/api/inject.setcrossdomain.html" style="font-weight:normal">Inject.setCrossDomain</a></li>
+                        
+                      
+                    
+                      
+                    
+                      
+                        
+                          <li><a href="/docs/0.4.x/api/inject.setExpires.html" style="font-weight:normal">Inject.setExpires</a></li>
+                        
+                      
+                    
+                      
+                        
+                          <li><a href="/docs/0.4.x/api/inject.setmoduleroot.html" style="font-weight:normal">Inject.setModuleRoot</a></li>
+                        
+                      
+                    
+                      
+                    
+                      
+                        
+                          <li><a href="/docs/0.4.x/api/require.html" style="font-weight:normal">require</a></li>
+                        
+                      
+                    
+                      
+                        
+                          <li><a href="/docs/0.4.x/api/require.ensure.html" style="font-weight:normal">require.ensure</a></li>
+                        
+                      
+                    
+                      
+                        
+                          <li><a href="/docs/0.4.x/api/require.run.html" style="font-weight:normal">require.run</a></li>
+                        
+                      
+                    
+                      
+                    
+                  </ul>
+                </li>
+              
+                <li><b>How To</b>
+                  <ul>
+                    
+                      
+                        
+                          <li><a href="/docs/0.4.x/howto/amd.html" style="font-weight:normal">AMD and Inject</a></li>
+                        
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                        
+                          <li><a href="/docs/0.4.x/howto/build_from_source.html" style="font-weight:normal">Building Inject From Source</a></li>
+                        
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                        
+                          <li><a href="/docs/0.4.x/howto/cross_domain.html" style="font-weight:normal">Using Inject on Multiple Domains</a></li>
+                        
+                      
+                    
+                      
+                    
+                      
+                        
+                          <li><a href="/docs/0.4.x/howto/how_inject_works.html" style="font-weight:normal">How Inject Works</a></li>
+                        
+                      
+                    
+                      
+                    
+                      
+                        
+                          <li class="current"><a href="/docs/0.4.x/howto/inject_and_libraries.html" style="font-weight:normal">Using Inject With Your Favorite Library</a></li>
+                        
+                      
+                    
+                      
+                        
+                          <li><a href="/docs/0.4.x/howto/quick_start.html" style="font-weight:normal">Quick Start Guide</a></li>
+                        
+                      
+                    
+                      
+                    
+                      
+                        
+                          <li><a href="/docs/0.4.x/howto/resolving_modules.html" style="font-weight:normal">How Modules are Resolved</a></li>
+                        
+                      
+                    
+                      
+                    
+                      
+                        
+                          <li><a href="/docs/0.4.x/howto/using_minifiers.html" style="font-weight:normal">Using Minifiers</a></li>
+                        
+                      
+                    
+                      
+                        
+                          <li><a href="/docs/0.4.x/howto/using_plugins.html" style="font-weight:normal">Using Plugins, Extending Functionality</a></li>
+                        
+                      
+                    
+                      
+                    
+                      
+                        
+                          <li><a href="/docs/0.4.x/howto/writing_a_commonjs_module.html" style="font-weight:normal">Writing a CommonJS Module</a></li>
+                        
+                      
+                    
+                  </ul>
+                </li>
+              
+            </ul>
+          </div>
+        
+      
+      <div class="block">
+        <p>
+          Other Versions:<br/>
+          
+            
+              [<a href="/docs/0.5.0/index.html">0.5.0</a>]
+            
+          
+            
+          
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+    </div>
+
+    <div class="global-footer">
+      <div class="wrapper">
+        <div class="footer">
+          &copy; 2013 LinkedIn Corporation
+        </div>
+      </div>
+    </div>
+
+    
+
+  </body>
+
+</html>

@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+
+<html>
+
+  <head>
+
+    <title>
+      
+        Inject.addModuleRule | Inject
+      
+    </title>
+
+    <link rel="stylesheet" href="/assets/css/main.css" type="text/css" />
+    
+
+    
+    <meta property="og:title" content="Inject.addModuleRule | Inject"/>
+    <meta name="title" content="Inject.addModuleRule | Inject" />
+    
+
+    
+    <meta property="og:description" content="CommonJS and AMD dependency management designed for the browser."/>
+    <meta name="description" content="CommonJS and AMD dependency management designed for the browser." />
+    
+
+    
+
+    <link rel="shortcut icon" type="image/ico" href="/assets/images/favicon_v3.ico">
+
+    <!-- tracking -->
+    <!-- todo: use LinkedIn GA Tracking -->
+    
+    <!-- google custom search engine -->
+    <script>
+      (function() {
+        var cx = '007454891895213570750:rm0mkbrbrmi';
+        var gcse = document.createElement('script'); gcse.type = 'text/javascript'; gcse.async = true;
+        gcse.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') +
+            '//www.google.com/cse/cse.js?cx=' + cx;
+        var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(gcse, s);
+      })();
+    </script>
+    <!-- end google custom search engine -->
+    
+  </head>
+
+  <body>
+
+    <div class="global-header">
+
+      <div class="top-nav">
+        <div class="wrapper">
+          <h2 class="logo">
+            <a title="Home" href="http://www.injectjs.com">&nbsp;</a>
+          </h2>
+          <h2 class="head-title">
+            Inject
+          </h2>
+        </div>
+      </div>
+
+      <div class="bottom-nav">
+
+        <div class="wrapper">
+
+          <ul class="nav" role="navigation">
+            <li class="tab ">
+              <a href="/" class="tab-name"><span>Home</span></a>
+            </li>
+            <li class="tab ">
+              <a href="/download" class="tab-name"><span>Download</span></a>
+            </li>
+            <li class="tab selected">
+              <a href="/docs" class="tab-name"><span>Documentation</span></a>
+            </li>
+            <li class="tab ">
+              <a href="/news" class="tab-name"><span>News</span></a>
+            </li>
+            <li class="tab">
+              <a href="http://github.com/linkedin/inject" class="tab-name"><span>GitHub</span></a>
+            </li>
+          </ul>
+
+          <div class="global-search">
+            <div class="gcse">
+              <gcse:searchbox-only></gcse:searchbox-only>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+
+    <div class="content">
+
+      
+      <div class="row">
+        <div id="content-header" class="full">
+          <div class="desc">
+            <div class="source">
+              <a class="button" href="/download/0.5.x/inject-0.5.0.tgz">Download Inject v0.5.0</a>
+              <div><a href="/download">See all versions</a></div>
+            </div>
+            <span class='short'>Dependency Management Got Awesome</span>
+            <span class='long'>CommonJS and AMD Compliant dependency loader for modern web apps</span>
+          </div>
+        </div>
+      </div>
+      
+
+      
+
+<div class="row">
+  <div id="content-main" class="grid16 first">
+    <div class="pad">
+      
+        <div class="markdown-body">
+          <h1>Inject.addModuleRule</h1>
+          
+            <div class="doc_version">0.5.0</div>
+          
+          <hr>
+
+          
+            
+          
+            
+          
+          
+          
+          
+          
+<div class="highlight"><pre><code class="js"><span class="nx">Inject</span><span class="p">.</span><span class="nx">addModuleRule</span><span class="p">(</span><span class="nx">matchesId</span><span class="p">,</span> <span class="nx">rule</span><span class="p">,</span> <span class="nx">options</span><span class="p">);</span>
+</code></pre></div>
+
+<p>This function allows you to add a rule to transform one module ID into another.</p>
+
+<h3 id="matchesid">matchesId</h3>
+<p>The <code>matchesId</code> parameter can either be a string or a regex. If a string, an exact match on module ID is required in order for the rule to be ran. If <code>matchesId</code> is a regular expression, this expression will be tested against the Module ID.</p>
+
+<h3 id="rule">rule</h3>
+<p>The rule object is either a string or a function. If a string, a 1:1 replacement is made on the matching Module ID. No history of previous transformations is saved. If <code>rule</code> is a function, it takes one argument <code>moduleId</code> and must return a string representing the transformed Module ID.</p>
+
+<h3 id="options">options</h3>
+<p>A collection of options for this rule. Supported options are:</p>
+
+<ul>
+  <li><strong>weight:</strong> assign a weight to this rule. Larger numbered rules run first.</li>
+  <li><strong>last:</strong> a boolean that, if true, will prevent further rules from running.</li>
+</ul>
+
+<p>The family of rules Inject supports:</p>
+
+<ul>
+  <li><a href="/docs/0.5.0/api/inject.addmodulerule.html">Inject.addModuleRule</a></li>
+  <li><a href="/docs/0.5.0/api/inject.addfilerule.html">Inject.addFileRule</a></li>
+  <li><a href="/docs/0.5.0/api/inject.addfetchrule.html">Inject.addFetchRule</a></li>
+  <li><a href="/docs/0.5.0/api/inject.addcontentrule.html">Inject.addContentRule</a></li>
+  <li><a href="/docs/0.5.0/api/inject.addpackage.html">Inject.addPackage</a></li>
+</ul>
+
+        </div>
+        
+          
+            
+              <div id="disqus_thread"></div>
+              <script type="text/javascript">
+                  /* * * CONFIGURATION VARIABLES: EDIT BEFORE PASTING INTO YOUR WEBPAGE * * */
+                  var disqus_shortname = 'injectjs';
+                  var disqus_developer = 0;
+                  var disqus_identifier = '/docs/0.5.0/api/inject.addmodulerule';
+                  var disqus_url = 'http://www.injectjs.com/docs/0.5.0/api/inject.addmodulerule.html';
+
+                  
+                  var disqus_title = 'Inject v0.5.0 documentation: Inject.addModuleRule';
+                  
+
+                  /* * * DON'T EDIT BELOW THIS LINE * * */
+                  (function() {
+                      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                      dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+                  })();
+              </script>
+              <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+              <a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+            
+          
+        
+          
+        
+      
+    </div>
+  </div>
+
+  <div id="content-sidebar" class="grid8">
+    <div class="pad">
+      
+        
+          <div class="block">
+            <ul>
+              
+                <li><b>CommonJS Interface</b>
+                  <ul>
+                    
+                      
+                        
+                          <li><a href="/docs/0.5.0/cjs/require.html" style="font-weight:normal">require</a></li>
+                        
+                      
+                    
+                      
+                        
+                          <li><a href="/docs/0.5.0/cjs/require.ensure.html" style="font-weight:normal">require.ensure</a></li>
+                        
+                      
+                    
+                  </ul>
+                </li>
+              
+                <li><b>AMD Interface</b>
+                  <ul>
+                    
+                      
+                        
+                          <li><a href="/docs/0.5.0/amd/define.html" style="font-weight:normal">define</a></li>
+                        
+                      
+                    
+                      
+                        
+                          <li><a href="/docs/0.5.0/amd/require.html" style="font-weight:normal">require</a></li>
+                        
+                      
+                    
+                  </ul>
+                </li>
+              
+                <li><b>The Inject API</b>
+                  <ul>
+                    
+                      
+                    
+                      
+                        
+                          <li><a href="/docs/0.5.0/api/inject.addcontentrule.html" style="font-weight:normal">Inject.addContentRule</a></li>
+                        
+                      
+                    
+                      
+                        
+                          <li><a href="/docs/0.5.0/api/inject.addfetchrule.html" style="font-weight:normal">Inject.addFetchRule</a></li>
+                        
+                      
+                    
+                      
+                        
+                          <li><a href="/docs/0.5.0/api/inject.addfilerule.html" style="font-weight:normal">Inject.addFileRule</a></li>
+                        
+                      
+                    
+                      
+                        
+                          <li class="current"><a href="/docs/0.5.0/api/inject.addmodulerule.html" style="font-weight:normal">Inject.addModuleRule</a></li>
+                        
+                      
+                    
+                      
+                        
+                          <li><a href="/docs/0.5.0/api/inject.addpackage.html" style="font-weight:normal">Inject.addPackage</a></li>
+                        
+                      
+                    
+                      
+                    
+                      
+                        
+                          <li><a href="/docs/0.5.0/api/inject.addrule.html" style="font-weight:normal">Inject.addRule</a></li>
+                        
+                      
+                    
+                      
+                    
+                      
+                        
+                          <li><a href="/docs/0.5.0/api/inject.clearcache.html" style="font-weight:normal">Inject.clearCache</a></li>
+                        
+                      
+                    
+                      
+                        
+                          <li><a href="/docs/0.5.0/api/inject.disableglobalamd.html" style="font-weight:normal">Inject.disableGlobalAMD</a></li>
+                        
+                      
+                    
+                      
+                    
+                      
+                        
+                          <li><a href="/docs/0.5.0/api/inject.plugin.html" style="font-weight:normal">Inject.plugin</a></li>
+                        
+                      
+                    
+                      
+                        
+                          <li><a href="/docs/0.5.0/api/inject.reset.html" style="font-weight:normal">Inject.reset</a></li>
+                        
+                      
+                    
+                      
+                    
+                      
+                        
+                          <li><a href="/docs/0.5.0/api/inject.setcrossdomain.html" style="font-weight:normal">Inject.setCrossDomain</a></li>
+                        
+                      
+                    
+                      
+                    
+                      
+                        
+                          <li><a href="/docs/0.5.0/api/inject.setExpires.html" style="font-weight:normal">Inject.setExpires</a></li>
+                        
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                        
+                          <li><a href="/docs/0.5.0/api/inject.setmoduleroot.html" style="font-weight:normal">Inject.setModuleRoot</a></li>
+                        
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                        
+                          <li><a href="/docs/0.5.0/api/require.run.html" style="font-weight:normal">require.run</a></li>
+                        
+                      
+                    
+                  </ul>
+                </li>
+              
+                <li><b>How To and Tutorials</b>
+                  <ul>
+                    
+                      
+                    
+                      
+                        
+                          <li><a href="/docs/0.5.0/howto/amd.html" style="font-weight:normal">AMD and Inject</a></li>
+                        
+                      
+                    
+                      
+                        
+                          <li><a href="/docs/0.5.0x/howto/build_from_source.html" style="font-weight:normal">Building Inject From Source</a></li>
+                        
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                        
+                          <li><a href="/docs/0.5.0x/howto/cross_domain.html" style="font-weight:normal">Using Inject on Multiple Domains</a></li>
+                        
+                      
+                    
+                      
+                    
+                      
+                        
+                          <li><a href="/docs/0.5.0/howto/how_inject_works.html" style="font-weight:normal">How Inject Works</a></li>
+                        
+                      
+                    
+                      
+                    
+                      
+                        
+                          <li><a href="/docs/0.5.0/howto/inject_and_libraries.html" style="font-weight:normal">Using Inject With Your Favorite Library</a></li>
+                        
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                        
+                          <li><a href="/docs/0.5.0/howto/quick_start.html" style="font-weight:normal">Quick Start Guide</a></li>
+                        
+                      
+                    
+                      
+                    
+                      
+                        
+                          <li><a href="/docs/0.5.0/howto/resolving_modules.html" style="font-weight:normal">How Modules are Resolved</a></li>
+                        
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                        
+                          <li><a href="/docs/0.5.0/howto/using_plugins.html" style="font-weight:normal">Using Plugins, Extending Functionality</a></li>
+                        
+                      
+                    
+                      
+                    
+                  </ul>
+                </li>
+              
+            </ul>
+          </div>
+        
+      
+        
+      
+      <div class="block">
+        <p>
+          Other Versions:<br/>
+          
+            
+          
+            
+              [<a href="/docs/0.4.x/index.html">0.4.x</a>]
+            
+          
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+    </div>
+
+    <div class="global-footer">
+      <div class="wrapper">
+        <div class="footer">
+          &copy; 2013 LinkedIn Corporation
+        </div>
+      </div>
+    </div>
+
+    
+
+  </body>
+
+</html>

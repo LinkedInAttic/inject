@@ -1,0 +1,53 @@
+Users are coming here from other AMD sites. Cater to them!
+So...
+Why Inject over other solutions?
+
+
+
+This is what will happen:
+--------------------------------------------------
+- Simplify script loading.
+  (How: Dependencies are handled for you.)
+
+- Improve your site's performance.
+  (How: All your scripts are loaded asynchronously. Non-blocking.)
+
+- Include JavaScript safely.
+  (How: Objects are encapsulated in their contexts. Safely use multible versions of a library at once! jQuery 1.9.1 and 2.0.0, anyone?)
+
+
+
+Our Proposition:
+--------------------------------------------------
+You're using dependency management because (you care about performance, including JS safely, and ...) Here's what makes Inject awesome:
+- Both CommonJS and AMD
+
+
+
+Comparison:
+--------------------------------------------------
+
+Why do this:
+  <script src="/path/to/framework.js"></script>
+  <script src="/path/to/library.js"></script>
+  <script src="/path/to/another-library.js"></script>
+  <script src="/path/to/shim.js"></script>
+  <script src="/path/to/yet-another-library.js"></script>
+  <script src="/path/to/something.js"></script>
+  <script src="/path/to/something-else.js"></script>
+  <script src="/path/to/etc.js"></script>
+
+...When you can do this:
+  <script src="/path/to/inject.js"></script>
+  <script>
+    require.run('program');
+  </script>
+
+
+
+
+
+
+- 974px boxes
+- single column for buttons
+  - remove news button (so there's only 3)

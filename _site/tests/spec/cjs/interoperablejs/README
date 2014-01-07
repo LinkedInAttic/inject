@@ -1,0 +1,41 @@
+
+trivial/
+    using this directory as your js std library path,
+    load the "program" module.  It should
+    alert you with the results of
+    an increment function.
+
+compliance/*
+
+    for a module loader to be compliant,
+    it must run and pass every test in
+    this directory.
+
+    All of these tests presume the existence of an
+    "print" free variable or a "system" module on
+    which a ".stdout.print" method exists for test
+    reporting.  Tests call the "print" method with a
+    "message" and a "label" argument that is one of
+    "pass" or "fail".  "window.console.log" in most
+    browsers suffices.
+
+    The test must be run with its directory
+    as the standard library path so that
+    absolute identifiers will reference
+    modules in that directory.
+
+    All of these tests write a "DONE" info
+    message to confirm that they ran completely.
+
+security/*
+    each directory here contains
+    a test that verifies that a module
+    can get capabilities from its environment
+    without accessing free variables.
+    (Some of these tests use non-standard features)
+
+extensions/*
+    each of these tests corresponds to
+    an experimental feature, like
+    "include" or implicit locally bound "exports".
+

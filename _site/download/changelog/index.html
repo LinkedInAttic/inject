@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+
+<html>
+
+  <head>
+
+    <title>
+      
+        Changelog | Inject
+      
+    </title>
+
+    <link rel="stylesheet" href="/assets/css/main.css" type="text/css" />
+    
+
+    
+    <meta property="og:title" content="Changelog | Inject"/>
+    <meta name="title" content="Changelog | Inject" />
+    
+
+    
+    <meta property="og:description" content="CommonJS and AMD dependency management designed for the browser."/>
+    <meta name="description" content="CommonJS and AMD dependency management designed for the browser." />
+    
+
+    
+
+    <link rel="shortcut icon" type="image/ico" href="/assets/images/favicon_v3.ico">
+
+    <!-- tracking -->
+    <!-- todo: use LinkedIn GA Tracking -->
+    
+    <!-- google custom search engine -->
+    <script>
+      (function() {
+        var cx = '007454891895213570750:rm0mkbrbrmi';
+        var gcse = document.createElement('script'); gcse.type = 'text/javascript'; gcse.async = true;
+        gcse.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') +
+            '//www.google.com/cse/cse.js?cx=' + cx;
+        var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(gcse, s);
+      })();
+    </script>
+    <!-- end google custom search engine -->
+    
+  </head>
+
+  <body>
+
+    <div class="global-header">
+
+      <div class="top-nav">
+        <div class="wrapper">
+          <h2 class="logo">
+            <a title="Home" href="http://www.injectjs.com">&nbsp;</a>
+          </h2>
+          <h2 class="head-title">
+            Inject
+          </h2>
+        </div>
+      </div>
+
+      <div class="bottom-nav">
+
+        <div class="wrapper">
+
+          <ul class="nav" role="navigation">
+            <li class="tab ">
+              <a href="/" class="tab-name"><span>Home</span></a>
+            </li>
+            <li class="tab selected">
+              <a href="/download" class="tab-name"><span>Download</span></a>
+            </li>
+            <li class="tab ">
+              <a href="/docs" class="tab-name"><span>Documentation</span></a>
+            </li>
+            <li class="tab ">
+              <a href="/news" class="tab-name"><span>News</span></a>
+            </li>
+            <li class="tab">
+              <a href="http://github.com/linkedin/inject" class="tab-name"><span>GitHub</span></a>
+            </li>
+          </ul>
+
+          <div class="global-search">
+            <div class="gcse">
+              <gcse:searchbox-only></gcse:searchbox-only>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+
+    <div class="content">
+
+      
+      <div class="row">
+        <div id="content-header" class="full">
+          <div class="desc">
+            <div class="source">
+              <a class="button" href="/download/0.5.x/inject-0.5.0.tgz">Download Inject v0.5.0</a>
+              <div><a href="/download">See all versions</a></div>
+            </div>
+            <span class='short'>Dependency Management Got Awesome</span>
+            <span class='long'>CommonJS and AMD Compliant dependency loader for modern web apps</span>
+          </div>
+        </div>
+      </div>
+      
+
+      
+
+<div class="row">
+  <div id="content-main" class="grid16 first">
+    <div class="pad">
+      
+        <div class="markdown-body">
+          
+<h1>Changelog </h1>
+<hr>
+
+
+
+          <h2 id="current-rc1">0.5.0 (current: RC1)</h2>
+<p>### Breaks Backwards Compatibility
+* #246 <strong>pointcuts.before and pointcuts.after are removed:</strong> Instead of using the before/after pointcuts, we encourage the use of the new addRule replacement methods. The afterFetch pointcut is still supported, although addRule itself is now deprecated. We encourage everyone to move to the new addXXRule methods.</p>
+
+<h3 id="new-features">New Features</h3>
+<ul>
+  <li>#254 <strong>new rules to replace addRule:</strong> addModuleRule, addFileRule, addContentRule, addFetchRule, addPackage. This collection of rules gives the developer much greater control of the loading system, allowing any or many parts of the module loader to be circumvented. Additionally, packages can be regstered globally using addPackage.</li>
+  <li>#244 <strong>run Inject alongside script tags:</strong> Unlike traditional AMD loaders, you are able to run Inject alongside code that checks for define and define.amd. A new method Inject.setGlobalAMD(false) allows the global define.amd to be disabled. The define.amd variable will still be available within the sandbox context. This is an incredibly useful feature if you have both script tags and Inject on your page.</li>
+  <li>#217 <strong>remote localStorage:</strong> to improve security, when using a CDN, the remote localStorage location will be used as opposed to the primary hosting domain. This frees up the main URLs localStorage for other storage operations.</li>
+</ul>
+
+<h3 id="bug-fixes">Bug Fixes</h3>
+<ul>
+  <li>#255 setExpires(0) was treated as &ldquo;always cache&rdquo; instead of &ldquo;never cache&rdquo;</li>
+  <li>#256 CSS plugin attaches properly in IE7</li>
+</ul>
+
+<h3 id="dev-features">Dev Features</h3>
+<ul>
+  <li>#213 Bower Support available as the package &ldquo;inject&rdquo;</li>
+  <li>#254 addRule is now deprecated</li>
+  <li>#248 &ldquo;grunt release&rdquo; available for creating the release .tgz file</li>
+</ul>
+
+<h2 id="released-march-27-2013">0.4.2 (Released March 27, 2013)</h2>
+<p>### New Features
+n/a</p>
+
+<h3 id="bug-fixes-1">Bug Fixes</h3>
+<ul>
+  <li>#245 protect against getCurrentAMD returning null</li>
+  <li>#216 fixed issues with parsing more complex JS</li>
+</ul>
+
+<h3 id="dev-features-1">Dev Features</h3>
+<ul>
+  <li>#239 Using new AMD testing infrastructure</li>
+  <li>#219 Removed random Travis-CI failures</li>
+  <li># Link.JS upgrade</li>
+  <li># easyXDM upgrade</li>
+  <li># upgraded from Class.js to Fiber.js</li>
+</ul>
+
+<h2 id="released-jan-4-2013">0.4.1 (Released Jan 4, 2013)</h2>
+<p>### New Features
+* Introduces the afterFetch pointcut, allowing for mutation of a file before it is executed. This collapses the before/after pointcuts under one umbrella.
+* AMD and Inject Plugins: We can now load plugins with a <code>plugin!</code> prefix, where &ldquo;plugin&rdquo; is a supported plugin. We&rsquo;re launching with text, json, and css. We also support AMD loader plugins
+* Massive push for end-user documentation: The gh-pages branch (soon to be www.injectjs.com)</p>
+
+<h3 id="bug-fixes-2">Bug Fixes</h3>
+<ul>
+  <li>#176 test for line offset is relegated to just Firefox (remove unneeded fake-error utility)</li>
+  <li>#177 improved detection of dependencies</li>
+  <li>#194 addRule regex fixes for Chrome 12
+# #196 Relative paths do not resolve to correct absolute paths beyond immediate peer</li>
+</ul>
+
+<h3 id="dev-features-2">Dev Features</h3>
+<ul>
+  <li>AMD tests are now external to the repository to ensure maximum compliance</li>
+  <li>CJS tests are now external to the repository to ensure maximum compliance</li>
+  <li>link.js used for AST integration</li>
+  <li>added a simple flow control library to allow us to create an asynchronous queue (For things like the afterFetch pointcuts)</li>
+</ul>
+
+<h2 id="released-october-26-2012">0.4.0 (released October 26, 2012)</h2>
+
+<h3 id="backwards-compatibility-issues">Backwards Compatibility Issues</h3>
+<ul>
+  <li>The new Cross Domain library (easyXDM) requires a new configuration</li>
+  <li>Public API Cleanup</li>
+</ul>
+
+<h3 id="new-features-1">New Features</h3>
+<ul>
+  <li>Inject.setUseSuffix available for toggling automatic suffix appending</li>
+  <li>setCacheKey now allows you to upgrade files and not run into localStorage conflicts</li>
+</ul>
+
+<h3 id="bug-fixes-3">Bug Fixes</h3>
+<ul>
+  <li>#171 Query string problems in relative URLs  </li>
+  <li>#170 setModuleRoot and IE9 compatibility  </li>
+  <li>#164 IE Compatibility w/ Executor  </li>
+</ul>
+
+<h3 id="dev-features-3">Dev Features</h3>
+<ul>
+  <li>JSDoc implemented as our standard commenting format (and now it&rsquo;s all commented)</li>
+  <li>Pure JavaScript Release (no CoffeeScript)</li>
+  <li>New Build System (node makefile.js)</li>
+  <li>Change of internal library from Porthole to EasyXDM</li>
+  <li>Change from Google Closure to UglifyJS</li>
+</ul>
+
+<h2 id="released-july-01-2012">0.3.1 (released July 01, 2012)</h2>
+
+<h3 id="bug-fixes-4">Bug Fixes</h3>
+<ul>
+  <li>#133 Minified asset had syntax error due to compression  </li>
+</ul>
+
+<h2 id="released-june-13-2012">0.3.0 (released June 13, 2012)</h2>
+
+<h3 id="breaks-backwards-compatibility">Breaks Backwards Compatibility</h3>
+<ul>
+  <li>jQuery automatic AMD support removed</li>
+</ul>
+
+<h3 id="bug-fixes-5">Bug Fixes</h3>
+<ul>
+  <li>#124 Resolution of debugging sourceURLs issues introduced in 0.2.4</li>
+  <li>#116 applyRules (Rules Engine) now lets adjusted rules continue through the stack</li>
+  <li>#118 requiring a file via different module paths misses cache  </li>
+  <li>#117 require.ensure mandates the first parameter is an array  </li>
+  <li>#115 require.clearCache fixes  </li>
+</ul>
+
+<h3 id="dev-features-4">Dev Features</h3>
+<ul>
+  <li>lscache upgraded to latest version</li>
+</ul>
+
+<h2 id="released-april-11-2012">0.2.4 (released April 11, 2012)</h2>
+
+<h3 id="bug-fixes-6">Bug Fixes</h3>
+<ul>
+  <li>#92 Syntax Errors in Minified Source  </li>
+  <li>#91 setExports needs to accept a function  </li>
+  <li>#86 Relative module IDs resolve properly (compliance w/ AMD)  </li>
+  <li>#82 Require.manifest handles string values properly  </li>
+</ul>
+
+<h2 id="released-december-13-2011">0.2.3 (released December 13, 2011)</h2>
+
+<h3 id="new-features-2">New Features</h3>
+<ul>
+  <li>AMD Compliance (100%)</li>
+  <li>Modules 1.1.1 Compliance</li>
+  <li>Official release of the IE 6/7 Shim</li>
+</ul>
+
+<h3 id="bug-fixes-7">Bug Fixes</h3>
+<ul>
+  <li>#78 AMD Circular Test passes  </li>
+  <li>#71 Executor properly returning line numbers on errors  </li>
+  <li>#69 Improvements in localStorage Shim  </li>
+</ul>
+
+<h3 id="dev-features-5">Dev Features</h3>
+<ul>
+  <li>CJS Modules 1.0, 1.1, 1.1.1 tests</li>
+</ul>
+
+<h2 id="released-december-06-2011">0.2.2 (released December 06, 2011)</h2>
+
+<h3 id="new-features-3">New Features</h3>
+<ul>
+  <li>define() globally available</li>
+</ul>
+
+<h3 id="bug-fixes-8">Bug Fixes</h3>
+<ul>
+  <li>#59 require() in comments no longer bring picked up  </li>
+  <li>#57 requiring with cache hits is storing the full module contents  </li>
+  <li>#56 overlapping dependencies with require.ensure only invoked once  </li>
+  <li>#33 Improved dependency extraction  </li>
+</ul>
+
+<h3 id="dev-fixes">Dev Fixes</h3>
+<ul>
+  <li>Improvements to Paperboy for static content</li>
+  <li>New command line options to build IE7 support and easyXDM support</li>
+</ul>
+
+<h2 id="released-nov-21-2011">0.2.1 (released Nov 21, 2011)</h2>
+
+<h3 id="new-features-4">New Features</h3>
+<ul>
+  <li>module.setExports() support</li>
+  <li>Asynchronous Module Definition (AMD) support</li>
+  <li>lscache supports an LRU</li>
+</ul>
+
+<h2 id="released-nov-15-2011">0.2.0 (released Nov 15, 2011)</h2>
+
+<h3 id="high-level-changes">High Level Changes</h3>
+<ul>
+  <li>Released under Apache Software License 2.0</li>
+</ul>
+
+<h3 id="breaks-backwards-compatibility-1">Breaks Backwards Compatibility</h3>
+<ul>
+  <li>Externalization of JSON Shim - the new JSON shim is in an external file</li>
+</ul>
+
+<h3 id="new-features-5">New Features</h3>
+<ul>
+  <li>Pointcuts - the ability to inject custom code that runs before and after a given module. Enables support of non CJS modules</li>
+  <li>localStorage expiration - a file can now be requested to expire out of localStorage after a specified number of seconds</li>
+</ul>
+
+<h3 id="bug-fixes-9">Bug Fixes</h3>
+<ul>
+  <li>#3 Resolution of localStorage limit  </li>
+  <li>#2 &ldquo;this&rdquo; scoped to module object  </li>
+</ul>
+
+        </div>
+      
+    </div>
+  </div>
+
+  <div id="content-sidebar" class="grid8">
+    <div class="pad">
+      <div class="block">
+        <h3>Source code</h3>
+        Get the source code over on <a href="http://github.com/linkedin/inject">GitHub</a>
+      </div>
+      
+      <div class="block">
+        <h3>License</h3>
+        Inject is released under the <a href="https://github.com/linkedin/inject/blob/master/LICENSE">Apache Software License 2.0</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+    </div>
+
+    <div class="global-footer">
+      <div class="wrapper">
+        <div class="footer">
+          &copy; 2013 LinkedIn Corporation
+        </div>
+      </div>
+    </div>
+
+    
+
+  </body>
+
+</html>

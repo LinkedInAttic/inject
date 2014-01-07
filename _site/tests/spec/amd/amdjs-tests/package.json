@@ -1,0 +1,15 @@
+{
+  "name":           "amdjs_test_server",
+  "version":        "0.0.1",
+  "description":    "A standalone test server for running generic AMD tests",
+  "author":         "AMD JS",
+  "private":        true,
+  "implements": [
+    "https://github.com/amdjs/amdjs-api/wiki/AMD"
+  ],
+  "devDependencies": {
+    "express":        "3.0.0"
+    },
+  "dependencies": {},
+  "engine":         "node >= 0.6.0"
+}
