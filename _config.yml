@@ -11,7 +11,18 @@ description  :
 
 # documentation structure
 documentation:
+  - version: 0.6.x
+    categories:
+      - cat: cjs
+        name: CommonJS Interface
+      - cat: amd
+        name: AMD Interface
+      - cat: api
+        name: The Inject API
+      - cat: howto
+        name: How To and Tutorials
   - version: 0.5.x
+    old: true
     categories:
       - cat: cjs
         name: CommonJS Interface
