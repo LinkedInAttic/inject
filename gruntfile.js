@@ -28,15 +28,6 @@ module.exports = function (grunt) {
     }
   }
 
-  /**
-   * Removes whitespace from a given string.
-   * @param  {String} string The string you wish to trim.
-   * @return {String}        The trimmed string.
-   */
-  function trim(string) {
-    return string.replace(/[\s]/g, '');
-  }
-
   // the workhorse of the grunt file
   grunt.initConfig({
     // inject specific header
@@ -85,7 +76,7 @@ module.exports = function (grunt) {
         command: 'git describe HEAD',
         options: {
           callback: function (err, stdout, stderr, next) {
-            var version = trim(stdout);
+            var version = stdout.trim();
             setVersion(version);
             next();
           }
@@ -95,7 +86,7 @@ module.exports = function (grunt) {
         command: 'git rev-parse --abbrev-ref HEAD',
         options: {
           callback: function (err, stdout, stderr, next) {
-            if (trim(stdout) !== 'master') {
+            if (stdout.trim() !== 'master') {
               throw new Error('You have not checked out the master branch.');
             }
             next();
