@@ -79,8 +79,19 @@ module.exports = function (grunt) {
         command: 'git describe HEAD',
         options: {
           callback: function (err, stdout, stderr, next) {
-            var version = stdout.replace(/[\s]/g, '');
+            var version = stdout.trim();
             setVersion(version);
+            next();
+          }
+        }
+      },
+      isBranchMaster: {
+        command: 'git rev-parse --abbrev-ref HEAD',
+        options: {
+          callback: function (err, stdout, stderr, next) {
+            if (stdout.trim() !== 'master') {
+              throw new Error('You have not checked out the master branch.');
+            }
             next();
           }
         }
@@ -433,6 +444,7 @@ module.exports = function (grunt) {
   ]);
   
   grunt.registerTask('release', [
+    'shell:isBranchMaster',
     'build',
     'releasetest',
     'copy:recent_to_release',
