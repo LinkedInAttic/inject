@@ -23,20 +23,23 @@ governing permissions and limitations under the License.
  * run (require.run), and define.
  * @file
 **/
-var RequireContext = Fiber.extend(function () {
+var RequireContext = Fiber.extend(function() {
+
   return {
     /**
      * Creates a new RequireContext
      * @constructs RequireContext
+     * @param {object} env - The context to run in
      * @param {String} id - the current module ID for this context
      * @param {String} path - the current module URL for this context
-     * @param {String} qualifiedId - a (from)-joined collection of paths
+     * @param {Array} qualifiedIds - a (from)-joined collection of paths
      * @public
      */
-    init: function (id, path, qualifiedId) {
+    init: function (env, id, path, qualifiedIds) {
+      this.env = env;
       this.id = id || null;
       this.path = path || null;
-      this.qualifiedId = qualifiedId || null;
+      this.qualifiedIds = qualifiedIds || [];
     },
 
     /**
@@ -56,10 +59,10 @@ var RequireContext = Fiber.extend(function () {
      * @returns {String} the path for the current context
      */
     getPath: function () {
-      if (!userConfig.moduleRoot) {
+      if (!this.env.config.moduleRoot) {
         throw new Error('moduleRoot must be defined. Please use Inject.setModuleRoot()');
       }
-      return this.path || userConfig.moduleRoot;
+      return this.path || this.env.config.moduleRoot;
     },
 
     /**
@@ -86,9 +89,14 @@ var RequireContext = Fiber.extend(function () {
      */
     require: function (moduleIdOrList, callback) {
       var module;
+      var identifiers = [];
+      var identifierCache = {};
       var identifier;
       var assignedModule;
+      var localQualifiedId;
       var qualifiedId;
+      var i;
+      var len;
 
       if (typeof(moduleIdOrList) === 'string') {
         this.log('CommonJS require(string) of ' + moduleIdOrList);
@@ -97,17 +105,24 @@ var RequireContext = Fiber.extend(function () {
         }
 
         // try to get the module a couple different ways
-        identifier = RulesEngine.resolveModule(moduleIdOrList, this.getId());
-        qualifiedId = RequireContext.qualifiedId(identifier, this.qualifiedId);
-
-        // try the qualified path if we had a qualified ID
-        if (qualifiedId) {
-          module = Executor.getModule(qualifiedId);
+        identifier = this.env.rulesEngine.resolveModule(moduleIdOrList, this.getId());
+        localQualifiedId = this.env.requireContext.qualifiedId(identifier, this.id);
+        
+        identifiers = [ identifier, localQualifiedId ];
+        identifierCache[identifier] = 1;
+        identifierCache[localQualifiedId] = 1;
+        
+        // add all possible search paths
+        for (i = 0, len = this.qualifiedIds.length; i < len; i++) {
+          qualifiedId = this.env.requireContext.qualifiedId(identifier, this.qualifiedIds[i]);
+          if (!identifierCache[qualifiedId]) {
+            identifiers.push(qualifiedId);
+            identifierCache[qualifiedId] = 1;
+          }
         }
         
-        // if we still don't have a module from a qualified path, try a direct get
-        if (!module) {
-          module = Executor.getModule(identifier);
+        for (i = 0, len = identifiers.length; !module && i < len; i++) {
+          module = this.env.executor.getModule(identifiers[i]);
         }
         
         // still no module means it was never seen in a loading path
@@ -160,7 +175,7 @@ var RequireContext = Fiber.extend(function () {
       this.log('CommonJS require.ensure(array) of ' + moduleList.join(', '));
 
       // strip builtins (CommonJS doesn't download or make these available)
-      moduleList = Analyzer.stripBuiltins(moduleList);
+      moduleList = this.env.analyzer.stripBuiltins(moduleList);
 
       var require = proxy(this.require, this);
       this.process(moduleList, function(root) {
@@ -256,7 +271,7 @@ var RequireContext = Fiber.extend(function () {
 
       // handle anonymous modules
       if (!id) {
-        currentExecutingAMD = Executor.getCurrentExecutingAMD();
+        currentExecutingAMD = this.env.executor.getCurrentExecutingAMD();
         if (currentExecutingAMD) {
           id = currentExecutingAMD.id;
         }
@@ -274,8 +289,8 @@ var RequireContext = Fiber.extend(function () {
         // all modules have been ran, now to deal with this guy's args
         var resolved = [];
         var deps = (dependenciesDeclared) ? dependencies : ['require', 'exports', 'module'];
-        var require = RequireContext.createRequire(root.data.resolvedId, root.data.resolvedUrl);
-        var module = Executor.createModule(root.data.resolvedId, RequireContext.qualifiedId(root), root.data.resolvedUrl);
+        var require = this.env.requireContext.createRequire(root.data.resolvedId, root.data.resolvedUrl);
+        var module = this.env.executor.createModule(root.data.resolvedId, this.env.requireContext.qualifiedId(root), root.data.resolvedUrl);
         var result;
         for (var i = 0, len = deps.length; i < len; i++) {
           switch(deps[i]) {
@@ -329,22 +344,23 @@ var RequireContext = Fiber.extend(function () {
         callback = arguments[2];
       }
       
-      var root = new TreeNode();
+      var root = new this.env.TreeNode();
       var count = dependencies.length;
       var node;
       var runner;
       var runners = [];
+      var self = this;
       var resolveCount = function() {
         if (count === 0 || --count === 0) {
-          runner = new TreeRunner(root);
+          runner = new self.env.TreeRunner(self.env, root);
           runner.execute(function() {
-            callback(root);
+            callback.call(self, root);
           });
         }
       };
       root.data.originalId = id;
       root.data.resolvedId = id;
-      root.data.resolvedUrl = RulesEngine.resolveFile(id, this.path);
+      root.data.resolvedUrl = this.env.rulesEngine.resolveFile(id, this.path);
       
       if (dependencies.length) {
         for (i = 0, len = dependencies.length; i < len; i++) {
@@ -355,20 +371,20 @@ var RequireContext = Fiber.extend(function () {
           
           // add the node always at this point, we just may not need
           // to download it.
-          node = new TreeNode();
+          node = new this.env.TreeNode();
           node.data.originalId = dependencies[i];
           root.addChild(node);
           
-          if (Executor.getModule(dependencies[i])) {
+          if (this.env.executor.getModule(dependencies[i])) {
             resolveCount();
             continue;
           }
-          else if (Executor.getModule(RequireContext.qualifiedId(RulesEngine.resolveModule(node.data.originalId, root.data.resolvedId), node))) {
+          else if (this.env.executor.getModule(this.env.requireContext.qualifiedId(this.env.rulesEngine.resolveModule(node.data.originalId, root.data.resolvedId), node))) {
             resolveCount();
             continue;
           }
           else {
-            runner = new TreeRunner(node);
+            runner = new this.env.TreeRunner(this.env, node);
             runners.push(runner);
             runner.download(resolveCount);
           }
@@ -377,142 +393,143 @@ var RequireContext = Fiber.extend(function () {
       else {
         resolveCount();
       }
+    },
+    
+    /**
+     * create a require() method within a given context path
+     * relative require() calls can be based on the provided
+     * id and path
+     * @method RequireContext.createRequire
+     * @param {string} id - the module identifier for relative module IDs
+     * @param {string} path - the module path for relative path operations
+     * @public
+     * @returns a function adhearing to CommonJS and AMD require()
+     */
+    createRequire: function (id, path, qualifiedIds) {
+      var req = new RequireContext(this.env, id, path, qualifiedIds);
+      var require = proxy(req.require, req);
+      var self = this;
+
+      require.ensure = proxy(req.ensure, req);
+      require.run = proxy(req.run, req);
+      // resolve an identifier to a URL (AMD compatibility)
+      require.toUrl = function (identifier) {
+        var resolvedId = self.env.rulesEngine.resolveModule(identifier, id);
+        var resolvedPath = self.env.rulesEngine.resolveFile(resolvedId, '', true);
+        return resolvedPath;
+      };
+      return require;
+    },
+
+    /**
+     * create a define() method within a given context path
+     * relative define() calls can be based on the provided
+     * id and path
+     * @method RequireContext.createDefine
+     * @param {string} id - the module identifier for relative module IDs
+     * @param {string} path - the module path for relative path operations
+     * @param {boolean} disableAMD - if provided, define.amd will be false, disabling AMD detection
+     * @public
+     * @returns a function adhearing to the AMD define() method
+     */
+    createDefine: function (id, path, disableAMD) {
+      var req = new RequireContext(this.env, id, path);
+      var define = proxy(req.define, req);
+      define.amd = (disableAMD) ? false : {};
+      return define;
+    },
+
+    /**
+     * generate a Qualified ID
+     * A qualified ID behaves differently than a module ID. Based on it's parents,
+     * it refers to the ID as based on the chain of modules that were executed to
+     * invoke it. While this may be a reference to another module, a qualified ID is
+     * the real source of truth for where a module may be found
+     * @method RequireContext.qualifiedId
+     * @public
+     * @param {Object} rootOrId - either a {TreeNode} or {String} representing the current ID
+     * @param {String} qualifiedId - if provided, the qualfied ID is used instead of parent references
+     * @returns {String}
+     */
+    qualifiedId: function(rootOrId, qualifiedId) {
+      var out = [];
+  
+      if (typeof rootOrId === 'string') {
+        if (qualifiedId) {
+          return [rootOrId, qualifiedId].join('(from)');
+        }
+        else {
+          return rootOrId;
+        }
+      }
+      else {
+        rootOrId.parents(function(node) {
+          if (node.data.resolvedId) {
+            out.push(node.data.resolvedId);
+          }
+        });
+        return out.join('(from)');
+      }
+    },
+
+    /**
+     * Creates a synchronous define() function as used inside of the Inject Sandbox
+     * Unlike a global define(), this local define already has a module context and
+     * a local require function. It is used inside of the sandbox because at
+     * execution time, it's assumed all dependencies have been resolved. This is
+     * a much lighter version of RequireContext#define
+     * @method RequireContext.createInlineDefine
+     * @public
+     * @param {Object} module - a module object from the Executor
+     * @param {Function} require - a synchronous require function
+     * @returns {Function}
+     */
+    createInlineDefine: function(module, require) {
+      var define = function() {
+        // this is a serial define and is no longer functioning asynchronously',
+        function isArray(a) {
+          return (Object.prototype.toString.call(a) === '[object Array]');
+        }
+        var deps = [];
+        var depends = ['require', 'exports', 'module'];
+        var factory = {};
+        var result;
+        for (var i = 0, len = arguments.length; i < len; i++) {
+          if (isArray(arguments[i])) {
+            depends = arguments[i];
+            break;
+          }
+        }
+        factory = arguments[arguments.length - 1];
+        for (var d = 0, dlen = depends.length; d < dlen; d++) {
+          switch(depends[d]) {
+          case 'require':
+            deps.push(require);
+            break;
+          case 'module':
+            deps.push(module);
+            break;
+          case 'exports':
+            deps.push(module.exports);
+            break;
+          default:
+            deps.push(require(depends[d]));
+          }
+        }
+        if (typeof factory === 'function') {
+          result = factory.apply(module, deps);
+          if (result) {
+            module.exports = result;
+          }
+        }
+        else if (typeof factory === 'object') {
+          module.exports = factory;
+        }
+        module.amd = true;
+        module.exec = true;
+      };
+      define.amd = {};
+      return define;
     }
   };
 });
-
-/**
- * create a require() method within a given context path
- * relative require() calls can be based on the provided
- * id and path
- * @method RequireContext.createRequire
- * @param {string} id - the module identifier for relative module IDs
- * @param {string} path - the module path for relative path operations
- * @public
- * @returns a function adhearing to CommonJS and AMD require()
- */
-RequireContext.createRequire = function (id, path, qualifiedId) {
-  var req = new RequireContext(id, path, qualifiedId);
-  var require = proxy(req.require, req);
-
-  require.ensure = proxy(req.ensure, req);
-  require.run = proxy(req.run, req);
-  // resolve an identifier to a URL (AMD compatibility)
-  require.toUrl = function (identifier) {
-    var resolvedId = RulesEngine.resolveModule(identifier, id);
-    var resolvedPath = RulesEngine.resolveFile(resolvedId, path, true);
-    return resolvedPath;
-  };
-  return require;
-};
-
-/**
- * create a define() method within a given context path
- * relative define() calls can be based on the provided
- * id and path
- * @method RequireContext.createDefine
- * @param {string} id - the module identifier for relative module IDs
- * @param {string} path - the module path for relative path operations
- * @param {boolean} disableAMD - if provided, define.amd will be false, disabling AMD detection
- * @public
- * @returns a function adhearing to the AMD define() method
- */
-RequireContext.createDefine = function (id, path, disableAMD) {
-  var req = new RequireContext(id, path);
-  var define = proxy(req.define, req);
-  define.amd = (disableAMD) ? false : {};
-  return define;
-};
-
-/**
- * generate a Qualified ID
- * A qualified ID behaves differently than a module ID. Based on it's parents,
- * it refers to the ID as based on the chain of modules that were executed to
- * invoke it. While this may be a reference to another module, a qualified ID is
- * the real source of truth for where a module may be found
- * @method RequireContext.qualifiedId
- * @public
- * @param {Object} rootOrId - either a {TreeNode} or {String} representing the current ID
- * @param {String} qualifiedId - if provided, the qualfied ID is used instead of parent references
- * @returns {String}
- */
-RequireContext.qualifiedId = function(rootOrId, qualifiedId) {
-  var out = [];
-  
-  if (typeof rootOrId === 'string') {
-    if (qualifiedId) {
-      return [rootOrId, qualifiedId].join('(from)');
-    }
-    else {
-      return rootOrId;
-    }
-  }
-  else {
-    rootOrId.parents(function(node) {
-      if (node.data.resolvedId) {
-        out.push(node.data.resolvedId);
-      }
-    });
-    return out.join('(from)');
-  }
-};
-
-/**
- * Creates a synchronous define() function as used inside of the Inject Sandbox
- * Unlike a global define(), this local define already has a module context and
- * a local require function. It is used inside of the sandbox because at
- * execution time, it's assumed all dependencies have been resolved. This is
- * a much lighter version of RequireContext#define
- * @method RequireContext.createInlineDefine
- * @public
- * @param {Object} module - a module object from the Executor
- * @param {Function} require - a synchronous require function
- * @returns {Function}
- */
-RequireContext.createInlineDefine = function(module, require) {
-  var define = function() {
-    // this is a serial define and is no longer functioning asynchronously',
-    function isArray(a) {
-      return (Object.prototype.toString.call(a) === '[object Array]');
-    }
-    var deps = [];
-    var depends = ['require', 'exports', 'module'];
-    var factory = {};
-    var result;
-    for (var i = 0, len = arguments.length; i < len; i++) {
-      if (isArray(arguments[i])) {
-        depends = arguments[i];
-        break;
-      }
-    }
-    factory = arguments[arguments.length - 1];
-    for (var d = 0, dlen = depends.length; d < dlen; d++) {
-      switch(depends[d]) {
-      case 'require':
-        deps.push(require);
-        break;
-      case 'module':
-        deps.push(module);
-        break;
-      case 'exports':
-        deps.push(module.exports);
-        break;
-      default:
-        deps.push(require(depends[d]));
-      }
-    }
-    if (typeof factory === 'function') {
-      result = factory.apply(module, deps);
-      if (result) {
-        module.exports = result;
-      }
-    }
-    else if (typeof factory === 'object') {
-      module.exports = factory;
-    }
-    module.amd = true;
-    module.exec = true;
-  };
-  define.amd = {};
-  return define;
-};

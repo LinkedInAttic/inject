@@ -21,7 +21,8 @@ governing permissions and limitations under the License.
  * via various traversal methods.
  * @file
 **/
-var TreeNode = Fiber.extend(function () {
+var TreeNode = Fiber.extend(function() {
+
   return {
     /**
      * Create a TreeNode
@@ -198,5 +199,3 @@ var TreeNode = Fiber.extend(function () {
     }
   };
 });
-
-TreeNode = TreeNode;

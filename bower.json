@@ -4,10 +4,11 @@
   "main": [
     "dist/recent/inject.js",
     "dist/recent/inject.min.js",
-    "dist/recent/inject-plugins.js",
-    "dist/recent/inject-plugins.min.js",
+    "dist/recent/plugins/css.js",
+    "dist/recent/plugins/text.js",
+    "dist/recent/plugins/json.js",
     "dist/LICENSE",
-    "dist/README.markdown",
+    "dist/README.md",
     "dist/relay.html"
   ],
   "ignore": [

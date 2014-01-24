@@ -15,6 +15,6 @@ test("#240 fail gracefully when an anonymous define is used out of context - AMD
 // #244, disable amd detection
 test("#244 disable the global AMD, preventing errors", function() {
   var pass = false;
-  Inject.disableGlobalAMD(true);
+  define = Inject.disableAMD();
   ok(false === define.amd, "Global AMD detection can be disabled via a config");
 });
