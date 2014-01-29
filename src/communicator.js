@@ -55,8 +55,8 @@ var Communicator;
         return;
       }
       alreadyListening = true;
-      
-      listenFor(window, 'message', function(e) {
+    
+      addListener(window, 'message', function(e) {
         var commands, command, params;
       
         if (!userConfig.xd.relayFile) {
