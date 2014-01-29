@@ -117,7 +117,7 @@ var Communicator = Fiber.extend(function() {
       }
       this.alreadyListening = true;
     
-      this.listenFor(window, 'message', function(e) {
+      addListener(window, 'message', function(e) {
         var commands, command, params;
     
         if (!self.env.config.relayFile) {
