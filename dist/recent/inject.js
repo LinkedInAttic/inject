@@ -753,6 +753,15 @@ governing permissions and limitations under the License.
 
 var reURI = /^((http.?:)\/\/([^:\/\s]+)(:\d+)*)/; // returns groups for protocol (2), domain (3) and port (4) 
 
+function addListener(el, evt, fn) {
+  if (window.addEventListener) {
+    el.addEventListener(evt, fn, false);
+  }
+  else {
+    el.attachEvent('on' + evt, fn);
+  }
+}
+
 function getDomainName(url) {
   return url.match(reURI)[3];
 }
@@ -1421,7 +1430,7 @@ var Communicator = Fiber.extend(function() {
       }
       this.alreadyListening = true;
     
-      this.listenFor(window, 'message', function(e) {
+      addListener(window, 'message', function(e) {
         var commands, command, params;
     
         if (!self.env.config.relayFile) {
