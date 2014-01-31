@@ -894,6 +894,15 @@ governing permissions and limitations under the License.
 
 var reURI = /^((http.?:)\/\/([^:\/\s]+)(:\d+)*)/; // returns groups for protocol (2), domain (3) and port (4) 
 
+function addListener(el, evt, fn) {
+  if (window.addEventListener) {
+    el.addEventListener(evt, fn, false);
+  }
+  else {
+    el.attachEvent('on' + evt, fn);
+  }
+}
+
 function getDomainName(url) {
   return url.match(reURI)[3];
 }
@@ -1095,8 +1104,8 @@ var Communicator;
         return;
       }
       alreadyListening = true;
-      
-      listenFor(window, 'message', function(e) {
+    
+      addListener(window, 'message', function(e) {
         var commands, command, params;
       
         if (!userConfig.xd.relayFile) {
@@ -1338,7 +1347,8 @@ var Communicator;
     };
   });
   Communicator = new AsStatic();
-})();;/*jshint evil:true */
+})();
+;/*jshint evil:true */
 /*global context:true, document:true */
 
 /*
@@ -4225,5 +4235,5 @@ context.require = context.Inject.require;
     @public
  */
 context.define = context.Inject.define;
-;context.Inject.version = "0.6.0";
+;context.Inject.version = "0.6.1";
 })(this);
