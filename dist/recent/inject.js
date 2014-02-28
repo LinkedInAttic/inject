@@ -4263,5 +4263,5 @@ var TreeNode = Fiber.extend(function() {
 
   
   // initialize
-  init('__INJECT__VERSION__');
+  init('0.7.0-rc1-1-ge804895');
 })(this);

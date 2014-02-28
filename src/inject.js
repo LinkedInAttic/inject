@@ -70,5 +70,5 @@ governing permissions and limitations under the License.
   //@@include('./treerunner.js')
   
   // initialize
-  init('__INJECT__VERSION__');
+  init('//@@INJECT_VERSION');
 })(this);
