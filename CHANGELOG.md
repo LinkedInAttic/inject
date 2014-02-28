@@ -1,3 +1,27 @@
+<a name="v0.7.0-rc1"></a>
+### v0.7.0-rc1 (2014-02-28)
+
+
+#### Bug Fixes
+
+* **Communicator:** communicator now only uses iframe when cross domain ([3907e556](http://github.com/jakobo/atomic/commit/3907e556d1b27222426a55026bd33d786140bf97))
+* **grunt:**
+  * use native trim ([1aa45f7b](http://github.com/jakobo/atomic/commit/1aa45f7bb09541ea55023e99769d649743e6630a))
+  * Reincludes the qunit commands ([8dd5dd4e](http://github.com/jakobo/atomic/commit/8dd5dd4e838ca3e256c2cccd8a249b760a2e0d72))
+
+
+#### Features
+
+* **Core:** Allows for multiple instances of Inject ([4ee4af1d](http://github.com/jakobo/atomic/commit/4ee4af1d6248990fb6a88e6e74da88b0f52d7754))
+* **grunt:** adds a release task check to ensure the branch is master ([d568538a](http://github.com/jakobo/atomic/commit/d568538a3414f10fe5144ba799893d6437f27c9b))
+
+
+#### Breaking Changes
+
+* If you had logic that was depending on the iframe existing, then it may not
+always be available. Making a cross domain request will establish the iframe.
+ ([3907e556](http://github.com/jakobo/atomic/commit/3907e556d1b27222426a55026bd33d786140bf97))
+
 <a name="v0.6.1"></a>
 ### v0.6.1 (2014-01-31)
 
