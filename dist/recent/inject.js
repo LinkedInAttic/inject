@@ -1407,7 +1407,7 @@ var Communicator = Fiber.extend(function() {
       this.downloadCompleteQueue[url].push(callback);
       
       // local xhr
-      if (!this.env.config.relayFile) {
+      if (!this.env.config.relayFile || getDomainName(url) === getDomainName(location.href)) {
         this.sendViaXHR(url);
         return;
       }
@@ -1437,7 +1437,7 @@ var Communicator = Fiber.extend(function() {
           return;
         }
     
-        if (self.getDomainName(e.origin) !== self.getDomainName(self.env.config.relayFile)) {
+        if (getDomainName(e.origin) !== getDomainName(self.env.config.relayFile)) {
           return;
         }
     

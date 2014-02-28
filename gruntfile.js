@@ -485,7 +485,7 @@ module.exports = function (grunt) {
   ]);
   
   grunt.registerTask('releasetest', [
-    'express:generic',
+    'express:server',
     'express:alternate',
     'qunit',
     'express-stop'
