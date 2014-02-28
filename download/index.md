@@ -5,6 +5,10 @@ title : Downloads
 
 View the [Changelog](https://github.com/linkedin/inject/blob/master/CHANGELOG.md) to see what changed between versions.
 
+# 0.7.x
+
+* 0.4.0 - [rc1](0.7.x/inject-0.7.0-rc1.zip)
+
 # 0.6.x
 
 * [0.6.1 final](0.6.x/inject-0.6.1.tgz)
