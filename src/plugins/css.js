@@ -21,48 +21,50 @@ governing permissions and limitations under the License.
  * It returns a CSS object with one method, attach
  * @file
 **/
+window.INJECT_PLUGINS = window.INJECT_PLUGINS || {};
 (function () {
   var style = document.createElement('style');
   style.type = 'text/css';
   var placed = false;
   var useCssText = (style.styleSheet) ? true : false;
-
+  
   function CSS(txt) {
     this.txt = txt;
   }
   CSS.prototype.attach = function () {
-    Inject.plugins.css.addStyles(this.txt);
+    addStyles(this.txt);
   };
-
-  Inject.addFetchRule(/^css\!.+$/, function(next, content, resolver, comm, options) {
-    var moduleId = options.moduleId.replace(/^css!\s*/, '');
-    var resolvedMid = resolver.module(moduleId, options.parentId);
-    var path = resolver.url(resolvedMid, options.parentUrl, true);
-
-    comm.get(resolvedMid, path, function(text) {
-      next(null, ['',
-        ['var cssText = decodeURIComponent("', encodeURIComponent(text), '");'].join(''),
-        'module.setExports(Inject.plugins.css.create(cssText))',
-        ''].join('\n')
-      );
-    });
-  });
-
-  Inject.plugins.css = {
-    create: function(text) {
-      return new CSS(text);
-    },
-    addStyles: function (text) {
-      if (useCssText) {
-        style.styleSheet.cssText = [style.innerHTML, text].join('\n');
-      }
-      else {
-        style.appendChild(document.createTextNode(text));
-      }
-      if (!placed) {
-        placed = true;
-        document.getElementsByTagName('head')[0].appendChild(style);
-      }
+  
+  function addStyles(text) {
+    if (useCssText) {
+      style.styleSheet.cssText = [style.innerHTML, text].join('\n');
     }
+    else {
+      style.appendChild(document.createTextNode(text));
+    }
+    if (!placed) {
+      placed = true;
+      document.getElementsByTagName('head')[0].appendChild(style);
+    }
+  }
+  
+  window.INJECT_PLUGINS.css = function(inject) {
+    inject.addFetchRule(/^css\!.+$/, function(next, content, resolver, comm, options) {
+      var moduleId = options.moduleId.replace(/^css!\s*/, '');
+      var resolvedMid = resolver.module(moduleId, options.parentId);
+      var path = resolver.url(resolvedMid, options.parentUrl, true);
+
+      comm.get(resolvedMid, path, function(text) {
+        next(null, ['',
+          ['var cssText = decodeURIComponent("', encodeURIComponent(text), '");'].join(''),
+          'module.setExports(window.INJECT_PLUGINS.css.create(cssText))',
+          ''].join('\n')
+        );
+      });
+    });
+  };
+  
+  window.INJECT_PLUGINS.css.create = function(text) {
+    return new CSS(text);
   };
 })();

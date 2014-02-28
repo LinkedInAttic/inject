@@ -22,20 +22,23 @@ governing permissions and limitations under the License.
  * scenarios include things like config files.
  * @file
 **/
+window.INJECT_PLUGINS = window.INJECT_PLUGINS || {};
 (function () {
-  Inject.addFetchRule(/^json\!.+$/, function(next, content, resolver, comm, options) {
-    var moduleId = options.moduleId.replace(/^json!\s*/, '');
-    var resolvedMid = resolver.module(moduleId, options.parentId);
-    var path = resolver.url(resolvedMid, options.parentUrl, true);
+  window.INJECT_PLUGINS.json = function(inject) {
+    inject.addFetchRule(/^json\!.+$/, function(next, content, resolver, comm, options) {
+      var moduleId = options.moduleId.replace(/^json!\s*/, '');
+      var resolvedMid = resolver.module(moduleId, options.parentId);
+      var path = resolver.url(resolvedMid, options.parentUrl, true);
 
-    comm.get(resolvedMid, path, function(text) {
-      next(null, ['',
-        'var json = "',
-        encodeURIComponent(text),
-        '";',
-        'module.setExports(JSON.parse(decodeURIComponent(json)));',
-        ''].join('')
-      );
+      comm.get(resolvedMid, path, function(text) {
+        next(null, ['',
+          'var json = "',
+          encodeURIComponent(text),
+          '";',
+          'module.setExports(JSON.parse(decodeURIComponent(json)));',
+          ''].join('')
+        );
+      });
     });
-  });
+  };
 })();

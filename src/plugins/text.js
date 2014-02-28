@@ -22,20 +22,23 @@ governing permissions and limitations under the License.
  * transformations such as markdown syntax
  * @file
 **/
+window.INJECT_PLUGINS = window.INJECT_PLUGINS || {};
 (function () {
-  Inject.addFetchRule(/^text\!.+$/, function(next, content, resolver, comm, options) {
-    var moduleId = options.moduleId.replace(/^text!\s*/, '');
-    var resolvedMid = resolver.module(moduleId, options.parentId);
-    var path = resolver.url(resolvedMid, options.parentUrl, true);
+  window.INJECT_PLUGINS.text = function(inject) {
+    inject.addFetchRule(/^text\!.+$/, function(next, content, resolver, comm, options) {
+      var moduleId = options.moduleId.replace(/^text!\s*/, '');
+      var resolvedMid = resolver.module(moduleId, options.parentId);
+      var path = resolver.url(resolvedMid, options.parentUrl, true);
 
-    comm.get(resolvedMid, path, function(text) {
-      next(null, ['',
-        'var text = "',
-        encodeURIComponent(text),
-        '";',
-        'module.setExports(decodeURIComponent(text));',
-        ''].join('')
-      );
+      comm.get(resolvedMid, path, function(text) {
+        next(null, ['',
+          'var text = "',
+          encodeURIComponent(text),
+          '";',
+          'module.setExports(decodeURIComponent(text));',
+          ''].join('')
+        );
+      });
     });
-  });
+  };
 })();
