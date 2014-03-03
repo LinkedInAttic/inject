@@ -139,7 +139,7 @@ var Communicator = Fiber.extend(function() {
             self.socketQueue = [];
             self.socketQueueCache = {};
             for (var i = 0, len = lQueue.length; i < len; i++) {
-              self.sendMessage(self.socket.contentWindow, self.env.config.relayFile, 'fetch', {
+              sendMessage(self.socket.contentWindow, self.env.config.relayFile, 'fetch', {
                 url: lQueue[i]
               });
             }
@@ -212,7 +212,7 @@ var Communicator = Fiber.extend(function() {
       this.beginListening();
       var self = this;
       if (this.socket && !this.socketInProgress) {
-        this.sendMessage(this.socket.contentWindow, this.env.config.relayFile, 'fetch', {
+        sendMessage(this.socket.contentWindow, this.env.config.relayFile, 'fetch', {
           url: url
         });
       }
