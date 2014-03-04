@@ -416,7 +416,7 @@ function amdPluginBreakout(env) {
           contents = ['module.exports = decodeURIComponent("', encodeURIComponent(contents), '");'].join('');
         }
 
-        next(contents);
+        next(null, contents);
       };
       onload.fromText = function(moduleName, contents) {
         if (!contents) {
