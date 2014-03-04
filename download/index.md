@@ -7,7 +7,7 @@ View the [Changelog](https://github.com/linkedin/inject/blob/master/CHANGELOG.md
 
 # 0.7.x
 
-* 0.7.0 - [rc1](0.7.x/inject-0.7.0-rc1.zip)
+* 0.7.0 - [rc2](0.7.x/inject-0.7.0-rc2.zip), [rc1](0.7.x/inject-0.7.0-rc1.zip)
 
 # 0.6.x
 
