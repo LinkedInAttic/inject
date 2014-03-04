@@ -1,6 +1,6 @@
 {
   "name": "inject",
-  "version": "0.7.0-rc1",
+  "version": "0.7.0-rc2",
   "main": [
     "dist/recent/inject.js",
     "dist/recent/inject.min.js",

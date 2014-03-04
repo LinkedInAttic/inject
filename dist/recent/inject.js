@@ -1452,7 +1452,7 @@ var Communicator = Fiber.extend(function() {
             self.socketQueue = [];
             self.socketQueueCache = {};
             for (var i = 0, len = lQueue.length; i < len; i++) {
-              self.sendMessage(self.socket.contentWindow, self.env.config.relayFile, 'fetch', {
+              sendMessage(self.socket.contentWindow, self.env.config.relayFile, 'fetch', {
                 url: lQueue[i]
               });
             }
@@ -1525,7 +1525,7 @@ var Communicator = Fiber.extend(function() {
       this.beginListening();
       var self = this;
       if (this.socket && !this.socketInProgress) {
-        this.sendMessage(this.socket.contentWindow, this.env.config.relayFile, 'fetch', {
+        sendMessage(this.socket.contentWindow, this.env.config.relayFile, 'fetch', {
           url: url
         });
       }
@@ -2424,7 +2424,7 @@ function amdPluginBreakout(env) {
           contents = ['module.exports = decodeURIComponent("', encodeURIComponent(contents), '");'].join('');
         }
 
-        next(contents);
+        next(null, contents);
       };
       onload.fromText = function(moduleName, contents) {
         if (!contents) {
@@ -4156,7 +4156,7 @@ var TreeNode = Fiber.extend(function() {
 
           addComm = function(fn) {
             commFlow.seq(function(next, error, contents) {
-              function onData(data) {
+              function onData(err, data) {
                 next(null, data);
               }
               function onError(err) {
@@ -4263,5 +4263,5 @@ var TreeNode = Fiber.extend(function() {
 
   
   // initialize
-  init('0.7.0-rc1-1-ge804895');
+  init('0.7.0-rc2');
 })(this);
