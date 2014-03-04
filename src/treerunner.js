@@ -281,7 +281,7 @@ var TreeRunner = Fiber.extend(function() {
 
           addComm = function(fn) {
             commFlow.seq(function(next, error, contents) {
-              function onData(data) {
+              function onData(err, data) {
                 next(null, data);
               }
               function onError(err) {
