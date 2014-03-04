@@ -4263,5 +4263,5 @@ var TreeNode = Fiber.extend(function() {
 
   
   // initialize
-  init('0.7.0-rc2');
+  init('0.7.0-rc3');
 })(this);

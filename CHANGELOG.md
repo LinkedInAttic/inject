@@ -1,3 +1,11 @@
+<a name="v0.7.0-rc3"></a>
+### v0.7.0-rc3 (2014-03-04)
+
+
+#### Bug Fixes
+
+* **gruntfile:** Plugins bundled with release now ([30886a6d](http://github.com/jakobo/atomic/commit/30886a6d2782cd28b6abfa52151c5f318c64fd8c))
+
 <a name="v0.7.0-rc2"></a>
 ### v0.7.0-rc2 (2014-03-03)
 
