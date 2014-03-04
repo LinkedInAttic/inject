@@ -177,7 +177,7 @@ module.exports = function (grunt) {
       recent_to_release: {
         expand: true,
         cwd: 'dist/recent',
-        src: '*',
+        src: '**/*',
         dest: '<%= output_files.release %>'
       },
       uglify_to_final: {
@@ -346,7 +346,7 @@ module.exports = function (grunt) {
         },
         files: [
           {
-            src: '**',
+            src: '**/*',
             dest: '/',
             expand: true,
             filter: 'isFile',
