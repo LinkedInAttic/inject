@@ -4175,21 +4175,26 @@ var TreeNode = Fiber.extend(function() {
             });
           };
     
-      // is this module already available? If so, don't redownload. This happens often when
-      // there was an inline define() on the page
-      if (this.env.executor.getModule(nodeData.resolvedId)) {
-        return function(a, b, cb) {
-          cb('');
-        };
+      // for non-AMD modules, if the module is already resolved, return an empty string
+      // which will cause the communicator to exit early and apply content rules if required
+      // for AMD modules, we re-fetch every time due to the nature of dynamic modules
+      if (nodeData.resolvedId.indexOf('!') === -1) {
+        // is this module already available? If so, don't redownload. This happens often when
+        // there was an inline define() on the page
+        if (this.env.executor.getModule(nodeData.resolvedId)) {
+          return function(a, b, cb) {
+            cb('');
+          };
+        }
+
+        else if (this.env.executor.getModule(this.env.requireContext.qualifiedId(node))) {
+          return function(a, b, cb) {
+            cb('');
+          };
+        }
       }
 
-      else if (this.env.executor.getModule(this.env.requireContext.qualifiedId(node))) {
-        return function(a, b, cb) {
-          cb('');
-        };
-      }
-
-      else if (fetchRules.length > 0) {
+      if (fetchRules.length > 0) {
         return function(name, path, cb) {
           var i = 0,
               len = fetchRules.length;
