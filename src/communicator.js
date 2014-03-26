@@ -223,23 +223,10 @@ var Communicator = Fiber.extend(function() {
       else {
         this.socketInProgress = true;
         this.addSocketQueue(url);
-        var iframeSrc = this.env.config.relayFile;
-      
-        this.socket = document.createElement('iframe');
-        iframeSrc += (iframeSrc.indexOf('?') < 0) ? '?' : '&';
-        iframeSrc += 'injectReturn=' + encodeURIComponent(location.href);
-        this.socket.src = iframeSrc;
-      
-        this.socket.style.visibility = 'hidden';
-        this.socket.style.border = 0;
-        this.socket.style.width = '1px';
-        this.socket.style.height = '1px';
-        this.socket.style.left = '-5000px';
-        this.socket.style.top = '-5000px';
-        this.socket.style.opacity = '0';
+        this.socket = this.buildIframe();
 
         window.setTimeout(function() {
-          if (!document.body.firsChild) {
+          if (!document.body.firstChild) {
             document.body.appendChild(self.socket);
           }
           else {
@@ -247,6 +234,33 @@ var Communicator = Fiber.extend(function() {
           }
         });
       }
+    },
+
+    /**
+     * Builds an iframe containing the HTTPRequest relay file.
+     * @function
+     * @private
+     */
+    buildIframe: function() {
+
+      var iframe = document.createElement('iframe'),
+          iframeStyle = iframe.style,
+          iframeSrc = this.env.config.relayFile;
+
+      iframeSrc += (iframeSrc.indexOf('?') < 0) ? '?' : '&';
+      iframeSrc += 'injectReturn=' + encodeURIComponent(location.href);
+      iframe.src = iframeSrc;
+    
+      iframeStyle.position = 'absolute';
+      iframeStyle.visibility = 'hidden';
+      iframeStyle.border = 0;
+      iframeStyle.width = '1px';
+      iframeStyle.height = '1px';
+      iframeStyle.left = '-5000px';
+      iframeStyle.top = '-5000px';
+      iframeStyle.opacity = '0';
+
+      return iframe;
     },
 
     /**
