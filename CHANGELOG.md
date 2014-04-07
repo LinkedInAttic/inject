@@ -1,3 +1,12 @@
+<a name="v0.7.0-rc4"></a>
+### v0.7.0-rc4 (2014-04-07)
+
+
+#### Bug Fixes
+
+* **Communicator:** refactor iframe building and address property typo ([83cac3ea](http://github.com/jakobo/atomic/commit/83cac3ea2c8ad4dbb2309edd3e3516a0dbf4267c))
+* **TreeRunner:** Prevents returning an empty callback for AMD-ish modules ([1bf3aac5](http://github.com/jakobo/atomic/commit/1bf3aac5f3acd69ec0173077859bf8fd9362f024))
+
 <a name="v0.7.0-rc3"></a>
 ### v0.7.0-rc3 (2014-03-04)
 
