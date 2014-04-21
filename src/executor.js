@@ -36,7 +36,7 @@ var Executor  = Fiber.extend(function() {
    * @type {boolean}
    */
   var docHead = false;
-  
+
   /**
    * Determines if an object has its own property. Uses {} instead of a local
    * object in case the hasOwnProperty property has been overwritten
@@ -56,7 +56,7 @@ var Executor  = Fiber.extend(function() {
   } catch (e) {
     docHead = false;
   }
-  
+
   /**
    * Creates a globally accessible object for eval purposes
    * This allows eval to work in the window scope, while still having
@@ -77,7 +77,7 @@ var Executor  = Fiber.extend(function() {
     };
     return window[guid];
   }
-  
+
   /**
    * Delete a globally accessible object used by executor
    * @function
@@ -148,7 +148,7 @@ var Executor  = Fiber.extend(function() {
       toExec = [toExec, sourceString].join('\n');
 
       eval(toExec);
-      
+
       if (module.__error) {
         module.__error.message = 'Runtime error in ' + module.id + '(' + module.uri + ') ' + module.__error.message;
       }
@@ -187,7 +187,7 @@ var Executor  = Fiber.extend(function() {
     clearCaches : function() {
       // cache of resolved exports
       this.cache = {};
-      
+
       // any modules that had errors
       this.errors = {};
 
@@ -252,14 +252,14 @@ var Executor  = Fiber.extend(function() {
       var offsetTracePieces;
       var actualLine;
       var actualChar;
-      
+
       if (HAS_OWN_PROPERTY.call(this.errors, idAlias) && this.errors[idAlias]) {
         err = this.errors[idAlias];
       }
       else if (alias && HAS_OWN_PROPERTY.call(this.errors, alias) && this.errors[alias]) {
         err = this.errors[alias];
       }
-      
+
       // check by moduleID
       if (this.cache[idAlias]) {
         module = this.cache[idAlias];
@@ -268,32 +268,38 @@ var Executor  = Fiber.extend(function() {
         this.cache[idAlias] = this.cache[alias];
         module = this.cache[alias];
       }
-      
+
       if (err) {
         errorMessage = 'module ' + idAlias + ' failed to load successfully';
         errorMessage += (err) ? ': ' + err.message : '';
-        
+
         // building a better stack trace
         if (module && module.__error_line) {
           // runtime errors need better stack trace
-          mainTrace = normalizeStack(err);
-          offsetTrace = normalizeStack(module.__error_line);
-          mainTracePieces = mainTrace[0].split(/:/);
-          offsetTracePieces = offsetTrace[0].split(/:/);
-          
-          actualLine =  mainTracePieces[mainTracePieces.length - 2] - offsetTracePieces[offsetTracePieces.length - 2];
-          actualLine = actualLine - 1;
-          
-          actualChar = mainTracePieces[mainTracePieces.length - 1];
-          
-          errorMessage = errorMessage + ' @ Line: ' + actualLine + ' Column: ' + actualChar + ' ';
+          mainTrace = printStackTrace({e: err});
+          offsetTrace = printStackTrace({e: module.__error_line});
+          mainTracePieces = mainTrace[1].split(/:/);
+          offsetTracePieces = offsetTrace[1].split(/:/);
+
+          if (!mainTrace[1] || mainTrace[1].indexOf(':') === -1) {
+            // traces were not usable. See issue #301
+            errorMessage = '(unparsable error) ' + err.message;
+          }
+          else {
+            actualLine =  mainTracePieces[mainTracePieces.length - 2] - offsetTracePieces[offsetTracePieces.length - 2];
+            actualLine = actualLine - 1;
+
+            actualChar = mainTracePieces[mainTracePieces.length - 1].replace(')', '');
+
+            errorMessage = errorMessage + ' @ Line: ' + actualLine + ' Column: ' + actualChar + ' ';
+          }
         }
-        
+
         err.message = errorMessage;
-        
+
         throw err;
       }
-      
+
       return module || null;
     },
 
@@ -307,13 +313,13 @@ var Executor  = Fiber.extend(function() {
      */
     createModule : function(moduleId, qualifiedId, path) {
       var module;
-      
+
       if (!(/\!/.test(moduleId)) && this.cache[moduleId]) {
         this.cache[qualifiedId] = this.cache[moduleId];
         this.cache[moduleId].qualifiedIds[qualifiedId] = 1;
         return this.cache[moduleId];
       }
-      
+
       module = {};
       module.id = moduleId || null;
       module.qualifiedIds = {};
@@ -344,16 +350,16 @@ var Executor  = Fiber.extend(function() {
             break;
         }
       };
-      
+
       // Important AMD item. Do not store any IDs with an !
       if (!(/\!/.test(moduleId))) {
         this.cache[moduleId] = module;
         this.cache[moduleId].qualifiedIds[qualifiedId] = 1;
       }
-      
+
       this.cache[qualifiedId] = module;
       this.cache[qualifiedId].qualifiedIds[moduleId] = 1;
-      
+
       return module;
     },
 
@@ -367,7 +373,7 @@ var Executor  = Fiber.extend(function() {
     getModule : function(moduleId, undef) {
       return this.getFromCache(moduleId) || undef;
     },
-    
+
     /**
      * Build a sandbox around and execute a module
      * @method Executor.runModule
@@ -382,14 +388,14 @@ var Executor  = Fiber.extend(function() {
       var functionId = 'exec' + (functionCount++);
       var globalPath = this.env.instance + '_' + functionId;
       var globalObject = createGlobalObject(globalPath, this);
-      
+
       var qualifiedIds = [];
       for (var name in module.qualifiedIds) {
         if (module.qualifiedIds.hasOwnProperty(name)) {
           qualifiedIds.push(name);
         }
       }
-      
+
       globalObject.module = module;
       globalObject.require = this.env.requireContext.createRequire(module.id, module.uri, qualifiedIds);
       globalObject.define = this.env.requireContext.createInlineDefine(module, globalObject.require);
@@ -414,7 +420,7 @@ var Executor  = Fiber.extend(function() {
         debugLog('Executor', 'broken', module.id, module.uri, module.exports);
         this.errors[module.id] = module.__error;
       }
-      
+
       removeGlobalObject(globalPath);
 
       debugLog('Executor', 'executed', module.id, module.uri, module.exports);

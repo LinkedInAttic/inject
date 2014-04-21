@@ -17,7 +17,7 @@ governing permissions and limitations under the License.
 var path = require('path');
 
 module.exports = function (grunt) {
-  
+
   function setVersion(version) {
     var foot = grunt.config.get('anonymous_footer');
     var output_files = grunt.config.get('output_files');
@@ -147,6 +147,11 @@ module.exports = function (grunt) {
           {src: ['./node_modules/fiber/src/fiber.js'], dest: './tmp/lib/fiber/fiber.js', filter: 'isFile'}
         ]
       },
+      stacktrace_to_tmp: {
+        files: [
+          {src: ['./node_modules/stacktrace-js/stacktrace.js'], dest: './tmp/lib/stacktrace/stacktrace.js', filter: 'isFile'}
+        ]
+      },
       inject_to_uglify: {
         files: {
           // dest: src
@@ -184,7 +189,7 @@ module.exports = function (grunt) {
         files: {'./tmp/final.out': './tmp/uglify.out'}
       }
     },
-    
+
     concat: {
       relayHtml: {
         dest: './tmp/concat.out', // placeholder
@@ -200,7 +205,7 @@ module.exports = function (grunt) {
         ]
       }
     },
-    
+
     /**
      * Do a bower install of browser-ready components Atomic needs
      */
@@ -270,7 +275,7 @@ module.exports = function (grunt) {
         dest: './tmp'
       }
     },
-    
+
     /**
      * qunit: runs our test suite via phantomjs
      */
@@ -355,14 +360,14 @@ module.exports = function (grunt) {
         ]
       }
     },
-    
+
     changelog: {
       options: {
         github: 'jakobo/atomic',
         version: '<%= version_string %>'
       }
     },
-    
+
     bumpup: {
       options: {
         dateformat: 'YYYY-MM-DD HH:mm'
@@ -397,30 +402,31 @@ module.exports = function (grunt) {
   grunt.loadNpmTasks('grunt-express');
   grunt.loadNpmTasks('grunt-include-replace');
   grunt.loadNpmTasks('grunt-shell');
-  
+
   grunt.registerMultiTask('log', 'Print some messages', function() {
     grunt.log.writeln(this.data.options.message);
   });
-  
+
   grunt.registerTask('versionFromParam', 'Use the version from a parameter --as', function() {
     setVersion(grunt.option('as'));
   });
-  
+
   grunt.registerTask('noop', 'Does nothing', function() {});
-  
+
   grunt.registerTask('autofail', 'Automatically stops a build', function() {
     throw new Error('Build halted');
   });
 
   // set up grunt task options
   grunt.registerTask('default', ['build']);
-  
+
   grunt.registerTask('build', [
     'bower:install',
     'copy:fiber_to_tmp', // fiber is in NPM, not bower, so copy it over
+    'copy:stacktrace_to_tmp', // same with stacktrace
     'jshint',
     (grunt.option('as')) ? 'versionFromParam' : 'shell:versionFromTag',
-    
+
     // create the inject.js file and it's min version
     'includereplace:inject',
     'copy:inject_to_final',
@@ -429,20 +435,20 @@ module.exports = function (grunt) {
     'uglify:file',
     'copy:uglify_to_final',
     'copy:final_to_main_min',
-    
+
     // copy the support files
     'copy:legal_to_legal',
     'copy:plugins_to_plugins',
-    
+
     // create the relay file
     'concat:relayHtml',
     'copy:concat_to_final',
     'copy:final_to_relay',
-    
+
     // clean up
     'clean:tmp'
   ]);
-  
+
   grunt.registerTask('release', [
     'shell:isBranchMaster',
     'build',
@@ -454,19 +460,19 @@ module.exports = function (grunt) {
     (grunt.option('as')) ? 'setversion' : 'noop',
     (grunt.option('as')) ? 'tagit' : 'noop'
   ]);
-  
+
   grunt.registerTask('genlog', [
     (grunt.option('as')) ? 'versionFromParam' : 'noop',
     (grunt.option('as')) ? 'noop' : 'autofail',
     'changelog'
   ]);
-  
+
   grunt.registerTask('setversion', [
     (grunt.option('as')) ? 'versionFromParam' : 'noop',
     (grunt.option('as')) ? 'noop' : 'autofail',
     'bumpup'
   ]);
-  
+
   grunt.registerTask('tagit', [
     (grunt.option('as')) ? 'versionFromParam' : 'noop',
     (grunt.option('as')) ? 'noop' : 'autofail',
@@ -475,7 +481,7 @@ module.exports = function (grunt) {
     'shell:git_tag_release',
     'log:pushInstructions'
   ]);
-  
+
   grunt.registerTask('test', [
     'build',
     'express:server',
@@ -483,14 +489,14 @@ module.exports = function (grunt) {
     'qunit',
     'express-stop'
   ]);
-  
+
   grunt.registerTask('releasetest', [
     'express:server',
     'express:alternate',
     'qunit',
     'express-stop'
   ]);
-  
+
   grunt.registerTask('itest', [
     'build',
     'server'
