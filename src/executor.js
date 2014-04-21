@@ -252,6 +252,7 @@ var Executor  = Fiber.extend(function() {
       var offsetTracePieces;
       var actualLine;
       var actualChar;
+      var tracePieces = /([\d]*)?:([\d]+)\)?$/;
 
       if (HAS_OWN_PROPERTY.call(this.errors, idAlias) && this.errors[idAlias]) {
         err = this.errors[idAlias];
@@ -278,18 +279,25 @@ var Executor  = Fiber.extend(function() {
           // runtime errors need better stack trace
           mainTrace = printStackTrace({e: err});
           offsetTrace = printStackTrace({e: module.__error_line});
-          mainTracePieces = mainTrace[1].split(/:/);
-          offsetTracePieces = offsetTrace[1].split(/:/);
 
           if (!mainTrace[1] || mainTrace[1].indexOf(':') === -1) {
             // traces were not usable. See issue #301
             errorMessage = '(unparsable error) ' + err.message;
           }
           else {
-            actualLine =  mainTracePieces[mainTracePieces.length - 2] - offsetTracePieces[offsetTracePieces.length - 2];
-            actualLine = actualLine - 1;
+            mainTracePieces = mainTrace[1].match(tracePieces);
+            offsetTracePieces = offsetTrace[1].match(tracePieces);
 
-            actualChar = mainTracePieces[mainTracePieces.length - 1].replace(')', '');
+            if (typeof mainTracePieces[1] == 'undefined') {
+              // phantomJS returns '   at :<line>'. We need to test for missing pieces
+              // all traces at least give us the line
+              actualLine = mainTracePieces[2] - offsetTracePieces[2] - 1;
+              actualChar = '--';
+            }
+            else {
+              actualLine = mainTracePieces[1] - offsetTracePieces[1] - 1;
+              actualChar = mainTracePieces[2];
+            }
 
             errorMessage = errorMessage + ' @ Line: ' + actualLine + ' Column: ' + actualChar + ' ';
           }
