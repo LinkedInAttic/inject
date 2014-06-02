@@ -31,7 +31,8 @@
     <script type="text/javascript" src="../../src/includes/constants.js"></script>
     <script type="text/javascript" src="../../src/includes/globals.js"></script>
     <script type="text/javascript" src="../../src/includes/commonjs.js"></script>
-    <script type="text/javascript" src="../resources/fiber.js"></script>
+    <script type="text/javascript" src="/node_modules/fiber/src/fiber.js"></script>
+    <script type="text/javascript" src="/node_modules/stacktrace-js/stacktrace.js"></script>
     <script type="text/javascript" src="../../src/executor.js"></script>
     <script type="text/javascript">
       var errorCode = {
@@ -61,20 +62,20 @@
           'exports.biz = \'boz\';',
           ''].join('\n')
       };
-      
+
       function makeRulesEngine() {
         return {
           getOriginalName: sinon.stub()
         };
       }
-      
+
       function makeRequireContext() {
         return {
           createRequire: sinon.stub(),
           createInlineDefine: sinon.stub()
         };
       }
-      
+
       function makeConfig() {
         return {
           instance: 'abcd',
@@ -99,13 +100,13 @@
         var re = makeRulesEngine();
         re.getOriginalName.returns(null);
         var testScript = "exports.foo = \"bar\";";
-        
+
         var e = new Executor({
           config: makeConfig(),
           rulesEngine: re,
           requireContext: makeRequireContext()
         });
-        
+
         var moduleA = e.createModule('testId', '', 'http://example.com/testid.js');
         e.runModule(moduleA, testScript);
         var moduleAOut = e.getModule('testId');
@@ -117,8 +118,8 @@
         equal(moduleA.exports.foo, "bar", "module sandboxed and set exports");
         equal(moduleA, moduleB, "same execution yields same module result");
       });
-      
-      
+
+
       module("Executor with eval enabled");
       test('Error handling', function() {
         var ex = new Executor({
@@ -126,7 +127,7 @@
           rulesEngine: makeRulesEngine(),
           requireContext: makeRequireContext()
         });
-        
+
         var syntaxModule = ex.createModule('syntaxError', '', 'http://example.com/syntaxerror.js');
         ex.runModule(syntaxModule, errorCode.syntax);
         try {
@@ -135,7 +136,7 @@
         catch(e) {
           ok((/Parse error .+?/).test(e.message), 'Syntax Error thrown (no line number)');
         }
-        
+
         var refModule = ex.createModule('refError', '', 'http://example.com/referror.js');
         ex.runModule(refModule, errorCode.reference);
         try {
@@ -144,7 +145,7 @@
         catch(e) {
           ok((/Runtime error .+? Line: 4/).test(e.message), 'Reference Error thrown with correct line number (4)');
         }
-        
+
         var typeModule = ex.createModule('typeError', '', 'http://example.com/typeerror.js');
         ex.runModule(typeModule, errorCode.type);
         try {
@@ -154,7 +155,7 @@
           ok((/Runtime error .+? Line: 7/).test(e.message), 'Type Error thrown with correct line number (7)');
         }
       });
-      
+
       test('using module aliases', function() {
         var re = makeRulesEngine();
         re.getOriginalName.withArgs('foo').returns('foo/bar/baz');
@@ -166,7 +167,7 @@
         });
 
         var testScript = "exports.foo = \"bar\";";
-        
+
         var module = ex.createModule('foo/bar/baz', '', 'http://example.com/syntaxerror.js');
         ex.runModule(module, testScript);
 

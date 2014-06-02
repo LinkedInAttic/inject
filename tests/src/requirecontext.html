@@ -30,30 +30,30 @@ governing permissions and limitations under the License.
   <div id="qunit"></div>
   <script type="text/javascript" src="../../src/includes/constants.js"></script>
   <script type="text/javascript" src="../../src/includes/globals.js"></script>
-  <script type="text/javascript" src="../resources/fiber.js"></script>
+  <script type="text/javascript" src="/node_modules/fiber/src/fiber.js"></script>
   <script type="text/javascript" src="../../src/requirecontext.js"></script>
   <script type="text/javascript">
-  
+
     function makeConfig() {
       return {
         moduleRoot: null
       };
     }
-    
+
     function makeRulesEngine() {
       return {
         resolveModule: sinon.stub(),
         resolveFile: sinon.stub()
       };
     }
-    
+
     function makeRequireContext() {
       return {
         qualifiedId: sinon.stub(),
         createRequire: sinon.stub()
       };
     }
-    
+
     function makeExecutor() {
       var ex = {
         getModule: sinon.stub(),
@@ -63,13 +63,13 @@ governing permissions and limitations under the License.
       ex.createModule.returns({});
       return ex;
     }
-    
+
     function makeAnalyzer() {
       return {
         stripBuiltins: sinon.stub()
       };
     }
-    
+
     function makeTreeNode() {
       var tn = function() {
         this.data = {};
@@ -78,18 +78,18 @@ governing permissions and limitations under the License.
       };
       return tn;
     }
-    
+
     function makeTreeRunner() {
       var tr = function() {
         this.execute = sinon.stub();
         this.download = sinon.stub();
-        
+
         this.execute.callsArg(0);
         this.download.callsArg(0);
       };
       return tr;
     }
-  
+
     module('RequireContext');
 
     test("Scaffolding", function() {
@@ -107,7 +107,7 @@ governing permissions and limitations under the License.
         rulesEngine: makeRulesEngine(),
         config: makeConfig()
       });
-      
+
       rc.define('foo', [], function() {
         ok(true, 'able to run callback for a defined module');
       });

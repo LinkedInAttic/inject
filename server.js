@@ -15,6 +15,7 @@ express or implied.   See the License for the specific language
 governing permissions and limitations under the License.
 */
 
+var fs = require('fs');
 var path = require("path");
 var util = require("util");
 var express = require("express");
@@ -54,6 +55,21 @@ app.use('/tests/spec/amd/includes/bugs/bug_56_a.js', delay(300));
 
 app.get('/inject.js', function(req, res) {
   return res.redirect('/dist/recent/inject.js');
+});
+
+app.get('/node_modules/*', function(req, res) {
+  fs.readFile(path.normalize('.' + req.path), function(err, data) {
+    // this hack exists because fiber doesn't check module.exports, just module
+    var out = [
+      'var oldM = module; var oldD = define;',
+      'var module = undefined; var define = undefined;',
+      data.toString(),
+      'module = oldM;',
+      'define = oldD;',
+      'oldM = oldD = undefined;'
+    ];
+    res.end(out.join('\n'));
+  });
 });
 
 app.use(express.static(path.normalize(__dirname)));

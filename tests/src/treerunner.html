@@ -30,7 +30,7 @@ governing permissions and limitations under the License.
   <div id="qunit"></div>
   <script type="text/javascript" src="../../src/includes/constants.js"></script>
   <script type="text/javascript" src="../../src/includes/globals.js"></script>
-  <script type="text/javascript" src="../resources/fiber.js"></script>
+  <script type="text/javascript" src="/node_modules/fiber/src/fiber.js"></script>
   <script type="text/javascript" src="../../src/lib/flow.js"></script>
   <script type="text/javascript" src="../../src/lib/lscache.js"></script>
   <script type="text/javascript" src="../../src/treenode.js"></script>
@@ -46,7 +46,7 @@ governing permissions and limitations under the License.
         getFetchRules: sinon.stub()
       };
     }
-    
+
     function makeExecutor() {
       return {
         createModule: sinon.stub(),
@@ -54,44 +54,44 @@ governing permissions and limitations under the License.
         getModule: sinon.stub()
       };
     }
-    
+
     function makeRequireContext() {
       return {
         qualifiedId: sinon.stub()
       };
     }
-    
+
     function makeCommunicator() {
       return {
         get: sinon.stub()
       };
     }
-    
+
     function makeAnalyzer() {
       return {
         extractRequires: sinon.stub()
       };
     }
-    
+
     function makeTreeRunner() {
       return TreeRunner;
     }
-    
+
     function makeExecutorModule(name) {
       executorModules[name] = {
         exports: {}
       };
       return executorModules[name];
     }
-    
+
     function getExecutorModule(name) {
       return executorModules[name];
     }
-    
+
     function clearExecutorModules() {
       executorModules = {};
     }
-    
+
     function makeDefaultTreeEnv() {
       /* Sample Tree To Build
               root
@@ -125,9 +125,9 @@ governing permissions and limitations under the License.
       var dJS = "d.js contents";
       var dUrl = "http://example.com/d.js";
       var dRequires = ["a"];
-      
+
       var env = {};
-      
+
       var analyzer = makeAnalyzer();
       analyzer.extractRequires.withArgs(rootJS).returns(rootRequires);
       analyzer.extractRequires.withArgs(aJS).returns(aRequires);
@@ -143,7 +143,7 @@ governing permissions and limitations under the License.
       communicator.get.withArgs("c", cUrl).callsArgWith(2, cJS);
       communicator.get.withArgs("d", dUrl).callsArgWith(2, dJS);
       env.communicator = communicator;
-      
+
       var executor = makeExecutor();
       executor.createModule.withArgs('root').returns(makeExecutorModule('root'));
       executor.createModule.withArgs('a').returns(makeExecutorModule('a'));
@@ -157,7 +157,7 @@ governing permissions and limitations under the License.
       var requireContext = makeRequireContext();
       requireContext.qualifiedId.returns('');
       env.requireContext = requireContext;
-      
+
       var rulesEngine = makeRulesEngine();
       rulesEngine.resolveModule.withArgs("root").returns("root");
       rulesEngine.resolveModule.withArgs("a").returns("a");
@@ -172,10 +172,10 @@ governing permissions and limitations under the License.
       rulesEngine.getFetchRules.returns([]);
       rulesEngine.getContentRules.returns([]);
       env.rulesEngine = rulesEngine;
-      
+
       var treeRunner = makeTreeRunner();
       env.TreeRunner = treeRunner;
-      
+
       return env;
     }
 
@@ -209,12 +209,12 @@ governing permissions and limitations under the License.
             output.push(items[i].data.originalId);
           }
         }
-        
+
         equal(expected.join(' '), output.join(' '), 'circular dependencies found and is traversed in post-order mode');
         start();
       });
     });
-    
+
     asyncTest("Run a Tree", 2, function() {
       var expected = ["(a)", "d", "b", "c", "a", "(b)", "c", "a", "d", "b", "root"];
       var defaultCount = expected.length;

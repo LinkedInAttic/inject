@@ -30,7 +30,7 @@ governing permissions and limitations under the License.
   <div id="qunit"></div>
   <script type="text/javascript" src="../../src/includes/constants.js"></script>
   <script type="text/javascript" src="../../src/includes/globals.js"></script>
-  <script type="text/javascript" src="../resources/fiber.js"></script>
+  <script type="text/javascript" src="/node_modules/fiber/src/fiber.js"></script>
   <script type="text/javascript" src="../../src/rulesengine.js"></script>
   <script type="text/javascript">
 
@@ -65,7 +65,7 @@ governing permissions and limitations under the License.
       var baseUL    = "http://example.com/a/b/c/d/";
       var baseUUL   = "http://example.com/a/b/c/";
       var baseSlash = "http://example.com/a/b/c/d/e/";
-      
+
       var config = makeConfig();
       config.moduleRoot = rootUrl;
       var re = new RulesEngine({
@@ -124,7 +124,7 @@ governing permissions and limitations under the License.
 
     test("#169 moduleRoot shouldn't force a slash", function() {
       var root = "http://example.com?file=";
-      
+
       var config = makeConfig();
       config.moduleRoot = root;
       var re = new RulesEngine({
@@ -148,7 +148,7 @@ governing permissions and limitations under the License.
 
     test("addRule weights respected", function() {
       var order = ["one", "two", "three"];
-      
+
       var re = new RulesEngine({
         config: makeConfig()
       });
@@ -188,13 +188,13 @@ governing permissions and limitations under the License.
       var re = new RulesEngine({
         config: config
       });
-      
+
       var rootUrl   = "http://example.com/";
       var baseUrl   = "http://example.com/a/b/c/d/e";
       var baseUL    = "http://example.com/a/b/c/d/";
       var baseUUL   = "http://example.com/a/b/c/";
       var baseSlash = "http://example.com/a/b/c/d/e/";
-      
+
       config.moduleRoot = rootUrl;
 
       re.addFileRule("one", "ONE");
@@ -226,7 +226,7 @@ governing permissions and limitations under the License.
       var re = new RulesEngine({
         config: makeConfig()
       });
-      
+
       var order = ["one", "two", "three"];
 
       re.addFileRule("example", function() {
@@ -259,7 +259,7 @@ governing permissions and limitations under the License.
       var re = new RulesEngine({
         config: makeConfig()
       });
-      
+
       re.addPackage('foo/main', 'foo');
       re.addPackage('foo/main', 'bar');
       equal(re.getOriginalName('foo'), 'foo/main', 'able to retrieve alias');

@@ -26,7 +26,7 @@ governing permissions and limitations under the License.
     context.Inject = ic.Inject;
     context.Inject.version = version;
   }
-  
+
   // --------------------------------------------------
   // INCLUDES/
   // --------------------------------------------------
@@ -34,7 +34,7 @@ governing permissions and limitations under the License.
   //@@include('./includes/constants.js')
   //@@include('./includes/globals.js')
 
-  // --------------------------------------------------  
+  // --------------------------------------------------
   // XD COLLECTION
   // --------------------------------------------------
   //@@include('./xd/postmessage.js')
@@ -45,12 +45,19 @@ governing permissions and limitations under the License.
   //@@include('./lib/fiber.pre.js')
   //@@include('../tmp/lib/fiber/fiber.js')
   //@@include('./lib/fiber.post.js')
-  
+
+  // --------------------------------------------------
+  // STACKTRACE-JS
+  // --------------------------------------------------
+  //@@include('./lib/stacktrace.pre.js')
+  //@@include('../tmp/lib/stacktrace/stacktrace.js')
+  //@@include('./lib/stacktrace.post.js')
+
   // --------------------------------------------------
   // FLOW
   // --------------------------------------------------
   //@@include('./lib/flow.js')
-  
+
   // --------------------------------------------------
   // LSCACHE
   // --------------------------------------------------
@@ -68,7 +75,7 @@ governing permissions and limitations under the License.
   //@@include('./rulesengine.js')
   //@@include('./treenode.js')
   //@@include('./treerunner.js')
-  
+
   // initialize
   init('//@@INJECT_VERSION');
 })(this);

@@ -31,7 +31,7 @@
     <script type="text/javascript" src="../../src/includes/constants.js"></script>
     <script type="text/javascript" src="../../src/includes/globals.js"></script>
     <script type="text/javascript" src="../../src/includes/commonjs.js"></script>
-    <script type="text/javascript" src="../resources/fiber.js"></script>
+    <script type="text/javascript" src="/node_modules/fiber/src/fiber.js"></script>
     <script type="text/javascript" src="../../src/injectcontext.js"></script>
     <script type="text/javascript">
       // override the allComponents helper function
@@ -44,14 +44,14 @@
         var TreeNode = function(env) { this.env = env; };
         var TreeRunner = function(env) { this.env = env; };
         var cache = {};
-        
+
         RequireContext.prototype = {
           createRequire: sinon.stub(),
           createDefine: sinon.stub()
         };
-        
+
         return function() {
-        
+
           return {
             Analyzer: Analyzer,
             Communicator: Communicator,
@@ -64,7 +64,7 @@
           };
         };
       }());
-      
+
       module("InjectContext");
 
       test("Scaffolding", function() {
