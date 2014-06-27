@@ -230,7 +230,7 @@ var REQUIRE_REGEX = new RegExp(
 var DEFINE_REGEX = new RegExp(
   '(?:^|[\\s;,\\?\\}\\)\\(])' +   // begins with start of string, and any symbol a function call() can follow
   'define[\\s]*\\(' +             // the "define" keyword, followed by optional whitespace and its opening paren
-  '[\\w\\W]*?\\[' +               // anything (don't care) until we hit the first [
+  '[^\\)]*?\\[' +                 // anything (not a closing paren) until we hit the first [
   '([\\w\\W]*?)' +                // our match (contents of the array)
   '\\]',                          // the closing bracket
   'gim'                           // flags: global, case-insensitive, multiline
@@ -4569,5 +4569,5 @@ var TreeNode = Fiber.extend(function() {
 
 
   // initialize
-  init('0.7.0-rc4-1-g80da8ae');
+  init('0.7.0-rc4-4-g0efc73f');
 })(this);

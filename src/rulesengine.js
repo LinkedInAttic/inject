@@ -648,7 +648,7 @@ var RulesEngine = Fiber.extend(function() {
       if (ABSOLUTE_PATH_REGEX.test(id)) {
         return id;
       }
-      
+
       // begins with a /, path is relative to root
       if (id.indexOf('/') === 0) {
         base = '';
@@ -663,7 +663,7 @@ var RulesEngine = Fiber.extend(function() {
       for (i = 0, frags = id.split('/'), len = frags.length; i < len; i++) {
         blownApartURL.push(frags[i]);
       }
-      
+
       for (i = 0, len = blownApartURL.length; i < len; i++) {
         piece = blownApartURL[i];
 

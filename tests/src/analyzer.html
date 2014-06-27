@@ -55,6 +55,12 @@ governing permissions and limitations under the License.
     '});',
     '']).join("\n");
 
+    var requireSampleCode_303 = ([
+      'define(function() {',
+      '  var someThings = [\'one\', \'two\', \'three\'];',
+      '});',
+    '']).join("\n");
+
     var sampleFunction = "function foo(one, two, three) {};";
 
     test("Scaffolding", function() {
@@ -90,6 +96,12 @@ governing permissions and limitations under the License.
       var analyzer = new Analyzer({});
       var result = analyzer.extractRequires(requireSampleCode_177);
       equal(result.length, 3, "only three modules identified");
+    });
+
+    test("#303 define syntax overmatching on array", function() {
+      var analyzer = new Analyzer({});
+      var result = analyzer.extractRequires(requireSampleCode_303);
+      equal(result.length, 0, "no matches found when define goes straight into an array");
     });
   </script>
 </body>
