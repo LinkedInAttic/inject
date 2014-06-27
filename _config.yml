@@ -2,17 +2,28 @@
 
 # site info
 name         : Inject
-version      : 0.6.1
-doc_version  : 0.6.x
+version      : 0.7.0
+doc_version  : 0.7.x
 logo         : /assets/images/logos/inject.png
-stable_dl    : /download/0.6.x/inject-0.6.1.tgz
+stable_dl    : /download/0.7.x/inject-0.7.0.tgz
 description  :
     short    : Dependency Management Got Awesome
     long     : CommonJS and AMD Compliant dependency loader for modern web apps
 
 # documentation structure
 documentation:
+- version: 0.7.x
+  categories:
+    - cat: cjs
+      name: CommonJS Interface
+    - cat: amd
+      name: AMD Interface
+    - cat: api
+      name: The Inject API
+    - cat: howto
+      name: How To and Tutorials
   - version: 0.6.x
+    old: true
     categories:
       - cat: cjs
         name: CommonJS Interface
