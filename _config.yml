@@ -12,8 +12,8 @@ description  :
 
 # documentation structure
 documentation:
-- version: 0.7.x
-  categories:
+  - version: 0.7.x
+    categories:
     - cat: cjs
       name: CommonJS Interface
     - cat: amd
@@ -106,9 +106,9 @@ future    : true
 production_url : http://www.injectjs.com
 
 # github defaults
-lsi       : false
-pygments  : true
-safe      : false
+lsi          : false
+highlighter  : pygments
+safe         : false
 
 # overrides maruku
 markdown  : kramdown
