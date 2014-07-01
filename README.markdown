@@ -1,6 +1,6 @@
 * Inject on the web: http://www.injectjs.com
 * InjectJS Mailing List: https://groups.google.com/forum/#!forum/injectjs
-* [![View Summary](https://secure.travis-ci.org/linkedin/inject.png?branch=master)](http://travis-ci.org/#!/linkedin/inject/branches)
+* [![View Summary](https://secure.travis-ci.org/linkedin/inject.svg?branch=master)](http://travis-ci.org/#!/linkedin/inject/branches)
 
 # Welcome
 **Inject** (Apache Software License 2.0) is a revolutionary way to manage your dependencies in a *Library Agnostic* way. Some of its major features include:
