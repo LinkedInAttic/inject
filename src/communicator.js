@@ -164,7 +164,7 @@ var Communicator = Fiber.extend(function() {
     readFromCache: function(url) {
       // lscache and passthrough
       if (this.env.config.expires > 0) {
-        return this.env.lscache.get(url);
+        return this.env.cache.get(url);
       }
       else {
         return null;
@@ -187,7 +187,7 @@ var Communicator = Fiber.extend(function() {
 
       // write cache
       if (statusCode === 200 && !this.env.config.relayFile && this.env.config.expires > 0) {
-        this.env.lscache.set(url, contents, this.env.config.expires);
+        this.env.cache.set(url, contents, this.env.config.expires);
       }
     
       // all non-200 codes create a runtime error that includes the error code

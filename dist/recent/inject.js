@@ -1750,7 +1750,7 @@ var Communicator = Fiber.extend(function() {
     readFromCache: function(url) {
       // lscache and passthrough
       if (this.env.config.expires > 0) {
-        return this.env.lscache.get(url);
+        return this.env.cache.get(url);
       }
       else {
         return null;
@@ -1773,7 +1773,7 @@ var Communicator = Fiber.extend(function() {
 
       // write cache
       if (statusCode === 200 && !this.env.config.relayFile && this.env.config.expires > 0) {
-        this.env.lscache.set(url, contents, this.env.config.expires);
+        this.env.cache.set(url, contents, this.env.config.expires);
       }
     
       // all non-200 codes create a runtime error that includes the error code
@@ -2368,7 +2368,8 @@ var InjectContext = Fiber.extend(function() {
       this.env.rulesEngine = new components.RulesEngine(this.env);
       this.env.TreeNode = components.TreeNode;
       this.env.TreeRunner = components.TreeRunner;
-
+      this.env.cache = components.cache;
+      
       // set a module root if they created a context with a base Url
       if (baseUrl) {
         this.setModuleRoot(baseUrl);
@@ -2663,6 +2664,7 @@ function allComponents() {
     TreeNode: TreeNode,
     TreeRunner: TreeRunner,
     cache: (HAS_LOCAL_STORAGE && lscache) ? lscache : null
+
   };
 }
 

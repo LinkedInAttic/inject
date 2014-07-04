@@ -59,7 +59,8 @@ var InjectContext = Fiber.extend(function() {
       this.env.rulesEngine = new components.RulesEngine(this.env);
       this.env.TreeNode = components.TreeNode;
       this.env.TreeRunner = components.TreeRunner;
-
+      this.env.cache = components.cache;
+      
       // set a module root if they created a context with a base Url
       if (baseUrl) {
         this.setModuleRoot(baseUrl);
