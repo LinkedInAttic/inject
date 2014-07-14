@@ -2664,7 +2664,6 @@ function allComponents() {
     TreeNode: TreeNode,
     TreeRunner: TreeRunner,
     cache: (HAS_LOCAL_STORAGE && lscache) ? lscache : null
-
   };
 }
 
@@ -4571,5 +4570,5 @@ var TreeNode = Fiber.extend(function() {
 
 
   // initialize
-  init('0.7.0');
+  init('0.7.0-4-gaf6fc87');
 })(this);

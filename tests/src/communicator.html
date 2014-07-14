@@ -60,7 +60,7 @@ governing permissions and limitations under the License.
       lscache.get.returns('foo');
       var c = new Communicator({
         config: makeConfig(),
-        lscache: lscache
+        cache: lscache
       });
       c.get("sampleModule", location.href, function(results) {
         ok(results, "got results from communicator");
@@ -73,7 +73,7 @@ governing permissions and limitations under the License.
       lscache.get.returns(null);
       var c = new Communicator({
         config: makeConfig(),
-        lscache: lscache
+        cache: lscache
       });
       c.get("sampleModule", location.href, function(results) {
         ok(lscache.get.called, "lscache get called");
@@ -87,7 +87,7 @@ governing permissions and limitations under the License.
       lscache.get.withArgs(location.href).returns("content");
       var c = new Communicator({
         config: makeConfig(),
-        lscache: lscache
+        cache: lscache
       });
 
       c.get("sampleModule", location.href, function(results) {
@@ -103,7 +103,7 @@ governing permissions and limitations under the License.
       config.expires = 0;
       var c = new Communicator({
         config: config,
-        lscache: lscache
+        cache: lscache
       });
 
       c.get("sampleModule", location.href, function(results) {
