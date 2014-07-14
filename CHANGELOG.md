@@ -1,3 +1,12 @@
+<a name="v0.7.1"></a>
+### v0.7.1 (2014-07-14)
+
+
+#### Bug Fixes
+
+* lscache was referenced as `cache` in InjectContext.env but communicator.js wasn' ([fe8e57ec](http://github.com/jakobo/atomic/commit/fe8e57ecf5eec24dc764207b1a0a1ee8f7e97b94))
+* **Communicator:** Makes use of lscache object in this.env ([b1bedd3f](http://github.com/jakobo/atomic/commit/b1bedd3f176ac11540d934534c92deb6bc8d35f0), closes [#306](http://github.com/jakobo/atomic/issues/306))
+
 <a name="v0.7.0"></a>
 ## v0.7.0 (2014-06-26)
 
