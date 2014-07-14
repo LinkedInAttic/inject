@@ -2,10 +2,10 @@
 
 # site info
 name         : Inject
-version      : 0.7.0
+version      : 0.7.1
 doc_version  : 0.7.x
 logo         : /assets/images/logos/inject.png
-stable_dl    : /download/0.7.x/inject-0.7.0.tgz
+stable_dl    : /download/0.7.x/inject-0.7.1.tgz
 description  :
     short    : Dependency Management Got Awesome
     long     : CommonJS and AMD Compliant dependency loader for modern web apps

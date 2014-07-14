@@ -7,7 +7,9 @@ View the [Changelog](https://github.com/linkedin/inject/blob/master/CHANGELOG.md
 
 # 0.7.x
 
-* 0.7.0 - [rc4](0.7.x/inject-0.7.0-rc4.tgz), [rc3](0.7.x/inject-0.7.0-rc3.tgz), [rc2](0.7.x/inject-0.7.0-rc2.tgz), [rc1](0.7.x/inject-0.7.0-rc1.tgz)
+* [0.7.1 final](0.7.x/inject-0.7.1.tgz)
+
+* [0.7.0 final](0.7.x/inject-0.7.0.tgz) - [rc4](0.7.x/inject-0.7.0-rc4.tgz), [rc3](0.7.x/inject-0.7.0-rc3.tgz), [rc2](0.7.x/inject-0.7.0-rc2.tgz), [rc1](0.7.x/inject-0.7.0-rc1.tgz)
 
 # 0.6.x
 
