@@ -84,7 +84,14 @@ var Executor  = Fiber.extend(function() {
    * @param {String} guid - a unique ID
    */
   function removeGlobalObject(guid) {
-    delete window[guid];
+    // IE8 won't allow deletion of window properties so the guid
+    // will be set to undefined instead.
+    try {
+      delete window[guid];
+    }
+    catch(e) {
+      window[guid] = undefined;
+    }
   }
 
   /**
