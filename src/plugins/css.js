@@ -28,9 +28,10 @@ window.INJECT_PLUGINS = window.INJECT_PLUGINS || {};
   var style = document.createElement('style'),
       placed = false,
       injectedCSS = '',
-      useCssText = !!(style.styleSheet);
+      useCssText;
 
   style.type = 'text/css';
+  useCssText = !!(style.styleSheet);
   
   function CSS(txt) {
     this.txt = txt;
