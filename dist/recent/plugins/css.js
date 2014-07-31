@@ -22,11 +22,16 @@ governing permissions and limitations under the License.
  * @file
 **/
 window.INJECT_PLUGINS = window.INJECT_PLUGINS || {};
-(function () {
-  var style = document.createElement('style');
+
+(function() {
+
+  var style = document.createElement('style'),
+      placed = false,
+      injectedCSS = '',
+      useCssText;
+
   style.type = 'text/css';
-  var placed = false;
-  var useCssText = (style.styleSheet) ? true : false;
+  useCssText = !!(style.styleSheet);
   
   function CSS(txt) {
     this.txt = txt;
@@ -37,7 +42,8 @@ window.INJECT_PLUGINS = window.INJECT_PLUGINS || {};
   
   function addStyles(text) {
     if (useCssText) {
-      style.styleSheet.cssText = [style.innerHTML, text].join('\n');
+      injectedCSS += text;
+      style.styleSheet.cssText = injectedCSS;
     }
     else {
       style.appendChild(document.createTextNode(text));
