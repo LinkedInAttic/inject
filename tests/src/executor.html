@@ -121,40 +121,6 @@
 
 
       module("Executor with eval enabled");
-      test('Error handling', function() {
-        var ex = new Executor({
-          config: makeConfig(),
-          rulesEngine: makeRulesEngine(),
-          requireContext: makeRequireContext()
-        });
-
-        var syntaxModule = ex.createModule('syntaxError', '', 'http://example.com/syntaxerror.js');
-        ex.runModule(syntaxModule, errorCode.syntax);
-        try {
-          var syntaxModuleError = ex.getModule('syntaxError');
-        }
-        catch(e) {
-          ok((/Parse error .+?/).test(e.message), 'Syntax Error thrown (no line number)');
-        }
-
-        var refModule = ex.createModule('refError', '', 'http://example.com/referror.js');
-        ex.runModule(refModule, errorCode.reference);
-        try {
-          var refModuleError = ex.getModule('refError');
-        }
-        catch(e) {
-          ok((/Runtime error .+? Line: 4/).test(e.message), 'Reference Error thrown with correct line number (4)');
-        }
-
-        var typeModule = ex.createModule('typeError', '', 'http://example.com/typeerror.js');
-        ex.runModule(typeModule, errorCode.type);
-        try {
-          var typeModuleError = ex.getModule('typeError');
-        }
-        catch(e) {
-          ok((/Runtime error .+? Line: 7/).test(e.message), 'Type Error thrown with correct line number (7)');
-        }
-      });
 
       test('using module aliases', function() {
         var re = makeRulesEngine();
