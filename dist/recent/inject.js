@@ -1632,7 +1632,7 @@ var Communicator = Fiber.extend(function() {
      * @public
      */
     clearCaches: function () {
-      self.downloadCompleteQueue = {};
+      this.downloadCompleteQueue = {};
     },
 
     /**
@@ -1678,42 +1678,42 @@ var Communicator = Fiber.extend(function() {
         return;
       }
       this.downloadCompleteQueue[url].push(callback);
-      
+
       // local xhr
       if (!this.env.config.relayFile || getDomainName(url) === getDomainName(location.href)) {
         this.sendViaXHR(url);
         return;
       }
-      
+
       // remote xhr
       this.sendViaIframe(url);
     },
-  
+
     addSocketQueue: function(lUrl) {
       if (!this.socketQueueCache[lUrl]) {
         this.socketQueueCache[lUrl] = 1;
         this.socketQueue.push(lUrl);
       }
     },
-  
+
     beginListening: function() {
       var self = this;
       if (this.alreadyListening) {
         return;
       }
       this.alreadyListening = true;
-    
+
       addListener(window, 'message', function(e) {
         var commands, command, params;
-    
+
         if (!self.env.config.relayFile) {
           return;
         }
-    
+
         if (getDomainName(e.origin) !== getDomainName(self.env.config.relayFile)) {
           return;
         }
-    
+
         commands = e.data.split(/:/);
         command = commands.shift();
 
@@ -1775,7 +1775,7 @@ var Communicator = Fiber.extend(function() {
       if (statusCode === 200 && !this.env.config.relayFile && this.env.config.expires > 0) {
         this.env.cache.set(url, contents, this.env.config.expires);
       }
-    
+
       // all non-200 codes create a runtime error that includes the error code
       if (statusCode !== 200) {
         contents = 'throw new Error(\'Error ' + statusCode + ': Unable to retrieve ' + url + '\');';
@@ -1836,7 +1836,7 @@ var Communicator = Fiber.extend(function() {
       iframeSrc += (iframeSrc.indexOf('?') < 0) ? '?' : '&';
       iframeSrc += 'injectReturn=' + encodeURIComponent(location.href);
       iframe.src = iframeSrc;
-    
+
       iframeStyle.position = 'absolute';
       iframeStyle.visibility = 'hidden';
       iframeStyle.border = 0;
@@ -4577,5 +4577,5 @@ var TreeNode = Fiber.extend(function() {
 
 
   // initialize
-  init('0.7.1-1-gad6a9d4');
+  init('0.7.1-6-g764283d');
 })(this);
