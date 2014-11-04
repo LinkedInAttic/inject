@@ -4,8 +4,8 @@
 
 #### Bug Fixes
 
-* lscache was referenced as `cache` in InjectContext.env but communicator.js wasn' ([fe8e57ec](http://github.com/jakobo/atomic/commit/fe8e57ecf5eec24dc764207b1a0a1ee8f7e97b94))
-* **Communicator:** Makes use of lscache object in this.env ([b1bedd3f](http://github.com/jakobo/atomic/commit/b1bedd3f176ac11540d934534c92deb6bc8d35f0), closes [#306](http://github.com/jakobo/atomic/issues/306))
+* lscache was referenced as `cache` in InjectContext.env but communicator.js wasn' ([fe8e57ec](http://github.com/linkedin/inject/commit/fe8e57ecf5eec24dc764207b1a0a1ee8f7e97b94))
+* **Communicator:** Makes use of lscache object in this.env ([b1bedd3f](http://github.com/linkedin/inject/commit/b1bedd3f176ac11540d934534c92deb6bc8d35f0), closes [#306](http://github.com/linkedin/inject/issues/306))
 
 <a name="v0.7.0"></a>
 ## v0.7.0 (2014-06-26)
@@ -16,8 +16,8 @@
 
 #### Bug Fixes
 
-* **Communicator:** refactor iframe building and address property typo ([83cac3ea](http://github.com/jakobo/atomic/commit/83cac3ea2c8ad4dbb2309edd3e3516a0dbf4267c))
-* **TreeRunner:** Prevents returning an empty callback for AMD-ish modules ([1bf3aac5](http://github.com/jakobo/atomic/commit/1bf3aac5f3acd69ec0173077859bf8fd9362f024))
+* **Communicator:** refactor iframe building and address property typo ([83cac3ea](http://github.com/linkedin/inject/commit/83cac3ea2c8ad4dbb2309edd3e3516a0dbf4267c))
+* **TreeRunner:** Prevents returning an empty callback for AMD-ish modules ([1bf3aac5](http://github.com/linkedin/inject/commit/1bf3aac5f3acd69ec0173077859bf8fd9362f024))
 
 <a name="v0.7.0-rc3"></a>
 ### v0.7.0-rc3 (2014-03-04)
@@ -25,7 +25,7 @@
 
 #### Bug Fixes
 
-* **gruntfile:** Plugins bundled with release now ([30886a6d](http://github.com/jakobo/atomic/commit/30886a6d2782cd28b6abfa52151c5f318c64fd8c))
+* **gruntfile:** Plugins bundled with release now ([30886a6d](http://github.com/linkedin/inject/commit/30886a6d2782cd28b6abfa52151c5f318c64fd8c))
 
 <a name="v0.7.0-rc2"></a>
 ### v0.7.0-rc2 (2014-03-03)
@@ -36,23 +36,23 @@
 
 #### Bug Fixes
 
-* **Communicator:** communicator now only uses iframe when cross domain ([3907e556](http://github.com/jakobo/atomic/commit/3907e556d1b27222426a55026bd33d786140bf97))
+* **Communicator:** communicator now only uses iframe when cross domain ([3907e556](http://github.com/linkedin/inject/commit/3907e556d1b27222426a55026bd33d786140bf97))
 * **grunt:**
-  * use native trim ([1aa45f7b](http://github.com/jakobo/atomic/commit/1aa45f7bb09541ea55023e99769d649743e6630a))
-  * Reincludes the qunit commands ([8dd5dd4e](http://github.com/jakobo/atomic/commit/8dd5dd4e838ca3e256c2cccd8a249b760a2e0d72))
+  * use native trim ([1aa45f7b](http://github.com/linkedin/inject/commit/1aa45f7bb09541ea55023e99769d649743e6630a))
+  * Reincludes the qunit commands ([8dd5dd4e](http://github.com/linkedin/inject/commit/8dd5dd4e838ca3e256c2cccd8a249b760a2e0d72))
 
 
 #### Features
 
-* **Core:** Allows for multiple instances of Inject ([4ee4af1d](http://github.com/jakobo/atomic/commit/4ee4af1d6248990fb6a88e6e74da88b0f52d7754))
-* **grunt:** adds a release task check to ensure the branch is master ([d568538a](http://github.com/jakobo/atomic/commit/d568538a3414f10fe5144ba799893d6437f27c9b))
+* **Core:** Allows for multiple instances of Inject ([4ee4af1d](http://github.com/linkedin/inject/commit/4ee4af1d6248990fb6a88e6e74da88b0f52d7754))
+* **grunt:** adds a release task check to ensure the branch is master ([d568538a](http://github.com/linkedin/inject/commit/d568538a3414f10fe5144ba799893d6437f27c9b))
 
 
 #### Breaking Changes
 
 * If you had logic that was depending on the iframe existing, then it may not
 always be available. Making a cross domain request will establish the iframe.
- ([3907e556](http://github.com/jakobo/atomic/commit/3907e556d1b27222426a55026bd33d786140bf97))
+ ([3907e556](http://github.com/linkedin/inject/commit/3907e556d1b27222426a55026bd33d786140bf97))
 
 <a name="v0.6.1"></a>
 ### v0.6.1 (2014-01-31)
