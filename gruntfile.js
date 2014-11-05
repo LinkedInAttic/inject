@@ -207,7 +207,7 @@ module.exports = function (grunt) {
     },
 
     /**
-     * Do a bower install of browser-ready components Atomic needs
+     * Do a bower install of browser-ready components Inject needs
      */
     bower: {
       install: {
@@ -363,7 +363,7 @@ module.exports = function (grunt) {
 
     changelog: {
       options: {
-        github: 'jakobo/atomic',
+        github: 'linkedin/inject',
         version: '<%= version_string %>'
       }
     },
