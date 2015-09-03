@@ -980,6 +980,10 @@ printStackTrace.implementation.prototype = {
             }
             // e.stacktrace && e.stack -> opera11
             return 'opera11'; // use e.stacktrace, format differs from 'opera10a', 'opera10b'
+        } else if (e.stack && !e.fileName) {
+            // Chrome 27 does not have e.arguments as earlier versions,
+            // but still does not have e.fileName as Firefox
+            return 'chrome';
         } else if (e.stack) {
             return 'firefox';
         }
@@ -992,7 +996,7 @@ printStackTrace.implementation.prototype = {
      *
      * @param {Object} context of execution (e.g. window)
      * @param {String} functionName to instrument
-     * @param {Function} function to call with a stack trace on invocation
+     * @param {Function} callback function to call with a stack trace on invocation
      */
     instrumentFunction: function(context, functionName, callback) {
         context = context || window;
@@ -1160,10 +1164,10 @@ printStackTrace.implementation.prototype = {
     },
 
     /**
-     * Given arguments array as a String, subsituting type names for non-string types.
+     * Given arguments array as a String, substituting type names for non-string types.
      *
-     * @param {Arguments} args
-     * @return {Array} of Strings with stringified arguments
+     * @param {Arguments,Array} args
+     * @return {String} stringified arguments
      */
     stringifyArguments: function(args) {
         var result = [];
@@ -1249,7 +1253,7 @@ printStackTrace.implementation.prototype = {
      * via Ajax).
      *
      * @param url <String> source url
-     * @return False if we need a cross-domain request
+     * @return <Boolean> False if we need a cross-domain request
      */
     isSameDomain: function(url) {
         return typeof location !== "undefined" && url.indexOf(location.hostname) !== -1; // location may not be defined, e.g. when running from nodejs.
@@ -4577,5 +4581,5 @@ var TreeNode = Fiber.extend(function() {
 
 
   // initialize
-  init('0.7.1-6-g764283d');
+  init('0.7.1-10-g3fb82ba');
 })(this);

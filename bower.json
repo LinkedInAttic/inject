@@ -7,9 +7,9 @@
     "dist/recent/plugins/css.js",
     "dist/recent/plugins/text.js",
     "dist/recent/plugins/json.js",
-    "dist/LICENSE",
-    "dist/README.md",
-    "dist/relay.html"
+    "dist/recent/LICENSE",
+    "dist/recent/README.markdown",
+    "dist/recent/relay.html"
   ],
   "ignore": [
     ".jshintrc",
