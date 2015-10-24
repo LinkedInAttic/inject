@@ -124,7 +124,7 @@ var Communicator = Fiber.extend(function() {
           return;
         }
 
-        if (getDomainName(e.origin) !== getDomainName(self.env.config.relayFile)) {
+        if (e.origin === 'null' || getDomainName(e.origin) !== getDomainName(self.env.config.relayFile)) {
           return;
         }
 
