@@ -27,7 +27,8 @@ function addListener(el, evt, fn) {
 }
 
 function getDomainName(url) {
-  return url.match(reURI)[3];
+  var matched = url.match(reURI);
+  return matched ? url.match(reURI)[3]: null;
 }
 
 function sendMessage(target, targetsUrl, command, params) {

@@ -35,7 +35,7 @@ window.setTimeout(function() {
 addListener(window, 'message', function(e) {
   var commands, command, params, xhr, cachedFile;
   
-  if (getDomainName(e.origin) !== getDomainName(returnUrl)) {
+  if (e.origin === 'null' || getDomainName(e.origin) !== getDomainName(returnUrl)) {
     return;
   }
   
